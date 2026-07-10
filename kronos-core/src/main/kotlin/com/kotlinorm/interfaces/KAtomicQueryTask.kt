@@ -27,4 +27,7 @@ import kotlin.reflect.KType
  */
 interface KAtomicQueryTask : KAtomicTask {
     val targetType: KType
+
+    val resultColumnTypes: Map<String, KType>
+        get() = emptyMap()
 }

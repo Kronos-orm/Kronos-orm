@@ -49,6 +49,12 @@ internal fun Field.toSqlSelectItem(useTableAlias: Boolean = false): SqlSelectIte
     )
 }
 
+internal fun totalCountSelectItem(): SqlSelectItem.Expr =
+    SqlSelectItem.Expr(
+        expr = SqlExpr.NumberLiteral("1"),
+        alias = "count_value"
+    )
+
 internal fun Any?.toSqlLiteralExpr(): SqlExpr = when (this) {
     null -> SqlExpr.NullLiteral
     is SqlExpr -> this

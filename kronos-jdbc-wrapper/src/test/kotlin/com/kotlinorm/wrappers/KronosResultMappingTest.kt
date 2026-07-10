@@ -16,6 +16,7 @@
 
 package com.kotlinorm.wrappers
 
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import io.mockk.every
@@ -57,4 +58,60 @@ class KronosResultMappingTest {
         assertEquals(false, value)
         verify(exactly = 0) { resultSet.getObject(1) }
     }
+
+    @Test
+    fun `map rows use query result column types case insensitively`() {
+        val resultSet = numberResultSet(BigDecimal("5"), "ID")
+        val context = oracleContext()
+        val task = KronosAtomicQueryTask(
+            sql = "SELECT id FROM kt_integration_user",
+            targetType = typeOf<Map<String, Any?>>(),
+            resultColumnTypes = mapOf("id" to typeOf<Int?>())
+        )
+
+        val rows = KronosResultMappers.toList(resultSet, task, context)
+
+        assertEquals(5, (rows.single() as Map<*, *>)["ID"])
+    }
+
+    @Test
+    fun `map rows without query column types preserve jdbc numeric values`() {
+        val rawValue = BigDecimal("5")
+        val resultSet = numberResultSet(rawValue, "ID")
+        val context = oracleContext()
+        val task = KronosAtomicQueryTask(
+            sql = "SELECT id FROM kt_integration_user",
+            targetType = typeOf<Map<String, Any?>>()
+        )
+
+        val rows = KronosResultMappers.toList(resultSet, task, context)
+
+        assertEquals(rawValue, (rows.single() as Map<*, *>)["ID"])
+    }
+
+    private fun numberResultSet(value: BigDecimal, label: String): ResultSet {
+        val metaData = mockk<ResultSetMetaData>()
+        every { metaData.columnCount } returns 1
+        every { metaData.getColumnLabel(1) } returns label
+        every { metaData.getColumnTypeName(1) } returns "NUMBER"
+        every { metaData.getPrecision(1) } returns 10
+        every { metaData.getScale(1) } returns 0
+
+        return mockk<ResultSet>().also { resultSet ->
+            every { resultSet.metaData } returns metaData
+            every { resultSet.next() } returnsMany listOf(true, false)
+            every { resultSet.getObject(1) } returns value
+        }
+    }
+
+    private fun oracleContext() = KronosStatementContext(
+        originalSql = "SELECT id FROM kt_integration_user",
+        jdbcSql = "SELECT id FROM kt_integration_user",
+        params = emptyList(),
+        parameterNames = emptyList(),
+        operationType = KOperationType.SELECT,
+        dbType = DBType.Oracle,
+        databaseProductName = "Oracle",
+        config = KronosJdbcConfig(DBType.Oracle, "Oracle", "jdbc:oracle:thin:@localhost:1521/FREEPDB1", "Oracle JDBC")
+    )
 }

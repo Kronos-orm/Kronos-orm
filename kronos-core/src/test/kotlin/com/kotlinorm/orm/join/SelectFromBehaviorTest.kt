@@ -45,6 +45,18 @@ class SelectFromBehaviorTest : MysqlTestBase() {
     }
 
     @Test
+    fun `build carries joined column types beyond root selected type`() {
+        val task = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
+            leftJoin(relation) { user.id == relation.id2 }
+            select { [user.id, relation.id2] }
+        }.build().atomicTask
+
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id2"])
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["ID2"])
+    }
+
+    @Test
     fun `join selectable currently keeps source class as selected type`() {
         val wrapper = CapturingMysqlWrapper()
         val selectFrom = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->

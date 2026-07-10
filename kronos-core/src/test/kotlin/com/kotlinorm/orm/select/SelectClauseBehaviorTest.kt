@@ -33,6 +33,7 @@ import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 
@@ -45,6 +46,19 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
         val task = clause.build()
 
         assertEquals(clause.toSqlQuery(), task.atomicTask.statement)
+    }
+
+    @Test
+    fun `build carries generated projection column types for map mapping`() {
+        val task = TestUser()
+            .select { [it.id, it.username] }
+            .build()
+            .atomicTask
+
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["ID"])
+        assertEquals(typeOf<String?>(), task.resultColumnTypes["username"])
+        assertFalse("score" in task.resultColumnTypes)
     }
 
     @Test

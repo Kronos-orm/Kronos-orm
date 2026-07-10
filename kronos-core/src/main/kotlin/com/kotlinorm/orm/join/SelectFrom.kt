@@ -442,6 +442,9 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         val dataSource = wrapper.orDefault()
         val plan = toSqlQueryPlan(dataSource)
         val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, context.fieldsMap())
+        val resultFieldsByLabel = context.selectedFieldsByAlias.ifEmpty {
+            context.allFields.associateByTo(linkedMapOf()) { it.name }
+        }
 
         return CascadeJoinClause.build(
             context.cascadeEnabled, context.cascadeAllowed, context.listOfPojo, KronosAtomicQueryTask(
@@ -449,7 +452,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
-                targetType = selectedType
+                targetType = selectedType,
+                resultColumnTypes = resultColumnTypes(resultFieldsByLabel)
             ), context.operationType, context.selectedFieldsByAlias, context.cascadeSelectedProps ?: mutableSetOf()
         )
     }

@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.InsertClause
@@ -24,6 +25,7 @@ import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.types.ToInsertSelect
 import com.kotlinorm.utils.createInstance
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 abstract class KSelectable<Selected : KPojo>(
@@ -43,6 +45,26 @@ abstract class KSelectable<Selected : KPojo>(
 
     internal open fun buildTotalCountTask(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask =
         error("Total count is not supported for ${this::class.simpleName}.")
+
+    @Suppress("UNCHECKED_CAST")
+    internal fun resultColumnTypes(fieldsByLabel: Map<String, Field> = emptyMap()): Map<String, KType> {
+        val selectedClass = selectedType.classifier as? KClass<*> ?: return emptyMap()
+        val projectionTypes = fieldsMapCache[selectedClass as KClass<KPojo>]
+            ?.mapNotNull { (label, field) -> field.kType?.let { label to it } }
+            ?.toMap()
+            .orEmpty()
+        return buildMap {
+            putAll(projectionTypes)
+            fieldsByLabel.forEach { (label, field) ->
+                val targetType = field.kType ?: return@forEach
+                listOf(label, field.name, field.columnName).forEach { name ->
+                    put(name, targetType)
+                    put(name.uppercase(), targetType)
+                    put(name.lowercase(), targetType)
+                }
+            }
+        }
+    }
 
     open fun toSqlQuery(wrapper: KronosDataSourceWrapper? = null): SqlQuery = toSqlQueryPlan(wrapper).query
 

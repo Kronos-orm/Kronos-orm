@@ -36,7 +36,8 @@ data class KronosAtomicQueryTask(
     override val operationType: KOperationType = KOperationType.SELECT,
     override val statement: SqlQuery? = null,
     override val targetType: KType,
-    val stash: MutableMap<String, Any?> = mutableMapOf()
+    val stash: MutableMap<String, Any?> = mutableMapOf(),
+    override val resultColumnTypes: Map<String, KType> = emptyMap()
 ) : KAtomicQueryTask {
 
     /**

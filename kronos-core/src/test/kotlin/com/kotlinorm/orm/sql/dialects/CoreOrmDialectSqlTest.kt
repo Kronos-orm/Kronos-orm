@@ -64,23 +64,23 @@ class CoreOrmDialectSqlTest {
 
         val expected = mapOf(
             DBType.Mysql to ExpectedTask(
-                "SELECT COUNT(*) FROM (SELECT 1 FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) AS `total_count`",
+                "SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) AS `total_count`",
                 mapOf("id" to 1)
             ),
             DBType.Postgres to ExpectedTask(
-                """SELECT COUNT(*) FROM (SELECT 1 FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = FALSE) AS "total_count"""",
+                """SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = FALSE) AS "total_count"""",
                 mapOf("id" to 1)
             ),
             DBType.SQLite to ExpectedTask(
-                """SELECT COUNT(*) FROM (SELECT 1 FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0) AS "total_count"""",
+                """SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0) AS "total_count"""",
                 mapOf("id" to 1)
             ),
             DBType.Mssql to ExpectedTask(
-                "SELECT COUNT(*) FROM (SELECT 1 FROM [tb_user] WHERE [tb_user].[id] = :id AND [deleted] = 0) AS [total_count]",
+                "SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM [tb_user] WHERE [tb_user].[id] = :id AND [deleted] = 0) AS [total_count]",
                 mapOf("id" to 1)
             ),
             DBType.Oracle to ExpectedTask(
-                """SELECT COUNT(*) FROM (SELECT 1 FROM "TB_USER" WHERE "TB_USER"."ID" = :id AND "DELETED" = 0) "TOTAL_COUNT"""",
+                """SELECT COUNT(*) FROM (SELECT 1 AS COUNT_VALUE FROM "TB_USER" WHERE "TB_USER"."ID" = :id AND "DELETED" = 0) "TOTAL_COUNT"""",
                 mapOf("id" to 1)
             )
         )

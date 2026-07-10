@@ -11,11 +11,11 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
 import com.kotlinorm.beans.dsl.KTableForSelect
 import com.kotlinorm.beans.dsl.KTableForSort
-import com.kotlinorm.beans.dsl.rawSqlSelectItem
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.orm.sql.materializeSqlQuery
 import com.kotlinorm.orm.sql.toSqlParameterEq
+import com.kotlinorm.orm.sql.totalCountSelectItem
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -90,7 +90,7 @@ internal class SelectFromPlanner(
         totalCount: Boolean
     ): List<SqlSelectItem> {
         if (totalCount && (context.selectAll || context.projectionItems.all { it is KTableForSelect.ProjectionItem.FieldItem })) {
-            return listOf(rawSqlSelectItem("1"))
+            return listOf(totalCountSelectItem())
         }
         val selected = mutableListOf<SqlSelectItem>()
         context.projectionItems.forEach { projection ->

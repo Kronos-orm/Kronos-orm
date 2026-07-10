@@ -258,6 +258,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         } else {
             (context.selectedFields + context.cascadeFields).toLinkedSet()
         }
+        val resultFieldsByLabel = (if (context.selectAll) context.allColumns else context.selectedFields)
+            .associateBy { it.name }
         return CascadeSelectClause.build(
             context.cascadeEnabled,
             context.cascadeAllowed,
@@ -268,7 +270,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
-                targetType = context.projectionType
+                targetType = context.projectionType,
+                resultColumnTypes = resultColumnTypes(resultFieldsByLabel)
             ),
             finalSelectFields,
             context.operationType,

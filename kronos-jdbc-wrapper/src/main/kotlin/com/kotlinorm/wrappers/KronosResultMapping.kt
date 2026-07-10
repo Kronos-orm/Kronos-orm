@@ -168,28 +168,40 @@ internal object KronosResultMappers {
         task: KAtomicQueryTask,
         context: KronosStatementContext
     ): List<Any?> {
-        return toList(resultSet, task.targetType, context)
+        return toList(resultSet, task.targetType, task.resultColumnTypes, context)
     }
 
     fun toList(
         resultSet: ResultSet,
         targetType: KType,
         context: KronosStatementContext
+    ): List<Any?> = toList(resultSet, targetType, emptyMap(), context)
+
+    private fun toList(
+        resultSet: ResultSet,
+        targetType: KType,
+        resultColumnTypes: Map<String, KType>,
+        context: KronosStatementContext
     ): List<Any?> =
         when (val mapping = targetType.mapping()) {
-            ResultMapping.Map -> toMapList(resultSet, context)
+            ResultMapping.Map -> toMapList(resultSet, context, resultColumnTypes)
             is ResultMapping.KPojoResult -> toKPojoList(resultSet, mapping.targetType, context)
             is ResultMapping.Scalar -> toObjectList(resultSet, mapping.targetType, context)
         }
 
-    fun toMapList(resultSet: ResultSet, context: KronosStatementContext): List<Map<String, Any?>> =
+    fun toMapList(
+        resultSet: ResultSet,
+        context: KronosStatementContext,
+        resultColumnTypes: Map<String, KType> = emptyMap()
+    ): List<Map<String, Any?>> =
         mapRows(resultSet, context) { row ->
             val metaData = resultSet.metaData
             val values = linkedMapOf<String, Any?>()
             for (position in 1..metaData.columnCount) {
                 if (position !in row.skipColumns) {
-                    values[metaData.getColumnLabel(position)] =
-                        context.config.columnMappers.map(resultSet, position, typeOf<Any?>(), context)
+                    val label = metaData.getColumnLabel(position)
+                    val targetType = resultColumnTypes.columnType(label) ?: typeOf<Any?>()
+                    values[label] = context.config.columnMappers.map(resultSet, position, targetType, context)
                 }
             }
             row.overrideValues.forEach { (position, value) ->
@@ -308,6 +320,9 @@ internal object KronosResultMappers {
 }
 
 private fun KType.classifierClass(): KClass<*>? = classifier as? KClass<*>
+
+private fun Map<String, KType>.columnType(label: String): KType? =
+    this[label] ?: this[label.uppercase()] ?: this[label.lowercase()]
 
 private fun KType.isStringKeyMap(): Boolean {
     val kClass = classifierClass() ?: return false

@@ -154,7 +154,8 @@ class UnionClause<Selected : KPojo> internal constructor(
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
-                targetType = selectedType
+                targetType = selectedType,
+                resultColumnTypes = resultColumnTypes()
             )
         )
     }

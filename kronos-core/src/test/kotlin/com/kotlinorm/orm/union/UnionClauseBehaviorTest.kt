@@ -41,6 +41,7 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
         val task = unionClause.build()
 
         assertEquals(unionClause.toSqlQuery(), task.atomicTask.statement)
+        assertEquals(typeOf<Int?>(), task.atomicTask.resultColumnTypes["id"])
     }
 
     @Test

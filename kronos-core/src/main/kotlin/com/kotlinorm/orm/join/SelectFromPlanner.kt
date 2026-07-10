@@ -61,7 +61,7 @@ internal class SelectFromPlanner(
                 })
             } else null,
             having = context.having?.takeIf { context.havingEnabled }?.rewriteDerivedJoinAliases(),
-            orderBy = orderItems(dataSource, parameters, parameterCounter),
+            orderBy = if (totalCount) emptyList() else orderItems(dataSource, parameters, parameterCounter),
             limit = if (totalCount) {
                 null
             } else {

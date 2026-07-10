@@ -51,7 +51,7 @@ data class Movie(
 // 查询 Director 时自动加载关联的 movies
 val director = Director(id = 1).select()
     .cascade { [Director::movies] }
-    .queryOne()
+    .first()
 // director.movies 自动填充
 ```
 
@@ -90,35 +90,35 @@ Kronos 提供数据库函数的类型安全调用，通过 `f` 对象访问：
 
 ```kotlin
 // 聚合函数
-User().select { f.count(it.id) }.queryOne<Int>()
-User().select { f.sum(it.age) }.queryOne<Int>()
-User().select { f.avg(it.age) }.queryOne<Double>()
-User().select { f.max(it.age) }.queryOne<Int>()
-User().select { f.min(it.age) }.queryOne<Int>()
+User().select { f.count(it.id) }.first<Int>()
+User().select { f.sum(it.age) }.first<Int>()
+User().select { f.avg(it.age) }.first<Double>()
+User().select { f.max(it.age) }.first<Int>()
+User().select { f.min(it.age) }.first<Int>()
 
 // 字符串函数
-User().select { f.upper(it.name) }.queryList()
-User().select { f.lower(it.name) }.queryList()
-User().select { f.length(it.name) }.queryList()
-User().select { f.concat(it.name, it.age) }.queryList()
+User().select { f.upper(it.name) }.toList()
+User().select { f.lower(it.name) }.toList()
+User().select { f.length(it.name) }.toList()
+User().select { f.concat(it.name, it.age) }.toList()
 
 // 数学函数
-User().select { f.abs(it.age) }.queryList()
-User().select { f.ceil(it.score) }.queryList()
-User().select { f.round(it.score, 2) }.queryList()
-User().select { f.trunc(it.score, 2) }.queryList()
+User().select { f.abs(it.age) }.toList()
+User().select { f.ceil(it.score) }.toList()
+User().select { f.round(it.score, 2) }.toList()
+User().select { f.trunc(it.score, 2) }.toList()
 
 // 在条件中使用函数
-User().select().where { f.length(it.name) > 5 }.queryList()
+User().select().where { f.length(it.name) > 5 }.toList()
 
 // 在分组中使用
 User().select { [it.age, f.count(it.id)] }
     .groupBy { it.age }
     .having { f.count(it.id) > 5 }
-    .queryList()
+    .toList()
 ```
 
-函数表达式用于 `select { ... }` 结果时要使用 `.alias("name")`，alias 会成为 `query()` 的 Map key 和生成投影属性名。窗口函数当前入口是 `f.rowNumber()`，需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`：
+函数表达式用于 `select { ... }` 结果时要使用 `.alias("name")`，alias 会成为 `toMapList()` 的 Map key 和生成投影属性名。窗口函数当前入口是 `f.rowNumber()`，需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`：
 
 ```kotlin
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
@@ -139,7 +139,7 @@ val ranked = Order()
 
 val rows = ranked
     .orderBy { it.rn.asc() }
-    .queryList()
+    .toList()
 
 val rowNumber: Int? = rows.first().rn
 ```
@@ -245,7 +245,7 @@ with(Kronos) {
 }
 ```
 
-自定义处理器实现 `KronosSerializeProcessor` 时，`serialize` 和 `deserialize` 都会收到字段声明上的 `KType`。处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段时，不要只看运行时 `KClass`。
+自定义处理器实现 `KronosSerializeProcessor` 时，`serialize` 和 `deserialize` 都会收到字段声明上的 `KType`。处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段时，直接使用这个完整声明类型。
 
 Kotlinx Serialization 接入示例：
 
@@ -289,11 +289,11 @@ data class ProfileSetting(
 ## 原生SQL
 
 ```kotlin
-val users = dataSource.forList(
-    KronosAtomicQueryTask(
-        "SELECT * FROM user WHERE name = :name AND age > :age",
-        mapOf("name" to "Kronos", "age" to 18)
-    )
+import com.kotlinorm.database.SqlExecutor.queryList
+
+val users = dataSource.queryList<User>(
+    "SELECT * FROM user WHERE name = :name AND age > :age",
+    mapOf("name" to "Kronos", "age" to 18)
 )
 ```
 
@@ -371,23 +371,23 @@ CTAS 也可以通过 `buildCreateTableAsSelectTask(Target(), query)` 先生成 S
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val generatedRows = nameLengths.queryList()
+val generatedRows = nameLengths.toList()
 val firstLength: Int? = generatedRows.first().nameLength
 
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
-无参 `queryList()` / `queryOne()` 返回编译器生成的投影类型；需要命名结果类型时，使用 `select(UserSummary::class) { ... }` 映射到 DTO，select 输出名要和 DTO 属性名对应。
+无参 `toList()` / `first()` 返回编译器生成的投影类型；需要命名结果类型时，使用 `select(UserSummary::class) { ... }` 映射到 DTO，select 输出名要和 DTO 属性名对应。
 
 原生 SQL select item 使用字符串表达式，alias 决定 Map key 或生成投影属性名：
 
 ```kotlin
 val rows = User()
     .select { ["count(*)".alias("total")] }
-    .query()
+    .toMapList()
 
 val total = rows.first()["total"]
 ```
@@ -417,7 +417,7 @@ val ranked = Order()
 val firstOrders = ranked
     .select { [it.id, it.userId, it.status] }
     .where { it.rn == 1 }
-    .queryList()
+    .toList()
 ```
 
 排序、分页和聚合可以和投影组合：
@@ -430,7 +430,7 @@ val (total, rows) = User()
     .orderBy { it.id.desc() }
     .page(1, 20)
     .withTotal()
-    .queryList<User>()
+    .toList<User>()
 ```
 
 标量子查询可以作为 select 字段使用。
@@ -449,7 +449,7 @@ val users = User()
                 .alias("lastOrderStatus")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 谓词子查询可以用于 `in`、`!in`、`exists`、`!exists`、`any`、`some`、`all` 和 row-value tuple 条件。
@@ -462,7 +462,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 `KSelectable` 可以作为 join 的派生查询源。
@@ -475,7 +475,7 @@ val paidOrders = Order()
 val users = User().join(paidOrders) { user, order ->
     leftJoin(order) { user.id == order.userId }
     select { [user.id, user.name, order.status] }
-}.queryList()
+}.toList()
 ```
 
 INSERT SELECT 使用 `KSelectable<Selected>.insert<Target>()`。
@@ -587,7 +587,7 @@ with(Kronos) {
 
 // 指定数据源执行
 user.insert().execute(pgWrapper)
-user.select().queryList(pgWrapper)
+user.select().toList(pgWrapper)
 
 // 指定数据源的事务
 Kronos.transact(pgWrapper) {
@@ -633,7 +633,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.1.2")
+    implementation("com.kotlinorm:kronos-logging:0.2.0")
 }
 ```
 
@@ -717,15 +717,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.1.2`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.1.2")
-@file:DependsOn("com.kotlinorm:kronos-core:0.1.2")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.1.2")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```

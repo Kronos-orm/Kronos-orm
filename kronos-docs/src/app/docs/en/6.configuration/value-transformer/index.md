@@ -86,9 +86,8 @@ Whether this converter can be used to convert the specified type.
 
   ```kotlin
   fun isMatch(
-      targetKotlinType: String,
-      superTypesOfValue: List<String>,
-      kClassOfValue: KClass<*>
+      targetKotlinType: KType,
+      sourceValueClass: KClass<*>
   ): Boolean
   ```
 
@@ -97,17 +96,17 @@ Whether this converter can be used to convert the specified type.
    ```kotlin
   class TestTransformer : ValueTransformer {
       override fun isMatch(
-          targetKotlinType: String,
-          superTypesOfValue: List<String>,
-          kClassOfValue: KClass<*>
+          targetKotlinType: KType,
+          sourceValueClass: KClass<*>
       ): Boolean {
-          return targetKotlinType == "com.example.Test" && kClassOfValue == String::class
+          return targetKotlinType.classifier == Test::class && sourceValueClass == String::class
+      }
   }
    ```
 
 - **Parameters**
 
-  {{$.params([['targetKotlinType', 'Target type', 'String'], ['superTypesOfValue', 'Superclass of the value', 'List<String>'], ['kClassOfValue', 'KClass of the value', 'KClass<*>']])}}
+  {{$.params([['targetKotlinType', 'Target type, including generic arguments and nullability', 'KType'], ['sourceValueClass', 'Runtime class of the source value', 'KClass<*>']])}}
 
 - **Return Value**
 
@@ -121,11 +120,10 @@ Convert the value to the specified type.
 
   ```kotlin
   fun transform(
-      targetKotlinType: String,
+      targetKotlinType: KType,
       value: Any,
-      superTypesOfValue: List<String>,
       dateTimeFormat: String?,
-      kClassOfValue: KClass<*>
+      sourceValueClass: KClass<*>
   ): Any
   ```
 
@@ -134,11 +132,10 @@ Convert the value to the specified type.
   ```kotlin
   class TestTransformer : ValueTransformer {
       override fun transform(
-          targetKotlinType: String,
+          targetKotlinType: KType,
           value: Any,
-          superTypesOfValue: List<String>,
           dateTimeFormat: String?,
-          kClassOfValue: KClass<*>
+          sourceValueClass: KClass<*>
       ): Any {
           return Test(value as String)
       }
@@ -147,7 +144,7 @@ Convert the value to the specified type.
 
 - **Parameters**
 
-  {{$.params([['targetKotlinType', 'Target type', 'String'], ['value', 'Value', 'Any'], ['superTypesOfValue', 'Superclass of the value', 'List<String>'], ['dateTimeFormat', 'Date format', 'String?'], ['kClassOfValue', 'KClass of the value', 'KClass<*>']])}}
+  {{$.params([['targetKotlinType', 'Target type, including generic arguments and nullability', 'KType'], ['value', 'Source value', 'Any'], ['dateTimeFormat', 'Date format', 'String?'], ['sourceValueClass', 'Runtime class of the source value', 'KClass<*>']])}}
 
 - **返回值**
 
@@ -187,20 +184,18 @@ data class TestPojo(
 // Custom value transformer
 class TestEnumTransformer : ValueTransformer {
     override fun isMatch(
-        targetKotlinType: String,
-        superTypesOfValue: List<String>,
-        kClassOfValue: KClass<*>
+        targetKotlinType: KType,
+        sourceValueClass: KClass<*>
     ): Boolean {
         // Determine whether the target type is an enum type and the value type is a string
-        return targetKotlinType == TestEnum::class.qualifiedName && kClassOfValue == String::class
+        return targetKotlinType.classifier == TestEnum::class && sourceValueClass == String::class
     }
 
     override fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String>,
         dateTimeFormat: String?,
-        kClassOfValue: KClass<*>
+        sourceValueClass: KClass<*>
     ): Any {
         return TestEnum.valueOf(value as String)
     }

@@ -24,16 +24,17 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
-import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.select.selectWithType
 import com.kotlinorm.orm.sql.toSqlParameterEq
 import com.kotlinorm.orm.statement.ParameterSource
-import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.update.updateWithType
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 object CascadeUpdateClause {
 
@@ -41,6 +42,7 @@ object CascadeUpdateClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
+        targetType: KType,
         kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
@@ -48,12 +50,13 @@ object CascadeUpdateClause {
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
-            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, where, rootTask
+            cascadeAllowed, pojo, targetType, kClass, paramMap, toUpdateFields, where, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
+        targetType: KType,
         kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
@@ -75,7 +78,7 @@ object CascadeUpdateClause {
                 val inheritedWhere = where
                 val inheritedParamMap = paramMap
                 val inheritedCascadeAllowed = cascadeAllowed
-                val selectClause = pojo.select().apply {
+                val selectClause = pojo.selectWithType(targetType).apply {
                     with(context) {
                         andWhere(inheritedWhere, inheritedParamMap)
                         this.cascadeAllowed = inheritedCascadeAllowed
@@ -84,7 +87,7 @@ object CascadeUpdateClause {
                     }
                 }
                 toUpdateRecords.addAll(
-                    selectClause.queryList(wrapper)
+                    selectClause.toList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { record ->
@@ -117,7 +120,7 @@ object CascadeUpdateClause {
                     }
                     atomicTasks.addAll(
                         list.mapNotNull {
-                            getTask(it, paramMap)?.atomicTasks
+                            getTask(it, paramMap, targetType)?.atomicTasks
                         }.flatten()
                     )
                 }
@@ -127,10 +130,14 @@ object CascadeUpdateClause {
 
     private fun getTask(
         node: NodeOfKPojo,
-        paramMap: Map<String, Any?>
+        paramMap: Map<String, Any?>,
+        rootTargetType: KType
     ): KronosActionTask? {
         if (null == node.data) return null
-        return node.kPojo.update().cascade(false).apply {
+        val targetType = node.data.fieldOfParent?.let { field ->
+            field.elementKType ?: field.kType
+        } ?: rootTargetType
+        return node.kPojo.updateWithType(targetType).cascade(false).apply {
             with(context) {
                 andWhereAll(this.fields.mapNotNull { field ->
                     sourceValues[field.name]?.let { value ->

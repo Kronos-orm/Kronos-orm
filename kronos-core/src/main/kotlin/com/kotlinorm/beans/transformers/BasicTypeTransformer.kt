@@ -20,6 +20,7 @@ import com.kotlinorm.interfaces.ValueTransformer
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Transformer for basic types.
@@ -104,18 +105,18 @@ object BasicTypeTransformer : ValueTransformer {
         else -> BigDecimal(toString()).compareTo(BigDecimal.ZERO) != 0
     }
 
-    override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
-        return targetKotlinType in basicTypes
+    override fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean {
+        return targetKotlinType.classifierName() in basicTypes
     }
 
     override fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String>,
         dateTimeFormat: String?,
-        kClassOfValue: KClass<*>
+        sourceValueClass: KClass<*>
     ): Any {
-        return when (targetKotlinType) {
+        val targetTypeName = targetKotlinType.classifierName()
+        return when (targetTypeName) {
             "kotlin.Int" -> value.safeCast(Number::toInt, String::toInt)
             "kotlin.Long" -> value.safeCast(Number::toLong, String::toLong)
             "kotlin.Short" -> value.safeCast(Number::toShort, String::toShort)
@@ -138,4 +139,7 @@ object BasicTypeTransformer : ValueTransformer {
             else -> null
         } ?: throw IllegalArgumentException("Invalid type: $targetKotlinType")
     }
+
+    private fun KType.classifierName(): String? =
+        (classifier as? KClass<*>)?.qualifiedName
 }

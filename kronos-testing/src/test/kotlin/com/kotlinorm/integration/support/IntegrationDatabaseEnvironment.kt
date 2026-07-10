@@ -1,6 +1,6 @@
 package com.kotlinorm.integration.support
 
-import com.kotlinorm.database.SqlHandler
+import com.kotlinorm.database.SqlExecutor
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 import org.apache.commons.dbcp2.BasicDataSource
@@ -89,7 +89,7 @@ object IntegrationDatabaseEnvironments {
 }
 
 fun KronosDataSourceWrapper.verifyConnection(probeSql: String) {
-    with(SqlHandler) {
+    with(SqlExecutor) {
         query(probeSql)
     }
 }

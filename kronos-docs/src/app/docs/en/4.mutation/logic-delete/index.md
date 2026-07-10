@@ -77,7 +77,7 @@ Select and update statements add the active-row condition for a KPojo with logic
 ```kotlin group="Visible rows" name="kotlin" icon="kotlin"
 User()
     .select { [it.id, it.name] }
-    .query()
+    .toMapList()
 
 User(id = 1)
     .update()

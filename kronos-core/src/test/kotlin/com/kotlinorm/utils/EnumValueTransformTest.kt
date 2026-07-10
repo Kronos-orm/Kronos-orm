@@ -7,6 +7,7 @@ import com.kotlinorm.interfaces.ValueTransformer
 import com.kotlinorm.utils.Extensions.safeMapperTo
 import kotlin.test.Test
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.test.assertEquals
 
 enum class TestEnum {
@@ -36,24 +37,22 @@ class EnumValueTransformTest {
 
     class TestEnumTransformer : ValueTransformer {
         override fun isMatch(
-            targetKotlinType: String,
-            superTypesOfValue: List<String>,
-            kClassOfValue: KClass<*>
+            targetKotlinType: KType,
+            sourceValueClass: KClass<*>
         ): Boolean {
-            return targetKotlinType in [TestEnum::class.qualifiedName, TestEnum2::class.qualifiedName] &&
-                    kClassOfValue == String::class
+            return targetKotlinType.classifier in [TestEnum::class, TestEnum2::class] &&
+                    sourceValueClass == String::class
         }
 
         override fun transform(
-            targetKotlinType: String,
+            targetKotlinType: KType,
             value: Any,
-            superTypesOfValue: List<String>,
             dateTimeFormat: String?,
-            kClassOfValue: KClass<*>
+            sourceValueClass: KClass<*>
         ): Any {
-            return when (targetKotlinType) {
-                TestEnum::class.qualifiedName -> TestEnum.valueOf(value as String)
-                TestEnum2::class.qualifiedName -> TestEnum2.valueOf(value as String)
+            return when (targetKotlinType.classifier) {
+                TestEnum::class -> TestEnum.valueOf(value as String)
+                TestEnum2::class -> TestEnum2.valueOf(value as String)
                 else -> throw IllegalArgumentException("Unsupported targetKotlinType: $targetKotlinType")
             }
         }
@@ -61,21 +60,23 @@ class EnumValueTransformTest {
 
     class GeneralJvmEnumTransformer : ValueTransformer {
         override fun isMatch(
-            targetKotlinType: String,
-            superTypesOfValue: List<String>,
-            kClassOfValue: KClass<*>
+            targetKotlinType: KType,
+            sourceValueClass: KClass<*>
         ): Boolean {
-            return !targetKotlinType.startsWith("kotlin.") && Class.forName(targetKotlinType).isEnum
+            val targetClass = targetKotlinType.classifier as? KClass<*> ?: return false
+            return targetClass.supertypes.any { it.classifier == Enum::class }
         }
 
         override fun transform(
-            targetKotlinType: String,
+            targetKotlinType: KType,
             value: Any,
-            superTypesOfValue: List<String>,
             dateTimeFormat: String?,
-            kClassOfValue: KClass<*>
+            sourceValueClass: KClass<*>
         ): Any {
-            return Class.forName(targetKotlinType).enumConstants.first { it.toString() == value }
+            val targetClass = targetKotlinType.classifier as KClass<*>
+            return requireNotNull(
+                Class.forName(targetClass.qualifiedName!!).enumConstants.firstOrNull { it.toString() == value }
+            )
         }
     }
 

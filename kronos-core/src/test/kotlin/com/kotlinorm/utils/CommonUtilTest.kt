@@ -69,95 +69,95 @@ class CommonUtilTest {
     @Test
     fun testGetTypeSafeValue() {
         // 测试整数类型
-        assertEquals(42, getTypeSafeValue("kotlin.Int", 42))
-        assertEquals(42, getTypeSafeValue("kotlin.Int", "42"))
-        assertEquals(42, getTypeSafeValue("kotlin.Int", 42.0))
+        assertEquals(42, getTypeSafeValue(typeOf<Int>(), 42))
+        assertEquals(42, getTypeSafeValue(typeOf<Int>(), "42"))
+        assertEquals(42, getTypeSafeValue(typeOf<Int>(), 42.0))
 
         // 测试长整型
-        assertEquals(42L, getTypeSafeValue("kotlin.Long", 42))
-        assertEquals(42L, getTypeSafeValue("kotlin.Long", "42"))
-        assertEquals(42L, getTypeSafeValue("kotlin.Long", 42.0))
+        assertEquals(42L, getTypeSafeValue(typeOf<Long>(), 42))
+        assertEquals(42L, getTypeSafeValue(typeOf<Long>(), "42"))
+        assertEquals(42L, getTypeSafeValue(typeOf<Long>(), 42.0))
 
         // 测试短整型
-        assertEquals(42.toShort(), getTypeSafeValue("kotlin.Short", 42))
-        assertEquals(42.toShort(), getTypeSafeValue("kotlin.Short", "42"))
+        assertEquals(42.toShort(), getTypeSafeValue(typeOf<Short>(), 42))
+        assertEquals(42.toShort(), getTypeSafeValue(typeOf<Short>(), "42"))
 
         // 测试浮点型
-        assertEquals(42f, getTypeSafeValue("kotlin.Float", 42))
-        assertEquals(42f, getTypeSafeValue("kotlin.Float", "42.0"))
+        assertEquals(42f, getTypeSafeValue(typeOf<Float>(), 42))
+        assertEquals(42f, getTypeSafeValue(typeOf<Float>(), "42.0"))
 
         // 测试双精度浮点型
-        assertEquals(42.0, getTypeSafeValue("kotlin.Double", 42))
-        assertEquals(42.0, getTypeSafeValue("kotlin.Double", "42.0"))
+        assertEquals(42.0, getTypeSafeValue(typeOf<Double>(), 42))
+        assertEquals(42.0, getTypeSafeValue(typeOf<Double>(), "42.0"))
 
         // 测试精确数值类型
-        assertEquals(BigDecimal("42.50"), getTypeSafeValue("java.math.BigDecimal", "42.50"))
-        assertEquals(BigDecimal("42.5"), getTypeSafeValue("java.math.BigDecimal", 42.5))
-        assertEquals(BigDecimal("42"), getTypeSafeValue("java.math.BigDecimal", BigInteger("42")))
-        assertEquals(BigInteger("42"), getTypeSafeValue("java.math.BigInteger", "42"))
-        assertEquals(BigInteger("42"), getTypeSafeValue("java.math.BigInteger", BigDecimal("42.50")))
+        assertEquals(BigDecimal("42.50"), getTypeSafeValue(typeOf<BigDecimal>(), "42.50"))
+        assertEquals(BigDecimal("42.5"), getTypeSafeValue(typeOf<BigDecimal>(), 42.5))
+        assertEquals(BigDecimal("42"), getTypeSafeValue(typeOf<BigDecimal>(), BigInteger("42")))
+        assertEquals(BigInteger("42"), getTypeSafeValue(typeOf<BigInteger>(), "42"))
+        assertEquals(BigInteger("42"), getTypeSafeValue(typeOf<BigInteger>(), BigDecimal("42.50")))
 
         // 测试字节型
-        assertEquals(42.toByte(), getTypeSafeValue("kotlin.Byte", 42))
-        assertEquals(42.toByte(), getTypeSafeValue("kotlin.Byte", "42"))
+        assertEquals(42.toByte(), getTypeSafeValue(typeOf<Byte>(), 42))
+        assertEquals(42.toByte(), getTypeSafeValue(typeOf<Byte>(), "42"))
 
         // 测试字符型
-        assertEquals('A', getTypeSafeValue("kotlin.Char", 65))
-        assertEquals('A', getTypeSafeValue("kotlin.Char", "A"))
+        assertEquals('A', getTypeSafeValue(typeOf<Char>(), 65))
+        assertEquals('A', getTypeSafeValue(typeOf<Char>(), "A"))
 
         // 测试字符串型
-        assertEquals("42", getTypeSafeValue("kotlin.String", 42))
-        assertEquals("Hello", getTypeSafeValue("kotlin.String", "Hello"))
+        assertEquals("42", getTypeSafeValue(typeOf<String>(), 42))
+        assertEquals("Hello", getTypeSafeValue(typeOf<String>(), "Hello"))
 
         // 测试布尔型
-        assertEquals(true, getTypeSafeValue("kotlin.Boolean", 1))
-        assertEquals(false, getTypeSafeValue("kotlin.Boolean", 0))
-        assertEquals(true, getTypeSafeValue("kotlin.Boolean", "true"))
-        assertEquals(false, getTypeSafeValue("kotlin.Boolean", "false"))
+        assertEquals(true, getTypeSafeValue(typeOf<Boolean>(), 1))
+        assertEquals(false, getTypeSafeValue(typeOf<Boolean>(), 0))
+        assertEquals(true, getTypeSafeValue(typeOf<Boolean>(), "true"))
+        assertEquals(false, getTypeSafeValue(typeOf<Boolean>(), "false"))
 
         // 测试日期时间类型
         val dateTimeString = "2023-10-17T10:00:00"
         assertEquals(
             LocalDateTime.parse(dateTimeString),
-            getTypeSafeValue("java.time.LocalDateTime", dateTimeString)
+            getTypeSafeValue(typeOf<LocalDateTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).toLocalDate(),
-            getTypeSafeValue("java.time.LocalDate", dateTimeString)
+            getTypeSafeValue(typeOf<LocalDate>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).toLocalTime(),
-            getTypeSafeValue("java.time.LocalTime", dateTimeString)
+            getTypeSafeValue(typeOf<java.time.LocalTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()),
-            getTypeSafeValue("java.time.ZonedDateTime", dateTimeString)
+            getTypeSafeValue(typeOf<java.time.ZonedDateTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toOffsetDateTime(),
-            getTypeSafeValue("java.time.OffsetDateTime", dateTimeString)
+            getTypeSafeValue(typeOf<java.time.OffsetDateTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant(),
-            getTypeSafeValue("java.time.Instant", dateTimeString)
+            getTypeSafeValue(typeOf<java.time.Instant>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-            getTypeSafeValue("kotlin.Long", LocalDateTime.parse(dateTimeString))
+            getTypeSafeValue(typeOf<Long>(), LocalDateTime.parse(dateTimeString))
         )
         assertEquals(
             "2023-10-17 10:00:00",
-            getTypeSafeValue("kotlin.String", LocalDateTime.parse(dateTimeString))
+            getTypeSafeValue(typeOf<String>(), LocalDateTime.parse(dateTimeString))
         )
 
         // 测试Instant类型
         assertEquals(
-            getTypeSafeValue("java.time.Instant", dateTimeString), LocalDateTime.parse(dateTimeString)
+            getTypeSafeValue(typeOf<java.time.Instant>(), dateTimeString), LocalDateTime.parse(dateTimeString)
                 .atZone(timeZone).toInstant()
         )
 
         // 测试java.util.Date类型
-        val date = getTypeSafeValue("java.util.Date", dateTimeString)
+        val date = getTypeSafeValue(typeOf<Date>(), dateTimeString)
         assertEquals(
             date,
             Date.from(LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant())
@@ -168,7 +168,7 @@ class CommonUtilTest {
         assertEquals(
             LocalDate.parse(dateString),
             getTypeSafeValue(
-                "java.time.LocalDate", java.sql.Date.valueOf(dateString)
+                typeOf<LocalDate>(), java.sql.Date.valueOf(dateString)
             )
         )
 
@@ -181,18 +181,18 @@ class CommonUtilTest {
         val localDate = dateTime.date
         val localTime = dateTime.time
 
-        assertEquals(dateTime, getTypeSafeValue("kotlinx.datetime.LocalDateTime", dateTimeString))
-        assertEquals(instant, getTypeSafeValue("kotlinx.datetime.Instant", dateTimeString))
-        assertEquals(localDate, getTypeSafeValue("kotlinx.datetime.LocalDate", dateTimeString))
-        assertEquals(localTime, getTypeSafeValue("kotlinx.datetime.LocalTime", dateTimeString))
-        assertEquals("2023-10-17 10:00:00", getTypeSafeValue("kotlin.String", dateTime))
-        assertEquals(instant.toEpochMilliseconds(), getTypeSafeValue("kotlin.Long", dateTime))
+        assertEquals(dateTime, getTypeSafeValue(typeOf<kotlinx.datetime.LocalDateTime>(), dateTimeString))
+        assertEquals(instant, getTypeSafeValue(typeOf<kotlinx.datetime.Instant>(), dateTimeString))
+        assertEquals(localDate, getTypeSafeValue(typeOf<kotlinx.datetime.LocalDate>(), dateTimeString))
+        assertEquals(localTime, getTypeSafeValue(typeOf<kotlinx.datetime.LocalTime>(), dateTimeString))
+        assertEquals("2023-10-17 10:00:00", getTypeSafeValue(typeOf<String>(), dateTime))
+        assertEquals(instant.toEpochMilliseconds(), getTypeSafeValue(typeOf<Long>(), dateTime))
 
         // 测试无效输入
         assertFailsWith<NumberFormatException> {
-            getTypeSafeValue("kotlin.Int", "invalid")
+            getTypeSafeValue(typeOf<Int>(), "invalid")
         }
-        assertEquals(false, getTypeSafeValue("kotlin.Boolean", "invalid"))
+        assertEquals(false, getTypeSafeValue(typeOf<Boolean>(), "invalid"))
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -218,7 +218,7 @@ class CommonUtilTest {
     fun toDatabaseValueUsesExplicitTransformerSafeValueBeforeFieldType() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val intField = Field("id", "id", kType = typeOf<Int>())
-        val pattern = TransformerSafeValue("1%", "kotlin.String")
+        val pattern = TransformerSafeValue("1%", typeOf<String>())
 
         assertEquals("1%", toDatabaseValue(wrapper, intField, pattern))
         assertEquals("1%", toDatabaseParameterValue(wrapper, mapOf("id" to intField), "id", pattern))

@@ -302,7 +302,7 @@ with(Kronos) {
 val users = User()
     .select()
     .where { (it.name == null).ifNoValue(NoValueStrategyType.Ignore) }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="No value 1" name="ignore sql" icon="mysql"
@@ -316,7 +316,7 @@ FROM `user`
 val users = User()
     .select()
     .where { it.name.isNull }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="No value 2" name="is null sql" icon="mysql"

@@ -20,6 +20,7 @@ import com.kotlinorm.compiler.utils.ErrorMessages
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.WindowOverFunctionName
 import com.kotlinorm.compiler.utils.dispatchReceiverArgument
+import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
@@ -518,7 +519,7 @@ private fun buildTupleFieldList(
 ): IrExpression? {
     val fields = analyzeAndBuildFields(irFunction, expression, errorReporter)
     if (fields.size <= 1) {
-        if (fields.size == 1 && expression is IrCall && expression.symbol.owner.name.asString() in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")) {
+        if (fields.size == 1 && expression is IrCall && expression.symbol.owner.name.asString() in DslCollectionFunctionNames) {
         errorReporter.reportError(
             expression,
             "Tuple IN requires at least two fields. Use `field in query` for a single-field subquery."

@@ -262,7 +262,7 @@ Use `.ifNoValue(...)` on one condition when that expression needs a local empty-
 val users = User()
     .select()
     .where { (it.name == null).ifNoValue(NoValueStrategyType.Ignore) }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="No value 1" name="ignore sql" icon="mysql"
@@ -276,7 +276,7 @@ Use `isNull` when the generated condition should be SQL `IS NULL`.
 val users = User()
     .select()
     .where { it.name.isNull }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="No value 2" name="is null sql" icon="mysql"

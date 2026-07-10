@@ -51,5 +51,9 @@ class DmlRendererTest {
             """MERGE INTO "user" AS "t1" USING (SELECT 1 AS "id", 'Ada' AS "name") AS "t2" ON ("t1"."id" = "t2"."id") WHEN MATCHED THEN UPDATE SET "t1"."name" = "t2"."name" WHEN NOT MATCHED THEN INSERT ("id", "name") VALUES (1, 'Ada')""",
             upsert.toSql()
         )
+        assertEquals(
+            """MERGE INTO [user] AS [t1] USING (SELECT 1 AS [id], N'Ada' AS [name]) AS [t2] ON ([t1].[id] = [t2].[id]) WHEN MATCHED THEN UPDATE SET [t1].[name] = [t2].[name] WHEN NOT MATCHED THEN INSERT ([id], [name]) VALUES (1, N'Ada');""",
+            upsert.toSql(SqlDialect.SqlServer)
+        )
     }
 }

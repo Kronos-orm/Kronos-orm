@@ -40,7 +40,7 @@ fun box(): String {
         val rows = source
             .select { [it.id, it.uid] }
             .where { it.uid == 7 }
-            .queryList()
+            .toList()
         val id: Int? = rows.firstOrNull()?.id
         val uid: Int? = rows.firstOrNull()?.uid
         if (id == -1 || uid == -1) return "Fail: unreachable"

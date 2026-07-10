@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies KPojo.where delegates to select().where() and queryList() returns Source rows.
+// Verifies KPojo.where delegates to select().where() and toList() returns Source rows.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -46,26 +46,13 @@ class WhereSugarWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     var mappedClass: KClass<*>? = null
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        val kClass = task.targetType.classifier as? KClass<*>
         mappedClass = kClass
         return listOf(WhereSugarUser(id = 7, name = "Ada"))
     }
 
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? = null
+    override fun first(task: KAtomicQueryTask): Any? = null
 
     override fun update(task: KAtomicActionTask): Int = 0
 
@@ -90,7 +77,7 @@ fun box(): String {
         .toSqlQuery() as SqlQuery.Select
     val rows: List<WhereSugarUser> = WhereSugarUser()
         .where { it.id == 7 }
-        .queryList(wrapper)
+        .toList(wrapper)
     val row = rows.singleOrNull()
     val derived = WhereSugarUser()
         .where { it.id == 7 }
@@ -104,7 +91,7 @@ fun box(): String {
         val selected = WhereSugarUser()
             .where { it.id == 7 }
             .select { [it.id] }
-            .queryOne()
+            .first()
         val id: Int? = selected.id
         return "Fail: selected projection unexpectedly evaluated as $id"
     }

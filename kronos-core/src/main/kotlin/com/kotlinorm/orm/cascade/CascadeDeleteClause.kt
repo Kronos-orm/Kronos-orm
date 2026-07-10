@@ -25,16 +25,17 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.CascadeDeleteAction.*
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
-import com.kotlinorm.orm.delete.delete
-import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.delete.deleteWithType
+import com.kotlinorm.orm.select.selectWithType
 import com.kotlinorm.orm.sql.toSqlParameterEq
 import com.kotlinorm.orm.statement.ParameterSource
-import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.update.updateWithType
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Used to build a cascade delete clause.
@@ -69,6 +70,7 @@ object CascadeDeleteClause {
     fun <T : KPojo> build(
         cascade: Boolean,
         cascadeAllowed: Set<Field>?,
+        targetType: KType,
         kClass: KClass<KPojo>,
         pojo: T,
         where: SqlExpr?,
@@ -78,6 +80,7 @@ object CascadeDeleteClause {
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
+            targetType,
             kClass,
             pojo,
             where,
@@ -101,6 +104,7 @@ object CascadeDeleteClause {
      * **/
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>?,
+        targetType: KType,
         kClass: KClass<KPojo>,
         pojo: T,
         where: SqlExpr?,
@@ -124,7 +128,7 @@ object CascadeDeleteClause {
                 val inheritedWhere = where
                 val inheritedParamMap = paramMap
                 val inheritedCascadeAllowed = cascadeAllowed
-                val selectClause = pojo.select().apply {
+                val selectClause = pojo.selectWithType(targetType).apply {
                     with(context) {
                         andWhere(inheritedWhere, inheritedParamMap)
                         this.cascadeAllowed = inheritedCascadeAllowed
@@ -132,7 +136,7 @@ object CascadeDeleteClause {
                         logicDeleteStrategy = null
                     }
                 }
-                val toDeleteRecords = selectClause.queryList(wrapper) //先查询出要删除的记录
+                val toDeleteRecords = selectClause.toList(wrapper) //先查询出要删除的记录
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
                 // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
@@ -177,10 +181,16 @@ object CascadeDeleteClause {
                             list.add(all.pop()) // 将所有节点压入list
                         }
                     }
-                    atomicTasks.addAll(list.mapNotNull {
-                        when (it.data?.kCascade?.onDelete) {
+                    atomicTasks.addAll(list.mapNotNull { node ->
+                        val nodeType = node.data?.fieldOfParent?.let { field ->
+                            field.elementKType ?: field.kType
+                        } ?: targetType
+                        requireNotNull(nodeType) {
+                            "Missing Kotlin type metadata for cascade field ${node.data?.fieldOfParent?.name}."
+                        }
+                        when (node.data?.kCascade?.onDelete) {
                             NO_ACTION, RESTRICT -> null
-                            CASCADE, null -> it.kPojo.delete()
+                            CASCADE, null -> node.kPojo.deleteWithType(nodeType)
                                 .logic(logic)
                                 .cascade(enabled = false)
                                 .apply {
@@ -195,8 +205,8 @@ object CascadeDeleteClause {
                                 }
                                 .build().atomicTasks
                             SET_NULL -> {
-                                val updateClause = it.kPojo.update()
-                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
+                                val updateClause = node.kPojo.updateWithType(nodeType)
+                                val listOfValidCascade = node.data.parent?.validCascades?.filter { cascade-> cascade.field == node.data.fieldOfParent }
                                 listOfValidCascade?.forEach { validCascade->
                                     validCascade.kCascade.properties.forEach{ property ->
                                         updateClause.patch(property to null)
@@ -215,8 +225,8 @@ object CascadeDeleteClause {
                             }
 
                             SET_DEFAULT -> {
-                                val updateClause = it.kPojo.update()
-                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
+                                val updateClause = node.kPojo.updateWithType(nodeType)
+                                val listOfValidCascade = node.data.parent?.validCascades?.filter { cascade-> cascade.field == node.data.fieldOfParent }
                                 listOfValidCascade?.forEach { validCascade->
                                     validCascade.kCascade.properties.forEachIndexed{ index, property ->
                                         val defaultValue = validCascade.kCascade.defaultValue.getOrNull(index)

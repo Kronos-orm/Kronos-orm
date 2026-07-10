@@ -32,7 +32,6 @@ import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
 import com.kotlinorm.syntax.statement.SqlStatement
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.token.SqlUnsafeToken
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -807,6 +806,17 @@ class DatabaseStatementsTest {
                     "PRIMARY_KEY" to "NO",
                     "IDENTITY" to "NO",
                     "COLUMN_DEFAULT" to "1"
+                ),
+                mapOf(
+                    "COLUMN_NAME" to "status",
+                    "DATA_TYPE" to "varchar",
+                    "LENGTH" to 20,
+                    "SCALE" to 0,
+                    "COLUMN_TYPE" to "varchar(20)",
+                    "IS_NULLABLE" to "YES",
+                    "PRIMARY_KEY" to "NO",
+                    "IDENTITY" to "NO",
+                    "COLUMN_DEFAULT" to "active"
                 )
             )
         ).map { it.toFieldShape() }
@@ -823,7 +833,8 @@ class DatabaseStatementsTest {
         assertEquals(
             listOf(
                 FieldShape("id", KColumnType.INT, 11, 0, "account", false, PrimaryKeyType.IDENTITY, null, "identifier"),
-                FieldShape("enabled", KColumnType.BIT, 1, 0, "account", true, PrimaryKeyType.NOT, "1", null)
+                FieldShape("enabled", KColumnType.BIT, 1, 0, "account", true, PrimaryKeyType.NOT, "1", null),
+                FieldShape("status", KColumnType.VARCHAR, 20, 0, "account", true, PrimaryKeyType.NOT, "'active'", null)
             ),
             fields
         )
@@ -858,6 +869,15 @@ class DatabaseStatementsTest {
                     "SCALE" to 0,
                     "IS_NULLABLE" to true,
                     "PRIMARY_KEY" to false
+                ),
+                mapOf(
+                    "COLUMN_NAME" to "status",
+                    "DATA_TYPE" to "VARCHAR",
+                    "LENGTH" to 20,
+                    "SCALE" to 0,
+                    "IS_NULLABLE" to true,
+                    "PRIMARY_KEY" to false,
+                    "COLUMN_DEFAULT" to "'active'::character varying"
                 )
             )
         ).map { it.toFieldShape() }
@@ -873,7 +893,8 @@ class DatabaseStatementsTest {
         assertEquals(
             listOf(
                 FieldShape("id", KColumnType.INT, 0, 0, "account", false, PrimaryKeyType.IDENTITY, null, "identifier"),
-                FieldShape("payload", KColumnType.BLOB, 0, 0, "account", true, PrimaryKeyType.NOT, null, null)
+                FieldShape("payload", KColumnType.BLOB, 0, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("status", KColumnType.VARCHAR, 20, 0, "account", true, PrimaryKeyType.NOT, "'active'", null)
             ),
             fields
         )
@@ -1184,7 +1205,8 @@ class DatabaseStatementsTest {
                 StatementShape("DropColumn", "dbo.account", columnName = "legacy"),
                 StatementShape("AddColumn", "dbo.account", columns = listOf(ColumnShape("nickname", "VARCHAR(16)", true, "NotPrimary", "'nick'"))),
                 StatementShape("SqlServerDropDefaultConstraint", "dbo.account", columnName = "name"),
-                StatementShape("ModifyColumn", "dbo.account", columns = listOf(ColumnShape("name", "VARCHAR(64)", false, "NotPrimary", "'new'"))),
+                StatementShape("ModifyColumn", "dbo.account", columns = listOf(ColumnShape("name", "VARCHAR(64)", false, "NotPrimary", null))),
+                StatementShape("AlterColumnDefault", "dbo.account", columnName = "name", defaultValue = "'new'"),
                 StatementShape("SqlServerExtendedPropertyComment", "dbo.account", columnName = "name", comment = "new display", operation = "Update"),
                 StatementShape("CreateIndex", "dbo.account", indexName = "idx_new", columns = listOf("nickname"), method = "BTREE")
             ),
@@ -1637,10 +1659,8 @@ class DatabaseStatementsTest {
             override val url: String = url
             override val userName: String = userName
             override val dbType: DBType = dbType
-            override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-            override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> = emptyList()
-            override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-            override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? = null
+            override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
+            override fun first(task: KAtomicQueryTask): Any? = null
             override fun update(task: KAtomicActionTask): Int = 0
             override fun batchUpdate(task: KronosAtomicBatchTask): IntArray = intArrayOf()
             override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? = null

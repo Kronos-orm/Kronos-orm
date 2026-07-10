@@ -6,7 +6,7 @@ Default JDBC-based `KronosDataSourceWrapper` implementation for Kronos ORM.
 
 - Wraps any `javax.sql.DataSource` into `KronosJdbcWrapper`
 - Named parameter binding (`:name` → `?` conversion)
-- Query execution: `forList`, `forMap`, `forObject` with type-safe result mapping
+- Query execution: `toList` and `first` with full `KType` result mapping
 - DML execution: `update`, `batchUpdate` with last-insert-ID capture
 - Transaction management: thread-local connection propagation, savepoints, nested transaction join semantics
 - Type-safe JDBC value conversion

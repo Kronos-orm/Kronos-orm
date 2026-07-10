@@ -5,7 +5,7 @@ import com.kotlinorm.codegen.TemplateConfig
 import com.kotlinorm.codegen.codeGenConfig
 import com.kotlinorm.codegen.init
 import com.kotlinorm.codegen.kotlinType
-import com.kotlinorm.database.SqlHandler.execute
+import com.kotlinorm.database.SqlExecutor.execute
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile

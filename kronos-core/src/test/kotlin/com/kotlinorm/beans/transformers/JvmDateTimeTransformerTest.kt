@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.reflect.typeOf
 import kotlin.time.ExperimentalTime
 
 class JvmDateTimeTransformerTest {
@@ -22,43 +23,42 @@ class JvmDateTimeTransformerTest {
         assertEquals(
             true,
             JvmDateTimeTransformer.isMatch(
-                targetKotlinType = "kotlin.String",
-                superTypesOfValue = listOf("java.time.LocalDateTime"),
-                kClassOfValue = String::class
+                targetKotlinType = typeOf<String>(),
+                sourceValueClass = LocalDateTime::class
             )
         )
         assertEquals(
             Instant.EPOCH,
-            JvmDateTimeTransformer.transform("java.time.Instant", 0L, emptyList(), pattern, Long::class)
+            JvmDateTimeTransformer.transform(typeOf<Instant>(), 0L, pattern, Long::class)
         )
         assertEquals(
             expectedText,
-            JvmDateTimeTransformer.transform("kotlin.String", Instant.EPOCH, emptyList(), pattern, Instant::class)
+            JvmDateTimeTransformer.transform(typeOf<String>(), Instant.EPOCH, pattern, Instant::class)
         )
         assertEquals(
             epochLocal,
-            JvmDateTimeTransformer.transform("java.time.LocalDateTime", Timestamp.from(Instant.EPOCH), emptyList(), pattern, Timestamp::class)
+            JvmDateTimeTransformer.transform(typeOf<LocalDateTime>(), Timestamp.from(Instant.EPOCH), pattern, Timestamp::class)
         )
         assertEquals(
             0L,
-            JvmDateTimeTransformer.transform("kotlin.Long", kotlin.time.Instant.fromEpochMilliseconds(0), emptyList(), pattern, kotlin.time.Instant::class)
+            JvmDateTimeTransformer.transform(typeOf<Long>(), kotlin.time.Instant.fromEpochMilliseconds(0), pattern, kotlin.time.Instant::class)
         )
         assertEquals(
             kotlin.time.Instant.fromEpochMilliseconds(0),
-            JvmDateTimeTransformer.transform("kotlin.time.Instant", expectedText, emptyList(), pattern, String::class)
+            JvmDateTimeTransformer.transform(typeOf<kotlin.time.Instant>(), expectedText, pattern, String::class)
         )
         assertEquals(
             java.sql.Date.valueOf(epochLocal.toLocalDate()),
-            JvmDateTimeTransformer.transform("java.sql.Date", java.sql.Date.valueOf(epochLocal.toLocalDate()), emptyList(), pattern, java.sql.Date::class)
+            JvmDateTimeTransformer.transform(typeOf<java.sql.Date>(), java.sql.Date.valueOf(epochLocal.toLocalDate()), pattern, java.sql.Date::class)
         )
         assertEquals(
             Timestamp.valueOf(epochLocal),
-            JvmDateTimeTransformer.transform("java.sql.Timestamp", expectedText, emptyList(), pattern, String::class)
+            JvmDateTimeTransformer.transform(typeOf<Timestamp>(), expectedText, pattern, String::class)
         )
         assertEquals(
-            "Unsupported target type: unsupported.Type",
+            "Unsupported target type: kotlin.collections.List<kotlin.String>",
             assertFailsWith<IllegalArgumentException> {
-                JvmDateTimeTransformer.transform("unsupported.Type", expectedText, emptyList(), pattern, String::class)
+                JvmDateTimeTransformer.transform(typeOf<List<String>>(), expectedText, pattern, String::class)
             }.message
         )
     }

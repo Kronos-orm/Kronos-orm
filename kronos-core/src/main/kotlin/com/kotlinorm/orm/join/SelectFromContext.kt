@@ -18,17 +18,16 @@ import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.LinkedHashSet
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 internal class SelectFromContext<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     val root: T1
 ) {
     private val rootKClass = root.kClass()
 
-    var projectionKClass: KClass<out KPojo> = rootKClass
+    lateinit var projectionType: KType
+    lateinit var nullableProjectionType: KType
     var receiverPojo: KPojo = root
-    val selectedKClass: KClass<Selected>
-        @Suppress("UNCHECKED_CAST")
-        get() = projectionKClass as KClass<Selected>
 
     var tableName: String = root.__tableName
     var paramMap: MutableMap<String, Any?> = root.toDataMap().toMutableMap()

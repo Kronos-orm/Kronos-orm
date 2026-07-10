@@ -21,7 +21,6 @@ import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlIndexDefinition
 import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
 import com.kotlinorm.syntax.table.SqlTable
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -685,13 +684,12 @@ class TableOperationUtilTest {
             else -> "jdbc:mysql://localhost:3306/kronos"
         }
         override val userName: String = "kronos"
-        override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+        override fun toList(task: KAtomicQueryTask): List<Any?> {
             queries += task
             return if (listResults.isNotEmpty()) listResults.removeAt(0) else listResult
         }
-        override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> = emptyList()
-        override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-        override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+
+        override fun first(task: KAtomicQueryTask): Any? {
             queries += task
             return if (objectResults.isNotEmpty()) objectResults.removeAt(0) else objectResult
         }

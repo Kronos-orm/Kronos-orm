@@ -29,12 +29,12 @@ import com.kotlinorm.syntax.statement.SqlLock
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     val pojo: Source,
     val receiverPojo: Context,
-    val projectionClass: KClass<Selected>
+    val projectionType: KType
 ) {
     val kClass = pojo.kClass()
     val tableName = pojo.__tableName

@@ -18,17 +18,17 @@ package com.kotlinorm.beans.transformers
 
 import com.kotlinorm.interfaces.ValueTransformer
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 object ToStringTransformer : ValueTransformer {
-    override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>) =
-        targetKotlinType == "kotlin.String"
+    override fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>) =
+        targetKotlinType.classifier == String::class
 
     override fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String>,
         dateTimeFormat: String?,
-        kClassOfValue: KClass<*>
+        sourceValueClass: KClass<*>
     ): Any {
         return value.toString()
     }

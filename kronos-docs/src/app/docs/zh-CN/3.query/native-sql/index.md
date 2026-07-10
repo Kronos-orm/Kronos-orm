@@ -1,6 +1,16 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+原生 SQL 方法是 `SqlExecutor` 提供的扩展函数。按需导入对应方法，例如：
+
+```kotlin group="Native SQL import" name="kotlin" icon="kotlin"
+import com.kotlinorm.database.SqlExecutor.query
+import com.kotlinorm.database.SqlExecutor.queryList
+import com.kotlinorm.database.SqlExecutor.queryMap
+import com.kotlinorm.database.SqlExecutor.queryOne
+import com.kotlinorm.database.SqlExecutor.queryOneOrNull
+```
+
 ## 1. {{ $.title("query") }} 查询Map列表
 
 执行SQL语句，查询多行记录
@@ -8,7 +18,7 @@
 - **函数声明**
 
     ```kotlin
-    fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any>>
+    fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any?>>
     ```
 
 - **使用示例**
@@ -16,7 +26,7 @@
     ```kotlin
     val sql = "SELECT * FROM table WHERE column = :value"
     val params = mapOf("value" to "some value")
-    val result: List<Map<String, Any>> = wrapper.query(sql, params)
+    val result: List<Map<String, Any?>> = wrapper.query(sql, params)
     ```
 
 - **接收参数**：
@@ -28,7 +38,7 @@
 
 - **返回值**：
 
-    `List<Map<String, Any>>` 查询结果列表
+    `List<Map<String, Any?>>` 查询结果列表。选中的 SQL `NULL` 会保留对应列名，值为 `null`。
 
 {{ $.hr() }}
 
@@ -81,7 +91,7 @@
 - **函数声明**
 
     ```kotlin
-    fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any>?
+    fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>?
     ```
 
 - **使用示例**
@@ -89,7 +99,7 @@
     ```kotlin
     val sql = "SELECT * FROM table WHERE column = :value"
     val params = mapOf("value" to "some value")
-    val result: Map<String, Any>? = wrapper.queryMap(sql, params)
+    val result: Map<String, Any?>? = wrapper.queryMap(sql, params)
     ```
 
 - **接收参数**：
@@ -101,7 +111,7 @@
 
 - **返回值**：
 
-    `Map<String, Any>?` 查询结果Map
+    `Map<String, Any?>?` 查询结果Map
 
 {{ $.hr() }}
 

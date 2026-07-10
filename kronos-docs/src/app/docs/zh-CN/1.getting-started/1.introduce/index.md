@@ -82,10 +82,10 @@ user.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
 user.update { it.name }.by { it.id }.execute()
 
 // 根据对象值查询记录
-val selectedUser: User = user.select().by { it.id }.queryOne()
+val selectedUser: User = user.select().by { it.id }.first()
 
 // 根据id查询name字段
-val selectedName: String = user.select { it.name }.where { it.id == 1 }.queryOne<String>()
+val selectedName: String = user.select { it.name }.where { it.id == 1 }.first<String>()
 
 // 删除id为1的数据
 User().delete().where { it.id == 1 }.execute()

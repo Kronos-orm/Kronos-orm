@@ -7,6 +7,62 @@
 
 ## 📝 更新日志
 
+### 0.2.0
+
+> **Warning**
+> `0.2.0` 包含源码和二进制不兼容的公开 API 变更。升级依赖后需要重新编译项目，并按下面的迁移说明更新调用点和自定义扩展。
+
+#### 破坏性 API 变更
+
+查询终结方法统一使用集合转换和单行读取语义：
+
+| `0.1.x` | `0.2.0` |
+| --- | --- |
+| `query()` | `toMapList()` / `toList<Map<String, Any?>>()` |
+| `queryList<T>()` | `toList<T>()` |
+| `queryMap()` | `toMap()` / `first<Map<String, Any?>>()` |
+| `queryMapOrNull()` | `toMapOrNull()` / `firstOrNull<Map<String, Any?>>()` / `first<Map<String, Any?>?>()` |
+| `queryOne<T>()` | `first<T>()` |
+| `queryOneOrNull<T>()` | `firstOrNull<T>()` / `first<T?>()` |
+| `PagedClause.query()` | `PagedClause.toMapList()` |
+| `PagedClause.queryList()` | `PagedClause.toList()` |
+
+`toMapList()`、`toMap()` 和 `toMapOrNull()` 是对应泛型写法的便捷方法；一般情况下，`firstOrNull<T>()` 也等价于 `first<T?>()`。Map 查询结果类型由 `Map<String, Any>` 改为 `Map<String, Any?>`，被选中的 SQL `NULL` 会保留在结果中。`QueryType` 同步精简为 `ToMapList`、`ToList`、`ToMap` 和 `First`；使用查询事件回调的项目需要更新枚举分支。原生 SQL 扩展改由 `com.kotlinorm.database.SqlExecutor` 提供，原 `SqlHandler` 对象已删除。
+
+内置 JDBC wrapper 已统一为 `KronosJdbcWrapper`。从更早版本升级、仍在使用旧 `KronosBasicWrapper` 的项目需要替换类名和包名：
+
+```kotlin
+// 旧 API
+import com.kotlinorm.KronosBasicWrapper
+val wrapper = KronosBasicWrapper(dataSource)
+
+// 0.2.0
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+val wrapper = KronosJdbcWrapper(dataSource)
+```
+
+自定义 `KronosDataSourceWrapper` 实现需要移除 `forList`、`forMap`、`forObject`，改为实现以下两个查询入口；结果映射目标从 `task.targetType` 读取：
+
+```kotlin
+override fun toList(task: KAtomicQueryTask): List<Any?>
+override fun first(task: KAtomicQueryTask): Any?
+```
+
+查询任务和类型转换链路改用完整 Kotlin `KType`：
+
+- `KAtomicQueryTask` 新增必需的 `targetType: KType`；直接构造 `KronosAtomicQueryTask` 时需要传入 `typeOf<T>()`。
+- `KronosSerializeProcessor` 改为 `serialize(obj, kType)` 和 `deserialize(serializedStr, kType)`，不再提供无类型参数的序列化方法或接收 `KClass` 的反序列化方法。
+- `ValueTransformer`、`TransformerManager.getValueTransformed`、`getTypeSafeValue`、`getSafeValue` 和 `TransformerSafeValue` 改为接收 `KType`；字符串类型名和 `superTypes` 参数已删除，运行时值类型参数统一命名为 `sourceValueClass`。
+- `Field` 构造参数中的 `cascadeIsCollectionOrArray`、`kClass` 和 `superTypes` 合并为 `kType`；`kClass`、`elementKType` 和 `cascadeIsCollectionOrArray` 现在由声明类型延迟计算。
+
+#### 功能与修复
+
+- ✨ 在字段、查询任务、序列化处理器和值转换器链路中保留完整 Kotlin `KType`，支持 `List<List<String>>` 等嵌套泛型集合 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 修复 Kotlinx Serialization 对泛型集合和 data class 字段的反序列化，并在 Map 与标量查询结果中保留被选中的 `null` 值 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 修复 `select { it }`、`select { [it] }`、KPojo 排除投影，以及完整行与 alias 混合投影的生成类型；覆盖 `[]`、`listOf`、`arrayOf`、`mutableListOf` 和 `setOf` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 修复 SQLite UNION 渲染、SQLite 表结构同步、字符串默认值及扩展测试发现的其他 ORM 边缘问题 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 💪 扩充投影、序列化、空值结果、表结构同步和跨数据库回归测试，并将 README、用户文档、AI skill、Gradle 插件和 IDEA 插件同步到 `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+
 ### 0.1.2
 
 - 🐛 修复 `syncTable()` 表结构差异比较：数据库 metadata 回读的普通主键与 KPojo 中的 `@PrimaryKey(custom = true)` 自定义主键会按同一种数据库主键模式处理 ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))

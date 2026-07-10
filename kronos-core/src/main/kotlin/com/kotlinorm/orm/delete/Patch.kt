@@ -17,8 +17,14 @@
 package com.kotlinorm.orm.delete
 
 import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
+@PublishedApi
+internal fun <T : KPojo> T.deleteWithType(targetType: KType): DeleteClause<T> {
+    return DeleteClause(this, targetType)
+}
 
-fun <T : KPojo> T.delete(): DeleteClause<T> {
-    return DeleteClause(this)
+inline fun <reified T : KPojo> T.delete(): DeleteClause<T> {
+    return deleteWithType(typeOf<T>())
 }

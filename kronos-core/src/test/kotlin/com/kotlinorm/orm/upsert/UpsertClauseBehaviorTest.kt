@@ -38,7 +38,6 @@ import com.kotlinorm.syntax.statement.SqlUpsertAction
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -239,12 +238,7 @@ private class UpsertFallbackWrapper(
     val queries = mutableListOf<QueryShape>()
     val actions = mutableListOf<ActionShape>()
 
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? {
+    override fun first(task: KAtomicQueryTask): Any? {
         queries += QueryShape(task.sql, task.paramMap)
         return countResult
     }

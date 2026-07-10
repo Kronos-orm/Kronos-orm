@@ -18,8 +18,17 @@ package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
+@PublishedApi
+internal fun <T : KPojo> T.upsertWithType(
+    targetType: KType,
+    setUpdateFields: ToSelect<T, Any?> = null
+): UpsertClause<T> {
+    return UpsertClause(this, targetType, setUpdateFields)
+}
 
-fun <T : KPojo> T.upsert(setUpdateFields: ToSelect<T, Any?> = null): UpsertClause<T> {
-    return UpsertClause(this, setUpdateFields)
+inline fun <reified T : KPojo> T.upsert(noinline setUpdateFields: ToSelect<T, Any?> = null): UpsertClause<T> {
+    return upsertWithType(typeOf<T>(), setUpdateFields)
 }

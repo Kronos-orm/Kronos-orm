@@ -31,6 +31,7 @@ import com.kotlinorm.syntax.expr.SqlQuantifiedComparisonOperator
 import com.kotlinorm.syntax.expr.SqlSubqueryQuantifier
 import com.kotlinorm.utils.TransformerSafeValue
 import kotlin.jvm.JvmName
+import kotlin.reflect.typeOf
 
 /**
  * kTableForCondition
@@ -396,7 +397,7 @@ open class KTableForCondition<T : KPojo> {
             is KSelectable<*> -> SqlExpr.Subquery(materializeSqlQuery(parameterValues))
             is QuantifiedSubqueryValue -> SqlExpr.Subquery(query.materializeSqlQuery(parameterValues))
             null -> SqlExpr.NullLiteral
-            else -> bindParameter(field, TransformerSafeValue(this, "kotlin.String"), field.parameterBaseName())
+            else -> bindParameter(field, TransformerSafeValue(this, typeOf<String>()), field.parameterBaseName())
         }
 
     private fun Any?.toInRightOperand(field: Field): SqlInRightOperand =

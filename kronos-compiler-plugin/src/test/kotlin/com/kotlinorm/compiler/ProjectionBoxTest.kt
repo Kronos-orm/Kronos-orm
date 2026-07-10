@@ -23,22 +23,28 @@ import org.junit.jupiter.api.Test
  */
 class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     /**
-     * Verifies bare select lambdas refine queryList() to generated projection row types.
+     * Verifies bare select lambdas refine toList() to generated projection row types.
      */
     @Test
     fun generatedSelectProjection() = box("generatedSelectProjection")
 
     /**
-     * Verifies queryList/queryOne/queryOneOrNull refine to generated projection row types.
+     * Verifies toList/first/firstOrNull refine to generated projection row types.
      */
     @Test
     fun queryReturnTypeVariants() = box("queryReturnTypeVariants")
 
     /**
-     * Verifies listOf and arrayOf projection forms feed generated receivers.
+     * Verifies supported collection constructors and literals feed generated receivers.
      */
     @Test
     fun projectionCollectionForms() = box("projectionCollectionForms")
+
+    /**
+     * Verifies whole-source and source-minus expressions generate matching projection rows.
+     */
+    @Test
+    fun kpojoExpansionGeneratedProjection() = box("kpojoExpansionGeneratedProjection")
 
     /**
      * Verifies collection literal and listOf projection forms feed generated receivers.
@@ -111,4 +117,10 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
      */
     @Test
     fun windowAliasContextOrderBy() = box("windowAliasContextOrderBy")
+
+    /**
+     * Verifies generated window aliases remain available to derived query where receivers.
+     */
+    @Test
+    fun windowAliasDerivedWhere() = box("windowAliasDerivedWhere")
 }

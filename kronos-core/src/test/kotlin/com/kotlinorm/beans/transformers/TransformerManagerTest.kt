@@ -23,13 +23,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class TransformerManagerTest {
     @Test
     fun testRegisterValueTransformer() {
         val mockTransformer = object : ValueTransformer {
-            override fun isMatch(targetKotlinType: String, superTypes: List<String>, kClassOfVal: kotlin.reflect.KClass<*>): Boolean = false
-            override fun transform(targetKotlinType: String, value: Any, superTypes: List<String>, dateTimeFormat: String?, kClassOfVal: kotlin.reflect.KClass<*>): Any = value
+            override fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean = false
+            override fun transform(targetKotlinType: KType, value: Any, dateTimeFormat: String?, sourceValueClass: KClass<*>): Any = value
         }
 
         TransformerManager.registerValueTransformer(mockTransformer)
@@ -42,8 +45,8 @@ class TransformerManagerTest {
     @Test
     fun testUnregisterValueTransformer() {
         val mockTransformer = object : ValueTransformer {
-            override fun isMatch(targetKotlinType: String, superTypes: List<String>, kClassOfVal: kotlin.reflect.KClass<*>): Boolean = false
-            override fun transform(targetKotlinType: String, value: Any, superTypes: List<String>, dateTimeFormat: String?, kClassOfVal: kotlin.reflect.KClass<*>): Any = value
+            override fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean = false
+            override fun transform(targetKotlinType: KType, value: Any, dateTimeFormat: String?, sourceValueClass: KClass<*>): Any = value
         }
 
         TransformerManager.registerValueTransformer(mockTransformer)
@@ -58,10 +61,8 @@ class TransformerManagerTest {
     fun testGetValueTransformedWithSameType() {
         val value = "testValue"
         val result = TransformerManager.getValueTransformed(
-            targetKotlinType = "kotlin.String",
-            value = value,
-            superTypes = ["kotlin.String"],
-            kClassOfVal = String::class
+            targetKotlinType = typeOf<String>(),
+            value = value
         )
         
         assertSame(value, result, "Should return same value when target type is in superTypes")
@@ -71,10 +72,8 @@ class TransformerManagerTest {
     fun testGetValueTransformedWithSameClass() {
         val value = 123
         val result = TransformerManager.getValueTransformed(
-            targetKotlinType = "kotlin.Int",
-            value = value,
-            superTypes = emptyList(),
-            kClassOfVal = Int::class
+            targetKotlinType = typeOf<Int>(),
+            value = value
         )
         
         assertEquals(value, result, "Should return same value when target type matches value class")
@@ -84,10 +83,8 @@ class TransformerManagerTest {
     fun testGetValueTransformedWithBasicTypeTransformer() {
         val value = "123"
         val result = TransformerManager.getValueTransformed(
-            targetKotlinType = "kotlin.Int",
-            value = value,
-            superTypes = emptyList(),
-            kClassOfVal = String::class
+            targetKotlinType = typeOf<Int>(),
+            value = value
         )
         
         assertEquals(123, result, "Should transform string to int using BasicTypeTransformer")
@@ -98,28 +95,22 @@ class TransformerManagerTest {
         assertEquals(
             false,
             TransformerManager.getValueTransformed(
-                targetKotlinType = "kotlin.Boolean",
-                value = BigDecimal.ZERO,
-                superTypes = emptyList(),
-                kClassOfVal = BigDecimal::class
+                targetKotlinType = typeOf<Boolean>(),
+                value = BigDecimal.ZERO
             )
         )
         assertEquals(
             false,
             TransformerManager.getValueTransformed(
-                targetKotlinType = "kotlin.Boolean",
-                value = BigInteger.ZERO,
-                superTypes = emptyList(),
-                kClassOfVal = BigInteger::class
+                targetKotlinType = typeOf<Boolean>(),
+                value = BigInteger.ZERO
             )
         )
         assertEquals(
             true,
             TransformerManager.getValueTransformed(
-                targetKotlinType = "kotlin.Boolean",
-                value = BigDecimal.ONE,
-                superTypes = emptyList(),
-                kClassOfVal = BigDecimal::class
+                targetKotlinType = typeOf<Boolean>(),
+                value = BigDecimal.ONE
             )
         )
     }
@@ -128,10 +119,8 @@ class TransformerManagerTest {
     fun testGetValueTransformedWithToStringTransformer() {
         val value = 123
         val result = TransformerManager.getValueTransformed(
-            targetKotlinType = "kotlin.String",
-            value = value,
-            superTypes = emptyList(),
-            kClassOfVal = Int::class
+            targetKotlinType = typeOf<String>(),
+            value = value
         )
         
         assertEquals("123", result, "Should transform int to string using ToStringTransformer")
@@ -141,10 +130,8 @@ class TransformerManagerTest {
     fun testGetValueTransformedWithNoMatchingTransformer() {
         val value = CustomClass("test")
         val result = TransformerManager.getValueTransformed(
-            targetKotlinType = "com.example.UnknownType",
-            value = value,
-            superTypes = emptyList(),
-            kClassOfVal = CustomClass::class
+            targetKotlinType = typeOf<CustomClass>(),
+            value = value
         )
         
         assertSame(value, result, "Should return same value when no transformer matches")

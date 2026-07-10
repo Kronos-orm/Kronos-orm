@@ -3,7 +3,7 @@
 
 ## Projection
 
-Projection is the field list passed to `select { ... }` or `join { select { ... } }`. Use it to choose result columns, name expressions with `alias`, and shape the rows returned by `query()`, `queryList()`, `queryOne()`, and join queries.
+Projection is the field list passed to `select { ... }` or `join { select { ... } }`. Use it to choose result columns, name expressions with `alias`, and shape the rows returned by `toMapList()`, `toList()`, `first()`, and join queries.
 
 Result methods and nullable single-row methods are covered in {{ $.keyword("query/result-methods", ["Result Methods"]) }}.
 
@@ -14,11 +14,11 @@ Use one field for a scalar result, or `[]` for a row with multiple fields.
 ```kotlin group="Field projection 1" name="kotlin" icon="kotlin"
 val names: List<String> = User()
     .select { it.name }
-    .queryList<String>()
+    .toList<String>()
 
 val rows = User()
     .select { [it.id, it.name] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Field projection 1" name="Mysql" icon="mysql"
@@ -60,7 +60,7 @@ val rows = User()
             "1".alias("constantValue")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Alias projection 1" name="Mysql" icon="mysql"
@@ -71,7 +71,7 @@ SELECT `id`,
 FROM `user`
 ```
 
-The alias becomes the map key for `query()` and the property name for generated projections.
+The alias becomes the map key for `toMapList()` and the property name for generated projections.
 
 ```kotlin group="Alias projection 2" name="result shape" icon="kotlin"
 mapOf(
@@ -103,7 +103,7 @@ val rows = User()
             "now()"
         ]
     }
-    .query()
+    .toMapList()
 
 val first = rows.first()
 val total = first["total"]
@@ -118,31 +118,31 @@ FROM `user`
 
 ## Consume projection results
 
-Use `query()` when each row should be a map. The map keys are field names and aliases.
+Use `toMapList()` when each row should be a map. The map keys are field names and aliases.
 
 ```kotlin group="Consume projection 1" name="map" icon="kotlin"
-val maps: List<Map<String, Any>> = User()
+val maps: List<Map<String, Any?>> = User()
     .select { [it.id, it.name.alias("username")] }
-    .query()
+    .toMapList()
 
 val first = maps.first()
 val id = first["id"]
 val username = first["username"]
 ```
 
-Use `queryList()` or `queryOne()` without a generic argument when you want the generated projection type.
+Use `toList()` or `first()` without a generic argument when you want the generated projection type.
 
 ```kotlin group="Consume projection 2" name="generated" icon="kotlin"
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
-    .queryList()
+    .toList()
 
 val nameLength: Int? = rows.first().nameLength
 
 val one = User()
     .select { [it.id, it.name.alias("username")] }
     .where { it.id == 1 }
-    .queryOne()
+    .first()
 
 val username: String? = one.username
 ```
@@ -159,19 +159,27 @@ val rows: List<UserSummary> = User()
     .select(UserSummary::class) {
         [it.id, it.name.alias("username")]
     }
-    .queryList()
+    .toList()
 ```
 
 The selected output names must match the DTO property names you want to fill.
 
-## Exclude columns from a full projection
+## Full projections, exclusions, and collection forms
 
-Pass the current KPojo to select all columns, then use `-` to remove fields.
+`select()` without a lambda returns the source KPojo type. Inside an explicit `select { ... }`, `it` represents all database columns of the current KPojo and produces a generated projection result type. Returning it directly or placing it inside `[]` has the same effect. Use `-` to remove one or more fields.
+
+```kotlin name="kotlin" icon="kotlin"
+val allDirect = User().select { it }.toList()
+val allInList = User().select { [it] }.toList()
+
+val withoutAge = User().select { it - it.age }.toList()
+val withoutAgeInList = User().select { [it - it.age] }.toList()
+```
 
 ```kotlin group="Exclude projection" name="kotlin" icon="kotlin"
 val rows = User()
     .select { it - it.age }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Exclude projection" name="Mysql" icon="mysql"
@@ -179,7 +187,40 @@ SELECT `id`, `name`
 FROM `user`
 ```
 
-Use this when most table columns should be returned and only a few columns should be skipped.
+A full projection can share a list with ordinary fields, aliases, or function projections. Expanded fields keep their source order, and following items are appended to the generated result type.
+
+```kotlin group="Mixed full projection" name="kotlin" icon="kotlin"
+val rows = User()
+    .select { [it, it.id.alias("sourceId")] }
+    .toList()
+
+val id: Int? = rows.first().id
+val sourceId: Int? = rows.first().sourceId
+```
+
+```sql group="Mixed full projection" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`, `id` AS `sourceId`
+FROM `user`
+```
+
+`[]` is the recommended form. These Kotlin collection constructors also expand `it` with the same rules and generate the same projection properties:
+
+```kotlin name="kotlin" icon="kotlin"
+val fromList = User().select {
+    listOf<Any?>(it, it.id.alias("sourceId"))
+}
+val fromArray = User().select {
+    arrayOf<Any?>(it, it.id.alias("sourceId"))
+}
+val fromMutableList = User().select {
+    mutableListOf<Any?>(it, it.id.alias("sourceId"))
+}
+val fromSet = User().select {
+    setOf<Any?>(it, it.id.alias("sourceId"))
+}
+```
+
+Use these forms when most columns should be returned with a few exclusions, or when aliases should be appended after a full projection. Final projection output names must remain unique.
 
 ## Project from join queries
 
@@ -203,7 +244,7 @@ val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
             order.status
         ]
     }
-}.queryList<UserOrderRow>()
+}.toList<UserOrderRow>()
 ```
 
 ```sql group="Join projection" name="Mysql" icon="mysql"
@@ -236,7 +277,7 @@ val rows = User()
                 .alias("lastOrderStatus")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Scalar projection" name="Mysql" icon="mysql"
@@ -271,7 +312,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Derived projection" name="Mysql" icon="mysql"

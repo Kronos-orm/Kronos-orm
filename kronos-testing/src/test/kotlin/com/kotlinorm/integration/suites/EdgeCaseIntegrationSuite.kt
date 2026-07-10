@@ -1,7 +1,7 @@
 package com.kotlinorm.integration.suites
 
-import com.kotlinorm.database.SqlHandler.batchExecute
-import com.kotlinorm.database.SqlHandler.queryList
+import com.kotlinorm.database.SqlExecutor.batchExecute
+import com.kotlinorm.database.SqlExecutor.toList
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.integration.fixtures.EdgeAccount
@@ -65,7 +65,7 @@ abstract class EdgeCaseIntegrationSuite(
             .onConflict()
             .execute()
 
-        with(com.kotlinorm.database.SqlHandler) {
+        with(com.kotlinorm.database.SqlExecutor) {
             wrapper.batchExecute(
                 "INSERT INTO ${table("kt_edge_account")} (${quote("id")}, ${quote("name")}, ${quote("balance")}, ${quote("state")}) " +
                     "VALUES (:id, :name, :balance, :state)",
@@ -103,7 +103,7 @@ abstract class EdgeCaseIntegrationSuite(
             .orderBy { it.id.asc() }
             .page(pi = 2, ps = 2)
             .withTotal()
-            .queryList<EdgeAccount>()
+            .toList<EdgeAccount>()
 
         assertEquals(5, total)
         assertEquals(
@@ -132,7 +132,7 @@ abstract class EdgeCaseIntegrationSuite(
                 .affectedRows,
         )
 
-        val value = wrapper.queryList<IntegrationTypedValue>(
+        val value = wrapper.toList<IntegrationTypedValue>(
             """
             SELECT ${quote("id")}, ${quote("long_value")}, ${quote("optional_score")}
             FROM ${table("kt_integration_typed_value")}
@@ -162,7 +162,7 @@ abstract class EdgeCaseIntegrationSuite(
 
         assertEquals(
             listOf(EdgeTupleInsertSelect(id = 1, age = null, name = "Ada")),
-            EdgeTupleInsertSelect().select().orderBy { it.id.asc() }.queryList<EdgeTupleInsertSelect>(),
+            EdgeTupleInsertSelect().select().orderBy { it.id.asc() }.toList<EdgeTupleInsertSelect>(),
         )
     }
 
@@ -182,7 +182,7 @@ abstract class EdgeCaseIntegrationSuite(
 
         assertEquals(
             listOf(EdgeTailNullInsertSelect(id = 1, firstNull = null, secondNull = null, thirdNull = null)),
-            EdgeTailNullInsertSelect().select().orderBy { it.id.asc() }.queryList<EdgeTailNullInsertSelect>(),
+            EdgeTailNullInsertSelect().select().orderBy { it.id.asc() }.toList<EdgeTailNullInsertSelect>(),
         )
     }
 
@@ -202,7 +202,7 @@ abstract class EdgeCaseIntegrationSuite(
 
         assertEquals(
             listOf(EdgeWideInsertSelect(id = 1, name = "Ada", balance = 10, state = "active", extraNote = null)),
-            EdgeWideInsertSelect().select().orderBy { it.id.asc() }.queryList<EdgeWideInsertSelect>(),
+            EdgeWideInsertSelect().select().orderBy { it.id.asc() }.toList<EdgeWideInsertSelect>(),
         )
     }
 
@@ -239,7 +239,7 @@ abstract class EdgeCaseIntegrationSuite(
         EdgeAccount()
             .select()
             .orderBy { it.id.asc() }
-            .queryList<EdgeAccount>()
+            .toList<EdgeAccount>()
             .map { it.toRecord() }
 
     private fun EdgeAccount.toRecord(): EdgeAccountRecord =

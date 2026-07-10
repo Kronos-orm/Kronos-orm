@@ -32,7 +32,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
             .orderBy { it.id.asc() }
             .page(pi = 2, ps = 2)
             .withTotal()
-            .queryList<IntegrationPageProjection>()
+            .toList<IntegrationPageProjection>()
 
         assertEquals(4, total)
         assertEquals(listOf(3, 4), pageUsers.map { it.id })
@@ -49,7 +49,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
             .orderBy { it.id.asc() }
             .page(pi = 3, ps = 2)
             .withTotal()
-            .queryList<IntegrationPageProjection>()
+            .toList<IntegrationPageProjection>()
 
         assertEquals(5, total)
         assertEquals(5, pageUsers.single().id)
@@ -66,7 +66,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
             .select { [it.id, it.name.alias("userName"), it.score.alias("userScore")] }
             .where { it.id in [1, 2] }
             .orderBy { it.id.asc() }
-            .queryList<IntegrationAliasProjection>()
+            .toList<IntegrationAliasProjection>()
 
         assertEquals(listOf("Ada", "Grace"), rows.map { it.userName })
         assertEquals(listOf(10, 20), rows.map { it.userScore })
@@ -82,7 +82,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
             .orderBy { it.id.asc() }
             .page(pi = 1, ps = 10)
             .withTotal()
-            .query()
+            .toMapList()
 
         assertEquals(5, total)
         val row = rows.single { it.cell("id") == 5 }
@@ -100,7 +100,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val row = IntegrationUser()
             .select { [it.id, it.name, it.score] }
             .where { it.id == 5 }
-            .query()
+            .toMapList()
             .single()
 
         assertTrue(row.hasColumn("name"))
@@ -118,14 +118,14 @@ abstract class ResultMethodEdgeIntegrationSuite(
             IntegrationUser()
                 .select { it.id }
                 .where { it.id == -1 }
-                .queryOneOrNull<Int>(),
+                .firstOrNull<Int>(),
         )
 
         assertFailsWith<NoSuchElementException> {
             IntegrationUser()
                 .select { it.id }
                 .where { it.id == -1 }
-                .queryOne<Int>()
+                .first<Int>()
         }
     }
 
@@ -137,7 +137,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val scores = IntegrationUser()
             .select { it.score }
             .orderBy { it.id.asc() }
-            .queryList<Int?>()
+            .toList<Int?>()
 
         assertEquals(listOf(10, 20, 30, 5, null), scores)
     }
@@ -155,7 +155,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
                 ]
             }
             .where { it.id == -1 }
-            .queryOne<IntegrationAggregateProjection>()
+            .first<IntegrationAggregateProjection>()
 
         assertEquals(0, projection.total)
         assertNull(projection.scoreSum)
@@ -173,7 +173,7 @@ abstract class ResultMethodEdgeIntegrationSuite(
                     f.sum(it.score).alias("scoreSum")
                 ]
             }
-            .queryOne<IntegrationAggregateProjection>()
+            .first<IntegrationAggregateProjection>()
 
         assertNotNull(projection.total)
         assertNotNull(projection.scoreSum)
@@ -186,9 +186,9 @@ abstract class ResultMethodEdgeIntegrationSuite(
         IntegrationUser(id = 5, name = null, score = null, status = 0).insert().execute()
     }
 
-    private fun Map<String, Any>.cell(label: String): Any? =
+    private fun Map<String, Any?>.cell(label: String): Any? =
         this[label] ?: this[label.uppercase()] ?: this[label.lowercase()]
 
-    private fun Map<String, Any>.hasColumn(label: String): Boolean =
+    private fun Map<String, Any?>.hasColumn(label: String): Boolean =
         keys.any { it.equals(label, ignoreCase = true) }
 }

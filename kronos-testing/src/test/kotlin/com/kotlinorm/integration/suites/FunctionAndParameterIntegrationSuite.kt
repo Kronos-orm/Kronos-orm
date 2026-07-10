@@ -46,7 +46,7 @@ abstract class FunctionAndParameterIntegrationSuite(
                 }
                 .where { it.id in [1, 4] }
                 .orderBy { it.id.asc() }
-                .queryList<IntegrationFunctionProjection>()
+                .toList<IntegrationFunctionProjection>()
                 .map {
                     IntegrationFunctionRecord(
                         id = it.id,
@@ -69,7 +69,7 @@ abstract class FunctionAndParameterIntegrationSuite(
                         f.max(it.score).alias("maxScore")
                     ]
                 }
-                .queryList<IntegrationAggregateProjection>()
+                .toList<IntegrationAggregateProjection>()
                 .single()
                 .let {
                     IntegrationAggregateRecord(
@@ -92,7 +92,7 @@ abstract class FunctionAndParameterIntegrationSuite(
             IntegrationUser()
                 .select { f.length(x = it.name).alias("nameLength") }
                 .orderBy { it.nameLength }
-                .queryList<IntegrationFunctionProjection>()
+                .toList<IntegrationFunctionProjection>()
                 .map { it.nameLength },
         )
 
@@ -101,7 +101,7 @@ abstract class FunctionAndParameterIntegrationSuite(
             IntegrationUser()
                 .select { [it.id, it.name.alias("displayName")] }
                 .orderBy { it.displayName.asc() }
-                .queryList<IntegrationFunctionProjection>()
+                .toList<IntegrationFunctionProjection>()
                 .map { it.displayName },
         )
 
@@ -110,7 +110,7 @@ abstract class FunctionAndParameterIntegrationSuite(
             IntegrationUser()
                 .select { [it.id, (it.score % 2).alias("scoreMod"), f.length(it.name).alias("nameLength")] }
                 .orderBy { [it.scoreMod.desc(), it.nameLength.asc(), it.id.asc()] }
-                .queryList<IntegrationFunctionProjection>()
+                .toList<IntegrationFunctionProjection>()
                 .map { it.id },
         )
     }
@@ -124,25 +124,25 @@ abstract class FunctionAndParameterIntegrationSuite(
             4,
             IntegrationUser()
                 .select { f.count(1).alias("total") }
-                .queryOne<Int>(),
+                .first<Int>(),
         )
         assertEquals(
             65L,
             IntegrationUser()
                 .select { f.sum(it.score).alias("scoreSum") }
-                .queryOne<Long>(),
+                .first<Long>(),
         )
         assertEquals(
             5,
             IntegrationUser()
                 .select { f.min(it.score).alias("minScore") }
-                .queryOne<Int>(),
+                .first<Int>(),
         )
         assertEquals(
             30,
             IntegrationUser()
                 .select { f.max(it.score).alias("maxScore") }
-                .queryOne<Int>(),
+                .first<Int>(),
         )
     }
 }

@@ -202,6 +202,9 @@ open class MysqlSqlRenderer(
 }
 
 open class PostgresqlSqlRenderer : StandardSqlRenderer(SqlDialect.PostgreSql) {
+    override fun shouldQuoteSelectItemAlias(metadata: SqlSelectItemAliasMetadata?): Boolean =
+        metadata?.userReferenceable == true || super.shouldQuoteSelectItemAlias(metadata)
+
     override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
         is SqlDdlStatement.AlterTable.ModifyColumn -> {
             "ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderIdentifier(statement.column.name)} TYPE ${renderType(statement.column.type)}"
@@ -549,6 +552,11 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
         is SqlDdlStatement.AlterTable.ModifyColumn -> {
             "ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderColumnDefinition(statement.column)}"
         }
+        is SqlDdlStatement.AlterTable.AlterColumnDefault -> {
+            statement.defaultValue?.let {
+                "ALTER TABLE ${renderIdentifier(statement.tableName)} ADD DEFAULT ${renderExpr(it)} FOR ${renderIdentifier(statement.columnName)}"
+            } ?: "ALTER TABLE ${renderIdentifier(statement.tableName)} DROP DEFAULT FOR ${renderIdentifier(statement.columnName)}"
+        }
         is SqlDdlStatement.CommentOnTable -> renderSqlServerExtendedPropertyComment(
             SqlDdlStatement.SqlServerExtendedPropertyComment(
                 tableName = statement.tableName,
@@ -578,6 +586,9 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
         is SqlDdlStatement.SqlServerDropDefaultConstraint -> renderSqlServerDropDefaultConstraint(statement)
         else -> super.renderDdl(statement)
     }
+
+    override fun renderUpsert(statement: SqlDmlStatement.Upsert): String =
+        "${super.renderUpsert(statement)};"
 
     private fun renderSqlServerCreateTable(statement: SqlDdlStatement.CreateTable): String {
         val createSql = super.renderDdl(statement.copy(ifNotExists = false))

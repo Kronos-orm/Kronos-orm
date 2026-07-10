@@ -23,6 +23,7 @@ import com.kotlinorm.compiler.utils.ColumnAnnotationFqName
 import com.kotlinorm.compiler.utils.ColumnTypeAnnotationFqName
 import com.kotlinorm.compiler.utils.DateTimeFormatAnnotationFqName
 import com.kotlinorm.compiler.utils.DefaultValueAnnotationFqName
+import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
 import com.kotlinorm.compiler.utils.ErrorMessages
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
@@ -98,7 +99,6 @@ import org.jetbrains.kotlin.name.FqName
  * This module handles all field-related transformations for KTableForSelect.
  */
 
-private val ProjectionCollectionFunctionNames = setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")
 private val ArithmeticOperatorFunctionNames = setOf("plus", "minus", "times", "div", "rem")
 private val SqlOperatorFunctionNames = mapOf(
     "minus" to "sub",
@@ -183,7 +183,7 @@ private fun analyzeCallFields(
             // Check for special function calls
             val functionName = call.symbol.owner.name.asString()
             when {
-                functionName in ProjectionCollectionFunctionNames -> analyzeFieldProjection(irFunction, call, errorReporter)
+                functionName in DslCollectionFunctionNames -> analyzeFieldProjection(irFunction, call, errorReporter)
                 functionName in ArithmeticOperatorFunctionNames -> emptyList()
                 functionName == WindowOverFunctionName -> emptyList()
                 functionName == "unaryPlus" -> {
@@ -339,7 +339,7 @@ private fun buildInsertSelectValue(
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrCall.isProjectionCollectionCall(): Boolean {
-    return symbol.owner.name.asString() in ProjectionCollectionFunctionNames
+    return symbol.owner.name.asString() in DslCollectionFunctionNames
 }
 
 context(context: IrPluginContext)
@@ -748,7 +748,7 @@ private fun collectExcludedFieldNames(
 
         is IrCall -> {
             val functionName = expression.symbol.owner.name.asString()
-            if (functionName in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")) {
+            if (functionName in DslCollectionFunctionNames) {
                 expression.flattenValueArguments().forEach { collectExcludedFieldNames(it, excludedFields) }
             } else if (expression.origin == IrStatementOrigin.GET_PROPERTY) {
                 // Handle property access: it.username

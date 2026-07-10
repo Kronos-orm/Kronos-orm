@@ -35,13 +35,13 @@ User(id = 1)
     .execute()
 ```
 
-默认值让 `User()`、`User(id = 1)` 这样的写法可用，也让 `queryList<User>()` 能创建结果对象。
+默认值让 `User()`、`User(id = 1)` 这样的写法可用，也让 `toList<User>()` 能创建结果对象。
 
 ```kotlin group="KPojo 2 2" name="query" icon="kotlin"
 val users: List<User> = User()
     .select()
     .where { it.age > 18 }
-    .queryList()
+    .toList()
 ```
 
 ## KPojo 会提供哪些元数据

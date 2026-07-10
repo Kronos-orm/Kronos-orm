@@ -61,7 +61,7 @@ Projection result fields need stable names. Give function, aggregate, window, ra
 ```kotlin group="Projection 1" name="alias" icon="kotlin"
 User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
-    .queryList()
+    .toList()
 ```
 
 Scalar subqueries used as values need one selected field and `limit(1)`.
@@ -78,7 +78,7 @@ User()
                 .alias("lastAmount")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 The diagnostic codes `KRONOS_SELECT_ITEM_REQUIRES_ALIAS`, `KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT`, and `KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN` are listed in {{ $.keyword("configuration/compiler-plugins", ["Fix common diagnostics"]) }}. Query-shape examples are in {{ $.keyword("query/projection", ["Projection"]) }} and {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
@@ -92,7 +92,7 @@ val wrapper = KronosJdbcWrapper(dataSource)
 
 Kronos.dataSource = { wrapper }
 
-val users = User().select().queryList()
+val users = User().select().toList()
 ```
 
 When a command needs a specific data source, call it through the wrapper.
@@ -100,7 +100,7 @@ When a command needs a specific data source, call it through the wrapper.
 ```kotlin group="DataSource 2" name="wrapper" icon="kotlin"
 val users = User()
     .select()
-    .queryList(wrapper)
+    .toList(wrapper)
 ```
 
 ## Dialect output looks different

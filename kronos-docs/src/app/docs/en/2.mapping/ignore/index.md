@@ -67,7 +67,7 @@ data class User(
 ) : KPojo
 
 val data = User(id = 1, name = "Ada", searchText = "Ada").toDataMap()
-val users = User(searchText = "Ada").select().where().queryList()
+val users = User(searchText = "Ada").select().where().toList()
 ```
 
 `toDataMap()` still contains the local property value:
@@ -111,7 +111,7 @@ data class Employee(
     var name: String? = null
 ) : KPojo
 
-val companies = Company().select().queryList()
+val companies = Company().select().toList()
 ```
 
 The root query still reads the company table:

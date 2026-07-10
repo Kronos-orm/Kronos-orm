@@ -28,9 +28,6 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -45,19 +42,22 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     override val pojo: Source,
     setSelectFields: ToSelect<Source, Any?> = null,
-    projectionClass: KClass<Selected>,
+    projectionType: KType,
+    nullableProjectionType: KType,
     contextPojo: Context = pojo as Context,
     sourceQuery: KSelectable<*>? = null,
     sourceAlias: String? = null
-) : KSelectable<Selected>(pojo, projectionClass) {
-    internal val context = SelectContext(pojo, contextPojo, projectionClass)
+) : KSelectable<Selected>(pojo) {
+    override val selectedType: KType = projectionType
+    override val nullableSelectedType: KType = nullableProjectionType
+    internal val context = SelectContext<Source, Selected, Context>(pojo, contextPojo, projectionType)
     private val planner = SelectPlanner(context)
 
     init {
@@ -92,7 +92,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                 sql = renderedSql.sql,
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
-                statement = plan.query
+                statement = plan.query,
+                targetType = typeOf<Int>()
             )
         )
     }
@@ -266,7 +267,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                 sql = renderedSql.sql,
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
-                statement = plan.query
+                statement = plan.query,
+                targetType = context.projectionType
             ),
             finalSelectFields,
             context.operationType,
@@ -274,89 +276,56 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         )
     }
 
-    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-        return build(wrapper).query(wrapper)
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
+        return build(wrapper).toMapList(wrapper)
     }
 
-    inline fun <reified T> queryList(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null
     ): List<T> {
-        return build(wrapper).queryList(wrapper, isKPojo, superTypes)
+        return build(wrapper).toList(wrapper)
     }
 
-    @JvmName("queryForList")
+    @JvmName("toProjectionList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
-        with(build(wrapper)) {
-            beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, context.projectionClass, true, []) as List<Selected>,
-                QueryList
-            )
-            afterQuery?.invoke(result, QueryList, wrapper.orDefault())
-            return result
-        }
+    fun toList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
+        return build(wrapper).toList(wrapper, selectedType) as List<Selected>
     }
 
-    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
         limit(1)
-        return build(wrapper).queryMap(wrapper)
+        return build(wrapper).toMap(wrapper)
     }
 
-    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
         limit(1)
-        return build(wrapper).queryMapOrNull(wrapper)
+        return build(wrapper).toMapOrNull(wrapper)
     }
 
-    inline fun <reified T> queryOne(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
+    inline fun <reified T> first(
+        wrapper: KronosDataSourceWrapper? = null
     ): T {
         limit(1)
-        return build(wrapper).queryOne(wrapper, isKPojo, superTypes)
+        return build(wrapper).first(wrapper)
     }
 
-    @JvmName("queryForObject")
+    @JvmName("firstProjection")
     @Suppress("UNCHECKED_CAST")
-    fun queryOne(wrapper: KronosDataSourceWrapper? = null): Selected {
+    fun first(wrapper: KronosDataSourceWrapper? = null): Selected {
         limit(1)
-        with(build(wrapper)) {
-            beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, context.projectionClass, true, [])
-                    ?: throw NullPointerException("No such record")) as Selected,
-                QueryOne
-            )
-            afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
-            return result
-        }
+        return build(wrapper).first(wrapper, selectedType) as Selected
     }
 
-    inline fun <reified T> queryOneOrNull(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
-    ): T? {
+    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
         limit(1)
-        return build(wrapper).queryOneOrNull(wrapper, isKPojo, superTypes)
+        return build(wrapper).firstOrNull(wrapper)
     }
 
-    @JvmName("queryForObjectOrNull")
+    @JvmName("firstProjectionOrNull")
     @Suppress("UNCHECKED_CAST")
-    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
+    fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
         limit(1)
-        with(build(wrapper)) {
-            beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, context.projectionClass, true, []) as Selected?,
-                QueryOneOrNull
-            )
-            afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
-            return result
-        }
+        return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
     }
 
 }

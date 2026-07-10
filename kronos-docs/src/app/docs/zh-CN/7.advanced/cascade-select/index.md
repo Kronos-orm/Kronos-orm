@@ -8,7 +8,7 @@
 Kronos默认开启级联查询功能，需要在`select`函数中显式关闭：
 
 ```kotlin
-KPojo.select().cascade(enabled = false).queryList()
+KPojo.select().cascade(enabled = false).toList()
 ```
 
 ### 部分开启级联查询
@@ -17,7 +17,7 @@ KPojo.select().cascade(enabled = false).queryList()
 
 ```kotlin
 // 若KPojo中只有property1和property2需要级联查询，那么如下：
-KPojo.select().cascade { [KPojo::property1, KPojo::property2] }.queryList()
+KPojo.select().cascade { [KPojo::property1, KPojo::property2] }.toList()
 ```
 
 可以限制其子属性级联查询，如下：
@@ -32,7 +32,7 @@ KPojo.select()
             Property1::subProperty2
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ### {{ $.annotation("Ignore") }} 声明级联查询跳过字段
@@ -56,7 +56,7 @@ data class Employee(
     var company: Company? = null
 ) : KPojo
 
-Employee().select().queryList()
+Employee().select().toList()
 ```
 
 ```text group="Cascade select ignore" name="result"
@@ -69,9 +69,9 @@ Employee().select().queryList()
 ## 级联查询
 
 在级联关系被定义后，使用：
-1. {{$.keyword("query/select", ["queryList查询指定类型列表"])}}
-2. {{$.keyword("query/select", ["queryOne查询单条记录"])}}
-3. {{$.keyword("query/select", ["queryOneOrNull查询单条记录（可空）"])}}
+1. {{$.keyword("query/select", ["toList查询指定类型列表"])}}
+2. {{$.keyword("query/select", ["first查询单条记录"])}}
+3. {{$.keyword("query/select", ["firstOrNull查询单条记录（可空）"])}}
 
 以上三种方法查询数据时，我们将自动为您根据级联关系进行逻辑查询，详见：{{ $.keyword("advanced/cascade", ["级联关系定义"]) }}。
 

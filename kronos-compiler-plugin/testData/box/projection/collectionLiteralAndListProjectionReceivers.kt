@@ -51,10 +51,10 @@ fun box(): String {
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {
-        val literalSelected = literalClause.queryOne()
+        val literalSelected = literalClause.first()
         val uid: Int? = literalSelected.uid
         val nameLength: Any? = literalSelected.nameLength
-        val listSelected = listClause.queryOne()
+        val listSelected = listClause.first()
         val statusCode: Int? = listSelected.statusCode
         val listLength: Any? = listSelected.listLength
         return "Fail: selected values unexpectedly evaluated as $uid/$nameLength/$statusCode/$listLength"

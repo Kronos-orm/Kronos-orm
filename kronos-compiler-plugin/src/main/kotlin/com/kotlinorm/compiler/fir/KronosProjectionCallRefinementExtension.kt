@@ -23,35 +23,27 @@ import com.kotlinorm.compiler.utils.GeneratedContextClassPrefix
 import com.kotlinorm.compiler.utils.GeneratedProjectionFieldIdentifierRegex
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.JoinPackageFqName
-import com.kotlinorm.compiler.utils.KotlinListOfFunctionName
 import com.kotlinorm.compiler.utils.KSelectableClassId
-import com.kotlinorm.compiler.utils.QueryListFunctionName
-import com.kotlinorm.compiler.utils.QueryOneFunctionName
-import com.kotlinorm.compiler.utils.QueryOneOrNullFunctionName
+import com.kotlinorm.compiler.utils.FirstFunctionName
+import com.kotlinorm.compiler.utils.FirstOrNullFunctionName
 import com.kotlinorm.compiler.utils.SelectAliasFunctionName
 import com.kotlinorm.compiler.utils.SelectClauseClassId
 import com.kotlinorm.compiler.utils.SelectFromClassId
 import com.kotlinorm.compiler.utils.SelectFunctionName
 import com.kotlinorm.compiler.utils.SelectPackageFqName
 import com.kotlinorm.compiler.utils.SelectQueryFunctionNames
+import com.kotlinorm.compiler.utils.ToListFunctionName
 import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.extensions.FirExtensionApiInternals
 import org.jetbrains.kotlin.fir.extensions.FirFunctionCallRefinementExtension
-import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
 import org.jetbrains.kotlin.fir.expressions.FirAnonymousFunctionExpression
-import org.jetbrains.kotlin.fir.expressions.FirBlock
-import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
-import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
-import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
-import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
-import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
 import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
 import org.jetbrains.kotlin.fir.resolve.calls.candidate.CallInfo
 import org.jetbrains.kotlin.fir.resolve.toClassSymbol
@@ -93,9 +85,9 @@ class KronosProjectionCallRefinementExtension(
         KSelectableClassId to 0
     )
     private val queryReturnTypeByName = mapOf<String, (KronosProjectionModel) -> ConeKotlinType?>(
-        QueryListFunctionName to { model -> listType(model) },
-        QueryOneFunctionName to { model -> projectionType(model, isNullable = false) },
-        QueryOneOrNullFunctionName to { model -> projectionType(model, isNullable = true) }
+        ToListFunctionName to { model -> listType(model) },
+        FirstFunctionName to { model -> projectionType(model, isNullable = false) },
+        FirstOrNullFunctionName to { model -> projectionType(model, isNullable = true) }
     )
 
     /**
@@ -193,24 +185,65 @@ class KronosProjectionCallRefinementExtension(
     /**
      * Reads projection fields from a bare property access, collection literal, or vararg call.
      */
-    private fun readProjectionFields(expression: FirStatement, sourceType: ConeKotlinType): List<KronosProjectionField> {
+    private fun readProjectionFields(
+        expression: FirStatement,
+        sourceType: ConeKotlinType,
+        sourceValueNames: Set<Name>
+    ): List<KronosProjectionField> {
         val statement = expression.projectionStatementOrNull() ?: return emptyList()
-        return statement.projectionItems(includeSingle = true).mapNotNull { it.toProjectionField(sourceType) }
+        return statement.projectionItems().flatMap {
+            it.toProjectionFields(sourceType, sourceValueNames)
+        }
     }
 
     /**
-     * Converts one select item expression into a generated projection field.
+     * Converts one select item expression into one or more generated projection fields.
      */
-    private fun FirStatement.toProjectionField(sourceType: ConeKotlinType): KronosProjectionField? {
-        val statement = projectionStatementOrNull() ?: return null
+    private fun FirStatement.toProjectionFields(
+        sourceType: ConeKotlinType,
+        sourceValueNames: Set<Name>
+    ): List<KronosProjectionField> {
+        val statement = projectionStatementOrNull() ?: return emptyList()
 
         val propertyAccess = statement as? FirPropertyAccessExpression
-        if (propertyAccess != null) return propertyAccess.toPropertyProjectionField(sourceType)
+        if (propertyAccess != null) {
+            if (
+                propertyAccess.isProjectionSourceValueAccess(
+                    sourceType,
+                    sourceValueNames,
+                    propertyAccess.coneTypeOrNull
+                )
+            ) {
+                return readSourceFields(sourceType)
+            }
+            return listOfNotNull(propertyAccess.toPropertyProjectionField(sourceType))
+        }
 
         val call = statement as? FirFunctionCall
-        if (call != null) return call.toAliasProjectionField(sourceType) ?: call.toAliasCallProjectionField()
+        if (call != null) {
+            call.toSourceMinusProjectionFields(sourceType, sourceValueNames)?.let { return it }
+            return listOfNotNull(call.toAliasProjectionField(sourceType) ?: call.toAliasCallProjectionField())
+        }
 
-        return statement.toAliasLiteralProjectionField()
+        return listOfNotNull(statement.toAliasLiteralProjectionField())
+    }
+
+    private fun FirFunctionCall.toSourceMinusProjectionFields(
+        sourceType: ConeKotlinType,
+        sourceValueNames: Set<Name>
+    ): List<KronosProjectionField>? {
+        if (calleeReference.name.asString() != "minus") return null
+        val receiver = explicitReceiver as? FirStatement ?: return null
+        val sourceAccess = receiver.projectionStatementOrNull() as? FirPropertyAccessExpression ?: return null
+        if (!sourceAccess.isProjectionSourceValueAccess(sourceType, sourceValueNames, sourceAccess.coneTypeOrNull)) {
+            return null
+        }
+        val sourceFields = readSourceFields(sourceType)
+        val sourceFieldNames = sourceFields.mapTo(linkedSetOf()) { it.name.asString() }
+        val excludedNames = argumentList.arguments.flatMapTo(linkedSetOf()) { argument ->
+            argument.excludedProjectionSourceFieldNames(sourceFieldNames)
+        }
+        return sourceFields.filterNot { it.name.asString() in excludedNames }
     }
 
     /**
@@ -377,7 +410,10 @@ class KronosProjectionCallRefinementExtension(
         val sourceDeclaration = sourceType.toClassSymbol(session)?.fir?.source
         val lambda = callInfo.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return null
         val returned = lambda.anonymousFunction.body?.lastExpression() ?: return null
-        val fields = readProjectionFields(returned, sourceType)
+        val sourceValueNames = lambda.anonymousFunction.valueParameters.mapTo(linkedSetOf()) { it.name }.apply {
+            add(Name.identifier("it"))
+        }
+        val fields = readProjectionFields(returned, sourceType, sourceValueNames)
         if (fields.isEmpty()) return null
 
         val name = Name.identifier("$GeneratedProjectionClassPrefix${mangleProjectionName(sourceType, fields)}")
@@ -455,7 +491,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Builds the concrete projection return type for queryOne/queryOneOrNull.
+     * Builds the concrete projection return type for first/firstOrNull.
      */
     private fun projectionType(model: KronosProjectionModel, isNullable: Boolean): ConeClassLikeTypeImpl {
         return ConeClassLikeTypeImpl(
@@ -479,7 +515,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Wraps the projection type in List for queryList().
+     * Wraps the projection type in List for toList().
      */
     private fun listType(model: KronosProjectionModel): ConeClassLikeTypeImpl {
         return ConeClassLikeTypeImpl(
@@ -529,6 +565,7 @@ class KronosProjectionCallRefinementExtension(
         val fields = mutableListOf<KronosProjectionField>()
         classSymbol.processAllDeclarations(session, FirResolvePhase.STATUS) { symbol ->
             val property = (symbol as? FirPropertySymbol)?.fir ?: return@processAllDeclarations
+            if (!property.isKronosColumn(session)) return@processAllDeclarations
             val name = property.name
             val type = (property.returnTypeRef as? FirResolvedTypeRef)?.coneType ?: return@processAllDeclarations
             fields += KronosProjectionField(
@@ -536,7 +573,7 @@ class KronosProjectionCallRefinementExtension(
                 type = type,
                 source = property.source,
                 sourceName = name,
-                signature = "contextSource:${name.asString()}"
+                signature = "property:${name.asString()}"
             )
         }
         return fields

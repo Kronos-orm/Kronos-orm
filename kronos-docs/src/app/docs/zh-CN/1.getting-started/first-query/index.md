@@ -29,7 +29,7 @@ data class User(
 
 ## 配置 wrapper
 
-在调用 `execute()` 或 `query*()` 的操作前，先设置默认 wrapper。
+在调用 `execute()`、`toList()`、`first()` 等终端方法前，先设置默认 wrapper。
 
 ```kotlin group="Wrapper" name="Main.kt" icon="kotlin"
 import com.kotlinorm.Kronos
@@ -98,7 +98,7 @@ VALUES (:name, :createTime, :updateTime)
 val user = User(name = "Kronos")
     .select()
     .where()
-    .queryOne()
+    .first()
 ```
 
 ```sql group="Select 1" name="mysql" icon="mysql"
@@ -113,7 +113,7 @@ WHERE `tb_user`.`name` = :name
 val users = User()
     .select()
     .where { it.name == "Kronos" }
-    .queryList()
+    .toList()
 ```
 
 更多查询行为见 {{ $.keyword("query/select", ["Select"]) }} 和 {{ $.keyword("query/conditions", ["条件 DSL"]) }}。

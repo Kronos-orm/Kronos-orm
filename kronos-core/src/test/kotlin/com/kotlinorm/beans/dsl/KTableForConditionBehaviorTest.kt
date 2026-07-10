@@ -21,6 +21,7 @@ import com.kotlinorm.utils.TransformerSafeValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.reflect.typeOf
 
 class KTableForConditionBehaviorTest {
     private val id = Field("id", "id", tableName = "tb_user")
@@ -79,7 +80,7 @@ class KTableForConditionBehaviorTest {
             table.likeConditionExpr(username, null, not = false, value = "ann")
         )
         assertEquals(
-            linkedMapOf<String, Any?>("username" to TransformerSafeValue("ann", "kotlin.String")),
+            linkedMapOf<String, Any?>("username" to TransformerSafeValue("ann", typeOf<String>())),
             table.parameterValues
         )
         assertEquals(
@@ -370,7 +371,9 @@ private fun String.toStringBuilder(): StringBuilder = StringBuilder(this)
 @Table("runtime_condition_pojo")
 data class RuntimeConditionPojo(val id: Int? = null) : KPojo
 
-private class ConditionSelectable : KSelectable<RuntimeConditionPojo>(RuntimeConditionPojo(), RuntimeConditionPojo::class) {
+private class ConditionSelectable : KSelectable<RuntimeConditionPojo>(RuntimeConditionPojo()) {
+    override val selectedType = typeOf<RuntimeConditionPojo>()
+
     val query = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.NumberLiteral("1"))),
         from = listOf(SqlTable.Ident("runtime_condition_pojo"))

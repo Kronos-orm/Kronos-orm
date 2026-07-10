@@ -94,7 +94,7 @@ abstract class IntegrationSuiteSupport(
 
     protected fun table(identifier: String): String = quote(identifier)
 
-    protected fun Map<String, Any>.value(label: String): Any? =
+    protected fun Map<String, Any?>.value(label: String): Any? =
         this[label] ?: this[label.uppercase()] ?: this[label.lowercase()]
 
     private fun registerIntegrationKPojoFactories() {

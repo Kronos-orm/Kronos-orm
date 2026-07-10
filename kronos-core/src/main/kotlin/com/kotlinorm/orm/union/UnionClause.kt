@@ -33,13 +33,16 @@ import com.kotlinorm.syntax.quantifier.SqlQuantifier
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSetOperator
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class UnionClause<Selected : KPojo> internal constructor(
     selectables: List<KSelectable<out KPojo>>,
-    selectedKClass: KClass<Selected>,
+    selectedType: KType,
+    nullableSelectedType: KType,
     initialUnionAll: Boolean = false
-) : KSelectable<Selected>(selectables.first().pojo, selectedKClass) {
+) : KSelectable<Selected>(selectables.first().pojo) {
+    override val selectedType: KType = selectedType
+    override val nullableSelectedType: KType = nullableSelectedType
     internal val selectables: MutableList<KSelectable<out KPojo>> = selectables.toMutableList()
     internal var unionAll: Boolean = initialUnionAll
     private var orderByItems: List<SqlOrderingItem> = emptyList()
@@ -65,44 +68,56 @@ class UnionClause<Selected : KPojo> internal constructor(
         return this
     }
 
-    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-        return build(wrapper).query(wrapper)
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
+        return build(wrapper).toMapList(wrapper)
     }
 
-    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
         limit(1)
-        return build(wrapper).queryMap(wrapper)
+        return build(wrapper).toMap(wrapper)
     }
 
-    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
         limit(1)
-        return build(wrapper).queryMapOrNull(wrapper)
+        return build(wrapper).toMapOrNull(wrapper)
     }
 
-    inline fun <reified T> queryList(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null
     ): List<T> {
-        return build(wrapper).queryList(wrapper, isKPojo, superTypes)
+        return build(wrapper).toList(wrapper)
     }
 
-    inline fun <reified T> queryOne(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
+    @JvmName("toProjectionList")
+    @Suppress("UNCHECKED_CAST")
+    fun toList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
+        return build(wrapper).toList(wrapper, selectedType) as List<Selected>
+    }
+
+    inline fun <reified T> first(
+        wrapper: KronosDataSourceWrapper? = null
     ): T {
         limit(1)
-        return build(wrapper).queryOne(wrapper, isKPojo, superTypes)
+        return build(wrapper).first(wrapper)
     }
 
-    inline fun <reified T> queryOneOrNull(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
-    ): T? {
+    @JvmName("firstProjection")
+    @Suppress("UNCHECKED_CAST")
+    fun first(wrapper: KronosDataSourceWrapper? = null): Selected {
         limit(1)
-        return build(wrapper).queryOneOrNull(wrapper, isKPojo, superTypes)
+        return build(wrapper).first(wrapper, selectedType) as Selected
+    }
+
+    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        limit(1)
+        return build(wrapper).firstOrNull(wrapper)
+    }
+
+    @JvmName("firstProjectionOrNull")
+    @Suppress("UNCHECKED_CAST")
+    fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
+        limit(1)
+        return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
     }
 
     internal override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan {
@@ -138,7 +153,8 @@ class UnionClause<Selected : KPojo> internal constructor(
                 sql = renderedSql.sql,
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
-                statement = plan.query
+                statement = plan.query,
+                targetType = selectedType
             )
         )
     }

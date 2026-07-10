@@ -35,7 +35,7 @@ import com.kotlinorm.interfaces.KPojo
  * @return UnionClause for further configuration and execution
  */
 fun <R : KPojo> union(first: KSelectable<R>, vararg selectables: KSelectable<out KPojo>): UnionClause<R> {
-    return UnionClause(listOf(first, *selectables), first.selectedKClass, initialUnionAll = false)
+    return UnionClause(listOf(first, *selectables), first.selectedType, first.nullableSelectedType, initialUnionAll = false)
 }
 
 /**
@@ -52,7 +52,7 @@ fun <R : KPojo> union(first: KSelectable<R>, vararg selectables: KSelectable<out
  * @return UnionClause for further configuration and execution
  */
 infix fun <R : KPojo> KSelectable<R>.union(other: KSelectable<out KPojo>): UnionClause<R> {
-    return UnionClause([this, other], selectedKClass, initialUnionAll = false)
+    return UnionClause([this, other], selectedType, nullableSelectedType, initialUnionAll = false)
 }
 
 /**
@@ -69,7 +69,7 @@ infix fun <R : KPojo> KSelectable<R>.union(other: KSelectable<out KPojo>): Union
  * @return UnionClause for further configuration and execution
  */
 infix fun <R : KPojo> KSelectable<R>.unionAll(other: KSelectable<out KPojo>): UnionClause<R> {
-    return UnionClause([this, other], selectedKClass, initialUnionAll = true)
+    return UnionClause([this, other], selectedType, nullableSelectedType, initialUnionAll = true)
 }
 
 /**

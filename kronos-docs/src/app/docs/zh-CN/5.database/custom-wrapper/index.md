@@ -63,78 +63,37 @@ class SpringJdbcKronosWrapper(
 }
 ```
 
-## 委托Map查询
+## 委托查询
 
-`KAtomicQueryTask.sql`使用命名参数，`KAtomicQueryTask.paramMap`保存参数值。
+`KAtomicQueryTask.sql`使用命名参数，`paramMap`保存参数值，`targetType`保存完整的目标`KType`。自定义wrapper只需为Map、标量、KPojo和DTO实现一个列表方法和一个单行方法。
 
-```kotlin group="Spring wrapper 2" name="map queries" icon="kotlin"
-override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-    return namedJdbc.queryForList(task.sql, task.paramMap)
-}
+```kotlin group="Spring wrapper 2" name="query mapping" icon="kotlin"
+private fun rowMapper(targetType: KType): RowMapper<Any?> {
+    val targetClass = targetType.classifier as? KClass<*>
+        ?: error("Unsupported target type: $targetType")
 
-override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-    return try {
-        namedJdbc.queryForMap(task.sql, task.paramMap)
-    } catch (e: DataAccessException) {
-        null
+    return when {
+        targetClass == Map::class -> ColumnMapRowMapper()
+        targetClass in setOf(String::class, Int::class, Long::class, Boolean::class) ->
+            SingleColumnRowMapper(targetClass.java)
+        else -> DataClassRowMapper(targetClass.java)
     }
 }
+
+override fun toList(task: KAtomicQueryTask): List<Any?> =
+    namedJdbc.query(task.sql, task.paramMap, rowMapper(task.targetType))
+
+override fun first(task: KAtomicQueryTask): Any? =
+    toList(task).firstOrNull()
 ```
 
-```kotlin group="Spring wrapper 2" name="map usage" icon="kotlin"
-val rows = wrapper.forList(
+```kotlin group="Spring wrapper 2" name="query usage" icon="kotlin"
+val users = wrapper.toList(
     KronosAtomicQueryTask(
         sql = "SELECT id, name FROM user WHERE status = :status",
-        paramMap = mapOf("status" to "ACTIVE")
+        paramMap = mapOf("status" to "ACTIVE"),
+        targetType = typeOf<User>()
     )
-)
-```
-
-## 委托对象查询
-
-`isKPojo`表示Kronos需要映射对象。`kClass`是查询API选定的结果类型。
-
-```kotlin group="Spring wrapper 3" name="object queries" icon="kotlin"
-override fun forList(
-    task: KAtomicQueryTask,
-    kClass: KClass<*>,
-    isKPojo: Boolean,
-    superTypes: List<String>
-): List<Any> {
-    return if (isKPojo) {
-        namedJdbc.query(task.sql, task.paramMap, DataClassRowMapper(kClass.java))
-    } else {
-        namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
-    }
-}
-
-override fun forObject(
-    task: KAtomicQueryTask,
-    kClass: KClass<*>,
-    isKPojo: Boolean,
-    superTypes: List<String>
-): Any? {
-    return try {
-        if (isKPojo) {
-            namedJdbc.queryForObject(task.sql, task.paramMap, DataClassRowMapper(kClass.java))
-        } else {
-            namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
-        }
-    } catch (e: DataAccessException) {
-        null
-    }
-}
-```
-
-```kotlin group="Spring wrapper 3" name="object usage" icon="kotlin"
-val users = wrapper.forList(
-    KronosAtomicQueryTask(
-        sql = "SELECT id, name FROM user WHERE status = :status",
-        paramMap = mapOf("status" to "ACTIVE")
-    ),
-    User::class,
-    isKPojo = true,
-    superTypes = listOf("com.kotlinorm.interfaces.KPojo")
 )
 ```
 

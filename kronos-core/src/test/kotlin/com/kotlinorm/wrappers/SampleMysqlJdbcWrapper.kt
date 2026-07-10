@@ -7,7 +7,6 @@ import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import kotlin.reflect.KClass
 
 open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
     companion object{
@@ -19,7 +18,7 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
     override val dbType: DBType
         get() = DBType.Mysql
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
         return [
             mapOf(
                 "COLUMN_NAME" to "id",
@@ -48,16 +47,7 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
             )
         ]
     }
-
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
-        return []
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return null
-    }
-
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+    override fun first(task: KAtomicQueryTask): Any? {
         return null
     }
 

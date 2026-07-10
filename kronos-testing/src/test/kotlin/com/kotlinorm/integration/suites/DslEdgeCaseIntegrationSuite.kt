@@ -41,7 +41,7 @@ abstract class DslEdgeCaseIntegrationSuite(
                 page(pi = 1, ps = 1)
             }
             .withTotal()
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
         assertEquals(listOf(1), rows.map { it.userId })
@@ -68,7 +68,7 @@ abstract class DslEdgeCaseIntegrationSuite(
             .orderBy { it.id.desc() }
             .page(pi = 1, ps = 1)
             .withTotal()
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
         assertEquals(listOf(2), rows.map { it.id })
@@ -91,7 +91,7 @@ abstract class DslEdgeCaseIntegrationSuite(
             .groupBy { it.userId }
             .having { f.sum(it.amount) > 30 }
             .orderBy { it.userId.asc() }
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(listOf(1, 2), rows.map { it.userId })
         assertEquals(listOf(70, 40), rows.map { it.totalAmount })
@@ -116,7 +116,7 @@ abstract class DslEdgeCaseIntegrationSuite(
             .orderBy { it.userId.asc() }
             .page(pi = 1, ps = 1)
             .withTotal()
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
         assertEquals(listOf(1), rows.map { it.userId })
@@ -146,7 +146,7 @@ abstract class DslEdgeCaseIntegrationSuite(
                 page(pi = 1, ps = 1)
             }
             .withTotal()
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
         assertEquals(listOf(1), rows.map { it.userId })
@@ -181,7 +181,7 @@ abstract class DslEdgeCaseIntegrationSuite(
             .orderBy { it.userId.asc() }
             .page(pi = 1, ps = 10)
             .withTotal()
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
         assertEquals(listOf(1, 3), rows.map { it.id })
@@ -205,7 +205,7 @@ abstract class DslEdgeCaseIntegrationSuite(
         )
             .orderBy("id" to SqlOrdering.Desc)
             .limit(2)
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(listOf(3, 2), rows.map { it.id })
         assertEquals(listOf("Linus", "Grace"), rows.map { it.name })
@@ -232,7 +232,7 @@ abstract class DslEdgeCaseIntegrationSuite(
             .orderBy { it.id.asc() }
             .page(pi = 1, ps = 1)
             .withTotal()
-            .queryList<IntegrationDslEdgeProjection>()
+            .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
         assertEquals(listOf(2), rows.map { it.id })

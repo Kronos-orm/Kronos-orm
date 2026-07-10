@@ -12,7 +12,7 @@ val user = User()
     .select()
     .where { it.id == 1 }
     .lock(SqlLock.Update())
-    .queryOne()
+    .first()
 ```
 
 ```sql group="Lock 1" name="mysql" icon="mysql"
@@ -33,7 +33,7 @@ val users = User()
     .select()
     .where { it.status == "ACTIVE" }
     .lock(SqlLock.Share())
-    .queryList()
+    .toList()
 ```
 
 Shared and update locks are rendered by the SQL dialect. Keep lock usage close to the transaction boundary that needs the locked read.

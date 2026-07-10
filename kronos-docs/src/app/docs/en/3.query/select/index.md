@@ -8,7 +8,7 @@ In Kronos, we can use `KPojo.select()` method to query database records.
 Field lists, aliases, generated projection objects, and join projection examples are covered in {{ $.keyword("query/projection", ["Projection"]) }}.
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {1}
-val users: List<User> = User().select().queryList()
+val users: List<User> = User().select().toList()
 ```
 
 ```sql group="Case 1" name="Mysql" icon="mysql"
@@ -47,11 +47,11 @@ Multiple fields are written with `[]` and the `alias` method is used to set fiel
 For field projection, aliases, generated result shapes, and DTO consumption, see {{ $.keyword("query/projection", ["Projection"]) }}. For derived query sources, scalar subqueries, predicate subqueries, and window-result filtering, see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
 
 ```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-5}
-val rows: List<Map<String, Any>> = User()
+val rows: List<Map<String, Any?>> = User()
     .select {
         [it.id, it.name.alias("username"), "count(*) as total", "1"]
     }
-    .query()
+    .toMapList()
 ```
 
 ```sql group="Case 1-1" name="Mysql" icon="mysql"
@@ -81,15 +81,28 @@ FROM "user"
 
 ### Query all fields, exclude some columns
 
-You can pass `KPojo` to query all columns, use `-` to exclude columns, and use `[]` to combine the final select list.
+Returning `it` from an explicit projection expands every database column of the current KPojo. It can be returned directly or placed inside `[]`. Use `-` to exclude columns from that full projection.
 
 > **Note**
-> Please note that `-` must be used after `KPojo`.
+> `select()` returns the source KPojo type. `select { it }` and `select { [it] }` return a generated projection containing all columns. The `-` operator must follow a KPojo value.
+
+```kotlin name="kotlin" icon="kotlin"
+val allDirect = User().select { it }.toList()
+val allInList = User().select { [it] }.toList()
+val withoutId = User().select { it - it.id }.toList()
+val withoutIdInList = User().select { [it - it.id] }.toList()
+
+val withAlias = User()
+    .select { [it, it.id.alias("sourceId")] }
+    .toList()
+```
+
+`[]` is the recommended form. `listOf`, `arrayOf`, `mutableListOf`, and `setOf` can build the same projection list, for example `select { arrayOf<Any?>(it, it.id.alias("sourceId")) }`. See {{ $.keyword("query/projection", ["Projection"]) }} for the complete matrix and generated result properties.
 
 ```kotlin group="Case 1-2" name="kotlin" icon="kotlin"
-val rows: List<Map<String, Any>> = User()
+val rows: List<Map<String, Any?>> = User()
     .select { [it - it.id, "count(*) as total"] }
-    .query()
+    .toMapList()
 ```
 
 ```sql group="Case 1-2" name="Mysql" icon="mysql"
@@ -139,7 +152,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 1-3" name="Mysql" icon="mysql"
@@ -157,7 +170,7 @@ WHERE `user`.`id` IN (
 )
 ```
 
-Generated projections can be returned directly by no-argument `queryList()` or `queryOne()`, and they can be used as the next query source.
+Generated projections can be returned directly by no-argument `toList()` or `first()`, and they can be used as the next query source.
 
 ```kotlin group="Case 1-4" name="kotlin" icon="kotlin"
 val nameLengths = User()
@@ -166,7 +179,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 Generated projection consumption is covered in {{ $.keyword("query/projection", ["Projection"]) }}. Derived query sources, scalar subqueries, predicate subqueries, and window-result filtering are covered in {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
@@ -176,12 +189,12 @@ Generated projection consumption is covered in {{ $.keyword("query/projection", 
 An empty `where()` reads queryable non-null fields from the current KPojo object and generates equality conditions.
 
 > **Warning**
-> `select().queryList()` reads from the current table. Empty `where()` and `by { ... }` read object property values; `where { ... }` uses the lambda condition you write.
+> `select().toList()` reads from the current table. Empty `where()` and `by { ... }` read object property values; `where { ... }` uses the lambda condition you write.
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {1,3}
 val user: User = User(name = "Kronos", age = null)
 
-val listOfUser: List<User> = user.select().where().queryList()
+val listOfUser: List<User> = user.select().where().toList()
 ```
 
 ```sql group="Case 2" name="Mysql" icon="mysql"
@@ -227,7 +240,7 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().by { it.id }.queryOneOrNull()
+val kronos: User? = user.select().by { it.id }.firstOrNull()
 ```
 
 ```sql group="Case 3" name="Mysql" icon="mysql"
@@ -269,7 +282,7 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().by { [it.id, it.name] }.queryOneOrNull()
+val kronos: User? = user.select().by { [it.id, it.name] }.firstOrNull()
 ```
 
 ```sql group="Case 3-1" name="Mysql" icon="mysql"
@@ -316,11 +329,11 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().where { it.id }.queryOneOrNull()
+val kronos: User? = user.select().where { it.id }.firstOrNull()
 
 val listOfUser: List<User> = user.select()
     .where { it.id > 1 && it.age < 20 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 4" name="Mysql" icon="mysql"
@@ -386,7 +399,7 @@ val user: User = User(
     status = 2
 )
 
-user.select().where { it.eq && it.status > 1 }.queryOneOrNull()
+user.select().where { it.eq && it.status > 1 }.firstOrNull()
 ```
 
 ```sql group="Case 4-2" name="Mysql" icon="mysql"
@@ -441,7 +454,7 @@ val user: User = User(
     name = "Kronos"
 )
 
-user.select().where { (it - it.name).eq && it.status == 1 }.queryOneOrNull()
+user.select().where { (it - it.name).eq && it.status == 1 }.firstOrNull()
 ```
 
 ```sql group="Case 4-3" name="Mysql" icon="mysql"
@@ -493,7 +506,7 @@ The `patch` method can be used to add parameters to a custom query condition whe
 val user = User().select()
     .where { "id = :id".asSql() }
     .patch("id" to 1)
-    .queryOneOrNull()
+    .firstOrNull()
 ```
 
 ```sql group="Case 19" name="Mysql" icon="mysql"
@@ -539,7 +552,7 @@ When no sort method is set, the default is ascending, e.g. `orderBy { it.id }` i
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()
     .orderBy { [it.id.desc(), it.name.asc()] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 5" name="Mysql" icon="mysql"
@@ -578,7 +591,7 @@ Selected aliases and scalar subqueries can also be used as sort items.
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
     .orderBy { it.nameLength.desc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 5-1" name="Mysql" icon="mysql"
@@ -601,7 +614,7 @@ For aggregate projections that become generated fields in the next query layer, 
 val listOfUser: List<User> = User().select()
     .groupBy { it.age }
     .having { it.age > 18 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 6" name="Mysql" icon="mysql"
@@ -646,7 +659,7 @@ The `limit` method is used to set the maximum number of records to query, at whi
 ```kotlin group="Case 7" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()
     .limit(10)
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 7" name="Mysql" icon="mysql"
@@ -687,11 +700,11 @@ For **optimistic locks**, see {{$.keyword("query/locks", ["Advanced Usage", "Loc
 ```kotlin group="Case 18" name="kotlin" icon="kotlin"
 val listOfUser: List<User> = User().select()
     .lock() // SqlLock.Update()
-    .queryList()
+    .toList()
 
 val listOfUser: List<User> = User().select()
     .lock(SqlLock.Share())
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 18" name="Mysql" icon="mysql"
@@ -743,7 +756,7 @@ The `withTotal` method is used to query paging queries with total record counts.
 val (total, listOfUser) = User().select()
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
 
 // total: Int, listOfUser: List<User>
 ```
@@ -789,7 +802,7 @@ val (total, rows) = nameLengths
     .where { it.nameLength > 8 }
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 8-1" name="Mysql" icon="mysql"
@@ -813,13 +826,13 @@ The `db` method is used for cross-database queries, when Kronos sets the databas
 val listOfUser: List<User> = User()
     .db("user_database")
     .select { [it.id, it.username] }
-    .queryList()
+    .toList()
 
 // Or the db method can be called directly after the select
 // val listOfUser: List<User> = User()
 //            .select { [it.id, it.username] }
 //            .db("user_database")
-//            .queryList()
+//            .toList()
 ```
 
 ```sql group="Case 20" name="Mysql" icon="mysql"
@@ -852,16 +865,16 @@ Use a terminal result method at the end of a select chain to choose the returned
 ```kotlin group="Result methods" name="kotlin" icon="kotlin"
 val users: List<User> = User()
     .select()
-    .queryList()
+    .toList()
 
 val row: User? = User()
     .select()
     .where { it.id == 1 }
-    .queryOneOrNull()
+    .firstOrNull()
 
-val mapRows: List<Map<String, Any>> = User()
+val mapRows: List<Map<String, Any?>> = User()
     .select { [it.id, it.name] }
-    .query()
+    .toMapList()
 ```
 
 Result shapes, nullable single-row methods, generated projection results, pagination totals, and custom wrappers are covered in {{ $.keyword("query/result-methods", ["Result Methods"]) }}.
@@ -871,7 +884,7 @@ Result shapes, nullable single-row methods, generated projection results, pagina
 Use `single()` when a query chain should add a one-row limit before the terminal method.
 
 ```kotlin group="Single" name="kotlin" icon="kotlin" {1}
-val user: User = User().select().single().queryOne()
+val user: User = User().select().single().first()
 ```
 
 ```sql group="Single" name="Mysql" icon="mysql"
@@ -892,5 +905,5 @@ In Kronos, we can use the specified data source to query the records in the data
 ```kotlin group="Case 17" name="kotlin" icon="kotlin" {1}
 val customWrapper = CustomWrapper()
 
-val listOfUser: List<User> = User().select().queryList(customWrapper)
+val listOfUser: List<User> = User().select().toList(customWrapper)
 ```

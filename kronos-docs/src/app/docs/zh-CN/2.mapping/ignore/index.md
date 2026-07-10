@@ -67,7 +67,7 @@ data class User(
 ) : KPojo
 
 val data = User(id = 1, name = "Ada", searchText = "Ada").toDataMap()
-val users = User(searchText = "Ada").select().where().queryList()
+val users = User(searchText = "Ada").select().where().toList()
 ```
 
 `toDataMap()` 仍保留本地属性值：
@@ -111,7 +111,7 @@ data class Employee(
     var name: String? = null
 ) : KPojo
 
-val companies = Company().select().queryList()
+val companies = Company().select().toList()
 ```
 
 主查询仍读取公司表：

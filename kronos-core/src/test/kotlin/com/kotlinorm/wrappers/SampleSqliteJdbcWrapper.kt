@@ -7,7 +7,6 @@ import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import kotlin.reflect.KClass
 
 object SampleSqliteJdbcWrapper : KronosDataSourceWrapper {
     override val url: String
@@ -17,7 +16,7 @@ object SampleSqliteJdbcWrapper : KronosDataSourceWrapper {
     override val dbType: DBType
         get() = DBType.SQLite
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
         return [
             mapOf(
                 "Field" to "id",
@@ -46,16 +45,7 @@ object SampleSqliteJdbcWrapper : KronosDataSourceWrapper {
             )
         ]
     }
-
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
-        return []
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return null
-    }
-
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+    override fun first(task: KAtomicQueryTask): Any? {
         return null
     }
 

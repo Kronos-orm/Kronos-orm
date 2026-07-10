@@ -116,7 +116,7 @@ object MysqlStatements : DatabaseStatements() {
                     it.cell("IDENTITY") == "YES" -> PrimaryKeyType.IDENTITY
                     else -> PrimaryKeyType.DEFAULT
                 },
-                defaultValue = it.cell("COLUMN_DEFAULT") as String?,
+                defaultValue = normalizeDefaultValue(it.cell("COLUMN_DEFAULT") as String?, it.cell("DATA_TYPE")?.toString()),
                 kDoc = it.cell("COLUMN_COMMENT") as String?
             )
         }
@@ -237,5 +237,14 @@ object MysqlStatements : DatabaseStatements() {
             return BIT
         }
         return KColumnType.fromString(type)
+    }
+
+    private fun normalizeDefaultValue(defaultValue: String?, dataType: String?): String? {
+        if (defaultValue == null) return null
+        return if (dataType?.contains("char", ignoreCase = true) == true || dataType.equals("text", ignoreCase = true)) {
+            "'${defaultValue.trim('\'')}'"
+        } else {
+            defaultValue
+        }
     }
 }

@@ -59,9 +59,11 @@ internal class SelectPlanner(
                 SqlGroup(items = it.map(SqlGroupingItem::Expr))
             },
             having = context.having,
-            orderBy = context.orderByItems.map { it.toOrderingItem(dataSource, parameters, parameterCounter) },
+            orderBy = if (totalCount) emptyList() else context.orderByItems.map {
+                it.toOrderingItem(selectItems, dataSource, parameters, parameterCounter)
+            },
             limit = context.limit.takeUnless { totalCount },
-            lock = context.lock
+            lock = context.lock.takeUnless { totalCount }
         )
 
         return SqlQueryPlan(query, parameters)
@@ -179,17 +181,31 @@ internal class SelectPlanner(
         }
 
     private fun SelectOrderItem.toOrderingItem(
+        selectItems: List<SqlSelectItem>,
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
         parameterCounter: MutableMap<String, Int>
     ): SqlOrderingItem =
         SqlOrderingItem(
             expr = when (this) {
-                is SelectOrderItem.FieldItem -> field.toPlannerExpr()
+                is SelectOrderItem.FieldItem -> selectItems.orderAliasExpr(field.name) ?: field.toPlannerExpr()
                 is SelectOrderItem.ExprItem -> expr
                 is SelectOrderItem.SelectableItem ->
                     SqlExpr.Subquery(query.materializeSqlQuery(parameters, parameterCounter, dataSource))
             },
             ordering = ordering
         )
+
+    private fun List<SqlSelectItem>.orderAliasExpr(outputName: String): SqlExpr? =
+        asSequence()
+            .mapNotNull { (it as? SqlSelectItem.Expr)?.metadata }
+            .firstOrNull { it.outputName == outputName && it.userReferenceable }
+            ?.let { metadata ->
+                when (metadata.scope) {
+                    SqlSelectItemSourceScope.Aggregate,
+                    SqlSelectItemSourceScope.Window -> SqlExpr.Column(columnName = outputName)
+                    SqlSelectItemSourceScope.Selected -> SqlExpr.Column(columnName = outputName)
+                    else -> null
+                }
+            }
 }

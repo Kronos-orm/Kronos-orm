@@ -24,12 +24,11 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.First
+import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.select.selectWithType
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlInRightOperand
@@ -131,7 +130,7 @@ object CascadeSelectClause {
             doAfterQuery { queryType, wrapper ->
                 validCascades.forEach { validRef ->
                     when (queryType) {
-                        QueryList -> { // 若是查询KPojo列表
+                        ToList -> { // 若是查询KPojo列表
                             val lastStepResult = this as List<KPojo> // this为主表查询的结果
                             if (lastStepResult.isEmpty()) return@forEach // 若该级联属性查询结果为空，不进行级联查询
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
@@ -151,7 +150,7 @@ object CascadeSelectClause {
                             )
                         }
 
-                        QueryOne, QueryOneOrNull -> {
+                        First -> {
                             val lastStepResult = this as KPojo? // this为主表查询的结果
                             if (lastStepResult == null) return@forEach // 若该级联属性查询结果为空，不进行级联查询
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
@@ -238,7 +237,10 @@ object CascadeSelectClause {
         }
 
         // 构建级联查询的 SelectClause
-        fun cascadeSelect(refPojo: KPojo) = refPojo.select().apply {
+        val targetType = requireNotNull(propField.elementKType ?: propField.kType) {
+            "Missing Kotlin type metadata for cascade field ${propField.name}."
+        }
+        fun cascadeSelect(refPojo: KPojo) = refPojo.selectWithType(targetType).apply {
             val inheritedOperationType = operationType
             val inheritedCascadeAllowed = cascadeAllowed
             val inheritedCascadeSelectedProps = cascadeSelectedProps
@@ -284,7 +286,7 @@ object CascadeSelectClause {
                     val condition = compositeFkCondition(remoteFields, keyChunk)
                     allChildren += cascadeSelect(refPojo).apply {
                         context.andWhere(condition.expr, condition.parameters)
-                    }.queryList(wrapper)
+                    }.toList(wrapper)
                 }
 
                 val childrenByKey = allChildren.groupBy { child ->
@@ -306,8 +308,8 @@ object CascadeSelectClause {
                 val clause = cascadeSelect(refPojo).apply {
                     context.addFieldConditions(remoteFields, fkPairs.toMap())
                 }
-                row[prop] = if (isCollection) clause.queryList(wrapper)
-                else clause.queryOneOrNull(wrapper)
+                row[prop] = if (isCollection) clause.toList(wrapper)
+                else clause.firstOrNull(wrapper)
             }
             return
         }
@@ -330,7 +332,7 @@ object CascadeSelectClause {
             val condition = singleFkCondition(remoteField, keyChunk)
             allChildren += cascadeSelect(refPojo).apply {
                 context.andWhere(condition.expr, condition.parameters)
-            }.queryList(wrapper)
+            }.toList(wrapper)
         }
 
         val childrenByFk = allChildren.groupBy { it.toDataMap()[remoteProp] }

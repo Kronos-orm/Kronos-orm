@@ -14,8 +14,11 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.SqlQueryPlan
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
-import kotlin.reflect.KClass
+import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.table.SqlTable
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -34,7 +37,7 @@ class PagedClauseBehaviorTest {
             .build(wrapper)
 
         assertEquals(
-            "SELECT COUNT(*) FROM (SELECT id FROM paged_clause_stub) AS total_count",
+            "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
             countTask.atomicTask.sql
         )
         assertNull(countTask.beforeQuery)
@@ -51,12 +54,12 @@ class PagedClauseBehaviorTest {
         )
 
         val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(RecordingSelectable())
-            .query(wrapper)
+            .toMapList(wrapper)
 
         assertEquals(2 to listOf(mapOf("id" to 1)), result)
         assertEquals(
             listOf(
-                "SELECT COUNT(*) FROM (SELECT id FROM paged_clause_stub) AS total_count",
+                "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
                 "SELECT id FROM paged_clause_stub"
             ),
             wrapper.querySql
@@ -64,7 +67,7 @@ class PagedClauseBehaviorTest {
     }
 
     @Test
-    fun `typed queryList uses provided wrapper for count and typed records`() {
+    fun `typed toList uses provided wrapper for count and typed records`() {
         val rows = listOf(PagedClauseStubRow(1), PagedClauseStubRow(2))
         val wrapper = RecordingWrapper(
             typedListResult = rows,
@@ -72,12 +75,12 @@ class PagedClauseBehaviorTest {
         )
 
         val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(RecordingSelectable())
-            .queryList<PagedClauseStubRow>(wrapper)
+            .toList<PagedClauseStubRow>(wrapper)
 
         assertEquals(2 to rows, result)
         assertEquals(
             listOf(
-                "SELECT COUNT(*) FROM (SELECT id FROM paged_clause_stub) AS total_count",
+                "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
                 "SELECT id FROM paged_clause_stub"
             ),
             wrapper.querySql
@@ -85,7 +88,7 @@ class PagedClauseBehaviorTest {
     }
 
     @Test
-    fun `selected queryList overload uses selected class metadata and hooks`() {
+    fun `selected toList overload uses selected class metadata and hooks`() {
         val rows = listOf(PagedClauseStubRow(1))
         val wrapper = RecordingWrapper(
             typedListResult = rows,
@@ -94,12 +97,12 @@ class PagedClauseBehaviorTest {
         val selectable = RecordingSelectable()
 
         val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(selectable)
-            .queryList(wrapper)
+            .toList(wrapper)
 
         assertEquals(1 to rows, result)
         assertEquals(
             listOf(
-                "SELECT COUNT(*) FROM (SELECT id FROM paged_clause_stub) AS total_count",
+                "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
                 "SELECT id FROM paged_clause_stub"
             ),
             wrapper.querySql
@@ -107,25 +110,32 @@ class PagedClauseBehaviorTest {
     }
 
     private class RecordingSelectable : KSelectable<PagedClauseStubRow>(
-        PagedClauseStubRow(),
-        PagedClauseStubRow::class
+        PagedClauseStubRow()
     ) {
+        override val selectedType = typeOf<PagedClauseStubRow>()
         val calls = mutableListOf<String>()
 
         override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
             calls += "build"
             return KronosAtomicQueryTask(
                 sql = "SELECT id FROM paged_clause_stub",
-                operationType = KOperationType.SELECT
+                operationType = KOperationType.SELECT,
+                targetType = typeOf<PagedClauseStubRow>()
             ).toKronosQueryTask()
         }
 
         override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
             calls += "count"
+            val statement = SqlQuery.Select(
+                select = listOf(SqlSelectItem.Expr(SqlExpr.Column(columnName = "id"))),
+                from = listOf(SqlTable.Ident("paged_clause_stub"))
+            )
             return KronosQueryTask(
                 KronosAtomicQueryTask(
                     sql = "SELECT id FROM paged_clause_stub",
-                    operationType = KOperationType.SELECT
+                    operationType = KOperationType.SELECT,
+                    statement = statement,
+                    targetType = typeOf<Int>()
                 )
             ).doBeforeQuery { "before" }
                 .doAfterQuery { _, _ -> "after" }
@@ -136,8 +146,8 @@ class PagedClauseBehaviorTest {
     }
 
     private class RecordingWrapper(
-        private val listResult: List<Map<String, Any>> = emptyList(),
-        private val typedListResult: List<Any> = emptyList(),
+        private val listResult: List<Any?> = emptyList(),
+        private val typedListResult: List<Any?> = emptyList(),
         private val objectResult: Any? = null
     ) : KronosDataSourceWrapper {
         val querySql = mutableListOf<String>()
@@ -145,29 +155,12 @@ class PagedClauseBehaviorTest {
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
 
-        override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+        override fun toList(task: KAtomicQueryTask): List<Any?> {
             querySql += task.sql
-            return listResult
+            return if (task.targetType == typeOf<Map<String, Any?>>()) listResult else typedListResult
         }
 
-        override fun forList(
-            task: KAtomicQueryTask,
-            kClass: KClass<*>,
-            isKPojo: Boolean,
-            superTypes: List<String>
-        ): List<Any> {
-            querySql += task.sql
-            return typedListResult
-        }
-
-        override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-        override fun forObject(
-            task: KAtomicQueryTask,
-            kClass: KClass<*>,
-            isKPojo: Boolean,
-            superTypes: List<String>
-        ): Any? {
+        override fun first(task: KAtomicQueryTask): Any? {
             querySql += task.sql
             return objectResult
         }

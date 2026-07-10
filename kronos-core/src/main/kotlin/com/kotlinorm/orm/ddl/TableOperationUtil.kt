@@ -26,6 +26,7 @@ import com.kotlinorm.database.SqlManager.statementsOf
 import com.kotlinorm.database.sameDefinitionAs
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import kotlin.reflect.typeOf
 
 
 /**
@@ -35,39 +36,38 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
  * @param tableName String 表名。
  * @return Boolean 表示表是否存在的布尔值。
  */
-fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper): Boolean = (dataSource.forObject(
-    metadataTask(dataSource, tableName, statementsOf(dataSource.dbType).tableExists()),
-    Int::class,
-    false,
-    []
-) as Int) > 0
+fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper): Boolean =
+    (dataSource.first(metadataTask(dataSource, tableName, statementsOf(dataSource.dbType).tableExists(), typeOf<Int>()))
+        as Int) > 0
 
 fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): String {
     val statement = statementsOf(dataSource.dbType).tableComment() ?: return ""
-    return dataSource.forObject(
-        metadataTask(dataSource, tableName, statement),
-        String::class,
-        false,
-        []
-    ) as String? ?: ""
+    return dataSource.first(metadataTask(dataSource, tableName, statement, typeOf<String?>())) as String? ?: ""
 }
 
 fun queryTableColumns(tableName: String, dataSource: KronosDataSourceWrapper): List<Field> {
     val statements = statementsOf(dataSource.dbType)
-    val rows = dataSource.forList(metadataTask(dataSource, tableName, statements.tableColumns(tableName)))
+    @Suppress("UNCHECKED_CAST")
+    val rows = dataSource.toList(
+        metadataTask(dataSource, tableName, statements.tableColumns(tableName), typeOf<Map<String, Any?>>())
+    ) as List<Map<String, Any>>
     return statements.mapColumns(tableName, rows)
 }
 
 fun queryTableIndexes(tableName: String, dataSource: KronosDataSourceWrapper): List<KTableIndex> {
     val statements = statementsOf(dataSource.dbType)
-    val rows = dataSource.forList(metadataTask(dataSource, tableName, statements.tableIndexes(tableName)))
+    @Suppress("UNCHECKED_CAST")
+    val rows = dataSource.toList(
+        metadataTask(dataSource, tableName, statements.tableIndexes(tableName), typeOf<Map<String, Any?>>())
+    ) as List<Map<String, Any>>
     return statements.mapIndexes(tableName, rows)
 }
 
 private fun metadataTask(
     dataSource: KronosDataSourceWrapper,
     tableName: String,
-    statement: com.kotlinorm.syntax.statement.SqlQuery
+    statement: com.kotlinorm.syntax.statement.SqlQuery,
+    targetType: kotlin.reflect.KType = typeOf<Map<String, Any?>>()
 ): KronosAtomicQueryTask {
     val statements = statementsOf(dataSource.dbType)
     val rendered = renderStatement(
@@ -78,7 +78,7 @@ private fun metadataTask(
             "dbName" to statements.databaseName(dataSource)
         )
     )
-    return KronosAtomicQueryTask(rendered.sql, rendered.parameters, statement = statement)
+    return KronosAtomicQueryTask(rendered.sql, rendered.parameters, statement = statement, targetType = targetType)
 }
 
 

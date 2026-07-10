@@ -3,12 +3,12 @@
 
 ## 用多组参数执行同一条 SQL
 
-同一条 SQL 需要写入多行时，使用 `SqlHandler.batchExecute`。它会创建 `KronosAtomicBatchTask`，并调用当前 `KronosDataSourceWrapper.batchUpdate(...)`。
+同一条 SQL 需要写入多行时，使用 `SqlExecutor.batchExecute`。它会创建 `KronosAtomicBatchTask`，并调用当前 `KronosDataSourceWrapper.batchUpdate(...)`。
 
 ```kotlin group="Batch execute" name="kotlin" icon="kotlin"
-import com.kotlinorm.database.SqlHandler
+import com.kotlinorm.database.SqlExecutor
 
-val affectedRows: IntArray = with(SqlHandler) {
+val affectedRows: IntArray = with(SqlExecutor) {
     wrapper.batchExecute(
         "UPDATE user SET name = :name WHERE id = :id",
         arrayOf(
@@ -74,7 +74,7 @@ jdbcParams.map { it.toList() } == listOf(
 批量插入使用同样的批量任务形态。保持固定列列表，并为每行传入一个参数 map。
 
 ```kotlin group="Batch insert" name="kotlin" icon="kotlin"
-with(SqlHandler) {
+with(SqlExecutor) {
     wrapper.batchExecute(
         "INSERT INTO user (name, age) VALUES (:name, :age)",
         arrayOf(

@@ -22,6 +22,7 @@ import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
@@ -34,13 +35,14 @@ import java.sql.SQLXML
 import java.sql.Types
 import kotlin.jvm.javaObjectType
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 fun interface KronosColumnMapper {
     fun map(
         resultSet: ResultSet,
         position: Int,
-        targetType: KClass<*>,
-        superTypes: List<String>,
+        targetType: KType,
         context: KronosStatementContext
     ): Any?
 }
@@ -66,12 +68,13 @@ class KronosColumnMapperRegistry private constructor(
     fun map(
         resultSet: ResultSet,
         position: Int,
-        targetType: KClass<*>,
-        superTypes: List<String>,
+        targetType: KType,
         context: KronosStatementContext
     ): Any? {
-        val mapper = mappers[targetType] ?: mappers[Any::class] ?: defaultMapper
-        return mapper.map(resultSet, position, targetType, superTypes, context)
+        val targetClass = targetType.classifierClass()
+            ?: error("Unsupported column target type: $targetType")
+        val mapper = mappers[targetClass] ?: mappers[Any::class] ?: defaultMapper
+        return mapper.map(resultSet, position, targetType, context)
     }
 
     fun readJdbcValue(resultSet: ResultSet, position: Int, context: KronosStatementContext): Any? {
@@ -100,30 +103,30 @@ class KronosColumnMapperRegistry private constructor(
             }, prepend = false)
         }
 
-        private val defaultMapper = KronosColumnMapper { resultSet, position, targetType, superTypes, context ->
-            if (targetType == Any::class) {
+        private val defaultMapper = KronosColumnMapper { resultSet, position, targetType, context ->
+            val targetClass = targetType.classifierClass()
+                ?: error("Unsupported column target type: $targetType")
+            if (targetClass == Any::class) {
                 context.config.columnMappers.readJdbcValue(resultSet, position, context)
-            } else if (targetType == Boolean::class) {
+            } else if (targetClass == Boolean::class) {
                 val value = context.oracleNumberValueForBoolean(resultSet, position)
                     ?: context.config.columnMappers.readJdbcValue(resultSet, position, context)
                 value?.let {
                     getTypeSafeValue(
-                        targetType.qualifiedName ?: targetType.java.name,
+                        targetType,
                         it,
-                        superTypes,
-                        kClassOfVal = it::class
+                        sourceValueClass = it::class
                     )
                 }
             } else if (strictSetValue) {
-                resultSet.getObject(position, javaTypeOf(targetType))
+                resultSet.getObject(position, javaTypeOf(targetClass))
             } else {
                 val value = context.config.columnMappers.readJdbcValue(resultSet, position, context)
                 value?.let {
                     getTypeSafeValue(
-                        targetType.qualifiedName ?: targetType.java.name,
+                        targetType,
                         it,
-                        superTypes,
-                        kClassOfVal = it::class
+                        sourceValueClass = it::class
                     )
                 }
             }
@@ -160,40 +163,58 @@ class KronosColumnMapperRegistry private constructor(
 }
 
 internal object KronosResultMappers {
-    @Suppress("UNCHECKED_CAST")
-    fun toMapList(resultSet: ResultSet, context: KronosStatementContext): List<Map<String, Any>> =
+    fun toList(
+        resultSet: ResultSet,
+        task: KAtomicQueryTask,
+        context: KronosStatementContext
+    ): List<Any?> {
+        return toList(resultSet, task.targetType, context)
+    }
+
+    fun toList(
+        resultSet: ResultSet,
+        targetType: KType,
+        context: KronosStatementContext
+    ): List<Any?> =
+        when (val mapping = targetType.mapping()) {
+            ResultMapping.Map -> toMapList(resultSet, context)
+            is ResultMapping.KPojoResult -> toKPojoList(resultSet, mapping.targetType, context)
+            is ResultMapping.Scalar -> toObjectList(resultSet, mapping.targetType, context)
+        }
+
+    fun toMapList(resultSet: ResultSet, context: KronosStatementContext): List<Map<String, Any?>> =
         mapRows(resultSet, context) { row ->
             val metaData = resultSet.metaData
             val values = linkedMapOf<String, Any?>()
             for (position in 1..metaData.columnCount) {
                 if (position !in row.skipColumns) {
                     values[metaData.getColumnLabel(position)] =
-                        context.config.columnMappers.map(resultSet, position, Any::class, emptyList(), context)
+                        context.config.columnMappers.map(resultSet, position, typeOf<Any?>(), context)
                 }
             }
             row.overrideValues.forEach { (position, value) ->
                 values[metaData.getColumnLabel(position)] = value
             }
-            values as Map<String, Any>
+            values
         }
 
-    @Suppress("UNCHECKED_CAST")
     fun toObjectList(
         resultSet: ResultSet,
-        kClass: KClass<*>,
-        superTypes: List<String>,
+        targetType: KType,
         context: KronosStatementContext
-    ): List<Any> =
+    ): List<Any?> =
         mapRows(resultSet, context) {
-            context.config.columnMappers.map(resultSet, 1, kClass, superTypes, context)
-        } as List<Any>
+            context.config.columnMappers.map(resultSet, 1, targetType, context)
+        }
 
     @Suppress("UNCHECKED_CAST")
     fun toKPojoList(
         resultSet: ResultSet,
-        kClass: KClass<out KPojo>,
+        targetType: KType,
         context: KronosStatementContext
     ): List<KPojo> {
+        val kClass = targetType.classifierClass() as? KClass<out KPojo>
+            ?: error("Unsupported KPojo query result type: $targetType")
         val columns = fieldsMapCache[kClass as KClass<KPojo>]
             ?: throw UnsupportedTypeException("Cannot find fields in ${kClass.simpleName}")
         return mapRows(resultSet, context) { row ->
@@ -218,12 +239,11 @@ internal object KronosResultMappers {
                 } else if (position in row.skipColumns) {
                     continue
                 } else {
-                    val targetType = field.kClass ?: Any::class
+                    val targetType = field.kType ?: typeOf<Any?>()
                     val jdbcValue = context.config.columnMappers.map(
                         resultSet,
                         position,
                         targetType,
-                        targetType.localSuperTypes(),
                         context
                     )
                     if (field.serializable && jdbcValue != null) {
@@ -260,7 +280,7 @@ internal object KronosResultMappers {
     ): RowReadState {
         if (longColumns.isEmpty()) return RowReadState()
         val longValues = longColumns.associateWith {
-            context.config.columnMappers.map(resultSet, it, Any::class, emptyList(), context)
+            context.config.columnMappers.map(resultSet, it, typeOf<Any?>(), context)
         }
         return RowReadState(skipColumns = longColumns, overrideValues = longValues)
     }
@@ -287,16 +307,31 @@ internal object KronosResultMappers {
     )
 }
 
-private fun KClass<*>.localSuperTypes(): List<String> {
-    val result = linkedSetOf<String>()
-    fun collect(type: Class<*>) {
-        type.genericSuperclass?.typeName?.let(result::add)
-        type.interfaces.forEach {
-            result += it.name
-            collect(it)
-        }
-        type.superclass?.takeIf { it != Any::class.java }?.let(::collect)
+private fun KType.classifierClass(): KClass<*>? = classifier as? KClass<*>
+
+private fun KType.isStringKeyMap(): Boolean {
+    val kClass = classifierClass() ?: return false
+    if (kClass != Map::class && kClass != MutableMap::class) return false
+    val keyType = arguments.firstOrNull()?.type ?: return true
+    return keyType.classifierClass() == String::class
+}
+
+private fun KType.mapping(): ResultMapping {
+    if (isStringKeyMap()) return ResultMapping.Map
+    val targetClass = classifierClass() ?: error("Unsupported query result type: $this")
+    if (targetClass.isKPojoType()) {
+        return ResultMapping.KPojoResult(this)
     }
-    collect(java)
-    return result.toList()
+    return ResultMapping.Scalar(this)
+}
+
+private fun KClass<*>.isKPojoType(): Boolean =
+    this == KPojo::class || supertypes.any { superType ->
+        (superType.classifier as? KClass<*>)?.isKPojoType() == true
+    }
+
+private sealed interface ResultMapping {
+    data object Map : ResultMapping
+    data class KPojoResult(val targetType: KType) : ResultMapping
+    data class Scalar(val targetType: KType) : ResultMapping
 }

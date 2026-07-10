@@ -16,7 +16,7 @@ val users = User()
     .select { [it.id, it.name, it.age] }
     .where { it.age >= 18 }
     .orderBy { [it.age.desc(), it.name.asc()] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Sort 1" name="Mysql" icon="mysql"
@@ -32,7 +32,7 @@ When no direction helper is used, the field sorts ascending.
 User()
     .select()
     .orderBy { it.id }
-    .queryList()
+    .toList()
 ```
 
 ## Sort by selected aliases
@@ -43,7 +43,7 @@ User()
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
     .orderBy { it.nameLength.desc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Alias sort" name="Mysql" icon="mysql"
@@ -73,7 +73,7 @@ val rows = Order()
         ]
     }
     .orderBy { it.rn.asc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Window sort" name="Mysql" icon="mysql"
@@ -95,7 +95,7 @@ val users = User()
     .select()
     .orderBy { it.id.asc() }
     .limit(10)
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Limit" name="Mysql" icon="mysql"
@@ -105,7 +105,7 @@ ORDER BY `id` ASC
 LIMIT 10
 ```
 
-`queryOne()` and `queryMap()` also apply a single-row limit for single-row results.
+`first()` and `toMap()` also apply a single-row limit for single-row results.
 
 ## Page rows with total count
 
@@ -118,7 +118,7 @@ val (total, rows): Pair<Int, List<User>> = User()
     .orderBy { it.id.asc() }
     .page(2, 20)
     .withTotal()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Page 1" name="Mysql page" icon="mysql"
@@ -162,7 +162,7 @@ val rows = User()
             f.max(it.score).alias("scoreMax")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Aggregate" name="Mysql" icon="mysql"
@@ -200,7 +200,7 @@ val rows = User()
     .groupBy { it.gender }
     .having { f.count(1) > 5 && f.avg(it.score) > 50 }
     .orderBy { it.scoreAvg.desc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Group having 1" name="Mysql" icon="mysql"
@@ -228,7 +228,7 @@ Use `[]` for multiple group keys.
 User()
     .select { [it.gender, it.age, f.count(1).alias("count")] }
     .groupBy { [it.gender, it.age] }
-    .query()
+    .toMapList()
 ```
 
 ## Use the same APIs after joins
@@ -248,7 +248,7 @@ val rows = User().join(Order()) { user, order ->
     having { f.count(order.id) > 0 }
     orderBy { user.id.asc() }
     page(1, 20)
-}.withTotal().query()
+}.withTotal().toMapList()
 ```
 
 ```sql group="Join aggregate" name="Mysql" icon="mysql"

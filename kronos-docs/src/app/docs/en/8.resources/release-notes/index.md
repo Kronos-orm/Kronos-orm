@@ -7,6 +7,62 @@
 
 ## Update Logs
 
+### 0.2.0
+
+> **Warning**
+> `0.2.0` contains source- and binary-incompatible public API changes. Recompile the project after upgrading and update call sites and custom integrations as described below.
+
+#### Breaking API changes
+
+Query terminal operations now use collection-conversion and single-row terminology consistently:
+
+| `0.1.x` | `0.2.0` |
+| --- | --- |
+| `query()` | `toMapList()` / `toList<Map<String, Any?>>()` |
+| `queryList<T>()` | `toList<T>()` |
+| `queryMap()` | `toMap()` / `first<Map<String, Any?>>()` |
+| `queryMapOrNull()` | `toMapOrNull()` / `firstOrNull<Map<String, Any?>>()` / `first<Map<String, Any?>?>()` |
+| `queryOne<T>()` | `first<T>()` |
+| `queryOneOrNull<T>()` | `firstOrNull<T>()` / `first<T?>()` |
+| `PagedClause.query()` | `PagedClause.toMapList()` |
+| `PagedClause.queryList()` | `PagedClause.toList()` |
+
+`toMapList()`, `toMap()`, and `toMapOrNull()` are convenience methods for the corresponding generic forms; in general, `firstOrNull<T>()` is also equivalent to `first<T?>()`. Map query results now use `Map<String, Any?>`, preserving selected SQL `NULL` values. `QueryType` is reduced to `ToMapList`, `ToList`, `ToMap`, and `First`; projects that inspect query events must update their enum branches. Raw SQL extensions now come from `com.kotlinorm.database.SqlExecutor`, and the former `SqlHandler` object has been removed.
+
+The built-in JDBC wrapper is now consistently exposed as `KronosJdbcWrapper`. Projects upgrading from older releases that still use the legacy `KronosBasicWrapper` must update both the class and package name:
+
+```kotlin
+// Legacy API
+import com.kotlinorm.KronosBasicWrapper
+val wrapper = KronosBasicWrapper(dataSource)
+
+// 0.2.0
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+val wrapper = KronosJdbcWrapper(dataSource)
+```
+
+Custom `KronosDataSourceWrapper` implementations must replace `forList`, `forMap`, and `forObject` with the following two query entry points. Read the result mapping target from `task.targetType`:
+
+```kotlin
+override fun toList(task: KAtomicQueryTask): List<Any?>
+override fun first(task: KAtomicQueryTask): Any?
+```
+
+Query tasks and the conversion pipeline now carry complete Kotlin `KType` metadata:
+
+- `KAtomicQueryTask` requires `targetType: KType`; direct `KronosAtomicQueryTask` construction must provide `typeOf<T>()`.
+- `KronosSerializeProcessor` now defines `serialize(obj, kType)` and `deserialize(serializedStr, kType)`. The untyped serializer and the `KClass` deserializer have been removed.
+- `ValueTransformer`, `TransformerManager.getValueTransformed`, `getTypeSafeValue`, `getSafeValue`, and `TransformerSafeValue` now accept `KType`. String type names and `superTypes` have been removed, and the runtime value class parameter is consistently named `sourceValueClass`.
+- The `Field` constructor replaces `cascadeIsCollectionOrArray`, `kClass`, and `superTypes` parameters with `kType`; `kClass`, `elementKType`, and `cascadeIsCollectionOrArray` are now derived lazily from the declaration type.
+
+#### Features and fixes
+
+- ✨ Preserve complete Kotlin `KType` metadata across fields, query tasks, serializers, and value transformers, including nested generic collections such as `List<List<String>>` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 Fix Kotlinx Serialization deserialization for generic collection and data-class fields, and preserve selected `null` values in map and scalar query results ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 Fix generated projection types for `select { it }`, `select { [it] }`, KPojo-minus projections, and mixed full-row plus alias projections across collection literals, `listOf`, `arrayOf`, `mutableListOf`, and `setOf` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 Fix SQLite UNION rendering, SQLite schema synchronization, default string values, and other ORM edge cases found by expanded compiler, core, and integration tests ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 💪 Expand projection, serialization, nullable-result, schema-sync, and cross-database regression coverage; update the README, user docs, AI skill guide, Gradle plugin, and IDEA plugin for `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+
 ### 0.1.2
 
 - 🐛 Fix `syncTable()` schema diffing for custom string primary keys so database metadata primary keys and KPojo `@PrimaryKey(custom = true)` definitions are treated as the same database primary-key mode ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))

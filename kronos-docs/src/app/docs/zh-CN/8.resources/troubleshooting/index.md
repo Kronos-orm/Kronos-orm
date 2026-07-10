@@ -61,7 +61,7 @@ tb_user
 ```kotlin group="Projection 1" name="alias" icon="kotlin"
 User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
-    .queryList()
+    .toList()
 ```
 
 标量子查询作为值使用时，选择一个字段并使用 `limit(1)`。
@@ -78,7 +78,7 @@ User()
                 .alias("lastAmount")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 `KRONOS_SELECT_ITEM_REQUIRES_ALIAS`、`KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT` 和 `KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN` 这些诊断码见 {{ $.keyword("configuration/compiler-plugins", ["修复常见诊断"]) }}。查询形态示例见 {{ $.keyword("query/projection", ["投影"]) }} 和 {{ $.keyword("query/subqueries", ["子查询"]) }}。
@@ -92,7 +92,7 @@ val wrapper = KronosJdbcWrapper(dataSource)
 
 Kronos.dataSource = { wrapper }
 
-val users = User().select().queryList()
+val users = User().select().toList()
 ```
 
 某次操作需要指定数据源时，可以直接通过 wrapper 执行。
@@ -100,7 +100,7 @@ val users = User().select().queryList()
 ```kotlin group="DataSource 2" name="wrapper" icon="kotlin"
 val users = User()
     .select()
-    .queryList(wrapper)
+    .toList(wrapper)
 ```
 
 ## 方言输出与预期不同

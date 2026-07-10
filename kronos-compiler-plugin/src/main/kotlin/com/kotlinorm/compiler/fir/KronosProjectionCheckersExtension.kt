@@ -16,19 +16,15 @@
 
 package com.kotlinorm.compiler.fir
 
-import com.kotlinorm.compiler.utils.CascadeAnnotationClassId
 import com.kotlinorm.compiler.utils.CompareToFunctionName
 import com.kotlinorm.compiler.utils.ContainsFunctionName
 import com.kotlinorm.compiler.utils.EqualsFunctionName
 import com.kotlinorm.compiler.utils.GeneratedProjectionFieldIdentifierRegex
-import com.kotlinorm.compiler.utils.IgnoreAnnotationClassId
 import com.kotlinorm.compiler.utils.InsertClauseClassId
 import com.kotlinorm.compiler.utils.InsertFunctionName
-import com.kotlinorm.compiler.utils.KPojoClassId
 import com.kotlinorm.compiler.utils.KSelectableClassId
 import com.kotlinorm.compiler.utils.PlainAggregateFunctionNames
 import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationClassId
-import com.kotlinorm.compiler.utils.SerializeAnnotationClassId
 import com.kotlinorm.compiler.utils.SelectAliasFunctionName
 import com.kotlinorm.compiler.utils.SelectAliasFunctionNameIdentifier
 import com.kotlinorm.compiler.utils.SelectClauseClassId
@@ -51,7 +47,6 @@ import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.getAnnotationByClassId
 import org.jetbrains.kotlin.fir.declarations.getBooleanArgument
-import org.jetbrains.kotlin.fir.declarations.hasAnnotation
 import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
 import org.jetbrains.kotlin.fir.expressions.FirAnonymousFunctionExpression
 import org.jetbrains.kotlin.fir.expressions.FirBlock
@@ -131,31 +126,40 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     private fun checkSelectProjection(expression: FirFunctionCall) {
         val lambda = expression.argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return
         val returned = lambda.anonymousFunction.body?.lastExpression()?.projectionExpression() ?: return
-        val items = returned.projectionItems(includeSingle = true)
+        val items = returned.projectionItems()
         if (items.isEmpty()) return
-        val sourceFieldNames = expression.selectSourceType()?.sourceFieldNames().orEmpty()
+        val sourceType = expression.selectSourceType()
+        val sourceFieldNames = sourceType?.sourceFieldNames().orEmpty()
+        val sourceValueNames = lambda.anonymousFunction.valueParameters.mapTo(linkedSetOf()) { it.name }.apply {
+            add(Name.identifier("it"))
+        }
 
         val seenNames = linkedSetOf<String>()
         items.forEach { item ->
             if (item.hasResolutionError()) return@forEach
-            when (val result = item.projectionNameOrDiagnostic()) {
-                ProjectionItemResult.RequiresAlias -> reporter.reportOn(
-                    item.source,
-                    KronosProjectionDiagnostics.SELECT_ITEM_REQUIRES_ALIAS
-                )
+            item.projectionNamesOrDiagnostic(sourceType, sourceFieldNames, sourceValueNames).forEach { result ->
+                when (result) {
+                    ProjectionItemResult.RequiresAlias -> reporter.reportOn(
+                        item.source,
+                        KronosProjectionDiagnostics.SELECT_ITEM_REQUIRES_ALIAS
+                    )
 
-                is ProjectionItemResult.Named -> {
-                    if (!seenNames.add(result.name.asString())) {
-                        reporter.reportOn(
-                            item.source,
-                            KronosProjectionDiagnostics.DUPLICATE_PROJECTION_FIELD
-                        )
-                    }
-                    if (result.origin == ProjectionItemOrigin.ExplicitAlias && result.name.asString() in sourceFieldNames) {
-                        reporter.reportOn(
-                            item.source,
-                            KronosProjectionDiagnostics.SELECTED_FIELD_CONFLICTS_WITH_SOURCE
-                        )
+                    is ProjectionItemResult.Named -> {
+                        if (!seenNames.add(result.name.asString())) {
+                            reporter.reportOn(
+                                item.source,
+                                KronosProjectionDiagnostics.DUPLICATE_PROJECTION_FIELD
+                            )
+                        }
+                        if (
+                            result.origin == ProjectionItemOrigin.ExplicitAlias &&
+                            result.name.asString() in sourceFieldNames
+                        ) {
+                            reporter.reportOn(
+                                item.source,
+                                KronosProjectionDiagnostics.SELECTED_FIELD_CONFLICTS_WITH_SOURCE
+                            )
+                        }
                     }
                 }
             }
@@ -248,14 +252,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
 
     context(context: CheckerContext)
     private fun FirProperty.isTargetInsertableColumn(): Boolean {
-        if (hasAnnotation(IgnoreAnnotationClassId, context.session)) return false
-        if (hasAnnotation(CascadeAnnotationClassId, context.session)) return false
-        if (hasAnnotation(SerializeAnnotationClassId, context.session)) return !isIdentityPrimaryKey()
-        val propertyType = (returnTypeRef as? FirResolvedTypeRef)?.coneType ?: return false
-        if (propertyType.isKPojoLikeType()) return false
-        if (propertyType.typeArguments.any { (it as? ConeKotlinTypeProjection)?.type?.isKPojoLikeType() == true }) {
-            return false
-        }
+        if (!isKronosColumn(context.session)) return false
         return !isIdentityPrimaryKey()
     }
 
@@ -263,16 +260,6 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     private fun FirProperty.isIdentityPrimaryKey(): Boolean {
         val primaryKey = getAnnotationByClassId(PrimaryKeyAnnotationClassId, context.session) ?: return false
         return primaryKey.getBooleanArgument(PrimaryKeyIdentityArgumentName) == true
-    }
-
-    context(context: CheckerContext)
-    private fun ConeKotlinType.isKPojoLikeType(): Boolean {
-        val classLike = this as? ConeClassLikeType ?: return false
-        if (classLike.lookupTag.classId == KPojoClassId) return true
-        val symbol = classLike.toClassSymbol(context.session) ?: return false
-        return symbol.fir.superTypeRefs.any { ref ->
-            ((ref as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType)?.lookupTag?.classId == KPojoClassId
-        }
     }
 
     context(context: CheckerContext)
@@ -379,7 +366,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     private fun FirFunctionCall.selectProjectionItems(): List<FirStatement>? {
         val lambda = argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return null
         val returned = lambda.anonymousFunction.body?.lastExpression()?.projectionExpression() ?: return null
-        return returned.projectionItems(includeSingle = true)
+        return returned.projectionItems()
     }
 
     private fun FirStatement.containsPlainAggregateCall(): Boolean {
@@ -438,8 +425,8 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         val classSymbol = toClassSymbol(context.session) ?: return emptySet()
         val names = linkedSetOf<String>()
         classSymbol.processAllDeclarations(context.session, FirResolvePhase.STATUS) { symbol ->
-            val property = symbol as? FirPropertySymbol ?: return@processAllDeclarations
-            names += property.name.asString()
+            val property = (symbol as? FirPropertySymbol)?.fir ?: return@processAllDeclarations
+            if (property.isKronosColumn(context.session)) names += property.name.asString()
         }
         return names
     }
@@ -448,28 +435,74 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         return projectionStatementOrNull() ?: this
     }
 
-    private fun FirStatement.projectionNameOrDiagnostic(): ProjectionItemResult {
-        val statement = projectionStatementOrNull() ?: return ProjectionItemResult.RequiresAlias
+    context(context: CheckerContext)
+    private fun FirStatement.projectionNamesOrDiagnostic(
+        sourceType: ConeKotlinType?,
+        sourceFieldNames: Set<String>,
+        sourceValueNames: Set<Name>
+    ): List<ProjectionItemResult> {
+        val statement = projectionStatementOrNull() ?: return listOf(ProjectionItemResult.RequiresAlias)
 
         val propertyAccess = statement as? FirPropertyAccessExpression
         if (propertyAccess != null) {
-            return ProjectionItemResult.Named(propertyAccess.calleeReference.name, ProjectionItemOrigin.SourceField)
+            if (
+                sourceType != null && propertyAccess.isProjectionSourceValueAccess(
+                    sourceType,
+                    sourceValueNames,
+                    propertyAccess.safeResolvedType()
+                )
+            ) {
+                return sourceFieldNames.map { fieldName ->
+                    ProjectionItemResult.Named(Name.identifier(fieldName), ProjectionItemOrigin.SourceField)
+                }
+            }
+            return listOf(
+                ProjectionItemResult.Named(propertyAccess.calleeReference.name, ProjectionItemOrigin.SourceField)
+            )
         }
 
         val call = statement as? FirFunctionCall
+        if (call != null && sourceType != null) {
+            call.sourceMinusExcludedNames(sourceType, sourceFieldNames, sourceValueNames)?.let { excludedNames ->
+                return sourceFieldNames
+                    .filterNot { it in excludedNames }
+                    .map { fieldName ->
+                        ProjectionItemResult.Named(Name.identifier(fieldName), ProjectionItemOrigin.SourceField)
+                    }
+            }
+        }
         if (call != null && call.calleeReference.name.asString() == SelectAliasFunctionName) {
             val alias = call.argumentList.arguments.firstOrNull()?.stringLiteralValue()
             if (alias != null && GeneratedProjectionFieldIdentifierRegex.matches(alias)) {
-                return ProjectionItemResult.Named(Name.identifier(alias), ProjectionItemOrigin.ExplicitAlias)
+                return listOf(ProjectionItemResult.Named(Name.identifier(alias), ProjectionItemOrigin.ExplicitAlias))
             }
         }
 
         val aliasLiteral = stringLiteralValue()
         if (aliasLiteral != null && GeneratedProjectionFieldIdentifierRegex.matches(aliasLiteral)) {
-            return ProjectionItemResult.Named(Name.identifier(aliasLiteral), ProjectionItemOrigin.ExplicitAlias)
+            return listOf(
+                ProjectionItemResult.Named(Name.identifier(aliasLiteral), ProjectionItemOrigin.ExplicitAlias)
+            )
         }
 
-        return ProjectionItemResult.RequiresAlias
+        return listOf(ProjectionItemResult.RequiresAlias)
+    }
+
+    context(context: CheckerContext)
+    private fun FirFunctionCall.sourceMinusExcludedNames(
+        sourceType: ConeKotlinType,
+        sourceFieldNames: Set<String>,
+        sourceValueNames: Set<Name>
+    ): Set<String>? {
+        if (calleeReference.name.asString() != "minus") return null
+        val receiver = extensionReceiver as? FirStatement ?: return null
+        val sourceAccess = receiver.projectionStatementOrNull() as? FirPropertyAccessExpression ?: return null
+        if (!sourceAccess.isProjectionSourceValueAccess(sourceType, sourceValueNames, sourceAccess.safeResolvedType())) {
+            return null
+        }
+        return argumentList.arguments.flatMapTo(linkedSetOf()) { argument ->
+            argument.excludedProjectionSourceFieldNames(sourceFieldNames)
+        }
     }
 
     private fun FirStatement.intLiteralValue(): Int? {

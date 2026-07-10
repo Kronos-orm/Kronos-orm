@@ -8,7 +8,7 @@
 Kronos enables the cascading query function by default and needs to be explicitly disabled in the `select` function:
 
 ```kotlin
-KPojo.select().cascade(enabled = false).queryList()
+KPojo.select().cascade(enabled = false).toList()
 ```
 
 ### Partially enable cascading queries
@@ -16,7 +16,7 @@ KPojo.select().cascade(enabled = false).queryList()
 When there are multiple cascade declarations in KPojo, but only some of them need cascade query, you can pass the attributes that need cascade query into the `cascade` function, and the remaining attributes and sub-attributes will not trigger cascade query.
 ```kotlin
 // If only property1 and property2 in KPojo need to be cascade queried:
-KPojo.select().cascade { [KPojo::property1, KPojo::property2] }.queryList()
+KPojo.select().cascade { [KPojo::property1, KPojo::property2] }.toList()
 ```
 
 You can limit the cascade query of its sub-attributes as follows:
@@ -31,7 +31,7 @@ KPojo.select()
             Property1::subProperty2
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ### {{ $.annotation("Ignore") }} Declare a field skipped by cascade select
@@ -55,7 +55,7 @@ data class Employee(
     var company: Company? = null
 ) : KPojo
 
-Employee().select().queryList()
+Employee().select().toList()
 ```
 
 ```text group="Cascade select ignore" name="result"
@@ -68,9 +68,9 @@ For all `IgnoreAction` values, see {{ $.keyword("mapping/annotations", ["annotat
 ## Cascading queries
 
 After the cascade relationship is defined, use:
-1. {{$.keyword("query/select", ["queryList: query the specified type list"])}}
-2. {{$.keyword("query/select", ["queryOne: query a single record"])}}
-3. {{$.keyword("query/select", ["queryOneOrNull: query a single record (optional)"])}}
+1. {{$.keyword("query/select", ["toList: query the specified type list"])}}
+2. {{$.keyword("query/select", ["first: query a single record"])}}
+3. {{$.keyword("query/select", ["firstOrNull: query a single record (optional)"])}}
 
 When you use the above three methods to query data, we will automatically perform logical queries for you based on the cascade relationship. For details, see: {{ $.keyword("advanced/cascade", ["cascade relationship definition"]) }}.
 

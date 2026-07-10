@@ -44,23 +44,10 @@ class GeneratedFunctionAliasWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
+    override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): List<Any> = emptyList()
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): Any {
+    override fun first(task: KAtomicQueryTask): Any? {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return null
         mappedClasses += kClass
         return mapOf("id" to 9, "nameLength" to 4).mapperTo(kClass as KClass<out KPojo>)
     }
@@ -82,7 +69,7 @@ fun box(): String {
 
     val row = GeneratedFunctionAliasUser()
         .select { [it.id, f.length(it.username).alias("nameLength")] }
-        .queryOne(wrapper)
+        .first(wrapper)
     val fieldNames = row.kronosColumns().map { it.name }.toSet()
 
     val failures = listOfNotNull(
@@ -102,4 +89,3 @@ fun box(): String {
 
 inline fun expectGeneratedFunctionAlias(condition: Boolean, message: () -> String): String? =
     if (condition) null else "Fail: ${message()}"
-

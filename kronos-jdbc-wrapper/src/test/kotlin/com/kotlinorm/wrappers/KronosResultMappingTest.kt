@@ -27,6 +27,7 @@ import java.sql.ResultSetMetaData
 import java.sql.Types
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.reflect.typeOf
 
 class KronosResultMappingTest {
     @Test
@@ -51,7 +52,7 @@ class KronosResultMappingTest {
             config = KronosJdbcConfig(DBType.Oracle, "Oracle", "jdbc:oracle:thin:@localhost:1521/FREEPDB1", "Oracle JDBC")
         )
 
-        val value = context.config.columnMappers.map(resultSet, 1, Boolean::class, emptyList(), context)
+        val value = context.config.columnMappers.map(resultSet, 1, typeOf<Boolean>(), context)
 
         assertEquals(false, value)
         verify(exactly = 0) { resultSet.getObject(1) }

@@ -40,8 +40,9 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
+import kotlin.reflect.KType
 
-class DeleteClause<T : KPojo>(pojo: T) {
+class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
     internal val context = OrmContext(
         pojo = pojo,
         kClass = pojo.kClass(),
@@ -155,6 +156,7 @@ class DeleteClause<T : KPojo>(pojo: T) {
         return CascadeDeleteClause.build(
             context.cascadeEnabled,
             context.cascadeAllowed,
+            targetType,
             context.kClass,
             context.pojo,
             where,

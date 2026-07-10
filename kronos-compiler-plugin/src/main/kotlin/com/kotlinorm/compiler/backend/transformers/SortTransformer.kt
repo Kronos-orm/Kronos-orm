@@ -26,6 +26,7 @@ import com.kotlinorm.compiler.core.descMethodSymbol
 import com.kotlinorm.compiler.core.isColumnType
 import com.kotlinorm.compiler.core.isKSelectableType
 import com.kotlinorm.compiler.core.safeSelectableValueExpression
+import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
@@ -48,7 +49,6 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.properties
 
-private val SortCollectionFunctionNames = setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")
 private val SortDirectionFunctionNames = setOf("asc", "desc")
 
 /**
@@ -123,7 +123,7 @@ class SortTransformer(
     ): List<Pair<IrExpression, Boolean>> {
         val result = mutableListOf<Pair<IrExpression, Boolean>>()
         when {
-            expression is IrCall && expression.symbol.owner.name.asString() in SortCollectionFunctionNames -> {
+            expression is IrCall && expression.symbol.owner.name.asString() in DslCollectionFunctionNames -> {
                 expression.valueArguments.filterIsInstance<IrExpression>().forEach { arg ->
                     result += collectSortArgument(irFunction, arg)
                 }

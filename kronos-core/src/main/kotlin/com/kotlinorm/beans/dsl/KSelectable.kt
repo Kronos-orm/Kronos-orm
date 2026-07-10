@@ -24,12 +24,18 @@ import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.types.ToInsertSelect
 import com.kotlinorm.utils.createInstance
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 abstract class KSelectable<Selected : KPojo>(
-    internal open val pojo: KPojo,
-    internal open val selectedKClass: KClass<Selected>
+    internal open val pojo: KPojo
 ) {
+    @PublishedApi
+    internal abstract val selectedType: KType
+
+    @PublishedApi
+    internal open val nullableSelectedType: KType
+        get() = selectedType
+
     abstract fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask
 
     @PublishedApi

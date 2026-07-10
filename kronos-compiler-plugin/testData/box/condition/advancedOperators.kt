@@ -27,6 +27,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_condition_advanced")
 data class AdvancedConditionUser(
@@ -87,7 +88,7 @@ fun box(): String {
     val startsWith = customColumn.expr as? SqlExpr.Like
     val startsWithColumn = startsWith?.expr as? SqlExpr.Column
     if (startsWithColumn?.columnName != "user_name") return "Fail: columnName was ${startsWithColumn?.columnName}"
-    if (advancedParameterValue(customColumn, startsWith?.pattern) != TransformerSafeValue("A%", "kotlin.String")) {
+    if (advancedParameterValue(customColumn, startsWith?.pattern) != TransformerSafeValue("A%", typeOf<String>())) {
         return "Fail: startsWith value was ${advancedParameterValue(customColumn, startsWith?.pattern)}"
     }
 

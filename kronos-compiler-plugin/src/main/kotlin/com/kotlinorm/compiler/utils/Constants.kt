@@ -49,7 +49,7 @@ val SqlOrderingFqName = FqName("com.kotlinorm.syntax.order.SqlOrdering")
 
 val PairFqName = FqName("kotlin.Pair")
 val StringFqName = FqName("kotlin.String")
-val KotlinListOfFunctionName = Name.identifier("listOf")
+val DslCollectionFunctionNames = setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")
 val FunctionHandlerFqName = FqName("com.kotlinorm.functions.FunctionHandler")
 val KronosFunctionAnnotationFqName = FqName("com.kotlinorm.annotations.KronosFunction")
 
@@ -83,10 +83,10 @@ val GeneratedFactoryPackageFqName = FqName("com.kotlinorm.generated.factory")
 val GeneratedProjectionClassPrefix = "KronosSelectResult_"
 val GeneratedContextClassPrefix = "KronosSelectContext_"
 val GeneratedProjectionFieldIdentifierRegex = Regex("[A-Za-z_][A-Za-z0-9_]*")
-val QueryListFunctionName = "queryList"
-val QueryOneFunctionName = "queryOne"
-val QueryOneOrNullFunctionName = "queryOneOrNull"
-val SelectQueryFunctionNames = setOf(QueryListFunctionName, QueryOneFunctionName, QueryOneOrNullFunctionName)
+val ToListFunctionName = "toList"
+val FirstFunctionName = "first"
+val FirstOrNullFunctionName = "firstOrNull"
+val SelectQueryFunctionNames = setOf(ToListFunctionName, FirstFunctionName, FirstOrNullFunctionName)
 val CompareToFunctionName = Name.identifier("compareTo")
 val ContainsFunctionName = Name.identifier("contains")
 val EqualsFunctionName = Name.identifier("equals")
@@ -103,36 +103,6 @@ val SubqueryQuantifierFunctionNames = setOf(
 )
 val KPojoTableNamePropertyName = Name.identifier("__tableName")
 val KPojoTableCommentPropertyName = Name.identifier("__tableComment")
-val TypedQueryFunctionFqNames = setOf(
-    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryListFunctionName"),
-    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryOneFunctionName"),
-    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryOneOrNullFunctionName"),
-    FqName("com.kotlinorm.orm.select.SelectClause.$QueryListFunctionName"),
-    FqName("com.kotlinorm.orm.select.SelectClause.$QueryOneFunctionName"),
-    FqName("com.kotlinorm.orm.select.SelectClause.$QueryOneOrNullFunctionName"),
-    FqName("com.kotlinorm.database.SqlHandler.$QueryListFunctionName"),
-    FqName("com.kotlinorm.database.SqlHandler.$QueryOneFunctionName"),
-    FqName("com.kotlinorm.database.SqlHandler.$QueryOneOrNullFunctionName")
-)
-fun isSelectFromQueryFunctionFqName(fqName: String): Boolean {
-    val prefix = "com.kotlinorm.orm.join.SelectFrom"
-    if (!fqName.startsWith(prefix)) return false
-
-    val tail = fqName.removePrefix(prefix)
-    val separatorIndex = tail.indexOf('.')
-    if (separatorIndex <= 0) return false
-
-    val arity = tail.substring(0, separatorIndex)
-    if (arity.any { !it.isDigit() }) return false
-
-    return when (tail.substring(separatorIndex + 1)) {
-        QueryListFunctionName,
-        QueryOneFunctionName,
-        QueryOneOrNullFunctionName -> true
-        else -> false
-    }
-}
-
 // Enums
 val KColumnTypeFqName = FqName("com.kotlinorm.enums.KColumnType")
 

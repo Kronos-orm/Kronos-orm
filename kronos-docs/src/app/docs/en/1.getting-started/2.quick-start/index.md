@@ -148,7 +148,7 @@ fun main() {
     val director = Director(name = "Kronos")
         .select()
         .where()
-        .queryOne()
+        .first()
 }
 ```
 

@@ -18,8 +18,17 @@ package com.kotlinorm.orm.update
 
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
+@PublishedApi
+internal fun <T : KPojo> T.updateWithType(
+    targetType: KType,
+    fields: ToSelect<T, Any?> = null
+): UpdateClause<T> {
+    return UpdateClause(this, targetType, fields)
+}
 
-fun <T : KPojo> T.update(fields: ToSelect<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, fields)
+inline fun <reified T : KPojo> T.update(noinline fields: ToSelect<T, Any?> = null): UpdateClause<T> {
+    return updateWithType(typeOf<T>(), fields)
 }

@@ -43,8 +43,6 @@ data class ProjectionRow(
 
 data class ProjectionMappingCall(
     val kClass: KClass<*>,
-    val isKPojo: Boolean,
-    val superTypes: List<String>,
 )
 
 class ProjectionRecordingWrapper : KronosDataSourceWrapper {
@@ -53,24 +51,11 @@ class ProjectionRecordingWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     var objectCall: ProjectionMappingCall? = null
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
+    override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> = emptyList()
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? {
-        objectCall = ProjectionMappingCall(kClass, isKPojo, superTypes)
+    override fun first(task: KAtomicQueryTask): Any? {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return null
+        objectCall = ProjectionMappingCall(kClass)
         return ProjectionRow(7, "Projected")
     }
 
@@ -103,14 +88,13 @@ fun box(): String {
 
     val clause = buildProjection(ProjectionSource())
     val statement = clause.toSqlQuery(wrapper) as SqlQuery.Select
-    val row: ProjectionRow? = clause.queryOneOrNull(wrapper)
+    val row: ProjectionRow? = clause.firstOrNull(wrapper)
     val call = wrapper.objectCall
 
     val failures = listOfNotNull(
         expect(statement.select.size == 2) { "select size was ${statement.select.size}" },
         expect(row?.name == "Projected") { "projection row was $row" },
         expect(call?.kClass == ProjectionRow::class) { "mapping kClass was ${call?.kClass}" },
-        expect(call?.isKPojo == true) { "mapping isKPojo was ${call?.isKPojo}" },
     )
 
     return failures.firstOrNull() ?: "OK"

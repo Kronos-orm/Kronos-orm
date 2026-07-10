@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies join select generated projections flow into no-arg queryList/queryOne return types.
+// Verifies join select generated projections flow into no-arg toList/first return types.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -43,7 +43,7 @@ fun box(): String {
                 leftJoin(order) { user.id == order.userId }
             }
             .select { [it.id, it.name.alias("userName")] }
-            .queryList()
+            .toList()
         val id: Int? = rows.firstOrNull()?.id
         val userName: String? = rows.firstOrNull()?.userName
         if (id == -1 || userName == "unreachable") return "Fail: unreachable"

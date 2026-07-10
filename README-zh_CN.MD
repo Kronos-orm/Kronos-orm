@@ -37,7 +37,7 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.1.3--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.2.1--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -74,7 +74,7 @@ dataSource.table.createTable<User>()
 
 val id = User(username = "test", age = 18).insert().execute().lastInsertId
 
-val listOfUser = User().select().where { it.age == 18 }.queryList()
+val listOfUser = User().select().where { it.age == 18 }.toList()
 
 User(id = id, age = 19).update().by { it.id }.execute()
 
@@ -104,7 +104,7 @@ val rankedOrders = Order()
 val latestOrders = rankedOrders
     .select { [it.id, it.userId, it.amount] }
     .where { it.rn == 1 }
-    .queryList()
+    .toList()
 
 Order()
     .select { [it.userId, f.count(it.id).alias("orderCount")] }
@@ -123,7 +123,7 @@ val archivedUsers = ArchivedUser().select { [it.id, it.name] }
 
 union(currentUsers, archivedUsers)
     .select { [it.id, it.name] }
-    .queryList()
+    .toList()
 ```
 
 ## 环境要求
@@ -141,7 +141,8 @@ union(currentUsers, archivedUsers)
 
 | Kronos 版本 | 支持的 Kotlin 版本 | 说明 |
 |-------------|--------------------|------|
-| `0.1.2` | `2.4.0+` | 用户文档推荐版本 |
+| `0.2.0` | `2.4.0+` | 推荐版本，包含查询、wrapper 和类型元数据 API 的破坏性变更 |
+| `0.1.2` | `2.4.0+` | 修复表结构同步边缘场景并扩充跨数据库集成测试 |
 | `0.1.1` | `2.4.0+` | 补充投影文档、IDEA 插件文档与发版自动化改进 |
 | `0.1.0` | `2.3.0+` | 基于 Kotlin 2.3.0 的正式发布版本 |
 | `0.0.7` | `2.3.0+` | 在 0.0.7 中升级 Gradle 和 Kotlin |
@@ -158,12 +159,12 @@ union(currentUsers, archivedUsers)
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.2"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.2")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.2")
+    implementation("com.kotlinorm:kronos-core:0.2.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -175,12 +176,12 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.2'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.2.0'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.1.2'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.1.2'
+    implementation 'com.kotlinorm:kronos-core:0.2.0'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.2.0'
     implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
@@ -196,12 +197,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.1.2</version>
+            <version>0.2.0</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.1.2</version>
+            <version>0.2.0</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -225,7 +226,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.1.2</version>
+                        <version>0.2.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -284,6 +285,38 @@ data class Movie(
 }
 ```
 
+`@Serialize` 字段在序列化和反序列化时都会使用属性声明上的 `KType`，因此 `List<String>`、`List<List<String>>`、`List<Profile>` 等类型的泛型元素信息不会丢失。
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.KronosSerializeProcessor
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+import kotlin.reflect.KType
+
+object KotlinxSerializeProcessor : KronosSerializeProcessor {
+    private val json = Json {
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
+
+    override fun serialize(obj: Any, kType: KType): String {
+        @Suppress("UNCHECKED_CAST")
+        val valueSerializer = serializer(kType) as KSerializer<Any>
+        return json.encodeToString(valueSerializer, obj)
+    }
+
+    override fun deserialize(serializedStr: String, kType: KType): Any =
+        json.decodeFromString(serializer(kType), serializedStr)
+            ?: error("Kotlinx serialization returned null for $kType")
+}
+
+Kronos.serializeProcessor = KotlinxSerializeProcessor
+```
+
+交给 Kotlinx Serialization 处理的 Kotlin data class 需要添加 `@kotlinx.serialization.Serializable`。完整 Gson 和 Kotlinx 示例见[序列化](https://kotlinorm.com/#/documentation/zh-CN/mapping/serialization)。
+
 ### 表操作
 
 ```kotlin
@@ -296,13 +329,15 @@ dataSource.table.dropTable<Movie>()
 ### 查询
 
 ```kotlin
+import com.kotlinorm.database.SqlExecutor.query
+
 val listOfUser: List<User> = User()
     .select { [it.id, it.username] }
     .where { it.id < 10 && it.age >= 18 }
     .distinct()
     .groupBy { it.id }
     .orderBy { it.username.desc() }
-    .queryList()
+    .toList()
 
 // 分页
 val (total, list) = User()
@@ -310,7 +345,7 @@ val (total, list) = User()
     .where { it.id < 10 && it.username like "a%" }
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
 
 // 联表查询
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
@@ -320,7 +355,7 @@ val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role -
                 role.role, f.count(1).alias("count")]
     }
     where { user.id < 10 }
-}.query()
+}.toMapList()
 
 // 命名参数原生 SQL
 val result = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))

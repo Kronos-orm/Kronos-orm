@@ -60,6 +60,7 @@ import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.allocateBindParameterName
 import com.kotlinorm.utils.toDatabaseBooleanValue
+import kotlin.reflect.KClass
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private val paramMap = pojo.toDataMap()
@@ -212,7 +213,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
         sourceValueProvider = values?.let { insertValues ->
             {
-                val source = query.selectedKClass.createInstance()
+                @Suppress("UNCHECKED_CAST")
+                val selectedClass = query.selectedType.classifier as KClass<S>
+                val source = selectedClass.createInstance()
                 source.afterInsertSelect { insertValues(it) }
             }
         }

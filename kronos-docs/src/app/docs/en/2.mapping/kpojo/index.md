@@ -35,13 +35,13 @@ User(id = 1)
     .execute()
 ```
 
-Default values make `User()` and `User(id = 1)` available, and they let `queryList<User>()` create result objects.
+Default values make `User()` and `User(id = 1)` available, and they let `toList<User>()` create result objects.
 
 ```kotlin group="KPojo 2 2" name="query" icon="kotlin"
 val users: List<User> = User()
     .select()
     .where { it.age > 18 }
-    .queryList()
+    .toList()
 ```
 
 ## Metadata exposed by KPojo

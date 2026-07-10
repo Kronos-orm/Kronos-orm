@@ -49,7 +49,7 @@ fun box(): String {
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {
-        val selected = clause.queryOne()
+        val selected = clause.first()
         val nameLength: Any? = selected.nameLength
         val totalCount: Number? = selected.totalCount
         return "Fail: selected aliases unexpectedly evaluated as $nameLength/$totalCount"

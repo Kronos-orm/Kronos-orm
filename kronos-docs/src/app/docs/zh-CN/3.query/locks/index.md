@@ -12,7 +12,7 @@ val user = User()
     .select()
     .where { it.id == 1 }
     .lock(SqlLock.Update())
-    .queryOne()
+    .first()
 ```
 
 ```sql group="Lock 1" name="mysql" icon="mysql"
@@ -33,7 +33,7 @@ val users = User()
     .select()
     .where { it.status == "ACTIVE" }
     .lock(SqlLock.Share())
-    .queryList()
+    .toList()
 ```
 
 共享锁和更新锁都会按当前 SQL 方言渲染。请把锁的使用放在需要锁定读取的事务边界附近。

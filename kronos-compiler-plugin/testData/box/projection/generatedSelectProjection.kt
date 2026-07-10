@@ -43,26 +43,13 @@ class ProjectionMappingWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
         mappedClasses.add(kClass)
         return [mapOf("id" to 7, "xx" to "Ada").mapperTo(kClass as KClass<out KPojo>)]
     }
 
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? = null
+    override fun first(task: KAtomicQueryTask): Any? = null
 
     override fun update(task: KAtomicActionTask): Int = 0
 
@@ -83,7 +70,7 @@ fun box(): String {
         dataSource = { wrapper }
     }
 
-    val rows = source.select { [it.id, it.name.alias("xx")] }.queryList(wrapper)
+    val rows = source.select { [it.id, it.name.alias("xx")] }.toList(wrapper)
     val row = rows.singleOrNull()
     val fieldNames = row?.kronosColumns().orEmpty().map { it.name }.toSet()
 
@@ -96,7 +83,7 @@ fun box(): String {
             "projection column table names were ${row?.kronosColumns()?.map { it.tableName }}"
         },
         expect(wrapper.mappedClasses.singleOrNull() != ProjectionSourceRow::class) {
-            "queryList mapped with source class ${ProjectionSourceRow::class}"
+            "toList mapped with source class ${ProjectionSourceRow::class}"
         },
         expect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
             "mapped class was ${wrapper.mappedClasses.singleOrNull()}"

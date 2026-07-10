@@ -54,6 +54,8 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 - **Framework agnostic** — Spring Boot, Ktor, Vert.x, Solon, Android. Plug in anywhere.
 - **Coroutine-friendly** — Designed for structured concurrency from the ground up.
 - **Compile-time mappers** — KPojo to/from Map conversion with near-zero overhead.
+- **Compile-time typed projections** — `select`, `join`, and `union` expose generated result types whose fields and aliases are checked by Kotlin.
+- **Composable queries** — Projection types flow through derived subqueries, scalar and predicate subqueries, INSERT SELECT, CTAS, and Union query layers.
 
 ## For Contributors
 
@@ -100,30 +102,40 @@ val rankedOrders = Order()
                 .alias("rn")
         ]
     }
+// projection: { id: Int?, userId: Int?, amount: BigDecimal?, rn: Long? }
 
 val latestOrders = rankedOrders
     .select { [it.id, it.userId, it.amount] }
     .where { it.rn == 1 }
     .toList()
+// result: List<{ id: Int?, userId: Int?, amount: BigDecimal? }>
 
-Order()
+val orderCounts = Order()
     .select { [it.userId, f.count(it.id).alias("orderCount")] }
     .groupBy { it.userId }
+// projection: { userId: Int?, orderCount: Long? }
+
+orderCounts
     .insert<UserOrderSummary> { [it.userId, it.orderCount] }
     .execute()
 
 val activeUsers = User()
     .select { [it.id, it.name, it.status] }
     .where { it.status == ACTIVE }
+// projection: { id: Long?, name: String?, status: Int? }
 
 dataSource.table.createTable(UserArchive(), activeUsers)
 
 val currentUsers = User().select { [it.id, it.name] }.where { it.enabled == true }
-val archivedUsers = ArchivedUser().select { [it.id, it.name] }
+// projection: { id: Long?, name: String? }
 
-union(currentUsers, archivedUsers)
+val archivedUsers = ArchivedUser().select { [it.id, it.name] }
+// projection: { id: Long?, name: String? }
+
+val users = union(currentUsers, archivedUsers)
     .select { [it.id, it.name] }
     .toList()
+// result: List<{ id: Long?, name: String? }>
 ```
 
 ## Requirements
@@ -331,13 +343,14 @@ dataSource.table.dropTable<Movie>()
 ```kotlin
 import com.kotlinorm.database.SqlExecutor.query
 
-val listOfUser: List<User> = User()
+val users = User()
     .select { [it.id, it.username] }
     .where { it.id < 10 && it.age >= 18 }
     .distinct()
     .groupBy { it.id }
     .orderBy { it.username.desc() }
     .toList()
+// result: List<{ id: Long?, username: String? }>
 
 // Pagination
 val (total, list) = User()
@@ -346,16 +359,31 @@ val (total, list) = User()
     .page(1, 10)
     .withTotal()
     .toList()
+// total: Int; list: List<{ id: Long?, username: String? }>
 
 // Join
-val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
+val usersWithRoles = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
         [user.id, user.username, relation.id.alias("relationId"),
                 role.role, f.count(1).alias("count")]
     }
     where { user.id < 10 }
-}.toMapList()
+}.toList()
+// result: List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
+
+// Union
+val currentUsers = User()
+    .select { [it.id, it.username] }
+    .where { it.enabled == true }
+// projection: { id: Long?, username: String? }
+
+val archivedUsers = ArchivedUser()
+    .select { [it.id, it.username] }
+// projection: { id: Long?, username: String? }
+
+val allUsers = union(currentUsers, archivedUsers).toList()
+// result: List<{ id: Long?, username: String? }>
 
 // Native SQL with named parameters
 val result = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))

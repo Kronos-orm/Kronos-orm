@@ -54,6 +54,8 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 - **框架无关** — Spring Boot、Ktor、Vert.x、Solon、Android，轻易集成。
 - **协程友好** — 从底层为结构化并发设计。
 - **编译期映射** — KPojo 与 Map 互转，近乎零开销。
+- **编译期类型投影** — `select`、`join`、`union` 都会暴露生成结果类型，字段和 alias 由 Kotlin 在编译期检查。
+- **可组合查询** — 投影类型可以贯穿派生子查询、标量与谓词子查询、INSERT SELECT、CTAS 和 Union 查询层。
 
 ## 贡献者指引
 
@@ -100,30 +102,40 @@ val rankedOrders = Order()
                 .alias("rn")
         ]
     }
+// 投影：{ id: Int?, userId: Int?, amount: BigDecimal?, rn: Long? }
 
 val latestOrders = rankedOrders
     .select { [it.id, it.userId, it.amount] }
     .where { it.rn == 1 }
     .toList()
+// 结果：List<{ id: Int?, userId: Int?, amount: BigDecimal? }>
 
-Order()
+val orderCounts = Order()
     .select { [it.userId, f.count(it.id).alias("orderCount")] }
     .groupBy { it.userId }
+// 投影：{ userId: Int?, orderCount: Long? }
+
+orderCounts
     .insert<UserOrderSummary> { [it.userId, it.orderCount] }
     .execute()
 
 val activeUsers = User()
     .select { [it.id, it.name, it.status] }
     .where { it.status == ACTIVE }
+// 投影：{ id: Long?, name: String?, status: Int? }
 
 dataSource.table.createTable(UserArchive(), activeUsers)
 
 val currentUsers = User().select { [it.id, it.name] }.where { it.enabled == true }
-val archivedUsers = ArchivedUser().select { [it.id, it.name] }
+// 投影：{ id: Long?, name: String? }
 
-union(currentUsers, archivedUsers)
+val archivedUsers = ArchivedUser().select { [it.id, it.name] }
+// 投影：{ id: Long?, name: String? }
+
+val users = union(currentUsers, archivedUsers)
     .select { [it.id, it.name] }
     .toList()
+// 结果：List<{ id: Long?, name: String? }>
 ```
 
 ## 环境要求
@@ -331,13 +343,14 @@ dataSource.table.dropTable<Movie>()
 ```kotlin
 import com.kotlinorm.database.SqlExecutor.query
 
-val listOfUser: List<User> = User()
+val users = User()
     .select { [it.id, it.username] }
     .where { it.id < 10 && it.age >= 18 }
     .distinct()
     .groupBy { it.id }
     .orderBy { it.username.desc() }
     .toList()
+// 结果：List<{ id: Long?, username: String? }>
 
 // 分页
 val (total, list) = User()
@@ -346,16 +359,31 @@ val (total, list) = User()
     .page(1, 10)
     .withTotal()
     .toList()
+// total: Int；list: List<{ id: Long?, username: String? }>
 
 // 联表查询
-val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
+val usersWithRoles = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
         [user.id, user.username, relation.id.alias("relationId"),
                 role.role, f.count(1).alias("count")]
     }
     where { user.id < 10 }
-}.toMapList()
+}.toList()
+// 结果：List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
+
+// Union
+val currentUsers = User()
+    .select { [it.id, it.username] }
+    .where { it.enabled == true }
+// 投影：{ id: Long?, username: String? }
+
+val archivedUsers = ArchivedUser()
+    .select { [it.id, it.username] }
+// 投影：{ id: Long?, username: String? }
+
+val allUsers = union(currentUsers, archivedUsers).toList()
+// 结果：List<{ id: Long?, username: String? }>
 
 // 命名参数原生 SQL
 val result = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))

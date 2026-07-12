@@ -54,6 +54,13 @@ jobs:
           path: kronos-example-spring-boot
           persist-credentials: false
 
+      - name: Checkout Solon example
+        uses: actions/checkout@v6
+        with:
+          repository: Kronos-orm/kronos-example-solon
+          path: kronos-example-solon
+          persist-credentials: false
+
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -65,8 +72,11 @@ jobs:
         run: |
           set -euo pipefail
           version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+          kotlin_version=$(grep -E '^kotlin\s*=\s*"[^"]+"' libs.versions.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
           echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+          echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
           echo "Using Kronos version ${version}"
+          echo "Using Kotlin version ${kotlin_version}"
 
       - name: Publish current Kronos artifacts to Maven local
         working-directory: kronos-orm
@@ -81,6 +91,7 @@ jobs:
           from pathlib import Path
 
           version = os.environ["KRONOS_EXAMPLE_VERSION"]
+          kotlin_version = os.environ["KRONOS_EXAMPLE_KOTLIN_VERSION"]
           replacements = {
               "kronos-example-ktor/build.gradle.kts": [
                   (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
@@ -96,6 +107,10 @@ jobs:
               ],
               "kronos-example-spring-boot/maven-project/pom.xml": [
                   (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
+              ],
+              "kronos-example-solon/pom.xml": [
+                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
+                  (r'<kotlin.version>[^<]+</kotlin.version>', f'<kotlin.version>{kotlin_version}</kotlin.version>'),
               ],
           }
 
@@ -119,4 +134,8 @@ jobs:
 
       - name: Run Spring Boot Maven example smoke tests
         working-directory: kronos-example-spring-boot/maven-project
+        run: mvn -B test
+
+      - name: Run Solon example smoke tests
+        working-directory: kronos-example-solon
         run: mvn -B test

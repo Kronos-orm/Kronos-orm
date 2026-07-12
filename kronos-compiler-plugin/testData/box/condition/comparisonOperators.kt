@@ -35,7 +35,7 @@ data class ConditionUser(
     var age: Int? = null,
 ) : KPojo {
     fun column(name: String): Field {
-        return kronosColumns().single { it.name == name }
+        return __columns.single { it.name == name }
     }
 }
 

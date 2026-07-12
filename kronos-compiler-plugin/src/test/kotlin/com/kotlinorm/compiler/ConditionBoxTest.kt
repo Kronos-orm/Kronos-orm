@@ -153,6 +153,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun fieldValueCriteria() = box("fieldValueCriteria")
 
     /**
+     * Verifies literal null predicates and relationship safe-call field RHS expressions.
+     */
+    @Test
+    fun literalNullAndSafeCallFields() = box("literalNullAndSafeCallFields")
+
+    /**
      * Verifies operator function fields work inside comparisons and string match values.
      */
     @Test

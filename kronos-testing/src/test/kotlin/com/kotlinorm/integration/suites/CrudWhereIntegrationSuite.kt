@@ -1,11 +1,16 @@
 package com.kotlinorm.integration.suites
 
+import com.kotlinorm.integration.fixtures.IntegrationUser
 import com.kotlinorm.integration.fixtures.IntegrationUserRecord
 import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
 import com.kotlinorm.integration.support.IntegrationSuiteSupport
+import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.update.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
+private fun integrationFallbackName(): String? = null
 
 abstract class CrudWhereIntegrationSuite(
     environment: IntegrationDatabaseEnvironment,
@@ -53,6 +58,49 @@ abstract class CrudWhereIntegrationSuite(
                 IntegrationUserRecord(id = 1, name = "Ada", score = 10, status = 1),
             ),
             profile.selectUsersByStatusOrderedByScore(status = 1, limit = 2),
+        )
+    }
+
+    @Test
+    fun literalNullWhereMatchesNullValuesAgainstRealDatabase() {
+        recreateTables()
+
+        assertEquals(1, profile.insertUser(IntegrationUserRecord(id = 50, name = null, score = 1, status = 1)))
+        assertEquals(1, profile.insertUser(IntegrationUserRecord(id = 51, name = "Named", score = 2, status = 1)))
+
+        val nullNames = IntegrationUser()
+            .select()
+            .where { it.name == null }
+            .orderBy { it.id.asc() }
+            .toList<IntegrationUser>()
+
+        val nonNullNames = IntegrationUser()
+            .select()
+            .where { it.name != null }
+            .orderBy { it.id.asc() }
+            .toList<IntegrationUser>()
+
+        assertEquals(listOf(50), nullNames.map { it.id })
+        assertEquals(listOf(51), nonNullNames.map { it.id })
+    }
+
+    @Test
+    fun updateSetElvisFallbackExecutesAgainstRealDatabase() {
+        recreateTables()
+
+        assertEquals(1, profile.insertUser(IntegrationUserRecord(id = 52, name = "Before", score = 3, status = 1)))
+
+        val affectedRows = IntegrationUser()
+            .update()
+            .set { it.name = integrationFallbackName() ?: "匿名" }
+            .where { it.id == 52 }
+            .execute()
+            .affectedRows
+
+        assertEquals(1, affectedRows)
+        assertEquals(
+            IntegrationUserRecord(id = 52, name = "匿名", score = 3, status = 1),
+            profile.selectUserById(52),
         )
     }
 }

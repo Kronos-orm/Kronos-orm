@@ -31,7 +31,7 @@ data class SetSelectableHintVariantUser(
     var status: Int? = null,
     var label: String? = null,
 ) : KPojo {
-    fun column(name: String): Field = kronosColumns().single { it.name == name }
+    fun column(name: String): Field = __columns.single { it.name == name }
 }
 
 @Table(name = "tb_set_selectable_hint_variant_order")

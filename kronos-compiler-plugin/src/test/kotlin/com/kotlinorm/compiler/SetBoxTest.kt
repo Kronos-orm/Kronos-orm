@@ -33,6 +33,12 @@ class SetBoxTest : AbstractKronosJvmBoxSuite("set") {
     fun assignments() = box("assignments")
 
     /**
+     * Verifies Elvis expressions on the RHS of set assignments are bound as values.
+     */
+    @Test
+    fun elvisAssignmentValue() = box("elvisAssignmentValue")
+
+    /**
      * Verifies mixed assignment forms, including arithmetic and typed values.
      */
     @Test

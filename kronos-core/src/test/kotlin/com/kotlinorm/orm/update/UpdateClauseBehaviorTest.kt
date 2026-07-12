@@ -12,6 +12,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+private fun fallbackUsername(): String? = null
+
 class UpdateClauseBehaviorTest : MysqlTestBase() {
 
     @Test
@@ -103,6 +105,17 @@ class UpdateClauseBehaviorTest : MysqlTestBase() {
         val where = assertNotNull(statement.where, "Update statement should have WHERE clause")
         assertTrue(where is SqlExpr.Binary)
         assertEquals(SqlBinaryOperator.And, where.operator)
+    }
+
+    @Test
+    fun `set assignment accepts elvis value expression`() {
+        val task = TestUser(1, "test")
+            .update()
+            .set { it.username = fallbackUsername() ?: "anonymous" }
+            .by { it.id }
+            .build()
+
+        assertEquals("anonymous", task.atomicTasks.single().paramMap["usernameNew"])
     }
 
     private fun com.kotlinorm.beans.task.KronosActionTask.singleStatement() =

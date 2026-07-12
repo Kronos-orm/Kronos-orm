@@ -63,12 +63,12 @@ WHERE `user`.`id` = :id
   AND `user`.`name` = :name
 ```
 
-需要查询空值时，在 lambda 中显式写 `isNull`。
+需要查询 SQL `NULL` 时，在 lambda 中写 `== null` 或 `isNull`。
 
 ```kotlin group="Where calls 4" name="null value" icon="kotlin"
 val users = User()
     .select()
-    .where { it.email.isNull }
+    .where { it.email == null }
     .toList()
 ```
 
@@ -76,6 +76,17 @@ val users = User()
 SELECT `id`, `name`, `age`, `email`
 FROM `user`
 WHERE `user`.`email` IS NULL
+```
+
+动态 nullable 变量仍走无值策略。下面的 `email` 为 `null` 时，`SELECT` 默认会跳过该条件。
+
+```kotlin group="Where calls 4b" name="dynamic null" icon="kotlin"
+val email: String? = null
+
+val users = User()
+    .select()
+    .where { it.email == email }
+    .toList()
 ```
 
 带 lambda 的 `where { ... }` 使用 lambda 表达式生成本次条件。
@@ -390,12 +401,12 @@ WHERE `user`.`name` LIKE :name
 
 ## 判断空值
 
-使用 `isNull` 和 `notNull` 生成 SQL 空值判断。
+使用 `== null` / `!= null` 或 `isNull` / `notNull` 生成 SQL 空值判断。
 
 ```kotlin group="Null" name="kotlin" icon="kotlin"
 val users = User()
     .select()
-    .where { it.deletedAt.isNull || it.email.notNull }
+    .where { it.deletedAt == null || it.email != null }
     .toList()
 ```
 
@@ -420,6 +431,23 @@ val users = User()
 SELECT `id`, `age`, `other_age` AS `otherAge`
 FROM `user`
 WHERE `user`.`age` = `user`.`other_age`
+```
+
+级联关系字段链推荐使用安全调用。Kronos 读取关联字段元数据并比较列，不会读取运行时的 `director` 对象。
+
+```kotlin group="Related field" name="kotlin" icon="kotlin"
+val movies = Movie()
+    .select()
+    .where { it.directorId == it.director?.id }
+    .toList()
+
+// it.director!!.id 也支持。
+```
+
+```sql group="Related field" name="Mysql" icon="mysql"
+SELECT `id`, `director_id` AS `directorId`, `title`
+FROM `movie`
+WHERE `movie`.`director_id` = `director`.`id`
 ```
 
 需要读取另一个对象的 Kotlin 属性值时，使用 `.value`。

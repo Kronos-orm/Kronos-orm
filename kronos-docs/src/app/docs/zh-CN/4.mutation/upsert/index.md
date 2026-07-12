@@ -341,7 +341,7 @@ ON DUPLICATE KEY UPDATE `name` = 'patched', `count` = 10
 冲突更新需要复用另一列表达式时，可以传入 `Field`。
 
 ```kotlin group="Case 4-3" name="field expression" icon="kotlin"
-val countField = User().kronosColumns().single { it.name == "count" }
+val countField = User().__columns.single { it.name == "count" }
 
 User(id = 8, name = "seed", count = 5)
   .upsert { it.name }

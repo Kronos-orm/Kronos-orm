@@ -259,9 +259,11 @@ with(Kronos) {
 Use `.ifNoValue(...)` on one condition when that expression needs a local empty-value rule.
 
 ```kotlin group="No value 1" name="ignore" icon="kotlin"
+val name: String? = null
+
 val users = User()
     .select()
-    .where { (it.name == null).ifNoValue(NoValueStrategyType.Ignore) }
+    .where { (it.name == name).ifNoValue(NoValueStrategyType.Ignore) }
     .toList()
 ```
 
@@ -270,12 +272,12 @@ SELECT `id`, `name`
 FROM `user`
 ```
 
-Use `isNull` when the generated condition should be SQL `IS NULL`.
+Use `== null` or `isNull` when the generated condition should be SQL `IS NULL`.
 
 ```kotlin group="No value 2" name="is null" icon="kotlin"
 val users = User()
     .select()
-    .where { it.name.isNull }
+    .where { it.name == null }
     .toList()
 ```
 

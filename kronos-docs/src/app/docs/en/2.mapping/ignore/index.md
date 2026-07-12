@@ -32,7 +32,7 @@ data class User(
 ) : KPojo
 
 val user = User(id = 1, name = "Ada", displayName = "Ada Lovelace")
-val columnNames = user.kronosColumns().map { it.name }
+val columnNames = user.__columns.map { it.name }
 val data = user.toDataMap()
 val mapped = User().fromMapData<User>(
     mapOf("id" to 2, "name" to "Grace", "displayName" to "Grace Hopper")

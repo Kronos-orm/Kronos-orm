@@ -2,11 +2,11 @@
 
 ## {{ $.title("无值处理") }}
 
-无值策略用于处理条件参数为 `null` 或空集合的场景。当条件 DSL 中的比较、like、in、between 等表达式没有可用值时，Kronos 会根据当前操作类型和条件类型决定是忽略条件、生成恒真/恒假条件，还是转换为 `IS NULL` / `IS NOT NULL`。
+无值策略用于处理动态条件参数为 `null` 或空集合的场景。条件 lambda 中字面量 `field == null` 和 `field != null` 表示 SQL `IS NULL` 和 `IS NOT NULL`。
 
 ## 默认行为
 
-默认逻辑如下：
+动态条件值进入无值策略后，默认逻辑如下：
 
 - 当操作类型为`UPDATE`或`DELETE`时：
     - 如果条件类型为相等判断，则转换为`is null`或`is not null`
@@ -20,8 +20,11 @@
 只需在条件语句中调用`ifNoValue`方法即可，如下所示：
 
 ```kotlin
-where { (it.age == null).ifNoValue(NoValueStrategyType.Ignore) }
-where { (it.name like null).ifNoValue(NoValueStrategyType.False) }
+val age: Int? = null
+val namePattern: String? = null
+
+where { (it.age == age).ifNoValue(NoValueStrategyType.Ignore) }
+where { (it.name like namePattern).ifNoValue(NoValueStrategyType.False) }
 ```
 
 ## 无值策略的类型

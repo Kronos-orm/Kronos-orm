@@ -102,6 +102,26 @@ SET "age" = "age" + :age2PlusNew
 WHERE "id" = :id
 ```
 
+### Kotlin expressions as assignment values
+
+The right side of a `set` assignment can be a normal runtime Kotlin expression. Kronos binds the expression result as the assignment value.
+
+```kotlin group="Expression assignment" name="kotlin" icon="kotlin"
+fun displayName(): String? = null
+
+User(id = 1)
+    .update()
+    .set { it.name = displayName() ?: "Anonymous" }
+    .where()
+    .execute()
+```
+
+```sql group="Expression assignment" name="Mysql" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
+```
+
 ### Set a value from a scalar subquery
 
 Use a scalar subquery in `set` when the new value should come from another query. The subquery selects one column and uses `limit(1)`.

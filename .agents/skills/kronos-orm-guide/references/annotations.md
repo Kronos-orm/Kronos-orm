@@ -83,7 +83,7 @@ data class User(
 
 ## @ColumnType
 
-显式指定列的数据库类型。没有此注解时，编译器插件按 Kotlin 属性类型推断 `KColumnType`；有此注解时，`type`、`length`、`scale` 会进入 `kronosColumns()`，并由表操作按当前数据库方言渲染 DDL。
+显式指定列的数据库类型。没有此注解时，编译器插件按 Kotlin 属性类型推断 `KColumnType`；有此注解时，`type`、`length`、`scale` 会进入 `__columns`，并由表操作按当前数据库方言渲染 DDL。
 
 ```kotlin
 @Target(AnnotationTarget.PROPERTY)

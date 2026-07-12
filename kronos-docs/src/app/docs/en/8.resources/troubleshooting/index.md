@@ -36,14 +36,14 @@ Apply the Kronos Gradle or Maven plugin to each source set that declares entitie
 
 ## Check KPojo generated members
 
-Generated members such as `__tableName`, `toDataMap()`, `kronosColumns()`, and dynamic accessors are available after the source set is compiled with Kronos support.
+Generated members such as `__tableName`, `toDataMap()`, `__columns`, and dynamic accessors are available after the source set is compiled with Kronos support.
 
 ```kotlin group="KPojo Check" name="kotlin" icon="kotlin"
 val user = User(id = 7, name = "Ada")
 
 println(user.__tableName)
 println(user.toDataMap())
-println(user.kronosColumns().map { it.name })
+println(user.__columns.map { it.name })
 ```
 
 ```text group="KPojo Check" name="output"

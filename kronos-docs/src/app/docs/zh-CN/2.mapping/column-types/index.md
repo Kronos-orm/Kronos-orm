@@ -2,7 +2,7 @@
 
 ## Kotlin 类型推断
 
-属性未使用{{ $.keyword("mapping/annotations", ["注解设置", "@ColumnType列类型及长度"]) }}时，Kronos 会为每个持久化的 `KPojo` 属性推断一个 `KColumnType`。推断结果可以从 `kronosColumns()` 看到，也会进入表结构 DDL。
+属性未使用{{ $.keyword("mapping/annotations", ["注解设置", "@ColumnType列类型及长度"]) }}时，Kronos 会为每个持久化的 `KPojo` 属性推断一个 `KColumnType`。推断结果可以从 `__columns` 看到，也会进入表结构 DDL。
 
 ```kotlin name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.Table
@@ -17,7 +17,7 @@ data class TypeProfile(
     var createdAt: LocalDateTime? = null,
 ) : KPojo
 
-val types = TypeProfile().kronosColumns().associate { it.name to it.type }
+val types = TypeProfile().__columns.associate { it.name to it.type }
 ```
 
 结果：
@@ -63,7 +63,7 @@ MySQL DDL 类型片段：
 
 ## 使用 {{ $.annotation("ColumnType") }} 覆盖
 
-使用 `@ColumnType` 可以为单个属性指定列类型。注解中的类型会写入 `kronosColumns()`，覆盖自动推断结果。
+使用 `@ColumnType` 可以为单个属性指定列类型。注解中的类型会写入 `__columns`，覆盖自动推断结果。
 
 ```kotlin name="kotlin" icon="kotlin" {8,10}
 import com.kotlinorm.annotations.ColumnType
@@ -79,7 +79,7 @@ data class OverrideType(
     var externalId: String? = null,
 ) : KPojo
 
-val columns = OverrideType().kronosColumns().associate { it.name to it.type }
+val columns = OverrideType().__columns.associate { it.name to it.type }
 ```
 
 结果：

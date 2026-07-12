@@ -167,7 +167,7 @@ fun main() {
 
     println(user.__tableName)
     println(user.toDataMap())
-    println(user.kronosColumns().map { it.name })
+    println(user.__columns.map { it.name })
 }
 ```
 

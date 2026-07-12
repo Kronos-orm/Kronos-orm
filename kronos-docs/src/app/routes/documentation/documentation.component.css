@@ -599,8 +599,11 @@
 }
 
 :host ::ng-deep .ng-doc-code-body pre code .line.highlighted {
+  display: block;
   min-width: 100% !important;
   width: max-content !important;
+  background: var(--kronos-doc-code-highlight) !important;
+  box-shadow: inset 3px 0 0 var(--kronos-doc-primary);
 }
 
 :host ::ng-deep li.ngde::marker {

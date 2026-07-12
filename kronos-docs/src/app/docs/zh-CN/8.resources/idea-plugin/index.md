@@ -665,9 +665,11 @@ IDEA 插件会把这些 Kronos DSL 规则直接显示在编辑器中：
 
 | 现象 | 检查点 | 修复方式 |
 |------|--------|----------|
-| `toDataMap()` 或 `__tableName` 表现为默认 `KPojo` 方法 | source set 没有经过 Kronos 编译期支持 | 启用 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }} 后重新导入项目 |
+| `toDataMap()` 或 `__tableName` 表现为默认 `KPojo` 方法 | source set 没有经过 Kronos 编译期支持 | 启用编译器插件后重新导入项目 |
 | `nameLength` 这类投影 alias 没有补全 | 项目导入完成前已安装插件，IDE 模型较旧 | 重新加载 Gradle/Maven，并重新打开 Kotlin 文件 |
 | 构建输出有诊断，但编辑器没有提示 | IDEA 使用的 Kotlin 插件或项目模型不匹配 | 更新到支持 Kotlin 2.4.0 的 IDEA/Kotlin 插件，必要时清理缓存 |
 | Codegen UI 找不到数据源配置 | 配置路径没有指向目标 JSON 文件 | 在 `Kronos ORM Setting` 中设置 `Config File` |
+
+编译器插件配置见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
 
 更多查询、子查询和 INSERT SELECT 规则见 {{ $.keyword("query/subqueries", ["子查询"]) }}。安装与运行问题见 {{ $.keyword("resources/troubleshooting", ["故障排查"]) }}。

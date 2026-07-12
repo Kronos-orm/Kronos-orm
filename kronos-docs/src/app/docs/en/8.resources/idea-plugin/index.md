@@ -665,9 +665,11 @@ Use these checks when Gradle or Maven succeeds but IDEA does not show Kronos com
 
 | Symptom | Check | Fix |
 |---------|-------|-----|
-| `toDataMap()` or `__tableName` behaves like the default `KPojo` body | The source set was not compiled with Kronos support | Enable {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} and reimport the project |
+| `toDataMap()` or `__tableName` behaves like the default `KPojo` body | The source set was not compiled with Kronos support | Enable compiler plugin support and reimport the project |
 | Projection aliases such as `nameLength` are missing | The IDEA plugin was installed before the project import completed | Reload Gradle/Maven and reopen the Kotlin file |
 | Diagnostics are visible in build output but not in the editor | IDEA is using an incompatible Kotlin plugin or stale project model | Update IDEA/Kotlin plugin to a Kotlin 2.4.0-compatible build and invalidate caches if needed |
 | Codegen UI cannot find data source settings | The config path does not point to the intended JSON file | Set `Config File` on `Kronos ORM Setting` |
+
+Compiler plugin setup is covered in {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }}.
 
 For more query, subquery, and INSERT SELECT rules, see {{ $.keyword("query/subqueries", ["Subqueries"]) }}. For setup problems, see {{ $.keyword("resources/troubleshooting", ["Troubleshooting"]) }}.

@@ -3,12 +3,12 @@
     --kronos-language-bg: rgba(255, 255, 255, 0.72);
     --kronos-language-border: rgba(15, 23, 42, 0.14);
     --kronos-language-text: #0f172a;
-    --kronos-language-hover-border: rgba(55, 183, 128, 0.55);
-    --kronos-language-hover-bg: rgba(55, 183, 128, 0.12);
+    --kronos-language-hover-border: rgba(37, 99, 235, 0.45);
+    --kronos-language-hover-bg: rgba(37, 99, 235, 0.08);
     --kronos-language-hover-text: #0f172a;
-    --kronos-language-active-bg: rgba(223, 255, 103, 0.28);
+    --kronos-language-active-bg: rgba(37, 99, 235, 0.12);
     --kronos-language-active-text: #0f172a;
-    --kronos-language-accent: #5b7f00;
+    --kronos-language-accent: #2563eb;
     --kronos-language-muted: rgba(15, 23, 42, 0.56);
 }
 

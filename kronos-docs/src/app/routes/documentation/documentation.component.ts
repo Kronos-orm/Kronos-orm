@@ -8,11 +8,11 @@ import {NgDocThemeToggleComponent} from "@ng-doc/app";
 import {NgDocThemeService} from "@ng-doc/app/services/theme";
 import {NgDocButtonIconComponent, NgDocIconComponent, NgDocTooltipDirective} from "@ng-doc/ui-kit";
 import {WikiComponent} from "../../components/wiki.component";
-import {Popover} from "primeng/popover";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {filter} from "rxjs";
 import TurndownService from 'turndown';
 import {gfm} from 'turndown-plugin-gfm';
+import {LanguageSwitchComponent} from "../../components/language-switch/language-switch.component";
 
 @Component({
     selector: 'app-documentation',
@@ -26,7 +26,7 @@ import {gfm} from 'turndown-plugin-gfm';
         NgDocTooltipDirective,
         WikiComponent,
         RouterLink,
-        Popover
+        LanguageSwitchComponent
     ],
     templateUrl: './documentation.component.html',
     styleUrl: './documentation.component.css'
@@ -80,10 +80,6 @@ export class DocumentationComponent implements OnDestroy {
         // Restore dark class when leaving documentation, since all other pages are always dark
         document.documentElement.classList.add('dark');
         this.copyObserver?.disconnect();
-    }
-
-    get language(): string {
-        return this.appService.language;
     }
 
     private applyDarkClass(theme: string | null) {
@@ -151,10 +147,4 @@ export class DocumentationComponent implements OnDestroy {
         this.copyObserver.observe(document.body, {childList: true, subtree: true});
     }
 
-    async setLang(lang: string) {
-        this.appService.language = lang; // update language
-        this.translocoService.setActiveLang(lang);
-        const newUrl = `/documentation/${lang}/${this.router.url.split("/").slice(3).join("/")}`;
-        await this.router.navigate([newUrl]);
-    }
 }

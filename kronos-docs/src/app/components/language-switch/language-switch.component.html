@@ -1,0 +1,24 @@
+<button
+        type="button"
+        class="kronos-language-trigger"
+        aria-label="Change language"
+        (click)="languagePopover.toggle($event)">
+    <span>{{ label }}</span>
+    <span class="pi pi-chevron-down" aria-hidden="true"></span>
+</button>
+
+<p-popover #languagePopover class="m-0 p-0" styleClass="kronos-language-popover" [appendTo]="appendTo">
+    <ul class="kronos-language-list" aria-label="Language options">
+        @for (item of languages; track item.lang) {
+            <li>
+                <button
+                        type="button"
+                        class="kronos-language-option"
+                        [class.active]="language === item.lang"
+                        (click)="setLanguage(item.lang); languagePopover.hide()">
+                    <span class="kronos-language-label">{{ item.label }}</span>
+                </button>
+            </li>
+        }
+    </ul>
+</p-popover>

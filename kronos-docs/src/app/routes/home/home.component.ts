@@ -2,6 +2,7 @@ import {CommonModule} from '@angular/common';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {AppService} from '../../app.service';
+import {LanguageSwitchComponent} from '../../components/language-switch/language-switch.component';
 
 type LocalizedText = {
     zh: string;
@@ -60,7 +61,7 @@ const KEYWORDS = new Set([
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, LanguageSwitchComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -451,10 +452,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     get isZh(): boolean {
         return this.language === 'zh-CN';
-    }
-
-    setLanguage(language: string): void {
-        this.appService.language = language;
     }
 
     setStage(index: number): void {

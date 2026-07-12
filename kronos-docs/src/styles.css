@@ -201,11 +201,6 @@ img {
     display: none;
 }
 
-code {
-    counter-reset: step;
-    counter-increment: step 0;
-}
-
 *:not(pre) > code.ngde {
     white-space: normal;
 }
@@ -217,12 +212,29 @@ article *:not(pre) > code.ngde:not(.title) {
     vertical-align: 0.08em;
 }
 
-code .line::before {
-    content: counter(step);
-    counter-increment: step;
+.ng-doc-code-body pre code {
+    counter-reset: kronos-code-line;
+}
+
+.ng-doc-code-body pre code .line::before {
+    content: counter(kronos-code-line);
+    counter-increment: kronos-code-line;
+    display: inline-block;
     width: 1rem;
     margin-right: 1.5rem;
-    display: inline-block;
     text-align: right;
-    color: rgba(115, 138, 148, .4)
+    color: var(--kronos-doc-code-muted, rgba(115, 138, 148, .4));
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+    font-synthesis: none;
+    text-shadow: none !important;
+}
+
+.ng-doc-code-body pre code .line.highlighted {
+    background-color: var(--kronos-doc-code-highlight-bg) !important;
+    background-image: linear-gradient(var(--kronos-doc-code-highlight-bg), var(--kronos-doc-code-highlight-bg)) !important;
+}
+
+.ng-doc-code-body pre code .line.highlighted span {
+    background: transparent !important;
 }

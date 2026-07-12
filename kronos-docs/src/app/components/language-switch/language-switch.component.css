@@ -60,3 +60,11 @@
 .kronos-language-trigger .pi {
     font-size: 0.7rem;
 }
+
+@media screen and (max-width: 1023px) {
+    .kronos-language-trigger {
+        width: 6.75rem;
+        min-height: 2.35rem;
+        font-size: 0.82rem;
+    }
+}

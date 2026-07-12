@@ -32,7 +32,8 @@
   --kronos-doc-code-text: #111827;
   --kronos-doc-code-muted: #64748b;
   --kronos-doc-code-border: rgba(15, 23, 42, 0.13);
-  --kronos-doc-code-highlight: rgba(37, 99, 235, 0.1);
+  --kronos-doc-code-highlight: #2563eb;
+  --kronos-doc-code-highlight-bg: rgba(37, 99, 235, 0.12);
   --kronos-doc-code-corner: rgba(37, 99, 235, 0.32);
   --kronos-doc-inline-code-bg: rgba(37, 99, 235, 0.08);
   --kronos-doc-inline-code-text: #1d4ed8;
@@ -78,7 +79,8 @@
   --kronos-doc-code-text: #f6f7ef;
   --kronos-doc-code-muted: rgba(246, 247, 239, 0.44);
   --kronos-doc-code-border: rgba(246, 247, 239, 0.14);
-  --kronos-doc-code-highlight: rgba(223, 255, 103, 0.18);
+  --kronos-doc-code-highlight: #dfff67;
+  --kronos-doc-code-highlight-bg: rgba(223, 255, 103, 0.16);
   --kronos-doc-code-corner: rgba(223, 255, 103, 0.38);
   --kronos-doc-inline-code-bg: rgba(223, 255, 103, 0.08);
   --kronos-doc-inline-code-text: #faffd7;
@@ -209,6 +211,10 @@
   -webkit-backdrop-filter: blur(22px) saturate(1.28);
   color: var(--kronos-doc-nav-text) !important;
   overflow: hidden;
+}
+
+:host ::ng-deep ng-doc-navbar .ng-doc-menu {
+  display: none !important;
 }
 
 :host ::ng-deep .ng-doc-navbar-content {
@@ -387,91 +393,6 @@
   color: var(--kronos-doc-code-text);
 }
 
-:host ::ng-deep .ng-doc-code-body .line::before {
-  color: var(--kronos-doc-code-muted);
-}
-
-:host ::ng-deep .ng-doc-code-body .token.comment,
-:host ::ng-deep .ng-doc-code-body .token.prolog,
-:host ::ng-deep .ng-doc-code-body .token.doctype,
-:host ::ng-deep .ng-doc-code-body .token.cdata {
-  color: #64748b;
-}
-
-:host ::ng-deep .ng-doc-code-body .token.keyword,
-:host ::ng-deep .ng-doc-code-body .token.operator {
-  color: #7c3aed;
-}
-
-:host ::ng-deep .ng-doc-code-body .token.string,
-:host ::ng-deep .ng-doc-code-body .token.char {
-  color: #047857;
-}
-
-:host ::ng-deep .ng-doc-code-body .token.number,
-:host ::ng-deep .ng-doc-code-body .token.boolean {
-  color: #b45309;
-}
-
-:host ::ng-deep .ng-doc-code-body .token.function,
-:host ::ng-deep .ng-doc-code-body .token.method {
-  color: #0369a1;
-}
-
-:host ::ng-deep .ng-doc-code-body .token.class-name,
-:host ::ng-deep .ng-doc-code-body .token.annotation,
-:host ::ng-deep .ng-doc-code-body .token.builtin {
-  color: #5a3e8a;
-}
-
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.comment,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.comment,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.prolog,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.prolog,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.doctype,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.doctype,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.cdata,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.cdata {
-  color: rgba(246, 247, 239, 0.46);
-}
-
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.keyword,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.keyword,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.operator,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.operator {
-  color: #f4c56a;
-}
-
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.string,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.string,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.char,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.char {
-  color: #8fd894;
-}
-
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.number,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.number,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.boolean,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.boolean {
-  color: #f3b36a;
-}
-
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.function,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.function,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.method,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.method {
-  color: #80d4e8;
-}
-
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.class-name,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.class-name,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.annotation,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.annotation,
-:host-context(.dark) ::ng-deep .ng-doc-code-body .token.builtin,
-:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.builtin {
-  color: #df8edb;
-}
-
 :host ::ng-deep code:not(.ngde),
 :host ::ng-deep :not(pre) > code.ngde {
   border: 1px solid var(--ng-doc-base-3);
@@ -529,15 +450,26 @@
   margin-left: 0;
 }
 
+:host ::ng-deep .ng-doc-header-controls ng-doc-theme-toggle {
+  display: inline-flex;
+  width: 2.65rem;
+  min-width: 2.65rem;
+  height: 2.65rem;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+}
+
 :host ::ng-deep .ng-doc-header-controls a[ng-doc-button-icon],
 :host ::ng-deep .ng-doc-header-controls button[ng-doc-button-icon],
-:host ::ng-deep ng-doc-theme-toggle {
+:host ::ng-deep .ng-doc-header-controls ng-doc-theme-toggle button[ng-doc-button-icon],
+:host ::ng-deep ng-doc-search button[ng-doc-button-icon] {
   width: 2.65rem;
   min-width: 2.65rem;
   height: 2.65rem;
   min-height: 2.65rem;
   border: 1px solid var(--kronos-doc-control-border) !important;
-  border-radius: 8px !important;
+  border-radius: 8px;
   background: var(--kronos-doc-control-bg);
   color: var(--kronos-doc-nav-text);
   backdrop-filter: blur(14px) saturate(1.18);
@@ -546,14 +478,22 @@
 }
 
 :host ::ng-deep .ng-doc-header-controls a[ng-doc-button-icon]:hover,
-:host ::ng-deep .ng-doc-header-controls button[ng-doc-button-icon]:hover {
+:host ::ng-deep .ng-doc-header-controls button[ng-doc-button-icon]:hover,
+:host ::ng-deep .ng-doc-header-controls ng-doc-theme-toggle button[ng-doc-button-icon]:hover,
+:host ::ng-deep ng-doc-search button[ng-doc-button-icon]:hover {
   background: var(--kronos-doc-control-hover-bg);
   color: var(--kronos-doc-control-hover-text);
 }
 
 .sidebar-toggle-button {
   opacity: 0.82;
+  width: 2.65rem !important;
+  min-width: 2.65rem !important;
+  height: 2.65rem !important;
+  min-height: 2.65rem !important;
+  flex: 0 0 2.65rem;
   border: 1px solid var(--kronos-doc-control-border) !important;
+  border-radius: 999px !important;
   background: var(--kronos-doc-control-bg) !important;
 }
 
@@ -591,19 +531,6 @@
 :host ::ng-deep .ng-doc-code-wrapper {
   overflow-x: auto;
   overflow-y: hidden;
-}
-
-:host ::ng-deep .ng-doc-code-body pre {
-  min-width: 100% !important;
-  width: fit-content;
-}
-
-:host ::ng-deep .ng-doc-code-body pre code .line.highlighted {
-  display: block;
-  min-width: 100% !important;
-  width: max-content !important;
-  background: var(--kronos-doc-code-highlight) !important;
-  box-shadow: inset 3px 0 0 var(--kronos-doc-primary);
 }
 
 :host ::ng-deep li.ngde::marker {
@@ -693,42 +620,7 @@
 }
 
 /* 标题间距规则 */
-:host ::ng-deep h1.ngde + h1.ngde,
-:host ::ng-deep h1.ngde + h2.ngde,
-:host ::ng-deep h1.ngde + h3.ngde,
-:host ::ng-deep h1.ngde + h4.ngde,
-:host ::ng-deep h1.ngde + h5.ngde,
-:host ::ng-deep h1.ngde + h6.ngde,
-:host ::ng-deep h2.ngde + h1.ngde,
-:host ::ng-deep h2.ngde + h2.ngde,
-:host ::ng-deep h2.ngde + h3.ngde,
-:host ::ng-deep h2.ngde + h4.ngde,
-:host ::ng-deep h2.ngde + h5.ngde,
-:host ::ng-deep h2.ngde + h6.ngde,
-:host ::ng-deep h3.ngde + h1.ngde,
-:host ::ng-deep h3.ngde + h2.ngde,
-:host ::ng-deep h3.ngde + h3.ngde,
-:host ::ng-deep h3.ngde + h4.ngde,
-:host ::ng-deep h3.ngde + h5.ngde,
-:host ::ng-deep h3.ngde + h6.ngde,
-:host ::ng-deep h4.ngde + h1.ngde,
-:host ::ng-deep h4.ngde + h2.ngde,
-:host ::ng-deep h4.ngde + h3.ngde,
-:host ::ng-deep h4.ngde + h4.ngde,
-:host ::ng-deep h4.ngde + h5.ngde,
-:host ::ng-deep h4.ngde + h6.ngde,
-:host ::ng-deep h5.ngde + h1.ngde,
-:host ::ng-deep h5.ngde + h2.ngde,
-:host ::ng-deep h5.ngde + h3.ngde,
-:host ::ng-deep h5.ngde + h4.ngde,
-:host ::ng-deep h5.ngde + h5.ngde,
-:host ::ng-deep h5.ngde + h6.ngde,
-:host ::ng-deep h6.ngde + h1.ngde,
-:host ::ng-deep h6.ngde + h2.ngde,
-:host ::ng-deep h6.ngde + h3.ngde,
-:host ::ng-deep h6.ngde + h4.ngde,
-:host ::ng-deep h6.ngde + h5.ngde,
-:host ::ng-deep h6.ngde + h6.ngde {
+:host ::ng-deep :is(h1, h2, h3, h4, h5, h6).ngde + :is(h1, h2, h3, h4, h5, h6).ngde {
   margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
 }
 
@@ -814,26 +706,28 @@
 }
 
 /* 侧边栏收缩 */
-:host ::ng-deep .sidebar-collapsed .ng-doc-sidenav {
-  width: 0 !important;
-  min-width: 0 !important;
-  overflow: hidden;
-  opacity: 0;
-  transition: width 0.3s ease, opacity 0.2s ease;
-}
+@media screen and (min-width: 1024px) {
+  :host ::ng-deep .sidebar-collapsed .ng-doc-sidenav {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    transition: width 0.3s ease, opacity 0.2s ease;
+  }
 
-:host ::ng-deep .sidebar-collapsed .ng-doc-sidenav-content {
-  margin-left: 0 !important;
-  width: 100% !important;
-  transition: margin-left 0.3s ease, width 0.3s ease;
-}
+  :host ::ng-deep .sidebar-collapsed .ng-doc-sidenav-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    transition: margin-left 0.3s ease, width 0.3s ease;
+  }
 
-:host ::ng-deep .ng-doc-sidenav {
-  transition: width 0.3s ease, opacity 0.2s ease;
-}
+  :host ::ng-deep .ng-doc-sidenav {
+    transition: width 0.3s ease, opacity 0.2s ease;
+  }
 
-:host ::ng-deep .ng-doc-sidenav-content {
-  transition: margin-left 0.3s ease, width 0.3s ease;
+  :host ::ng-deep .ng-doc-sidenav-content {
+    transition: margin-left 0.3s ease, width 0.3s ease;
+  }
 }
 
 /* 文档页脚 */
@@ -860,12 +754,35 @@
   text-decoration: underline;
 }
 
+:host ::ng-deep .doc-footer-stars {
+  display: inline-flex;
+  align-items: center;
+}
+
+:host ::ng-deep .doc-footer-stars img {
+  display: block;
+  height: 1.25rem;
+}
+
 :host ::ng-deep .doc-footer-sep {
   margin: 0 4px;
   opacity: 0.4;
 }
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 1023px) {
+  :host {
+    --kronos-nav-height: 4rem;
+    --kronos-doc-header-offset: 5rem;
+    --kronos-doc-sidebar-top: 5rem;
+  }
+
+  :host ::ng-deep ng-doc-root {
+    --ng-doc-navbar-height: var(--kronos-doc-sidebar-top);
+    --ng-doc-app-horizontal-padding: 1rem !important;
+    --ng-doc-page-padding: 1.25rem 1rem 2.5rem;
+    --ng-doc-sidebar-width: min(22rem, calc(100vw - 1rem));
+  }
+
   :host ::ng-deep .ng-doc-header {
     height: 5rem;
     padding: 0.75rem 0.75rem 0;
@@ -877,6 +794,8 @@
 
   :host ::ng-deep ng-doc-sidenav .ng-doc-sidenav {
     top: 5rem !important;
+    width: min(22rem, calc(100vw - 1rem)) !important;
+    max-width: calc(100vw - 1rem);
   }
 
   :host ::ng-deep .ng-doc-navbar-content {
@@ -888,13 +807,147 @@
   :host ::ng-deep .ng-doc-navbar {
     height: 4rem !important;
     min-height: 4rem !important;
+    padding: 0 0.65rem !important;
+    overflow: visible;
+  }
+
+  :host ::ng-deep ng-doc-navbar .navbar-container {
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  :host ::ng-deep ng-doc-navbar .ng-doc-navbar-left,
+  :host ::ng-deep ng-doc-navbar .ng-doc-navbar-right {
+    min-width: 0;
+  }
+
+  :host ::ng-deep ng-doc-navbar .ng-doc-navbar-left > .flex {
+    gap: 0.45rem !important;
+  }
+
+  :host ::ng-deep ng-doc-navbar .ng-doc-navbar-right {
+    gap: 0.4rem;
+  }
+
+  :host ::ng-deep .ng-doc-header-controls {
+    gap: 0.35rem;
+  }
+
+  :host ::ng-deep .ng-doc-header-controls a[ng-doc-button-icon],
+  :host ::ng-deep .ng-doc-header-controls button[ng-doc-button-icon],
+  :host ::ng-deep .ng-doc-header-controls ng-doc-theme-toggle,
+  :host ::ng-deep .ng-doc-header-controls ng-doc-theme-toggle button[ng-doc-button-icon],
+  :host ::ng-deep ng-doc-search button[ng-doc-button-icon],
+  .sidebar-toggle-button {
+    width: 2.35rem !important;
+    min-width: 2.35rem !important;
+    height: 2.35rem !important;
+    min-height: 2.35rem !important;
+    flex-basis: 2.35rem;
   }
 
   :host ::ng-deep article h1 {
     font-size: 2.6rem;
   }
 
+  :host ::ng-deep article,
+  :host ::ng-deep .ng-doc-page-wrapper,
+  :host ::ng-deep .ng-doc-sidenav-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :host ::ng-deep .ng-doc-sidenav-content {
+    overflow-x: hidden;
+  }
+
+  :host ::ng-deep article {
+    padding-top: 1.35rem;
+    overflow-wrap: anywhere;
+  }
+
+  :host ::ng-deep article img,
+  :host ::ng-deep article video,
+  :host ::ng-deep article canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :host ::ng-deep article table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  :host ::ng-deep .ng-doc-code-body,
+  :host ::ng-deep .ng-doc-code-wrapper {
+    max-width: 100%;
+  }
+
+  :host ::ng-deep .ng-doc-code-body pre {
+    max-width: 100%;
+  }
+
+  :host ::ng-deep .ng-doc-navigation-controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  :host ::ng-deep .ng-doc-navigation-controls a.ng-doc-next-page {
+    margin-left: 0;
+    align-items: flex-start;
+  }
+
   :host ::ng-deep .ng-doc-sidenav {
-    padding-left: 0.75rem;
+    padding: 0.75rem 0.5rem 0 0.5rem;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .logo img {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .navbar-divider {
+    display: none;
+  }
+
+  :host ::ng-deep .ng-doc-header-controls a[href*="github.com"] {
+    display: none !important;
+  }
+
+  :host ::ng-deep article h1 {
+    font-size: 2.1rem;
+  }
+
+  :host ::ng-deep article h2 {
+    font-size: 1.45rem;
+  }
+
+  :host ::ng-deep .ng-doc-page-controls {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: max-content;
+    margin-left: auto;
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  :host ::ng-deep .ng-doc-header {
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
+  }
+
+  :host ::ng-deep ng-doc-navbar,
+  :host ::ng-deep .ng-doc-navbar {
+    padding: 0 0.45rem !important;
+  }
+
+  :host ::ng-deep ng-doc-search button[ng-doc-button-icon] {
+    display: none !important;
   }
 }

@@ -187,6 +187,14 @@ a {
     max-width: 62rem;
 }
 
+.hero-copy,
+.hero-console,
+.stage-code,
+.install-section pre {
+    min-width: 0;
+    max-width: 100%;
+}
+
 .section-label {
     margin: 0 0 1.25rem;
     color: #dfff67;
@@ -977,6 +985,16 @@ em {
     color: #ffffff;
 }
 
+.footer-stars {
+    display: inline-flex;
+    align-items: center;
+}
+
+.footer-stars img {
+    display: block;
+    height: 1.25rem;
+}
+
 .reveal {
     animation: reveal 900ms ease both;
 }
@@ -1093,6 +1111,8 @@ em {
         top: 0.75rem;
         left: 0.75rem;
         right: 0.75rem;
+        grid-template-columns: auto minmax(0, auto);
+        gap: 0.45rem;
         min-height: 4rem;
         padding: 0.65rem;
     }
@@ -1111,34 +1131,79 @@ em {
     }
 
     .nav-actions {
+        min-width: 0;
         gap: 0.35rem;
     }
 
+    .nav-actions kronos-language-switch {
+        min-width: 0;
+    }
+
     .nav-cta {
-        padding: 0 0.85rem;
+        width: 6.35rem;
+        min-height: 2.35rem;
+        padding: 0 0.65rem;
+        font-size: 0.82rem;
     }
 
     .hero-section {
+        width: 100%;
         min-height: auto;
-        padding-top: 7rem;
+        gap: 2rem;
+        padding: 6.5rem 1rem 3.5rem;
+        overflow: hidden;
+    }
+
+    .hero-copy,
+    .hero-console {
+        width: 100%;
+        max-width: 100%;
     }
 
     .section-label {
         font-size: 0.78rem;
+        overflow-wrap: anywhere;
     }
 
     .hero-copy h1 {
-        font-size: 3.4rem;
+        max-width: 100%;
+        font-size: clamp(2.45rem, 12vw, 3.4rem);
         line-height: 1.02;
         overflow-wrap: anywhere;
     }
 
     .hero-lede {
-        font-size: 1.05rem;
+        max-width: 100%;
+        font-size: 1rem;
+        line-height: 1.72;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .hero-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+        width: 100%;
+    }
+
+    .action {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .metric-row {
+        max-width: 100%;
+        margin-top: 1.5rem;
+    }
+
+    .metric-row div {
+        min-height: auto;
+        padding: 0.95rem 0;
     }
 
     .metric-row strong {
-        font-size: 3rem;
+        font-size: 2.35rem;
     }
 
     .section-heading h2,
@@ -1175,12 +1240,13 @@ em {
     }
 
     .hero-console {
-        min-height: 30rem;
+        min-height: auto;
         padding: 0.75rem;
+        overflow: hidden;
     }
 
     .pipeline-visual {
-        min-height: 18rem;
+        min-height: 16rem;
     }
 
     .node {
@@ -1202,6 +1268,68 @@ em {
 
     .home-footer {
         flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-nav {
+        top: 0.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        padding: 0.55rem;
+    }
+
+    .brand img {
+        width: 1.8rem;
+        height: 1.8rem;
+    }
+
+    .nav-cta {
+        width: 5.75rem;
+        padding: 0 0.45rem;
+        font-size: 0.78rem;
+    }
+
+    .hero-section {
+        padding: 6rem 0.85rem 3rem;
+    }
+
+    .hero-copy h1 {
+        font-size: clamp(2.15rem, 11.5vw, 2.85rem);
+    }
+
+    .hero-lede {
+        margin-top: 1.25rem;
+        font-size: 0.95rem;
+    }
+
+    .section-heading h2,
+    .architecture-copy h2,
+    .install-section h2 {
+        font-size: clamp(2.25rem, 11vw, 3rem);
+    }
+
+    .stage-section,
+    .outcomes-section,
+    .architecture-section,
+    .resource-section,
+    .install-section {
+        padding-right: 0.85rem;
+        padding-left: 0.85rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .nav-actions {
+        gap: 0.25rem;
+    }
+
+    .nav-cta {
+        display: none;
+    }
+
+    .hero-section {
+        padding-top: 5.5rem;
     }
 }
 

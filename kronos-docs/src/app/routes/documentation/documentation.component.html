@@ -5,12 +5,12 @@
                 <img class="mr-1" src="/assets/images/logo_circle.png" alt="Kronos ORM"/>
                 <span class="hidden! lg:block!">Kronos ORM</span>
             </a>
-            <span style="width:1px; height:1.2rem; background: var(--ng-doc-base-4); opacity:0.5;"></span>
+            <span class="navbar-divider" style="width:1px; height:1.2rem; background: var(--ng-doc-base-4); opacity:0.5;"></span>
             <a ng-doc-button-icon
                class="sidebar-toggle-button"
-               [ngDocTooltip]="sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'"
+               [ngDocTooltip]="sidebarToggleTooltip"
                size="large"
-               (click)="sidebarCollapsed = !sidebarCollapsed">
+               (click)="toggleSidebar()">
                 <svg class="sidebar-toggle-icon"
                      [class.sidebar-toggle-icon-collapsed]="sidebarCollapsed"
                      width="22"
@@ -52,6 +52,10 @@
                    <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a>
                    <span class="doc-footer-sep">·</span>
                    <span>Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a></span>
+                   <span class="doc-footer-sep">·</span>
+                   <a class="doc-footer-stars" href="https://github.com/Kronos-orm/Kronos-orm/stargazers" target="_blank" rel="noreferrer">
+                       <img src="https://img.shields.io/github/stars/kronos-orm/kronos-orm.svg?style=social" alt="GitHub stars"/>
+                   </a>
                </div>
            </div>
        </div>

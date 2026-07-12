@@ -18,12 +18,7 @@
         </div>
 
         <div class="nav-actions">
-            <button type="button"
-                    class="language-button"
-                    [class.active]="language === 'zh-CN'"
-                    (click)="setLanguage(language === 'zh-CN' ? 'en' : 'zh-CN')">
-                {{ language === 'zh-CN' ? '中文' : 'EN' }}
-            </button>
+            <kronos-language-switch/>
             <a class="nav-cta" [routerLink]="docsUrl">{{ isZh ? '打开文档' : 'Open docs' }}</a>
         </div>
     </nav>

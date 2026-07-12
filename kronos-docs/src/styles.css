@@ -40,11 +40,29 @@ h1, h2, h3, h4, h5, h6 {
     --p-menu-background: var(--ng-doc-sidebar-background) !important;
     --p-menu-item-color: var(--ng-doc-text) !important;
     --p-megamenu-item-active-background: rgba(127, 82, 255, 0.15) !important;
+    --kronos-language-bg: rgba(255, 255, 255, 0.72);
+    --kronos-language-border: rgba(15, 23, 42, 0.14);
+    --kronos-language-text: #0f172a;
+    --kronos-language-hover-border: rgba(55, 183, 128, 0.55);
+    --kronos-language-hover-bg: rgba(55, 183, 128, 0.12);
+    --kronos-language-hover-text: #0f172a;
+    --kronos-language-active-bg: rgba(223, 255, 103, 0.28);
+    --kronos-language-active-text: #0f172a;
+    --kronos-language-accent: #5b7f00;
 }
 
 :root.dark,
 .dark {
     --ng-doc-mermaid-viewer-background: #080909;
+    --kronos-language-bg: rgba(255, 255, 255, 0.04);
+    --kronos-language-border: rgba(246, 247, 239, 0.16);
+    --kronos-language-text: #f6f7ef;
+    --kronos-language-hover-border: rgba(93, 253, 194, 0.65);
+    --kronos-language-hover-bg: rgba(93, 253, 194, 0.12);
+    --kronos-language-hover-text: #ffffff;
+    --kronos-language-active-bg: rgba(223, 255, 103, 0.14);
+    --kronos-language-active-text: #faffd7;
+    --kronos-language-accent: #dfff67;
 }
 
 .dark .ng-doc-mermaid-viewer,
@@ -56,6 +74,69 @@ h1, h2, h3, h4, h5, h6 {
 img {
     user-drag: none;
     -webkit-user-drag: none;
+}
+
+.kronos-language-popover .kronos-language-list {
+    width: 12rem;
+    margin: 0;
+    padding: 0.35rem;
+    list-style: none;
+}
+
+.kronos-language-popover .kronos-language-list li {
+    margin: 0;
+    padding: 0;
+}
+
+.kronos-language-popover .kronos-language-option {
+    position: relative;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    display: flex;
+    width: 100%;
+    min-height: 2.5rem;
+    align-items: center;
+    padding: 0 0.75rem 0 0.9rem;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--kronos-language-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.kronos-language-popover .kronos-language-option::before {
+    content: "";
+    position: absolute;
+    left: 0.35rem;
+    top: 0.55rem;
+    bottom: 0.55rem;
+    width: 0.14rem;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.kronos-language-popover .kronos-language-option:hover {
+    background: var(--kronos-language-hover-bg);
+    color: var(--kronos-language-hover-text);
+}
+
+.kronos-language-popover .kronos-language-option.active {
+    background: var(--kronos-language-active-bg);
+    color: var(--kronos-language-active-text);
+}
+
+.kronos-language-popover .kronos-language-option.active::before,
+.kronos-language-popover .kronos-language-option:hover::before {
+    background: var(--kronos-language-accent);
+}
+
+.kronos-language-popover .kronos-language-label {
+    color: currentColor;
+    font-weight: 600;
 }
 
 ::-webkit-scrollbar {

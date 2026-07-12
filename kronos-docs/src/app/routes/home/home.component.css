@@ -108,7 +108,6 @@ a {
     gap: 0.5rem;
 }
 
-.language-button,
 .nav-cta,
 .action {
     display: inline-flex;
@@ -124,11 +123,6 @@ a {
     transition: border-color 220ms ease, background 220ms ease, color 220ms ease;
 }
 
-.language-button {
-    width: 3.25rem;
-}
-
-.language-button.active,
 .nav-cta {
     border-color: rgba(223, 255, 103, 0.5);
     background: rgba(223, 255, 103, 0.12);
@@ -137,8 +131,10 @@ a {
 
 .nav-cta {
     position: relative;
+    width: 7.25rem;
     padding: 0 1.1rem;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 .hero-section {
@@ -266,7 +262,6 @@ em {
 }
 
 .action-secondary:hover,
-.language-button:hover,
 .nav-cta:hover {
     border-color: rgba(93, 253, 194, 0.65);
     background: rgba(93, 253, 194, 0.12);

@@ -1,0 +1,62 @@
+:host {
+    display: inline-flex;
+    --kronos-language-bg: rgba(255, 255, 255, 0.72);
+    --kronos-language-border: rgba(15, 23, 42, 0.14);
+    --kronos-language-text: #0f172a;
+    --kronos-language-hover-border: rgba(55, 183, 128, 0.55);
+    --kronos-language-hover-bg: rgba(55, 183, 128, 0.12);
+    --kronos-language-hover-text: #0f172a;
+    --kronos-language-active-bg: rgba(223, 255, 103, 0.28);
+    --kronos-language-active-text: #0f172a;
+    --kronos-language-accent: #5b7f00;
+    --kronos-language-muted: rgba(15, 23, 42, 0.56);
+}
+
+:host-context(.dark),
+:host-context([data-theme="dark"]) {
+    --kronos-language-bg: rgba(255, 255, 255, 0.04);
+    --kronos-language-border: rgba(246, 247, 239, 0.16);
+    --kronos-language-text: #f6f7ef;
+    --kronos-language-hover-border: rgba(93, 253, 194, 0.65);
+    --kronos-language-hover-bg: rgba(93, 253, 194, 0.12);
+    --kronos-language-hover-text: #ffffff;
+    --kronos-language-active-bg: rgba(223, 255, 103, 0.14);
+    --kronos-language-active-text: #faffd7;
+    --kronos-language-accent: #dfff67;
+    --kronos-language-muted: rgba(246, 247, 239, 0.58);
+}
+
+.kronos-language-trigger {
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    width: 7.25rem;
+    min-height: 2.6rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0;
+    border: 1px solid var(--kronos-language-border);
+    border-radius: 4px;
+    background: var(--kronos-language-bg);
+    color: var(--kronos-language-text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.kronos-language-trigger:hover,
+.kronos-language-trigger[aria-expanded="true"] {
+    border-color: var(--kronos-language-hover-border);
+    background: var(--kronos-language-hover-bg);
+    color: var(--kronos-language-hover-text);
+}
+
+.kronos-language-trigger .pi {
+    font-size: 0.7rem;
+}

@@ -16,6 +16,7 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
@@ -28,4 +29,7 @@ import com.kotlinorm.syntax.statement.SqlStatement
 interface KAtomicActionTask : KAtomicTask {
     override val statement: SqlStatement?
     val stash: MutableMap<String, Any?>
+    var generatedKeyRequest: GeneratedKeyRequest?
+    val generatedKeys: MutableList<Any?>
+    var lastInsertId: Long?
 }

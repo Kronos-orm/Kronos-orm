@@ -38,9 +38,9 @@ val users = User()
 
 共享锁和更新锁都会按当前 SQL 方言渲染。请把锁的使用放在需要锁定读取的事务边界附近。
 
-## Upsert fallback 可以使用锁
+## 普通 upsert 可以使用锁
 
-fallback upsert 会先检查行是否存在，再选择 update 或 insert。需要锁定这次存在性检查时，使用 `.lock(...)`。调用 `.lock()` 也会让本次 upsert 不走乐观锁 fallback 路径。
+普通 `upsert().on { ... }` 会先检查是否存在匹配行，再选择 update 或 insert。未启用乐观锁策略时，匹配查询默认使用 `SqlLock.Update()`；需要显式声明锁类型时，使用 `.lock(...)`。
 
 ```kotlin group="Lock 3" name="upsert" icon="kotlin"
 User(id = 1, name = "Kronos")
@@ -54,7 +54,7 @@ User(id = 1, name = "Kronos")
 
 ## 乐观锁属于 mutation 策略
 
-乐观锁通过 `@Version` 或 `Kronos.optimisticLockStrategy` 配置。它会在 insert、update、逻辑删除和 fallback upsert 路径中初始化或递增版本字段。
+乐观锁通过 `@Version` 或 `Kronos.optimisticLockStrategy` 配置。它会在 insert、update、逻辑删除和 upsert 路径中初始化或递增版本字段。
 
 ```kotlin group="Lock 4" name="version" icon="kotlin"
 data class Product(

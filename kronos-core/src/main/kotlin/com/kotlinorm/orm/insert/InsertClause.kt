@@ -24,6 +24,7 @@ import com.kotlinorm.beans.dsl.KronosFunctionExpr
 import com.kotlinorm.beans.generator.SnowflakeIdGenerator
 import com.kotlinorm.beans.generator.UUIDGenerator
 import com.kotlinorm.beans.generator.customIdGenerator
+import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
@@ -72,7 +73,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
-    var stash = mutableMapOf<String, Any?>()
+    private var withGeneratedId = false
+    private var identityGeneratedKeyRequest: GeneratedKeyRequest? = null
     private var sourceQuery: KSelectable<*>? = null
     private var sourceUnion: UnionClause<*>? = null
     private var sourceValueProvider: ((List<Field>) -> List<Any?>)? = null
@@ -102,6 +104,11 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return this
     }
 
+    fun withId(): InsertClause<T> {
+        withGeneratedId = true
+        return this
+    }
+
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
         if (sourceQuery != null || sourceUnion != null) {
@@ -122,7 +129,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 paramMapNew,
                 operationType = KOperationType.INSERT,
                 statement = finalStatement,
-                stash = stash
+                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId }
             )
         )
 
@@ -146,7 +153,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 renderedSql.parameters,
                 operationType = KOperationType.INSERT,
                 statement = statement,
-                stash = stash
+                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId }
             )
         )
     }
@@ -252,7 +259,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
         dataSource: KronosDataSourceWrapper,
         includeUnsetDefaultValueFields: Boolean
     ): MutableList<Field> {
-        var useIdentity = false
+        var databaseGeneratesIdentity = false
+        identityGeneratedKeyRequest = null
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
 
@@ -260,16 +268,14 @@ class InsertClause<T : KPojo>(val pojo: T) {
             PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
             PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
             PrimaryKeyType.CUSTOM -> paramMap[primaryKeyField.name] = customIdGenerator?.nextId()
-            PrimaryKeyType.IDENTITY -> useIdentity = true
+            PrimaryKeyType.IDENTITY -> databaseGeneratesIdentity = true
             else -> {}
         }
         if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
-            useIdentity = false
+            databaseGeneratesIdentity = false
         }
-        stash["useIdentity"] = useIdentity
-        if (useIdentity) {
-            stash["identityTable"] = tableName
-            stash["identityColumn"] = primaryKeyField.columnName
+        if (databaseGeneratesIdentity) {
+            identityGeneratedKeyRequest = GeneratedKeyRequest(tableName, primaryKeyField.columnName)
         }
 
         arrayOf(

@@ -170,6 +170,8 @@ data class User(
 启用后：
 - `delete()` 自动变为 `UPDATE ... SET deleted = 1`
 - `select()` 自动添加 `WHERE deleted = 0`
+- 普通 upsert 匹配到已逻辑删除记录时更新原行，并把逻辑删除字段恢复为活动值
+- `onConflict()` upsert 会在插入列和冲突更新赋值中维护逻辑删除活动值
 - 需要物理删除时，对当前 delete 调用 `.logic(false)`
 
 ---
@@ -190,7 +192,7 @@ with(Kronos) {
 }
 ```
 
-insert 会初始化版本号，update 和逻辑删除会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
+insert 会初始化版本号，update、逻辑删除和 upsert 更新分支会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
 
 ```kotlin
 User(id = 1, version = 3)
@@ -533,7 +535,6 @@ Upsert 的冲突更新赋值可以使用标量子查询。
 ```kotlin
 User(id = 1, name = "seed")
     .upsert()
-    .on { it.id }
     .set {
         it.name = (Order()
             .select { order -> order.status }
@@ -556,7 +557,6 @@ User(id = 7, name = "seed", count = 2)
         "count" to SqlExpr.NumberLiteral("10"),
         "name" to KronosFunctionExpr(SqlExpr.StringLiteral("patched"), "literal")
     )
-    .on { it.id }
     .onConflict()
     .execute()
 
@@ -565,12 +565,11 @@ val countField = User().kronosColumns().single { it.name == "count" }
 User(id = 8, name = "seed", count = 5)
     .upsert { it.name }
     .patch("name" to countField)
-    .on { it.id }
     .onConflict()
     .execute()
 ```
 
-`patch(...)` 的值在 `onConflict()` 路径中作为冲突更新赋值；fallback upsert 路径中，相同字段进入存在性检查后的 update set。
+`patch(...)` 的值在 `onConflict()` 路径中作为冲突更新赋值；普通 upsert 路径中，相同字段进入匹配后的 update set。
 
 ---
 
@@ -633,7 +632,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.0")
+    implementation("com.kotlinorm:kronos-logging:0.2.1")
 }
 ```
 
@@ -717,15 +716,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.1")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.1")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.1")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -835,4 +834,3 @@ kotlinc -script example.main.kts
 ```text
 File generated successfully: src/main/kotlin/com/example/entity/User.kt
 ```
-

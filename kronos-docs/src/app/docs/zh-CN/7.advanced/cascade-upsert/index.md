@@ -5,7 +5,7 @@
 
 使用`KPojo.upsert().on(...).cascade(...).execute()`可以对根记录执行更新插入，并让已经声明的`@Cascade`关系参与本次操作。
 
-级联 upsert 使用 {{ $.keyword("mutation/upsert", ["更新插入"]) }} 中的 fallback 流程：
+级联 upsert 使用 {{ $.keyword("mutation/upsert", ["更新插入"]) }} 中的按匹配字段 upsert 流程：
 
 ```text
 1. 通过 `on { ... }` 指定的字段检查根记录是否存在。
@@ -274,7 +274,7 @@ UPDATE `account` SET `email` = :emailNew WHERE `id` = :id;
 
 ## 逻辑删除和乐观锁字段
 
-fallback 级联 upsert 沿用 insert 与 update 的策略字段。insert 分支会为`@LogicDelete`和`@Version`字段写入初始值。update 分支可以通过`on`字段匹配逻辑删除记录，将逻辑删除列恢复为正常值，并通过更新策略递增版本列。
+级联 upsert 沿用 insert 与 update 的策略字段。insert 分支会为`@LogicDelete`和`@Version`字段写入初始值。update 分支可以通过`on`字段匹配逻辑删除记录，将逻辑删除列恢复为正常值，并通过更新策略递增版本列。
 
 ```kotlin group="策略字段 1" name="kotlin" icon="kotlin" {6-9,18-21}
 @Table("account_flag")
@@ -391,7 +391,7 @@ IdentityParent(
 父记录插入返回生成 id 后，child.parentId 会在子记录插入前被填充。
 ```
 
-`onConflict()`会生成单条原生根表 upsert 语句。需要执行级联树时，使用上面的 fallback 流程。
+`onConflict()`只处理根表 upsert。需要执行级联树时，使用上面的按匹配字段 upsert 流程。
 
 ```kotlin group="onConflict 1" name="kotlin" icon="kotlin" {5}
 Product(id = 100, tenantId = 7, code = "A-100", name = "Desk")
@@ -411,5 +411,6 @@ ON DUPLICATE KEY UPDATE `name` = :name;
 
 ```text group="onConflict 2" name="result"
 生成的任务包含 product 根表 upsert 语句。
-原生冲突处理需要数据库在冲突字段上存在唯一性约束。
+`onConflict()` 需要数据库在冲突字段上存在唯一性约束。
+省略 `on { ... }` 时，Kronos 会从主键值或已声明唯一索引中推导冲突字段。
 ```

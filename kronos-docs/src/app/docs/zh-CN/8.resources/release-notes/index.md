@@ -7,6 +7,12 @@
 
 ## 📝 更新日志
 
+### 0.2.1
+
+- ✨ 支持在投影 `[]` 中使用 `it - [it.id, it.age]`，包括 `[it - [it.id, it.age], it.id.alias("sourceId")]` 这类混合投影列表。
+- 🔧 将发布流程中的 next SNAPSHOT PR 步骤改为幂等；重复运行时已有版本 PR 会直接跳过，不再因为同名分支失败。
+- 📚 将 README、文档宏、用户示例和 AI skill 引用同步到 `0.2.1`。
+
 ### 0.2.0
 
 > **Warning**
@@ -59,7 +65,7 @@ override fun first(task: KAtomicQueryTask): Any?
 
 - ✨ 在字段、查询任务、序列化处理器和值转换器链路中保留完整 Kotlin `KType`，支持 `List<List<String>>` 等嵌套泛型集合 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 Kotlinx Serialization 对泛型集合和 data class 字段的反序列化，并在 Map 与标量查询结果中保留被选中的 `null` 值 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
-- 🐛 修复 `select { it }`、`select { [it] }`、KPojo 排除投影，以及完整行与 alias 混合投影的生成类型；覆盖 `[]`、`listOf`、`arrayOf`、`mutableListOf` 和 `setOf` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 修复 `select { it }`、`select { [it] }`、KPojo 排除投影，以及使用 `[]` 混合完整行与 alias 时的生成类型 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 SQLite UNION 渲染、SQLite 表结构同步、字符串默认值及扩展测试发现的其他 ORM 边缘问题 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 💪 扩充投影、序列化、空值结果、表结构同步和跨数据库回归测试，并将 README、用户文档、AI skill、Gradle 插件和 IDEA 插件同步到 `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 

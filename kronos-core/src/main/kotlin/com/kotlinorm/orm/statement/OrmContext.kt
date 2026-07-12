@@ -37,6 +37,7 @@ internal class OrmContext<T : KPojo>(
     var cascadeEnabled: Boolean = true
     var cascadeAllowed: Set<Field>? = null
     var logicEnabled: Boolean? = null
+    var restoreLogicDeleteOnUpdate: Boolean = false
     var where: SqlExpr? = null
     val setPairs: MutableList<SqlUpdateSetPair> = mutableListOf()
 

@@ -1,10 +1,12 @@
 package com.kotlinorm.integration.suites
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.integration.fixtures.IntegrationUser
 import com.kotlinorm.integration.fixtures.IntegrationUserRecord
 import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
 import com.kotlinorm.integration.support.IntegrationSuiteSupport
+import com.kotlinorm.orm.insert.insert
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -74,5 +76,29 @@ abstract class TransactionIntegrationSuite(
             ),
             profile.selectAllUsers(),
         )
+    }
+
+    @Test
+    fun actionTaskAfterExecuteFailureRollsBackMainAndAfterActions() {
+        recreateTables()
+
+        val actionTask = IntegrationUser(id = 47, name = "Main-Action", score = 47, status = 4)
+            .insert()
+            .build(wrapper)
+            .doAfterExecute { _ ->
+                assertEquals(
+                    1,
+                    profile.insertUser(IntegrationUserRecord(id = 48, name = "After-Action", score = 48, status = 4))
+                )
+                error("force afterExecute rollback")
+            }
+
+        assertEquals(
+            "force afterExecute rollback",
+            assertFailsWith<IllegalStateException> {
+                actionTask.execute(wrapper)
+            }.message
+        )
+        assertEquals(emptyList(), profile.selectAllUsers())
     }
 }

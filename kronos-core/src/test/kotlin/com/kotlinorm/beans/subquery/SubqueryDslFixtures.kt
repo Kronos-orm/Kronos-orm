@@ -26,12 +26,14 @@ import com.kotlinorm.interfaces.KPojo
 
 @Table(name = "tb_subquery_user")
 internal data class SubqueryUser(
+    @PrimaryKey
     var id: Int? = null,
     var name: String? = null,
 ) : KPojo
 
 @Table(name = "tb_subquery_order")
 internal data class SubqueryOrder(
+    @PrimaryKey
     var id: Int? = null,
     var userId: Int? = null,
     var status: Int? = null,

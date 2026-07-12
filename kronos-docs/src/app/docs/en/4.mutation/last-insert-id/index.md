@@ -3,7 +3,7 @@
 
 ## Use cases
 
-`LastInsertIdPlugin` reads the generated ID after an insert on an identity primary key.
+Use `.withId()` when one insert should return the database-generated identity primary key.
 
 ```kotlin group="KPojo" name="User.kt" icon="kotlin"
 import com.kotlinorm.annotations.PrimaryKey
@@ -17,55 +17,50 @@ data class User(
 ```
 
 > **Note**
-> `lastInsertId` is available when the inserted KPojo uses `@PrimaryKey(identity = true)` and the insert lets the database generate the primary key value.
+> `lastInsertId` is available when the inserted KPojo uses `@PrimaryKey(identity = true)` and the primary key value is left `null`.
 
-## Read {{ $.title("lastInsertId") }} from an insert result
+## Read {{ $.title("lastInsertId") }}
 
-Enable `LastInsertIdPlugin` globally when every identity insert should collect the generated ID.
+Call `.withId()` on the insert that needs the generated ID.
 
 ```kotlin group="Read Id" name="kotlin" icon="kotlin"
-import com.kotlinorm.plugins.LastInsertIdPlugin
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-
-LastInsertIdPlugin.enabled = true
-
 val result = User(name = "Kronos")
     .insert()
+    .withId()
     .execute()
 
 val affectedRows = result.affectedRows
 val lastInsertId = result.lastInsertId
 ```
 
-The result is a `KronosOperationResult`. `affectedRows` comes from the insert execution, and `lastInsertId` is read from the operation result stash. With the built-in `KronosJdbcWrapper`, Kronos reads JDBC generated keys during the insert execution.
+`execute()` returns `KronosOperationResult`. `affectedRows` is the number of inserted rows, and `lastInsertId` is the generated identity value returned by the wrapper or the internal dialect fallback.
 
-## Disable the {{ $.title("lastInsertId") }} plugin
+## When no ID is returned
 
-Set `LastInsertIdPlugin.enabled` directly when identity inserts should skip generated ID collection by default.
+Kronos does not request a generated ID unless `.withId()` is present.
 
-```kotlin group="Disable" name="kotlin" icon="kotlin"
-import com.kotlinorm.plugins.LastInsertIdPlugin
+```kotlin group="No Id" name="kotlin" icon="kotlin"
+val result = User(name = "Kronos")
+    .insert()
+    .execute()
 
-LastInsertIdPlugin.enabled = false
+val lastInsertId = result.lastInsertId // null
 ```
 
-Use `.withId()` for one insert that still needs the generated ID.
+If the primary key value is already set, the insert uses that value and `lastInsertId` stays empty.
 
-```kotlin group="Single Insert" name="kotlin" icon="kotlin"
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-
-val result = User(name = "Kronos")
+```kotlin group="Assigned Id" name="kotlin" icon="kotlin"
+val result = User(id = 1001, name = "Kronos")
     .insert()
     .withId()
     .execute()
 
-val lastInsertId = result.lastInsertId
+val lastInsertId = result.lastInsertId // null
 ```
 
-## Dialect SQL used by wrapper fallback paths
+## Dialect fallback SQL
 
-Wrappers that read the generated ID with a follow-up query use the active data source dialect.
+The built-in `KronosJdbcWrapper` first reads JDBC generated keys during insert execution. If a wrapper cannot provide generated keys directly, Kronos uses the active dialect's follow-up SQL.
 
 ```sql group="Dialect SQL" name="Mysql" icon="mysql"
 SELECT LAST_INSERT_ID()
@@ -84,5 +79,5 @@ SELECT SCOPE_IDENTITY()
 ```
 
 ```sql group="Dialect SQL" name="Oracle" icon="oracle"
-SELECT * FROM DUAL
+SELECT MAX("ID") FROM "USER"
 ```

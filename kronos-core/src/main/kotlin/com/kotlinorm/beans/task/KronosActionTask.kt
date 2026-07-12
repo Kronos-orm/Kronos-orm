@@ -84,35 +84,36 @@ class KronosActionTask {
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault() //获取数据源
-        beforeExecute?.invoke(this, dataSource) // 在执行之前执行的操作
-
-        val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
-            val first = it.first()
-            if (it.size > 1) { //如果有多个任务
-                KronosAtomicBatchTask( //创建一个批量任务
-                    first.sql,
-                    it.map { task -> task.paramMap }.toTypedArray(),
-                    first.operationType,
-                    first.statement
-                )
-            } else { //如果只有一个任务
-                first
-            }
-        }
-
         @Suppress("UNCHECKED_CAST")
-        val results = dataSource.transact { //执行事务
-            groupedTasks.map {
+        return dataSource.transact { //执行事务
+            beforeExecute?.invoke(this@KronosActionTask, dataSource) // 在执行之前执行的操作
+
+            val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
+                val first = it.first()
+                if (it.size > 1) { //如果有多个任务
+                    KronosAtomicBatchTask( //创建一个批量任务
+                        first.sql,
+                        it.map { task -> task.paramMap }.toTypedArray(),
+                        first.operationType,
+                        first.statement
+                    )
+                } else { //如果只有一个任务
+                    first
+                }
+            }
+
+            val results = groupedTasks.map {
                 it.execute(dataSource)
             }
-        } as List<KronosOperationResult>
-        val affectRows = results.sumOf { it.affectedRows } //受影响的行数
-        return KronosOperationResult(affectRows).apply {
-            if(results.isNotEmpty()) {
-                stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
+            val affectRows = results.sumOf { it.affectedRows } //受影响的行数
+            val lastResult = results.lastOrNull()
+            KronosOperationResult(affectRows, lastResult?.lastInsertId).apply {
+                if(results.isNotEmpty()) {
+                    stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
+                }
+                afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
             }
-            afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
-        }
+        } as KronosOperationResult
     }
 
     companion object {

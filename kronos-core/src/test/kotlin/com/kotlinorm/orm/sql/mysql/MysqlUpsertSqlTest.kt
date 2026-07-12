@@ -83,7 +83,7 @@ class MysqlUpsertSqlTest : MysqlTestBase() {
 
                 4 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username, `update_time` = :updateTime",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username, `update_time` = :updateTime, `deleted` = :deleted",
                         sql
                     )
                     assertEquals(
@@ -100,7 +100,7 @@ class MysqlUpsertSqlTest : MysqlTestBase() {
 
                 5 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username, `update_time` = :updateTime",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username, `update_time` = :updateTime, `deleted` = :deleted",
                         sql
                     )
                     assertEquals(

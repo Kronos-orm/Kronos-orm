@@ -17,11 +17,13 @@ import com.kotlinorm.syntax.statement.SqlLockWaitMode
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlReturning
 import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.statement.SqlSelectItemSource
 import com.kotlinorm.syntax.statement.SqlUpsertAction
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class IdentifierAndDmlEnhancementTest {
     @Test
@@ -48,6 +50,14 @@ class IdentifierAndDmlEnhancementTest {
         )
         assertEquals(""""tenant_a"."orders"."id"""", qualifiedColumn.toSql())
         assertEquals(""""o".*""", asterisk.let { SqlQuery.Select(select = listOf(it)).toSql() }.removePrefix("SELECT "))
+    }
+
+    @Test
+    fun selectItemSourceKeepsStructuredDefaultIdentifiers() {
+        val source = SqlSelectItemSource(tableName = "user", columnName = "created_at")
+
+        assertEquals(SqlIdentifier.of("user"), source.qualifier)
+        assertEquals(SqlIdentifier.of("created_at"), source.identifier)
     }
 
     @Test
@@ -130,6 +140,85 @@ class IdentifierAndDmlEnhancementTest {
         assertEquals(
             """INSERT OR IGNORE INTO "user" ("id", "email") VALUES (1, 'a@b.test')""",
             upsert.toSql(SqlDialect.SQLite)
+        )
+    }
+
+    @Test
+    fun rendersInsertSubqueryWithReturning() {
+        val insert = SqlDmlStatement.Insert(
+            table = table("user_archive"),
+            columns = cols("id", "name"),
+            mode = SqlInsertMode.Subquery(
+                SqlQuery.Select(
+                    select = listOf(SqlSelectItem.Expr(col("id")), SqlSelectItem.Expr(col("name"))),
+                    from = listOf(table("user")),
+                    where = col("active").eq(num("1"))
+                )
+            ),
+            returning = SqlReturning(listOf(SqlSelectItem.Expr(col("id"))))
+        )
+
+        assertEquals(
+            """INSERT INTO "user_archive" ("id", "name") SELECT "id", "name" FROM "user" WHERE "active" = 1 RETURNING "id"""",
+            insert.toSql()
+        )
+    }
+
+    @Test
+    fun rendersStandardMergeDoNothingAndUpdateWhereBranches() {
+        val doNothing = SqlDmlStatement.Upsert(
+            table = table("user"),
+            columns = cols("id", "name"),
+            values = listOf(num("1"), str("Ada")),
+            primaryKeys = cols("id"),
+            action = SqlUpsertAction.DoNothing
+        )
+        val updateWhere = doNothing.copy(
+            action = SqlUpsertAction.Update(
+                setPairs = listOf(set("name", SqlExpr.ExcludedColumn(id("name")))),
+                where = col("active").eq(num("1"))
+            )
+        )
+
+        assertEquals(
+            """MERGE INTO "user" AS "t1" USING (SELECT 1 AS "id", 'Ada' AS "name") AS "t2" ON ("t1"."id" = "t2"."id") WHEN NOT MATCHED THEN INSERT ("id", "name") VALUES (1, 'Ada')""",
+            doNothing.toSql()
+        )
+        assertEquals(
+            """MERGE INTO "user" AS "t1" USING (SELECT 1 AS "id", 'Ada' AS "name") AS "t2" ON ("t1"."id" = "t2"."id") WHEN MATCHED THEN UPDATE SET "t1"."name" = "t2"."name" WHERE "active" = 1 WHEN NOT MATCHED THEN INSERT ("id", "name") VALUES (1, 'Ada')""",
+            updateWhere.toSql()
+        )
+    }
+
+    @Test
+    fun rejectsInvalidDmlModelShapesWithExactMessages() {
+        assertEquals(
+            "INSERT VALUES requires at least one row.",
+            assertFailsWith<IllegalArgumentException> { SqlInsertMode.Values(emptyList()) }.message
+        )
+        assertEquals(
+            "INSERT VALUES rows must not be empty.",
+            assertFailsWith<IllegalArgumentException> { SqlInsertMode.Values(listOf(emptyList())) }.message
+        )
+        assertEquals(
+            "RETURNING requires at least one item.",
+            assertFailsWith<IllegalArgumentException> { SqlReturning(emptyList()) }.message
+        )
+        assertEquals(
+            "UPDATE requires at least one SET pair.",
+            assertFailsWith<IllegalArgumentException> { SqlDmlStatement.Update(table("user"), emptyList()) }.message
+        )
+        assertEquals(
+            "UPSERT requires at least one column.",
+            assertFailsWith<IllegalArgumentException> {
+                SqlDmlStatement.Upsert(table("user"), emptyList(), listOf(num("1")), emptyList())
+            }.message
+        )
+        assertEquals(
+            "UPSERT requires at least one value.",
+            assertFailsWith<IllegalArgumentException> {
+                SqlDmlStatement.Upsert(table("user"), cols("id"), emptyList(), cols("id"))
+            }.message
         )
     }
 }

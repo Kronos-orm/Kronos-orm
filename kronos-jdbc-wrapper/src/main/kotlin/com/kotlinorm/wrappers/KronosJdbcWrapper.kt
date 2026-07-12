@@ -25,7 +25,6 @@ import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.plugins.LastInsertIdPlugin
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -221,8 +220,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
 
     private fun shouldReturnGeneratedKeys(task: KAtomicActionTask): Boolean =
         task.operationType == KOperationType.INSERT &&
-            task.stash["useIdentity"] == true &&
-            (task.stash["queryId"] == true || task.stash["queryId"] == null && LastInsertIdPlugin.enabled)
+            task.generatedKeyRequest != null
 
     private fun readGeneratedKeys(
         statement: PreparedStatement,
@@ -236,15 +234,15 @@ class KronosJdbcWrapper @JvmOverloads constructor(
         }
         if (context.generatedKeys.isEmpty()) return
 
-        task.stash["generatedKeys"] = context.generatedKeys.toList()
+        task.generatedKeys.clear()
+        task.generatedKeys.addAll(context.generatedKeys)
         val firstKey = context.generatedKeys.first()
         val lastInsertId = when (firstKey) {
             is Number -> firstKey.toLong()
             else -> firstKey?.toString()?.toLongOrNull()
         }
         if (lastInsertId != null) {
-            task.stash["lastInsertId"] = lastInsertId
-            task.stash["queryId"] = false
+            task.lastInsertId = lastInsertId
         }
     }
 

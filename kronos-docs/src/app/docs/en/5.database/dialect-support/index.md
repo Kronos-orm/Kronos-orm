@@ -37,7 +37,7 @@ Use this page as the dialect behavior matrix. Each row links to the section or p
 | Behavior | Where to check |
 |----------|----------------|
 | Pagination | See [Pagination](#pagination) for `page(pageIndex, pageSize)` SQL in MySQL, PostgreSQL, SQLite, SQL Server, and Oracle. |
-| Upsert and `onConflict()` | See [Upsert](#upsert) and {{ $.keyword("mutation/upsert", ["Upsert"]) }} for fallback upsert, native conflict update, and dynamic conflict assignments. |
+| Upsert and `onConflict()` | See [Upsert](#upsert) and {{ $.keyword("mutation/upsert", ["Upsert"]) }} for match-field upsert, uniqueness-conflict upsert, and dynamic conflict assignments. |
 | Last insert id | See [Last Insert Id](#last-insert-id) and {{ $.keyword("mutation/last-insert-id", ["Last Insert Id"]) }} for identity key retrieval. |
 | DDL and schema sync | See [Table Operations](#table-operations), {{ $.keyword("database/table-operations", ["Table Operations"]) }}, and {{ $.keyword("database/schema-sync", ["Schema Sync"]) }}. |
 | Column type rendering | See {{ $.keyword("mapping/column-types", ["Column Types"]) }} for `KColumnType` examples and dialect output. |
@@ -128,13 +128,12 @@ OFFSET 20 ROWS FETCH NEXT 20 ROWS ONLY
 
 ## Upsert
 
-`upsert().on { ... }` uses the `on` fields as the conflict target and renders the write statement for the dialect.
+`onConflict()` uses database uniqueness conflicts and renders the matching SQL for the active dialect. When `on { ... }` is omitted, Kronos infers the conflict target from KPojo uniqueness metadata: primary-key values and declared unique indexes.
 
 ```kotlin group="Upsert" name="kotlin" icon="kotlin"
 User(id = 1, name = "Ada")
-    .upsert()
-    .on { it.id }
-    .set { [it.name] }
+    .upsert { it.name }
+    .onConflict()
     .execute()
 ```
 
@@ -171,17 +170,14 @@ WHEN NOT MATCHED THEN INSERT ("ID", "NAME") VALUES (:id, :name)
 
 ## Last Insert Id
 
-When `LastInsertIdPlugin` is enabled, an insert on an identity primary key can read `lastInsertId`. The built-in `KronosJdbcWrapper` reads JDBC generated keys during insert execution; wrappers that use a follow-up query use the dialect SQL below.
+An insert on an identity primary key can read `lastInsertId` when the insert uses `.withId()`. The built-in `KronosJdbcWrapper` reads JDBC generated keys during insert execution; wrappers that use a follow-up query use the dialect SQL below.
 
 ```kotlin group="Last Insert Id" name="kotlin" icon="kotlin"
-LastInsertIdPlugin.enabled = true
-
-val id = with(LastInsertIdPlugin) {
-    User(name = "Kronos")
-        .insert()
-        .execute()
-        .lastInsertId
-}
+val id = User(name = "Kronos")
+    .insert()
+    .withId()
+    .execute()
+    .lastInsertId
 ```
 
 ```sql group="Last Insert Id" name="Mysql" icon="mysql"
@@ -201,7 +197,7 @@ SELECT SCOPE_IDENTITY()
 ```
 
 ```sql group="Last Insert Id" name="Oracle" icon="oracle"
-SELECT * FROM DUAL
+SELECT MAX("ID") FROM "USER"
 ```
 
 ## Table Operations

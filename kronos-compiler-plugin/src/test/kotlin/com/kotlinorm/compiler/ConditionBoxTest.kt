@@ -87,6 +87,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun noValueTakeIfBooleanMatrix() = box("noValueTakeIfBooleanMatrix")
 
     /**
+     * Verifies if/when-shaped condition lambdas lower through IrWhen analysis.
+     */
+    @Test
+    fun whenConditionBranches() = box("whenConditionBranches")
+
+    /**
      * Verifies parameterized string match helpers and negation matrix.
      */
     @Test

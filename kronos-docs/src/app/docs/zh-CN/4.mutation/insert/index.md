@@ -19,10 +19,7 @@ user.insert().execute()
 
 `execute()` 返回 `KronosOperationResult`。
 
-```kotlin name="demo" icon="kotlin" {8,9}
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-
+```kotlin name="demo" icon="kotlin" {6,8,9}
 val user: User = User(
     name = "Kronos",
     age = 18
@@ -35,7 +32,7 @@ val lastInsertId = result.lastInsertId
 
 `.withId()` 表示本次插入需要读取数据库生成的 ID。目标 KPojo 需要使用自增主键。
 
-更多用法见 {{ $.keyword("mutation/last-insert-id", ["LastInsertId 插件"]) }}。
+更多用法见 {{ $.keyword("mutation/last-insert-id", ["生成的自增主键 ID"]) }}。
 
 ## 批量插入记录
 

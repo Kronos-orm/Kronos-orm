@@ -68,13 +68,13 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 ```kotlin
 plugins {
     kotlin("jvm") version "2.4.0"
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.0"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.1"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.2.0")
+    implementation("com.kotlinorm:kronos-core:0.2.1")
     // JDBC 包装器（可选，提供开箱即用的数据源支持）
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.1")
     // JDBC Driver 与连接池使用和数据库/JDK 匹配的最新稳定版
     implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
@@ -87,7 +87,7 @@ dependencies {
 <dependency>
     <groupId>com.kotlinorm</groupId>
     <artifactId>kronos-core</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ dependencies {
 
 要求：JDK 8+，Kotlin 2.4.0+
 
-技能中的 Kronos 推荐稳定版本直接写 `0.2.0`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+技能中的 Kronos 推荐稳定版本直接写 `0.2.1`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
 
 ---
 
@@ -302,7 +302,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.0")
+    implementation("com.kotlinorm:kronos-logging:0.2.1")
 }
 ```
 
@@ -322,7 +322,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.0")
+    implementation("com.kotlinorm:kronos-logging:0.2.1")
     implementation("commons-logging:commons-logging:<latest-stable>")
 }
 ```
@@ -445,15 +445,15 @@ DataGuardPlugin.disable()
 
 `kronos-codegen` 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.1")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.1")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.1")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -629,7 +629,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 }
 ```
 
-连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.2.0`。
+连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.2.1`。
 
 生产连接检查要覆盖连接池大小、连接/网络/查询/空闲超时、validation query 或 JDBC validation method、SSL/TLS 与证书配置、secret 来源、时区/编码 URL 参数，以及数据库服务端、JDK、认证和 TLS 能力对应的 driver 稳定分支。
 
@@ -722,32 +722,25 @@ Upsert 按当前方言渲染：
 
 ```kotlin
 User(id = 1, name = "Ada")
-    .upsert()
-    .on { it.id }
-    .set { [it.name] }
+    .upsert { it.name }
+    .onConflict()
     .execute()
 ```
 
 ```sql
 -- MySQL
-ON DUPLICATE KEY UPDATE `name` = VALUES (`name`)
+ON DUPLICATE KEY UPDATE `name` = :name
 
 -- PostgreSQL / SQLite
-ON CONFLICT ("id") DO UPDATE SET "name" = EXCLUDED."name"
+ON CONFLICT ("id") DO UPDATE SET "name" = :name
 
 -- SQL Server / Oracle
 MERGE INTO ...
 ```
 
-`LastInsertIdPlugin` 查询自增主键时使用当前数据库语句：
+自增主键插入需要返回数据库生成 ID 时，在本次 insert 上调用 `.withId()`：
 
 ```kotlin
-import com.kotlinorm.plugins.LastInsertIdPlugin
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-
-LastInsertIdPlugin.enabled = false
-
 val result = User(name = "Kronos")
     .insert()
     .withId()
@@ -771,7 +764,7 @@ SELECT last_insert_rowid()
 SELECT SCOPE_IDENTITY()
 
 -- Oracle
-SELECT * FROM DUAL
+SELECT MAX("ID") FROM "USER"
 ```
 
 创建新数据库方言时，至少同步这些入口：
@@ -793,16 +786,13 @@ SqlManager.registerDatabase(
 )
 ```
 
-新增方言要验证 select、分页、upsert、last insert id、DDL、schema sync、函数渲染和 JDBC metadata 识别。
+新增方言要验证 select、分页、upsert、generated identity ID、DDL、schema sync、函数渲染和 JDBC metadata 识别。
 
 ---
 
 ## Insert
 
 ```kotlin
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-
 // 单条插入
 val user = User(name = "Kronos", age = 18)
 user.insert().execute()
@@ -955,13 +945,18 @@ val allDirect = User().select { it }.toList()
 val allInList = User().select { [it] }.toList()
 val withoutId = User().select { it - it.id }.toList()
 val withoutIdInList = User().select { [it - it.id] }.toList()
+val withoutIdAndAge = User().select { it - it.id - it.age }.toList()
 
 val withAlias = User()
     .select { [it, it.id.alias("sourceId")] }
     .toList()
+
+val compactRows = User()
+    .select { [it - [it.id, it.age], it.id.alias("sourceId")] }
+    .toList()
 ```
 
-`[]` 是推荐形式。`listOf<Any?>`、`arrayOf<Any?>`、`mutableListOf<Any?>` 和 `setOf<Any?>` 也可以构造投影列表，并支持 `listOf<Any?>(it, it.id.alias("sourceId"))` 这样的完整字段展开。投影输出名必须唯一。
+`[]` 可以组织多个投影项。`it - it.id - it.age` 可以链式排除字段；`it - [it.id, it.age]` 可以一次排除多个字段，并且可以作为 `[]` 里的一个投影项继续追加 alias。投影输出名必须唯一。
 
 ```kotlin
 val nameLengths = User()
@@ -1176,7 +1171,7 @@ User(id = 1, name = "seed")
 存在则更新，不存在则插入：
 
 ```kotlin
-// 基本用法：按 onFields 判断是否存在
+// 基本用法：按 on 字段匹配已有记录
 user.upsert().on { it.id }.execute()
 
 // 指定更新字段
@@ -1184,7 +1179,13 @@ user.upsert().on { it.id }.set { [it.name, it.age] }.execute()
 
 ```
 
-`on` 指定用于判断记录是否存在的字段，`set` 指定存在时要更新的字段。
+`on` 指定用于匹配已有记录的字段，`set` 指定匹配到记录时要更新的字段。匹配到逻辑删除记录时，upsert 会更新该记录并恢复逻辑删除字段为活动值。
+
+策略字段在 upsert 中按写入路径维护：插入分支初始化 `@CreateTime`、`@UpdateTime`、`@LogicDelete` 和 `@Version`；更新分支刷新 `@UpdateTime`、恢复 `@LogicDelete` 活动值并递增 `@Version`。
+
+`onConflict()` 表示按数据库唯一约束冲突处理：插入记录，命中唯一约束时更新记录，并由 Kronos 按当前方言生成 SQL。省略 `on { ... }` 时，从 KPojo 唯一性元数据推导冲突目标：优先使用有值的主键，其次使用字段值完整的 `@TableIndex(type = "UNIQUE")` / `@TableIndex(method = "UNIQUE")`。需要指定某个业务唯一键，或存在多个候选唯一键时，显式调用 `on { ... }`。
+
+启用策略字段时，`onConflict()` 的插入列包含创建时间、更新时间、逻辑删除和版本字段；冲突更新部分刷新更新时间、恢复逻辑删除活动值并递增版本。
 
 使用 `onConflict()` 时，`patch(...)` 可以为冲突更新提供动态赋值，并把字段加入冲突更新列表：
 
@@ -1198,7 +1199,6 @@ User(id = 7, name = "seed", count = 2)
         "count" to SqlExpr.NumberLiteral("10"),
         "name" to KronosFunctionExpr(SqlExpr.StringLiteral("patched"), "literal")
     )
-    .on { it.id }
     .onConflict()
     .execute()
 ```
@@ -1211,7 +1211,6 @@ val countField = User().kronosColumns().single { it.name == "count" }
 User(id = 8, name = "seed", count = 5)
     .upsert { it.name }
     .patch("name" to countField)
-    .on { it.id }
     .onConflict()
     .execute()
 
@@ -1223,12 +1222,11 @@ User(id = 1, name = "seed")
             .where { it.status == 15 }
             .limit(1)
     )
-    .on { it.id }
     .onConflict()
     .execute()
 ```
 
-`patch(...)` 的值在 `onConflict()` 路径中作为冲突更新赋值；fallback upsert 路径中，相同字段进入存在性检查后的 update set。
+`patch(...)` 的值在 `onConflict()` 路径中作为冲突更新赋值；普通 upsert 路径中，相同字段进入匹配后的 update set。
 
 ---
 
@@ -1288,7 +1286,9 @@ User(id = 1).delete().logic(false).by { it.id }.execute()
 // DELETE FROM ... WHERE id = :id
 ```
 
-`@Version` 标记版本字段。insert 会初始化版本字段，update 和逻辑删除会递增版本字段。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
+普通 upsert 匹配到逻辑删除记录时会更新原行并恢复逻辑删除字段为活动值；`onConflict()` 的冲突更新也会写回活动值。
+
+`@Version` 标记版本字段。insert 会初始化版本字段，update、逻辑删除和 upsert 更新分支会递增版本字段。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
 
 ```kotlin
 data class Product(
@@ -1529,7 +1529,7 @@ val (sql, params, atomicTasks) = truncateTask
 
 ## 故障排查入口
 
-- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.0`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.0` 和数据库 driver 的当前稳定版。
+- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.1`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.1` 和数据库 driver 的当前稳定版。
 - 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
 - 检查 KPojo generated members：`__tableName`、`toDataMap()`、`kronosColumns()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。
@@ -1542,4 +1542,3 @@ val (sql, params, atomicTasks) = truncateTask
 ---
 
 更多高级用法（级联操作、内置函数、自定义函数、多租户等）请参阅 `references/advanced.md`。
-

@@ -34,6 +34,8 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.LinkedHashSet as KronosLinkedHashSet
 import kotlin.reflect.KClass
 
 @Table("tb_kpojo_expansion_projection")
@@ -94,6 +96,17 @@ fun box(): String {
     val excludedLiteral = source.select { [it - it.id] }
     val excludedCollectionLiteral = source.select { it - [it.id, it.status] }
     val excludedList = source.select { it - listOf(it.id, it.status) }
+    val excludedDirectWithAlias = source.select { [it - it.id, it.id.alias("directIid")] }
+    val excludedCollectionLiteralWithAlias = source.select { [it - [it.id, it.status], it.id.alias("iid")] }
+    val excludedListWithAlias = source.select { [it - listOf(it.id, it.status), it.id.alias("listIid")] }
+    val excludedArrayWithAlias = source.select { [it - arrayOf(it.id, it.status), it.id.alias("arrayIid")] }
+    val excludedMutableListWithAlias =
+        source.select { [it - mutableListOf(it.id, it.status), it.id.alias("mutableIid")] }
+    val excludedSetWithAlias = source.select { [it - setOf(it.id, it.status), it.id.alias("setIid")] }
+    val excludedLinkedHashSetOfWithAlias =
+        source.select { [it - KronosLinkedHashSet.of(it.id, it.status), it.id.alias("linkedSetIid")] }
+    val excludedStackOfWithAlias = source.select { [it - KStack.of(it.id, it.status), it.id.alias("stackIid")] }
+    val chainedMinusWithAlias = source.select { [it - it.id - it.name, it.name.alias("uname")] }
     val namedAll = source.select { row -> row }
     val namedExcluded = source.select { row -> row - [row.id, row.status] }
     val propertyNamedIt = source.select { it.it }
@@ -130,6 +143,34 @@ fun box(): String {
         val collectionExcludedName: String? = collectionExcludedRow.name
         val listExcludedRow = excludedList.first()
         val listExcludedName: String? = listExcludedRow.name
+        val directAliasRow = excludedDirectWithAlias.first()
+        val directAliasName: String? = directAliasRow.name
+        val directAliasStatus: Int? = directAliasRow.status
+        val directAliasIid: Int? = directAliasRow.directIid
+        val collectionAliasRow = excludedCollectionLiteralWithAlias.first()
+        val collectionAliasName: String? = collectionAliasRow.name
+        val collectionAliasIid: Int? = collectionAliasRow.iid
+        val listAliasRow = excludedListWithAlias.first()
+        val listAliasName: String? = listAliasRow.name
+        val listAliasIid: Int? = listAliasRow.listIid
+        val arrayAliasRow = excludedArrayWithAlias.first()
+        val arrayAliasName: String? = arrayAliasRow.name
+        val arrayAliasIid: Int? = arrayAliasRow.arrayIid
+        val mutableAliasRow = excludedMutableListWithAlias.first()
+        val mutableAliasName: String? = mutableAliasRow.name
+        val mutableAliasIid: Int? = mutableAliasRow.mutableIid
+        val setAliasRow = excludedSetWithAlias.first()
+        val setAliasName: String? = setAliasRow.name
+        val setAliasIid: Int? = setAliasRow.setIid
+        val linkedSetAliasRow = excludedLinkedHashSetOfWithAlias.first()
+        val linkedSetAliasName: String? = linkedSetAliasRow.name
+        val linkedSetAliasIid: Int? = linkedSetAliasRow.linkedSetIid
+        val stackAliasRow = excludedStackOfWithAlias.first()
+        val stackAliasName: String? = stackAliasRow.name
+        val stackAliasIid: Int? = stackAliasRow.stackIid
+        val chainedMinusAliasRow = chainedMinusWithAlias.first()
+        val chainedMinusStatus: Int? = chainedMinusAliasRow.status
+        val chainedMinusUname: String? = chainedMinusAliasRow.uname
         val namedAllRow = namedAll.first()
         val namedAllId: Int? = namedAllRow.id
         val namedAllName: String? = namedAllRow.name
@@ -150,71 +191,68 @@ fun box(): String {
             "$literalAllId/$literalAllName/$literalAllStatus/$literalAllIt/$literalAllTags/" +
             "$expandedId/$expandedName/$expandedStatus/$aliasedId/" +
             "$directExcludedName/$directExcludedStatus/$literalExcludedName/$literalExcludedStatus/" +
-            "$collectionExcludedName/$listExcludedName/$namedAllId/$namedAllName/$namedAllStatus/$namedExcludedName/" +
+            "$collectionExcludedName/$listExcludedName/$directAliasName/$directAliasStatus/$directAliasIid/" +
+            "$collectionAliasName/$collectionAliasIid/" +
+            "$listAliasName/$listAliasIid/$arrayAliasName/$arrayAliasIid/$mutableAliasName/$mutableAliasIid/" +
+            "$setAliasName/$setAliasIid/$linkedSetAliasName/$linkedSetAliasIid/$stackAliasName/$stackAliasIid/" +
+            "$chainedMinusStatus/$chainedMinusUname/" +
+            "$namedAllId/$namedAllName/$namedAllStatus/$namedExcludedName/" +
             "$selectedIt/$previousId/$shorterLength/$excludedNonColumnId/$excludedNonColumnName"
     }
 
     val clauses = listOf(
-        allDirect,
-        allLiteral,
-        allWithAlias,
-        excludedDirect,
-        excludedLiteral,
-        excludedCollectionLiteral,
-        excludedList,
-        namedAll,
-        namedExcluded,
-        propertyNamedIt,
-        arithmeticMinus,
-        functionMinus,
-        excludedNonColumn
+        "allDirect" to allDirect,
+        "allLiteral" to allLiteral,
+        "allWithAlias" to allWithAlias,
+        "excludedDirect" to excludedDirect,
+        "excludedLiteral" to excludedLiteral,
+        "excludedCollectionLiteral" to excludedCollectionLiteral,
+        "excludedList" to excludedList,
+        "excludedDirectWithAlias" to excludedDirectWithAlias,
+        "excludedCollectionLiteralWithAlias" to excludedCollectionLiteralWithAlias,
+        "excludedListWithAlias" to excludedListWithAlias,
+        "excludedArrayWithAlias" to excludedArrayWithAlias,
+        "excludedMutableListWithAlias" to excludedMutableListWithAlias,
+        "excludedSetWithAlias" to excludedSetWithAlias,
+        "excludedLinkedHashSetOfWithAlias" to excludedLinkedHashSetOfWithAlias,
+        "excludedStackOfWithAlias" to excludedStackOfWithAlias,
+        "chainedMinusWithAlias" to chainedMinusWithAlias,
+        "namedAll" to namedAll,
+        "namedExcluded" to namedExcluded,
+        "propertyNamedIt" to propertyNamedIt,
+        "arithmeticMinus" to arithmeticMinus,
+        "functionMinus" to functionMinus,
+        "excludedNonColumn" to excludedNonColumn
     )
-    val outputNames = clauses.map { clause ->
-        (clause.toSqlQuery() as SqlQuery.Select).selectedOutputNames()
+    val outputNames = clauses.associate { (name, clause) ->
+        name to (clause.toSqlQuery() as SqlQuery.Select).selectedOutputNames()
     }
     val wrapper = KPojoExpansionProjectionWrapper()
-    clauses.forEach { it.toList(wrapper) }
+    clauses.forEach { (_, clause) -> clause.toList(wrapper) }
 
     val failures = listOfNotNull(
-        expansionExpect(outputNames[0] == listOf("id", "name", "status", "it", "tags")) {
-            "direct all columns were ${outputNames[0]}"
-        },
-        expansionExpect(outputNames[1] == listOf("id", "name", "status", "it", "tags")) {
-            "literal all columns were ${outputNames[1]}"
-        },
-        expansionExpect(outputNames[2] == listOf("id", "name", "status", "it", "tags", "xxx")) {
-            "all-with-alias columns were ${outputNames[2]}"
-        },
-        expansionExpect(outputNames[3] == listOf("name", "status", "it", "tags")) {
-            "direct excluded columns were ${outputNames[3]}"
-        },
-        expansionExpect(outputNames[4] == listOf("name", "status", "it", "tags")) {
-            "literal excluded columns were ${outputNames[4]}"
-        },
-        expansionExpect(outputNames[5] == listOf("name", "it", "tags")) {
-            "collection-literal excluded columns were ${outputNames[5]}"
-        },
-        expansionExpect(outputNames[6] == listOf("name", "it", "tags")) {
-            "list excluded columns were ${outputNames[6]}"
-        },
-        expansionExpect(outputNames[7] == listOf("id", "name", "status", "it", "tags")) {
-            "named source columns were ${outputNames[7]}"
-        },
-        expansionExpect(outputNames[8] == listOf("name", "it", "tags")) {
-            "named excluded columns were ${outputNames[8]}"
-        },
-        expansionExpect(outputNames[9] == listOf("it")) {
-            "property named it columns were ${outputNames[9]}"
-        },
-        expansionExpect(outputNames[10] == listOf("previousId")) {
-            "arithmetic-minus columns were ${outputNames[10]}"
-        },
-        expansionExpect(outputNames[11] == listOf("shorterLength")) {
-            "function-minus columns were ${outputNames[11]}"
-        },
-        expansionExpect(outputNames[12] == listOf("id", "name", "status", "it", "tags")) {
-            "non-column exclusion columns were ${outputNames[12]}"
-        },
+        expansionExpectOutput(outputNames, "allDirect", listOf("id", "name", "status", "it", "tags")),
+        expansionExpectOutput(outputNames, "allLiteral", listOf("id", "name", "status", "it", "tags")),
+        expansionExpectOutput(outputNames, "allWithAlias", listOf("id", "name", "status", "it", "tags", "xxx")),
+        expansionExpectOutput(outputNames, "excludedDirect", listOf("name", "status", "it", "tags")),
+        expansionExpectOutput(outputNames, "excludedLiteral", listOf("name", "status", "it", "tags")),
+        expansionExpectOutput(outputNames, "excludedCollectionLiteral", listOf("name", "it", "tags")),
+        expansionExpectOutput(outputNames, "excludedList", listOf("name", "it", "tags")),
+        expansionExpectOutput(outputNames, "excludedDirectWithAlias", listOf("name", "status", "it", "tags", "directIid")),
+        expansionExpectOutput(outputNames, "excludedCollectionLiteralWithAlias", listOf("name", "it", "tags", "iid")),
+        expansionExpectOutput(outputNames, "excludedListWithAlias", listOf("name", "it", "tags", "listIid")),
+        expansionExpectOutput(outputNames, "excludedArrayWithAlias", listOf("name", "it", "tags", "arrayIid")),
+        expansionExpectOutput(outputNames, "excludedMutableListWithAlias", listOf("name", "it", "tags", "mutableIid")),
+        expansionExpectOutput(outputNames, "excludedSetWithAlias", listOf("name", "it", "tags", "setIid")),
+        expansionExpectOutput(outputNames, "excludedLinkedHashSetOfWithAlias", listOf("name", "it", "tags", "linkedSetIid")),
+        expansionExpectOutput(outputNames, "excludedStackOfWithAlias", listOf("name", "it", "tags", "stackIid")),
+        expansionExpectOutput(outputNames, "chainedMinusWithAlias", listOf("status", "it", "tags", "uname")),
+        expansionExpectOutput(outputNames, "namedAll", listOf("id", "name", "status", "it", "tags")),
+        expansionExpectOutput(outputNames, "namedExcluded", listOf("name", "it", "tags")),
+        expansionExpectOutput(outputNames, "propertyNamedIt", listOf("it")),
+        expansionExpectOutput(outputNames, "arithmeticMinus", listOf("previousId")),
+        expansionExpectOutput(outputNames, "functionMinus", listOf("shorterLength")),
+        expansionExpectOutput(outputNames, "excludedNonColumn", listOf("id", "name", "status", "it", "tags")),
         expansionExpect(wrapper.mappedClasses.size == clauses.size) {
             "mapped classes were ${wrapper.mappedClasses}"
         },
@@ -228,6 +266,15 @@ fun box(): String {
 
 inline fun expansionExpect(condition: Boolean, message: () -> String): String? =
     if (condition) null else "Fail: ${message()}"
+
+fun expansionExpectOutput(
+    outputNames: Map<String, List<String>>,
+    caseName: String,
+    expected: List<String>
+): String? =
+    expansionExpect(outputNames[caseName] == expected) {
+        "$caseName columns were ${outputNames[caseName]}"
+    }
 
 fun SqlQuery.Select.selectedOutputNames(): List<String> =
     select.mapNotNull { item ->

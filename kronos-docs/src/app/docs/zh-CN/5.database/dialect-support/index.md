@@ -37,7 +37,7 @@ println(wrapper.sqlDialect)
 | 行为 | 查阅位置 |
 |------|----------|
 | 分页 | 见[分页](#分页)，查看 `page(pageIndex, pageSize)` 在 MySQL、PostgreSQL、SQLite、SQL Server 和 Oracle 中的 SQL。 |
-| Upsert 和 `onConflict()` | 见 [Upsert](#upsert) 与 {{ $.keyword("mutation/upsert", ["Upsert"]) }}，查看 fallback upsert、原生冲突更新和动态冲突赋值。 |
+| Upsert 和 `onConflict()` | 见 [Upsert](#upsert) 与 {{ $.keyword("mutation/upsert", ["Upsert"]) }}，查看按匹配字段 upsert、唯一约束冲突 upsert 和动态冲突赋值。 |
 | 自增主键读取 | 见 [Last Insert Id](#last-insert-id) 与 {{ $.keyword("mutation/last-insert-id", ["Last Insert Id"]) }}。 |
 | DDL 和表结构同步 | 见[表结构操作](#表结构操作)、{{ $.keyword("database/table-operations", ["表操作"]) }}和{{ $.keyword("database/schema-sync", ["表结构同步"]) }}。 |
 | 字段类型渲染 | 见 {{ $.keyword("mapping/column-types", ["字段类型"]) }} 中的 `KColumnType` 示例和方言输出。 |
@@ -128,13 +128,12 @@ OFFSET 20 ROWS FETCH NEXT 20 ROWS ONLY
 
 ## Upsert
 
-`upsert().on { ... }` 会使用 `on` 字段判断冲突记录，并按方言生成对应写入语句。
+`onConflict()` 按数据库唯一约束冲突处理更新，并按当前方言渲染对应 SQL。省略 `on { ... }` 时，Kronos 会根据 KPojo 唯一性元数据推导冲突目标，包括主键值和已声明的唯一索引。
 
 ```kotlin group="Upsert" name="kotlin" icon="kotlin"
 User(id = 1, name = "Ada")
-    .upsert()
-    .on { it.id }
-    .set { [it.name] }
+    .upsert { it.name }
+    .onConflict()
     .execute()
 ```
 
@@ -171,17 +170,14 @@ WHEN NOT MATCHED THEN INSERT ("ID", "NAME") VALUES (:id, :name)
 
 ## Last Insert Id
 
-启用 `LastInsertIdPlugin` 后，插入自增主键记录可以读取 `lastInsertId`。内置 `KronosJdbcWrapper` 会在 insert 执行时读取 JDBC generated keys；使用后续查询读取生成 ID 的 wrapper 会使用下面的方言 SQL。
+自增主键 insert 调用 `.withId()` 后可以读取 `lastInsertId`。内置 `KronosJdbcWrapper` 会在 insert 执行时读取 JDBC generated keys；使用后续查询读取生成 ID 的 wrapper 会使用下面的方言 SQL。
 
 ```kotlin group="Last Insert Id" name="kotlin" icon="kotlin"
-LastInsertIdPlugin.enabled = true
-
-val id = with(LastInsertIdPlugin) {
-    User(name = "Kronos")
-        .insert()
-        .execute()
-        .lastInsertId
-}
+val id = User(name = "Kronos")
+    .insert()
+    .withId()
+    .execute()
+    .lastInsertId
 ```
 
 ```sql group="Last Insert Id" name="Mysql" icon="mysql"
@@ -201,7 +197,7 @@ SELECT SCOPE_IDENTITY()
 ```
 
 ```sql group="Last Insert Id" name="Oracle" icon="oracle"
-SELECT * FROM DUAL
+SELECT MAX("ID") FROM "USER"
 ```
 
 ## 表结构操作

@@ -15,7 +15,6 @@ data class IntegrationDatabaseEnvironment(
     val password: String? = null,
     val enabled: Boolean = true,
     val probeSql: String = "SELECT 1",
-    val supportsConflictUpsert: Boolean = true,
     val wrapperFactory: (DataSource) -> KronosDataSourceWrapper = { KronosJdbcWrapper(it) },
 ) {
     fun createWrapper(): KronosDataSourceWrapper {
@@ -60,7 +59,6 @@ object IntegrationDatabaseEnvironments {
             ?: "jdbc:sqlserver://localhost:1433;databaseName=kronos_testing;encrypt=true;trustServerCertificate=true",
         username = env("SQLSERVER_USERNAME") ?: env("MSSQL_USERNAME") ?: "SA",
         password = env("SQLSERVER_PASSWORD") ?: env("MSSQL_PASSWORD") ?: "YourStrong!Passw0rd",
-        supportsConflictUpsert = false,
     )
 
     val oracle = IntegrationDatabaseEnvironment(
@@ -70,7 +68,6 @@ object IntegrationDatabaseEnvironments {
         username = env("ORACLE_USERNAME") ?: "kronos",
         password = env("ORACLE_PASSWORD") ?: "KronosPassw0rd1",
         probeSql = "SELECT 1 FROM DUAL",
-        supportsConflictUpsert = false,
     )
 
     val sqlite = IntegrationDatabaseEnvironment(

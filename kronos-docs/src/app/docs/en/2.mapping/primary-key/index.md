@@ -213,9 +213,9 @@ title -> "Login issue"
 > **Warning**
 > Set `customIdGenerator` before inserting a `custom` primary key. If it is not set, the generated key parameter is `null`.
 
-## Global fallback strategy
+## Global primary-key strategy
 
-The recommended mapping is to put `@PrimaryKey` on the key property. Use `Kronos.primaryKeyStrategy` only as a fallback primary-key lookup for unannotated models that share the same key field name.
+The recommended mapping is to put `@PrimaryKey` on the key property. Use `Kronos.primaryKeyStrategy` only for unannotated models that share the same key field name.
 
 ```kotlin group="Global primary key 1" name="config" icon="kotlin"
 import com.kotlinorm.Kronos

@@ -37,7 +37,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
                     .where { it.status == 15 }
                     .limit(1)
             )
-            .on { it.id }
             .onConflict()
             .build()
 
@@ -58,7 +57,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
                     .where { it.status == 21 }
                     .limit(1)
             )
-            .on { it.id }
             .onConflict()
             .build()
 
@@ -79,7 +77,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
                     .where { it.status == 22 }
                     .limit(1)
             )
-            .on { it.id }
             .onConflict()
             .build(SamplePostgresJdbcWrapper())
 
@@ -100,7 +97,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
                     .where { it.status == 23 }
                     .limit(1)
             )
-            .on { it.id }
             .onConflict()
             .build(SampleSqliteJdbcWrapper)
 
@@ -115,7 +111,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
     fun `set block conflict assignment supports scalar subquery`() {
         val (sql, params) = SubqueryUser(id = 2, name = "seed")
             .upsert()
-            .on { it.id }
             .set { user ->
                 setValue(
                     user.kronosColumns().single { it.name == "name" },
@@ -140,7 +135,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
     fun `set assignment scalar subquery type hint renders mysql sql`() {
         val (sql, params) = SubqueryUser(id = 3, name = "seed")
             .upsert()
-            .on { it.id }
             .set {
                 it.name = (SubqueryOrder()
                     .select { order -> order.status }
@@ -162,7 +156,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
     fun `set assignment scalar subquery type hint renders postgres sql`() {
         val (sql, params) = SubqueryUser(id = 8, name = "seed")
             .upsert()
-            .on { it.id }
             .set {
                 it.name = (SubqueryOrder()
                     .select { order -> order.status }
@@ -184,7 +177,6 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
     fun `set assignment scalar subquery type hint renders sqlite sql`() {
         val (sql, params) = SubqueryUser(id = 9, name = "seed")
             .upsert()
-            .on { it.id }
             .set {
                 it.name = (SubqueryOrder()
                     .select { order -> order.status }

@@ -121,7 +121,9 @@ WHERE `id` = :id
 
 ## Upsert uses the configured mutation paths
 
-Fallback `upsert()` checks existence through a select, then runs `update()` or `insert()`. The update branch gets the same version increment as a normal update, and the insert branch gets the same initial version as a normal insert.
+Match-field `upsert()` chooses `update()` or `insert()` from the row match result. The update branch gets the same version increment as a normal update, and the insert branch gets the same initial version as a normal insert.
+
+`onConflict()` upsert also initializes the version on insert and increments it in the conflict update assignment.
 
 ```kotlin group="Upsert" name="kotlin" icon="kotlin"
 Product(id = 1, name = "Keyboard")
@@ -130,7 +132,7 @@ Product(id = 1, name = "Keyboard")
     .execute()
 ```
 
-```sql group="Upsert" name="fallback SQL" icon="mysql"
+```sql group="Upsert" name="match SQL" icon="mysql"
 SELECT COUNT(1)
 FROM `product`
 WHERE `id` = :id
@@ -145,6 +147,14 @@ WHERE `id` = :id
 -- insert branch
 INSERT INTO `product` (`id`, `name`, `version`, `deleted`)
 VALUES (:id, :name, :version, :deleted)
+```
+
+```sql group="Upsert Conflict" name="Mysql" icon="mysql"
+INSERT INTO `product` (`id`, `name`, `version`, `deleted`)
+VALUES (:id, :name, :version, :deleted)
+ON DUPLICATE KEY UPDATE
+    `name` = :name,
+    `version` = `version` + :version2PlusNew
 ```
 
 See {{ $.keyword("mutation/upsert", ["Upsert"]) }} for `on(...)` and `onConflict()` examples.

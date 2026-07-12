@@ -156,14 +156,19 @@ data class NodeOfKPojo(
     private fun patchFromParent() {
         if (data == null || !data.updateReferenceValue || data.parent?.insertIgnore != false) return
         val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
-        val patches = validRef.kCascade.targetProperties.mapIndexedNotNull { index, name ->
-            val prop = if (tableName == validRef.tableName) {
+        val patches = validRef.kCascade.targetProperties.mapIndexedNotNull { index, targetProp ->
+            val sourceProp = if (tableName == validRef.tableName) {
+                targetProp
+            } else {
+                validRef.kCascade.properties[index]
+            }
+            val currentProp = if (tableName == validRef.tableName) {
                 validRef.kCascade.properties[index]
             } else {
-                name
+                targetProp
             }
-            val value = data.parent!!.dataMap[name] ?: return@mapIndexedNotNull null
-            Triple(prop, name, value)
+            val value = data.parent!!.dataMap[sourceProp] ?: return@mapIndexedNotNull null
+            Triple(currentProp, sourceProp, value)
         }
         patches.forEach { (prop, parentProp, value) ->
             data.parent!!.updateParams[parentProp]?.let { updateParams[prop] = it }

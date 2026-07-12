@@ -164,7 +164,7 @@ val rows: List<UserSummary> = User()
 
 select 输出名需要和要填充的 DTO 属性名对应。
 
-## 完整投影、排除列与集合形式
+## 完整投影、排除列与 []
 
 无 lambda 的 `select()` 返回源 KPojo 类型。在显式 `select { ... }` 中，`it` 表示当前 KPojo 的完整数据库列集合，并生成对应的投影结果类型。直接返回和放入 `[]` 的行为相同；`-` 可以排除一个或多个字段。
 
@@ -174,6 +174,8 @@ val allInList = User().select { [it] }.toList()
 
 val withoutAge = User().select { it - it.age }.toList()
 val withoutAgeInList = User().select { [it - it.age] }.toList()
+val withoutIdAndAge = User().select { it - it.id - it.age }.toList()
+val withoutIdAndAgeWithAlias = User().select { [it - [it.id, it.age], it.id.alias("sourceId")] }.toList()
 ```
 
 ```kotlin group="Exclude projection" name="kotlin" icon="kotlin"
@@ -186,6 +188,8 @@ val rows = User()
 SELECT `id`, `name`
 FROM `user`
 ```
+
+`-` 右侧也可以使用 `[]`，所以 `[it - [it.id, it.age], it.id.alias("sourceId")]` 也是合法的投影列表。
 
 完整投影还可以和普通字段、alias 或函数投影放在同一个列表中。展开后的字段保持原顺序，后续项继续追加到生成结果类型。
 
@@ -203,24 +207,7 @@ SELECT `id`, `name`, `age`, `id` AS `sourceId`
 FROM `user`
 ```
 
-`[]` 是推荐写法。以下 Kotlin 集合构造函数也会按相同规则展开 `it`，并生成相同的投影属性：
-
-```kotlin name="kotlin" icon="kotlin"
-val fromList = User().select {
-    listOf<Any?>(it, it.id.alias("sourceId"))
-}
-val fromArray = User().select {
-    arrayOf<Any?>(it, it.id.alias("sourceId"))
-}
-val fromMutableList = User().select {
-    mutableListOf<Any?>(it, it.id.alias("sourceId"))
-}
-val fromSet = User().select {
-    setOf<Any?>(it, it.id.alias("sourceId"))
-}
-```
-
-多数表字段都需要返回、只跳过少数字段，或需要在完整字段后追加 alias 时，可以使用这些写法。投影项的最终输出名必须唯一。
+多数表字段都需要返回、只跳过少数字段，或需要在完整字段后追加 alias 时，可以使用 `it - ...`。投影项的最终输出名必须唯一。
 
 ## 在 join 查询中投影
 

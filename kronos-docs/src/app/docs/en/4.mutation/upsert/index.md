@@ -5,11 +5,15 @@ In Kronos, we can use the `KPojo.upsert().execute()` method to upsert a record i
 
 Since implementations differ from database to database, in Kronos we have unified the `upsert` operation to achieve cross-database compatibility.
 
-For version fields on the update and insert paths, see {{ $.keyword("mutation/optimistic-lock", ["Optimistic Lock"]) }}.
+For version fields on the update and insert paths, see {{ $.keyword("mutation/optimistic-lock", ["Optimistic Lock"]) }}. For logically deleted rows restored by upsert, see {{ $.keyword("mutation/logic-delete", ["Logic Delete"]) }}.
 
-## {{ $.title("on") }} Set the unique constraint field
+## {{ $.title("on") }} Set match fields
 
-The `on` method is used to uniquely set a constraint field, either a single field or multiple fields. When the record exists, Kronos generates an update conditional statement based on the fields set by the `on` method, otherwise it generates an insert statement.
+The `on` fields match an existing row. Kronos updates the matched row, or inserts a new row when no row matches. The `on` fields can be one field or multiple fields. They build the match query and update condition; they do not create database unique constraints.
+
+When the matched row is logically deleted, Kronos updates the existing row and restores the logic-delete marker to the active value.
+
+Regular `on { ... }` upsert runs a match query before choosing insert or update. When the optimistic lock strategy is not enabled, the match query uses an update lock by default.
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7-11}
 val user: User = User(
@@ -25,7 +29,7 @@ user
 ```
 
 ```sql group="Case 1" name="Mysql" icon="mysql"
-SELECT COUNT(1) FROM `user` WHERE `id` = :id and `name` = :name;
+SELECT COUNT(1) FROM `user` WHERE `id` = :id and `name` = :name LIMIT 1 FOR UPDATE;
 # Update if record exists
 UPDATE `user` SET `id` = :id, `name` = :name, `age` = :age WHERE `id` = :id and `name` = :name;
 # Insert if record does not exist
@@ -33,7 +37,7 @@ INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 1" name="PostgreSQL" icon="postgres"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name LIMIT 1 FOR UPDATE;
 # Update if record exists
 UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and "name" = :name;
 # Insert if record does not exist
@@ -41,7 +45,7 @@ INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 1" name="SQLite" icon="sqlite"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name LIMIT 1;
 # Update if record exists
 UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and "name" = :name;
 # Insert if record does not exist
@@ -49,7 +53,7 @@ INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
-SELECT COUNT(1) FROM [user] WHERE [id] = :id and [name] = :name;
+SELECT COUNT(1) FROM [user] WITH (UPDLOCK, ROWLOCK) WHERE [id] = :id and [name] = :name;
 # Update if record exists
 UPDATE [user] SET [id] = :id, [name] = :name, [age] = :age WHERE [id] = :id and [name] = :name;
 # Insert if record does not exist
@@ -57,7 +61,7 @@ INSERT INTO [user] ([id], [name], [age]) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 1" name="Oracle" icon="oracle"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name FETCH NEXT 1 ROWS ONLY FOR UPDATE;
 # Update if record exists
 UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and "name" = :name;
 # Insert if record does not exist
@@ -82,7 +86,7 @@ user
 ```
 
 ```sql group="Case 2" name="Mysql" icon="mysql"
-SELECT COUNT(1) FROM `user` WHERE `id` = :id;
+SELECT COUNT(1) FROM `user` WHERE `id` = :id LIMIT 1 FOR UPDATE;
 # Update if record exists
 UPDATE `user` SET `name` = :name WHERE `id` = :id;
 # Insert if record does not exist
@@ -90,7 +94,7 @@ INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 2" name="PostgreSQL" icon="postgres"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id LIMIT 1 FOR UPDATE;
 # Update if record exists
 UPDATE "user" SET "name" = :name WHERE "id" = :id;
 # Insert if record does not exist
@@ -98,15 +102,15 @@ INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 2" name="SQLite" icon="sqlite"
-SELECT COUNT(1) FROM `user` WHERE `id` = :id;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id LIMIT 1;
 # Update if record exists
-UPDATE `user` SET `name` = :name WHERE `id` = :id;
+UPDATE "user" SET "name" = :name WHERE "id" = :id;
 # Insert if record does not exist
-INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age);
+INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 2" name="SQLServer" icon="sqlserver"
-SELECT COUNT(1) FROM [user] WHERE [id] = :id;
+SELECT COUNT(1) FROM [user] WITH (UPDLOCK, ROWLOCK) WHERE [id] = :id;
 # Update if record exists
 UPDATE [user] SET [name] = :name WHERE [id] = :id;
 # Insert if record does not exist
@@ -114,7 +118,7 @@ INSERT INTO [user] ([id], [name], [age]) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 2" name="Oracle" icon="oracle"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id FETCH NEXT 1 ROWS ONLY FOR UPDATE;
 # Update if record exists
 UPDATE "user" SET "name" = :name WHERE "id" = :id;
 # Insert if record does not exist
@@ -139,7 +143,7 @@ user
 ```
 
 ```sql group="Case 3" name="Mysql" icon="mysql"
-SELECT COUNT(1) FROM `user` WHERE `id` = :id;
+SELECT COUNT(1) FROM `user` WHERE `id` = :id LIMIT 1 FOR UPDATE;
 # Update if record exists
 UPDATE `user` SET `name` = :name, `age` = :age WHERE `id` = :id;
 # Insert if record does not exist
@@ -147,7 +151,7 @@ INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 3" name="PostgreSQL" icon="postgres"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id LIMIT 1 FOR UPDATE;
 # Update if record exists
 UPDATE "user" SET "name" = :name, "age" = :age WHERE "id" = :id;
 # Insert if record does not exist
@@ -155,15 +159,15 @@ INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 3" name="SQLite" icon="sqlite"
-SELECT COUNT(1) FROM `user` WHERE `id` = :id;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id LIMIT 1;
 # Update if record exists
-UPDATE `user` SET `name` = :name, `age` = :age WHERE `id` = :id;
+UPDATE "user" SET "name" = :name, "age" = :age WHERE "id" = :id;
 # Insert if record does not exist
-INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age);
+INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 3" name="SQLServer" icon="sqlserver"
-SELECT COUNT(1) FROM [user] WHERE [id] = :id;
+SELECT COUNT(1) FROM [user] WITH (UPDLOCK, ROWLOCK) WHERE [id] = :id;
 # Update if record exists
 UPDATE [user] SET [name] = :name, [age] = :age WHERE [id] = :id;
 # Insert if record does not exist
@@ -171,18 +175,20 @@ INSERT INTO [user] ([id], [name], [age]) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 3" name="Oracle" icon="oracle"
-SELECT COUNT(1) FROM "user" WHERE "id" = :id;
+SELECT COUNT(1) FROM "user" WHERE "id" = :id FETCH NEXT 1 ROWS ONLY FOR UPDATE;
 # Update if record exists
 UPDATE "user" SET "name" = :name, "age" = :age WHERE "id" = :id;
 # Insert if record does not exist
 INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
-## {{ $.title("onConflict") }} update when conflicted, otherwise insert
+## {{ $.title("onConflict") }} Use database uniqueness conflicts
 
-When using the `upsert` method, we can use the `onConflict` method to set the processing policy to update when there is a conflict, that is, update the record when it exists.
+Calling `onConflict()` means: insert the row, and update it when a database uniqueness constraint is hit. Kronos uses the current dialect to generate the required SQL. Add `on { ... }` before `onConflict()` when the conflict target must be a specific key. When `on { ... }` is omitted, Kronos infers the target from KPojo uniqueness metadata: usable primary-key values first, then `@TableIndex(type = "UNIQUE")` / `@TableIndex(method = "UNIQUE")` fields whose values are present.
 
-```kotlin group="Case 4" name="kotlin" icon="kotlin" {7-11}
+Strategy fields are maintained in both paths: insert initializes create/update time, logic delete, and version fields; conflict update refreshes update time, restores the active logic-delete value, and increments the version field.
+
+```kotlin group="Case 4" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
         id = 1,
         name = "Kronos",
@@ -191,45 +197,81 @@ val user: User = User(
 
 user
   .upsert { [it.name, it.age] }
-  .on { [it.name, it.age] }
   .onConflict()
   .execute()
 ```
 
 ```sql group="Case 4" name="Mysql" icon="mysql"
-# use on duplicate key
-INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age) ON DUPLICATE KEY UPDATE `name` = :name, `age` = :age;
+INSERT INTO `user` (`id`, `name`, `age`)
+VALUES (:id, :name, :age)
+ON DUPLICATE KEY UPDATE `name` = :name, `age` = :age;
 ```
 
 ```sql group="Case 4" name="PostgreSQL" icon="postgres"
-INSERT INTO "user" ("id", "name", "age") SELECT :id, :name, :age WHERE NOT EXISTS (SELECT 1 FROM "user" WHERE "name" = :name and "age" = :age);
-UPDATE "user" SET "name" = :name, "age" = :age WHERE "name" = :name and "age" = :age;
+INSERT INTO "user" ("id", "name", "age")
+VALUES (:id, :name, :age)
+ON CONFLICT ("id") DO UPDATE SET "name" = :name, "age" = :age;
 ```
 
 ```sql group="Case 4" name="SQLite" icon="sqlite"
-# use on conflict
-INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age) ON CONFLICT(`name`, `age`) DO UPDATE SET `name` = :name, `age` = :age;
+INSERT INTO "user" ("id", "name", "age")
+VALUES (:id, :name, :age)
+ON CONFLICT ("id") DO UPDATE SET "name" = :name, "age" = :age;
 ```
 
 ```sql group="Case 4" name="SQLServer" icon="sqlserver"
-IF EXISTS (SELECT 1 FROM [user] WHERE [name] = :name and [age] = :age)
-  BEGIN
-    UPDATE [user] SET [name] = :name, [age] = :age WHERE [name] = :name and [age] = :age
-  END
-ELSE
-  BEGIN
-    INSERT INTO [user] ([id], [name], [age]) VALUES (:id, :name, :age);
-  END
+MERGE INTO [user] AS [t1]
+USING (SELECT :id AS [id], :name AS [name], :age AS [age]) AS [t2]
+ON ([t1].[id] = [t2].[id])
+WHEN MATCHED THEN UPDATE SET [t1].[name] = :name, [t1].[age] = :age
+WHEN NOT MATCHED THEN INSERT ([id], [name], [age]) VALUES (:id, :name, :age);
 ```
 
 ```sql group="Case 4" name="Oracle" icon="oracle"
-BEGIN
-  INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
-EXCEPTION
-  WHEN DUP_VAL_ON_INDEX THEN
-    UPDATE "user" SET "name" = :name, "age" = :age WHERE "name" = :name and "age" = :age;
-END;
+MERGE INTO "USER" "T1"
+USING (SELECT :id AS "ID", :name AS "NAME", :age AS "AGE") "T2"
+ON ("T1"."ID" = "T2"."ID")
+WHEN MATCHED THEN UPDATE SET "T1"."NAME" = :name, "T1"."AGE" = :age
+WHEN NOT MATCHED THEN INSERT ("ID", "NAME", "AGE") VALUES (:id, :name, :age)
 ```
+
+Use explicit conflict fields for a unique constraint other than the primary key. For example, if the table has a unique key on `email`:
+
+```kotlin group="Case 4-target" name="kotlin" icon="kotlin"
+User(email = "ada@example.com", name = "Ada")
+  .upsert { it.name }
+  .on { it.email }
+  .onConflict()
+  .execute()
+```
+
+If the identity primary key is not provided and the model declares a unique index, `onConflict()` can infer that index:
+
+```kotlin group="Case 4-unique" name="model" icon="kotlin"
+@Table("user")
+@TableIndex("uk_user_email", ["email"], type = "UNIQUE")
+data class User(
+  @PrimaryKey(identity = true)
+  var id: Int? = null,
+  var email: String? = null,
+  var name: String? = null
+) : KPojo
+```
+
+```kotlin group="Case 4-unique" name="kotlin" icon="kotlin"
+User(email = "ada@example.com", name = "Ada")
+  .upsert { it.name }
+  .onConflict()
+  .execute()
+```
+
+```sql group="Case 4-unique" name="PostgreSQL" icon="postgres"
+INSERT INTO "user" ("email", "name")
+VALUES (:email, :name)
+ON CONFLICT ("email") DO UPDATE SET "name" = :name;
+```
+
+For composite unique indexes, every indexed field must have a value for inference. Use explicit `on { ... }` when multiple unique keys are possible and the intended target should be unambiguous.
 
 ### Set a conflict-update value from a scalar subquery
 
@@ -238,7 +280,6 @@ END;
 ```kotlin group="Case 4-1" name="kotlin" icon="kotlin"
 Order(id = 1, status = 0)
   .upsert()
-  .on { it.id }
   .set {
       it.status = (Order()
           .select { order -> order.status }
@@ -287,7 +328,6 @@ User(id = 7, name = "seed", count = 2)
       "count" to SqlExpr.NumberLiteral("10"),
       "name" to KronosFunctionExpr(SqlExpr.StringLiteral("patched"), "literal")
   )
-  .on { it.id }
   .onConflict()
   .execute()
 ```
@@ -306,7 +346,6 @@ val countField = User().kronosColumns().single { it.name == "count" }
 User(id = 8, name = "seed", count = 5)
   .upsert { it.name }
   .patch("name" to countField)
-  .on { it.id }
   .onConflict()
   .execute()
 ```
@@ -328,7 +367,6 @@ User(id = 1, name = "seed")
           .where { it.status == 15 }
           .limit(1)
   )
-  .on { it.id }
   .onConflict()
   .execute()
 ```
@@ -344,13 +382,15 @@ ON DUPLICATE KEY UPDATE `name` = (
 )
 ```
 
-`patch(...)` values are used as conflict-update assignments in the `onConflict()` path. In the fallback upsert path, the same fields are added to the update set used after the existence check.
+`patch(...)` values are used as conflict-update assignments in the `onConflict()` path. In the regular upsert path, the same fields are added to the update set used after a row match.
 
 ## {{ $.title("lock") }} set row lock
 
-The `lock` method adds a row lock to the existence check used by the fallback upsert flow.
+Regular `on { ... }` upsert uses an update lock for the match query by default. Call `lock(...)` when the lock should be explicit or use a different lock type.
 
 ```kotlin group="Case 18" name="kotlin" icon="kotlin" {1-3}
+import com.kotlinorm.syntax.statement.SqlLock
+
 val user: User = User(
         id = 1,
         name = "Kronos",
@@ -359,49 +399,17 @@ val user: User = User(
 
 user
   .upsert { [it.name, it.age] }
-  .lock()
+  .on { it.id }
+  .lock(SqlLock.Update())
   .execute()
 ```
 
 ```sql group="Case 18" name="Mysql" icon="mysql"
-SELECT `id`, `name`, `age` FROM `user` FOR UPDATE
+SELECT COUNT(1) FROM `user` WHERE `id` = :id LIMIT 1 FOR UPDATE;
 # Update if record exists
-UPDATE `user` SET `name` = :name WHERE `id` = :id;
+UPDATE `user` SET `name` = :nameNew, `age` = :ageNew WHERE `id` = :id;
 # Insert if record does not exist
 INSERT INTO `user` (`id`, `name`, `age`) VALUES (:id, :name, :age);
-```
-
-```sql group="Case 18" name="PostgreSQL" icon="postgres"
-SELECT "id", "name", "age" FROM "user" FOR UPDATE
-# Update if record exists
-UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and "name" = :name;
-# Insert if record does not exist
-INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
-```
-
-```sql group="Case 18" name="SQLite" icon="sqlite"
-# It is not supported to add a row lock function to Sqlite because Sqlite itself does not have a row lock function.
-SELECT COUNT(1) FROM "user" WHERE "id" = :id and "name" = :name;
-# Update if record exists
-UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and "name" = :name;
-# Insert if record does not exist
-INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
-```
-
-```sql group="Case 18" name="SQLServer" icon="sqlserver"
-SELECT [id], [name], [age] FROM [user] OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY ROWLOCK
-# Update if record exists
-UPDATE [user] SET [id] = :id, [name] = :name, [age] = :age WHERE [id] = :id and [name] = :name;
-# Insert if record does not exist
-INSERT INTO [user] ([id], [name], [age]) VALUES (:id, :name, :age);
-```
-
-```sql group="Case 18" name="Oracle" icon="oracle"
-SELECT "id", "name", "age" FROM "user" FOR UPDATE(NOWAIT)
-# Update if record exists
-UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and "name" = :name;
-# Insert if record does not exist
-INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
 ## Affected rows

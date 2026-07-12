@@ -19,10 +19,7 @@ user.insert().execute()
 
 `execute()` returns a `KronosOperationResult`.
 
-```kotlin name="demo" icon="kotlin" {8,9}
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-
+```kotlin name="demo" icon="kotlin" {6,8,9}
 val user: User = User(
     name = "Kronos",
     age = 18
@@ -35,7 +32,7 @@ val lastInsertId = result.lastInsertId
 
 `.withId()` declares that this insert should read the generated ID. The target KPojo needs an identity primary key.
 
-Read more about {{ $.keyword("mutation/last-insert-id", ["LastInsertId plugin"]) }}.
+Read more about {{ $.keyword("mutation/last-insert-id", ["generated identity IDs"]) }}.
 
 ## Batch insert records
 

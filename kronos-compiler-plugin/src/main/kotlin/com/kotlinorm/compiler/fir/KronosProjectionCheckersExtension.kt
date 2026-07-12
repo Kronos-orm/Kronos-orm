@@ -463,7 +463,11 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
 
         val call = statement as? FirFunctionCall
         if (call != null && sourceType != null) {
-            call.sourceMinusExcludedNames(sourceType, sourceFieldNames, sourceValueNames)?.let { excludedNames ->
+            call.sourceMinusExcludedProjectionFieldNames(
+                sourceType,
+                sourceFieldNames,
+                sourceValueNames
+            ) { sourceMinusStatement -> sourceMinusStatement.safeResolvedType() }?.let { excludedNames ->
                 return sourceFieldNames
                     .filterNot { it in excludedNames }
                     .map { fieldName ->
@@ -486,23 +490,6 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         }
 
         return listOf(ProjectionItemResult.RequiresAlias)
-    }
-
-    context(context: CheckerContext)
-    private fun FirFunctionCall.sourceMinusExcludedNames(
-        sourceType: ConeKotlinType,
-        sourceFieldNames: Set<String>,
-        sourceValueNames: Set<Name>
-    ): Set<String>? {
-        if (calleeReference.name.asString() != "minus") return null
-        val receiver = extensionReceiver as? FirStatement ?: return null
-        val sourceAccess = receiver.projectionStatementOrNull() as? FirPropertyAccessExpression ?: return null
-        if (!sourceAccess.isProjectionSourceValueAccess(sourceType, sourceValueNames, sourceAccess.safeResolvedType())) {
-            return null
-        }
-        return argumentList.arguments.flatMapTo(linkedSetOf()) { argument ->
-            argument.excludedProjectionSourceFieldNames(sourceFieldNames)
-        }
     }
 
     private fun FirStatement.intLiteralValue(): Int? {

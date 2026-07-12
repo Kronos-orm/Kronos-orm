@@ -139,17 +139,63 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NEXT_SNAPSHOT=$( bash .github/scripts/bump-version.sh next-snapshot | tail -n1 | cut -d= -f2 )
+          RELEASE_VERSION="${{ steps.release_set.outputs.version }}"
+          if [ -z "$RELEASE_VERSION" ]; then
+            RELEASE_VERSION="${{ steps.detect.outputs.current }}"
+          fi
+
+          if [[ ! "$RELEASE_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Cannot calculate next SNAPSHOT from release version: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+
+          NEXT_SNAPSHOT="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))-SNAPSHOT"
           BRANCH_NAME="chore/next-snapshot-${NEXT_SNAPSHOT%-SNAPSHOT}"
+
+          EXISTING_PR_URL=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --base "${{ github.ref_name }}" \
+            --head "$BRANCH_NAME" \
+            --state open \
+            --json url \
+            --jq '.[0].url // ""')
+
+          if [ -n "$EXISTING_PR_URL" ]; then
+            echo "Next SNAPSHOT PR already exists: $EXISTING_PR_URL"
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+            echo "Remote branch $BRANCH_NAME already exists. Opening a PR for it."
+            gh pr create \
+              --repo "${{ github.repository }}" \
+              --base "${{ github.ref_name }}" \
+              --head "$BRANCH_NAME" \
+              --title "chore(version): start $NEXT_SNAPSHOT" \
+              --body "Start the next development cycle after publishing $RELEASE_VERSION by bumping release configuration to $NEXT_SNAPSHOT."
+            exit 0
+          fi
+
+          BUMPED_SNAPSHOT=$( bash .github/scripts/bump-version.sh next-snapshot | tail -n1 | cut -d= -f2 )
+          if [ "$BUMPED_SNAPSHOT" != "$NEXT_SNAPSHOT" ]; then
+            echo "Expected next SNAPSHOT $NEXT_SNAPSHOT, but bump-version.sh produced $BUMPED_SNAPSHOT" >&2
+            exit 1
+          fi
+
           git switch -c "$BRANCH_NAME"
           git add -A
-          git commit -m "chore(version): start $NEXT_SNAPSHOT" || echo "No changes to commit"
-          git push origin "$BRANCH_NAME"
+          if git diff --cached --quiet; then
+            echo "No version changes to commit; skipping next SNAPSHOT PR."
+            exit 0
+          fi
+          git commit -m "chore(version): start $NEXT_SNAPSHOT"
+          git push --set-upstream origin "$BRANCH_NAME"
           gh pr create \
+            --repo "${{ github.repository }}" \
             --base "${{ github.ref_name }}" \
             --head "$BRANCH_NAME" \
             --title "chore(version): start $NEXT_SNAPSHOT" \
-            --body "Start the next development cycle after publishing ${{ steps.release_set.outputs.version }} by bumping release configuration to $NEXT_SNAPSHOT."
+            --body "Start the next development cycle after publishing $RELEASE_VERSION by bumping release configuration to $NEXT_SNAPSHOT."
 
       - name: Snapshot 📸 - publish to Central Snapshots
         if: steps.detect.outputs.mode == 'snapshot'

@@ -192,7 +192,7 @@ private fun obtainConnection(): Pair<Connection, Boolean> {
 ### Action Methods
 - `update(task)` → `Int` — returns affected rows
 - `batchUpdate(task)` → `IntArray` — batch with `addBatch()`/`executeBatch()`
-- Last insert ID: when `LastInsertIdPlugin.enabled`, retrieves `RETURN_GENERATED_KEYS`
+- Generated identity ID: when the action task has a `GeneratedKeyRequest`, retrieves `RETURN_GENERATED_KEYS`
 
 ### Transaction
 - ThreadLocal connection propagation
@@ -219,7 +219,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact() = SubpluginArtifact(
         groupId = "com.kotlinorm",
         artifactId = "kronos-compiler-plugin",
-        version = "0.1.0-SNAPSHOT"
+        version = "0.2.1"
     )
     override fun getPluginArtifactForNative() = getPluginArtifact()
     override fun applyToCompilation(compilation) = provider {
@@ -259,4 +259,3 @@ class KronosMavenPlugin : KotlinMavenPluginExtension {
 
 - Dependencies: `api(project(":kronos-compiler-plugin"))`, `kotlin-maven-plugin`, `maven-core`
 - Copies `META-INF/services` from kronos-compiler-plugin so Maven discovers the `ComponentRegistrar`
-

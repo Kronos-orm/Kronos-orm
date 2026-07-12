@@ -59,7 +59,7 @@ They are generated output or dependencies unless the user explicitly asks otherw
 
 Use the current repository implementation as the source of truth.
 
-- Use stable release-style versions such as `0.1.1` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
+- Use stable release-style versions such as `0.2.1` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
 - In `kronos-docs/src/app/docs` Markdown, source current Kronos versions from the docs macros instead of hard-coding them. Use `{{ $.kronosVersion() }}`, `{{ $.kronosSnapshotVersion() }}`, and `{{ $.kronosSnapshotBadgeVersion() }}` after the page imports its language macro file.
 - README files, homepage TypeScript snippets, module READMEs, and blog assets do not share the `kronos-docs` Markdown macro pipeline; keep their version text explicit or use local constants when the file already has that pattern.
 - Verify the current repository development version from `build-logic/src/main/kotlin/publishing.gradle.kts` before changing source-development or snapshot-specific text.
@@ -69,6 +69,14 @@ Use the current repository implementation as the source of truth.
 - `KronosJdbcWrapper` lives in `com.kotlinorm.wrappers`, takes a `DataSource`, optional `DBType`, and `KronosJdbcConfig` block; database type is inferred from JDBC metadata when `databaseType` is not supplied.
 - Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, and implementation pipeline details out of ordinary docs navigation.
 - Multi-platform, KMP, mobile, and Android language may remain in homepage/blog/product direction areas, but runnable tutorials must focus on current working JVM/JDBC usage.
+
+Version upgrade docs checklist:
+
+- For `kronos-docs/src/app/docs`, update `kronos-docs/src/app/docs/macros/common.njk` instead of hard-coding dependency versions in pages.
+- For README files, homepage snippets, module READMEs, and blog assets, update literal Kronos coordinates manually because they do not run through docs macros.
+- Update release notes in both languages and the `@status:primary` value on each release-notes `ng-doc.page.ts`.
+- Sync `.agents/skills/kronos-orm-guide/` after changing any user-facing dependency version or install example.
+- Preserve historical release-note sections and compatibility-table rows for old versions.
 
 ## NgDoc Structure Rules
 
@@ -173,7 +181,7 @@ Use these scans after broad docs edits, adapting scope to the changed files:
 
 ```bash
 rg -n "0\\.1\\.0|latest\\.release|kronos-jdbc-wrappere|com\\.kotlinorm\\.kronos-jdbc-wrapper|Kronos\\.init|lineHumpStrategy|dateFormat\\b|@updateTime|enabled = false" kronos-docs README.MD README-zh_CN.MD
-rg -n "\\{\\{ [0-9]+kronos|0\\.1\\.1|0\\.1\\.1-SNAPSHOT|0\\.1\\.1--SNAPSHOT" kronos-docs/src/app/docs -g "*.md"
+rg -n "\\{\\{ [0-9]+kronos|0\\.2\\.1|0\\.2\\.2-SNAPSHOT|0\\.2\\.2--SNAPSHOT" kronos-docs/src/app/docs -g "*.md"
 rg -n "class-definition|3\\.database|4\\.advanced|5\\.plugin|6\\.concept|7\\.ai|database/(insert-records|delete-records|update-records|upsert-records|select-records|select-join-tables|subqueries)|advanced/cascade-query|plugins/last-insert-id|\\$\\.keyword\\(\"$" kronos-docs/src/app/docs
 rg -n "route:|order:|title:|@status" kronos-docs/src/app/docs/en kronos-docs/src/app/docs/zh-CN
 ```
@@ -182,7 +190,7 @@ These scans are not automatic proof of failure. Inspect matches and decide wheth
 
 Known high-risk patterns:
 
-- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.1.1`.
+- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.2.1`.
 - Hard-coded current Kronos versions in `kronos-docs/src/app/docs` Markdown when the value should come from `$.kronosVersion()` or the snapshot macros.
 - Broken version macro text such as `{{ 9kronosVersion() }}` after shell or Perl replacements.
 - `latest.release` in copyable dependency examples.

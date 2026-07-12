@@ -13,7 +13,7 @@ Core module of the Kronos ORM framework. Zero runtime dependencies.
 - **Built-in strategies** — primary key generation, logical deletion, optimistic lock, timestamps, naming
 - **Functions system** — `FunctionHandler` DSL extensions lowered to syntax expressions, with optional `FunctionManager` renderers during migration
 - **Task system** — `KronosQueryTask`, `KronosActionTask`, `KronosAtomicBatchTask`, `TransactionScope`
-- **Plugins** — `DataGuardPlugin` (prevents full-table UPDATE/DELETE), `LastInsertIdPlugin`
+- **Plugins** — `DataGuardPlugin` prevents full-table UPDATE/DELETE
 - **Global config** — `Kronos.kt` singleton
 
 ## Dependencies

@@ -23,7 +23,6 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.database.DatabaseCreateTable
 import com.kotlinorm.database.DatabaseSyncTable
 import com.kotlinorm.database.SqlManager.renderStatement
@@ -47,6 +46,7 @@ import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.resolveRuntimeMetadata
 
 class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     val dataSource by lazy { wrapper.orDefault() }
@@ -74,12 +74,13 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      * @param instance Table instance
      */
     inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) {
+        val metadata = instance.resolveRuntimeMetadata()
         val statements = statementsOf(dataSource.dbType).createTable(
             DatabaseCreateTable(
-                tableName = instance.__tableName,
+                tableName = metadata.tableName,
                 tableComment = instance.__tableComment,
-                columns = instance.kronosColumns().filter { it.isColumn },
-                indexes = instance.kronosTableIndex()
+                columns = metadata.allColumns,
+                indexes = metadata.tableIndexes
             )
         )
         executeDdlStatements(statements, KOperationType.CREATE)
@@ -126,7 +127,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         return buildCreateTableAsSelectTaskFromQuery(
             statement,
             plan.parameters,
-            fieldsMapCache[query.pojo.kClass()] ?: emptyMap()
+            query.pojo.resolveRuntimeMetadata().fieldMap
         )
     }
 
@@ -192,7 +193,8 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      */
     inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
         // 表名
-        val tableName = instance.__tableName
+        val metadata = instance.resolveRuntimeMetadata()
+        val tableName = metadata.tableName
 
         // 不存在就创建
         if (!queryTableExistence(tableName, dataSource)) {
@@ -204,14 +206,14 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val dbType = dataSource.dbType
 
         // 实体类列信息
-        val kronosColumns = instance.kronosColumns().asSequence().filter { it.isColumn }.map { col ->
+        val kronosColumns = metadata.allColumns.asSequence().map { col ->
             if (dbType == DBType.Oracle) {
                 col.columnName = col.columnName.uppercase()
             }
             col
         }.toList()
         // 从实例中获取索引(oracle 需要 转大写)
-        val kronosIndexes = instance.kronosTableIndex()
+        val kronosIndexes = metadata.tableIndexes
         val originalTableComment = queryTableComment(tableName, dataSource)
         val tableComment = instance.__tableComment
 
@@ -291,15 +293,16 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
 
     inline fun <reified T : KPojo> buildCreateTableStatement(
         instance: T = T::class.createInstance()
-    ): SqlDdlStatement.CreateTable =
-        SqlDdlStatement.CreateTable(
-            tableName = SqlIdentifier.of(instance.__tableName),
-            columns = instance.kronosColumns()
-                .filter { it.isColumn }
+    ): SqlDdlStatement.CreateTable {
+        val metadata = instance.resolveRuntimeMetadata()
+        return SqlDdlStatement.CreateTable(
+            tableName = SqlIdentifier.of(metadata.tableName),
+            columns = metadata.allColumns
                 .map { it.toSqlColumnDefinition() },
-            indexes = instance.kronosTableIndex().map { it.toSqlIndexDefinition() },
+            indexes = metadata.tableIndexes.map { it.toSqlIndexDefinition() },
             comment = instance.__tableComment
         )
+    }
 
     inline fun <reified T : KPojo> buildCreateTableAsSelectStatement(
         instance: T = T::class.createInstance(),
@@ -340,7 +343,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         parameterFields: MutableMap<String, Field>
     ): SqlDdlStatement.CreateTableAsSelect {
         val statement = buildCreateTableAsSelectSyntaxStatement(tableName, query as KSelectable<*>, parameterValues)
-        parameterFields.putAll(fieldsMapCache[query.pojo.kClass()] ?: emptyMap())
+        parameterFields.putAll(query.pojo.resolveRuntimeMetadata().fieldMap)
         return statement
     }
 

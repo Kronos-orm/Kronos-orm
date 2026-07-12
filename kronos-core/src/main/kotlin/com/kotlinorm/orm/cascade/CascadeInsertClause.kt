@@ -21,12 +21,13 @@ import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.cache.kPojoPrimaryKeyCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.utils.getTypeSafeValue
+import com.kotlinorm.utils.resolveRuntimeMetadata
+import com.kotlinorm.utils.resolvePrimaryKey
 
 /**
  * Used to build a cascade insert clause.
@@ -84,7 +85,9 @@ object CascadeInsertClause {
         //因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键），因此级联操作放在doAfterExecute中执行：
         val operationResult = this //当前任务的执行结果, 用于获取自增主键值
         pojo.toTreeNode(NodeInfo(true), cascadeAllowed, KOperationType.INSERT) {
-            val identity = kPojoPrimaryKeyCache[kPojo.kClass()].takeIf { it!!.primaryKey == PrimaryKeyType.IDENTITY } ?: return@toTreeNode // 若没有自增主键，直接返回
+            val metadata = kPojo.resolveRuntimeMetadata()
+            val identity = (metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns))
+                .takeIf { it.primaryKey == PrimaryKeyType.IDENTITY } ?: return@toTreeNode // 若没有自增主键，直接返回
             if(insertIgnore) return@toTreeNode // 若有子节点提升到本节点的父节点，在此层级不需要执行插入操作，而是在insertIgnore为true的子节点的下一层级执行插入操作
             val lastInsertId = if (kPojo != pojo) { // 判断当前进行的插入操作是否为最外层的插入操作
                 kPojo.insert().cascade(enabled = false).withId().execute(wrapper)
@@ -105,7 +108,8 @@ object CascadeInsertClause {
     }
 
     private fun KPojo.identityGeneratedKeyRequest(): GeneratedKeyRequest? {
-        val identity = kPojoPrimaryKeyCache[kClass()] ?: return null
+        val metadata = resolveRuntimeMetadata()
+        val identity = metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns)
         if (identity.primaryKey != PrimaryKeyType.IDENTITY) return null
         if (identity.defaultValue != null) return null
         if (toDataMap()[identity.name] != null) return null
@@ -114,14 +118,15 @@ object CascadeInsertClause {
 
     private fun KPojo.hasInsertCascadeValue(cascadeAllowed: Set<Field>?): Boolean {
         val dataMap = toDataMap()
-        val tableName = __tableName
+        val metadata = resolveRuntimeMetadata()
+        val tableName = metadata.tableName
         val allowed = cascadeAllowed
             ?.filter { it.tableName == tableName }
             ?.map { it.name }
             ?.toSet()
         return findValidRefs(
-            kClass(),
-            kronosColumns(),
+            metadata.kClass,
+            metadata.allFields,
             KOperationType.INSERT,
             allowed,
             cascadeAllowed.isNullOrEmpty()

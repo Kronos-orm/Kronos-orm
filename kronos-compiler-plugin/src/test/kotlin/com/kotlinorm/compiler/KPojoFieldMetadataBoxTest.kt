@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
  * Verifies metadata extracted from KPojo declarations and annotations.
  *
  * The suite covers table names, column annotations, common strategies, and ignore
- * rules as they appear in generated `kronosColumns()` and related KPojo members.
+ * rules as they appear in generated `__columns` and related KPojo metadata properties.
  */
 class KPojoFieldMetadataBoxTest : AbstractKronosJvmBoxSuite("kpojoFieldMetadata") {
     /**

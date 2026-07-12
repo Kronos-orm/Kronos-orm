@@ -113,7 +113,7 @@ class UpsertSubquerySqlTest : MysqlTestBase() {
             .upsert()
             .set { user ->
                 setValue(
-                    user.kronosColumns().single { it.name == "name" },
+                    user.__columns.single { it.name == "name" },
                     SubqueryOrder()
                         .select { it.status }
                         .where { it.status == 19 }

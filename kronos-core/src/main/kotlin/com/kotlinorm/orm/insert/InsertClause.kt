@@ -28,13 +28,6 @@ import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.cache.fieldsMapCache
-import com.kotlinorm.cache.kPojoAllColumnsCache
-import com.kotlinorm.cache.kPojoCreateTimeCache
-import com.kotlinorm.cache.kPojoLogicDeleteCache
-import com.kotlinorm.cache.kPojoOptimisticLockCache
-import com.kotlinorm.cache.kPojoPrimaryKeyCache
-import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
@@ -60,18 +53,22 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.allocateBindParameterName
+import com.kotlinorm.utils.resolveRuntimeMetadata
+import com.kotlinorm.utils.resolvePrimaryKey
 import com.kotlinorm.utils.toDatabaseBooleanValue
 import kotlin.reflect.KClass
 
 class InsertClause<T : KPojo>(val pojo: T) {
+    private val metadata = pojo.resolveRuntimeMetadata()
     private val paramMap = pojo.toDataMap()
-    private val tableName = pojo.__tableName
-    private var kClass = pojo.kClass()
-    private var createTimeStrategy = kPojoCreateTimeCache[kClass]
-    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
-    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
-    internal var allColumns = kPojoAllColumnsCache[kClass]!!
+    private val tableName = metadata.tableName
+    private var kClass = metadata.kClass
+    private var createTimeStrategy = metadata.createTimeStrategy
+    private var updateTimeStrategy = metadata.updateTimeStrategy
+    private var logicDeleteStrategy = metadata.logicDeleteStrategy
+    private var optimisticStrategy = metadata.optimisticLockStrategy
+    private var primaryKey = metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns)
+    internal var allColumns = metadata.allColumns
     private var cascadeEnabled = true
     private var withGeneratedId = false
     private var identityGeneratedKeyRequest: GeneratedKeyRequest? = null
@@ -116,7 +113,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
         val toInsertFields = prepareInsertFields(dataSource, includeUnsetDefaultValueFields = false)
         val finalStatement = toSqlInsertStatement(toInsertFields)
-        val renderedSql = renderStatement(dataSource, finalStatement, paramMap, fieldsMapCache[kClass]!!)
+        val renderedSql = renderStatement(dataSource, finalStatement, paramMap, metadata.fieldMap)
         val sql = renderedSql.sql
         val paramMapNew = renderedSql.parameters
 
@@ -143,7 +140,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         )
         val parameterValues = linkedMapOf<String, Any?>()
         val statement = buildSourceInsertStatement(dataSource, toInsertFields, parameterValues)
-        val renderedSql = renderStatement(dataSource, statement, parameterValues, fieldsMapCache[kClass]!!)
+        val renderedSql = renderStatement(dataSource, statement, parameterValues, metadata.fieldMap)
         return CascadeInsertClause.build(
             cascadeEnabled,
             cascadeAllowed,
@@ -262,7 +259,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         var databaseGeneratesIdentity = false
         identityGeneratedKeyRequest = null
         val toInsertFields = mutableListOf<Field>()
-        val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
+        val primaryKeyField = primaryKey
 
         when (primaryKeyField.primaryKey) {
             PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()

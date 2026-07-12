@@ -2,6 +2,7 @@ package com.kotlinorm.interfaces
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import kotlin.test.Test
@@ -16,21 +17,27 @@ class KPojoDefaultBehaviorTest {
     fun `default KPojo methods return compiler-plugin placeholders`() {
         val pojo = defaultReceiver()
 
-        assertEquals(KPojo::class, invokeDefault("kClass", pojo))
+        assertEquals(KPojo::class, invokeDefault("get__kClass", pojo))
         assertEquals(emptyMap<String, Any?>(), invokeDefault("toDataMap", pojo))
         assertSame(pojo, invokeDefault("safeFromMapData", pojo, mapOf("id" to 1)))
         assertSame(pojo, invokeDefault("fromMapData", pojo, mapOf("id" to 1)))
         assertNull(invokeDefault("get", pojo, "id"))
         invokeDefault("set", pojo, "id", 1)
+        invokeDefault("set__kClass", pojo, KPojo::class)
         invokeDefault("set__tableName", pojo, "ignored")
         invokeDefault("set__tableComment", pojo, "ignored")
-        assertEquals(emptyList<KTableIndex>(), invokeDefault("kronosTableIndex", pojo))
-        assertEquals(emptyList<Field>(), invokeDefault("kronosColumns", pojo))
-        assertEquals("id", (invokeDefault("kronosPrimaryKey", pojo) as com.kotlinorm.beans.config.KronosCommonStrategy).field.name)
-        assertEquals("createTime", (invokeDefault("kronosCreateTime", pojo) as com.kotlinorm.beans.config.KronosCommonStrategy).field.name)
-        assertEquals("updateTime", (invokeDefault("kronosUpdateTime", pojo) as com.kotlinorm.beans.config.KronosCommonStrategy).field.name)
-        assertEquals("deleted", (invokeDefault("kronosLogicDelete", pojo) as com.kotlinorm.beans.config.KronosCommonStrategy).field.name)
-        assertEquals("version", (invokeDefault("kronosOptimisticLock", pojo) as com.kotlinorm.beans.config.KronosCommonStrategy).field.name)
+        invokeDefault("set__columns", pojo, mutableListOf<Field>())
+        invokeDefault("set__tableIndexes", pojo, mutableListOf<KTableIndex>())
+        invokeDefault("set__createTime", pojo, invokeDefault("get__createTime", pojo))
+        invokeDefault("set__updateTime", pojo, invokeDefault("get__updateTime", pojo))
+        invokeDefault("set__logicDelete", pojo, invokeDefault("get__logicDelete", pojo))
+        invokeDefault("set__optimisticLock", pojo, invokeDefault("get__optimisticLock", pojo))
+        assertEquals(emptyList<KTableIndex>(), invokeDefault("get__tableIndexes", pojo))
+        assertEquals(emptyList<Field>(), invokeDefault("get__columns", pojo))
+        assertEquals("createTime", (invokeDefault("get__createTime", pojo) as KronosCommonStrategy).field.name)
+        assertEquals("updateTime", (invokeDefault("get__updateTime", pojo) as KronosCommonStrategy).field.name)
+        assertEquals("deleted", (invokeDefault("get__logicDelete", pojo) as KronosCommonStrategy).field.name)
+        assertEquals("version", (invokeDefault("get__optimisticLock", pojo) as KronosCommonStrategy).field.name)
     }
 
     @Test

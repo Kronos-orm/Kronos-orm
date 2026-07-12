@@ -13,7 +13,7 @@ data class IndexedUser(
 
 fun box(): String {
     val user = IndexedUser()
-    val indexes = user.kronosTableIndex()
+    val indexes = user.__tableIndexes
     val unique = indexes.singleOrNull { it.name == "idx_name" }
     val compound = indexes.singleOrNull { it.name == "idx_age_name" }
 

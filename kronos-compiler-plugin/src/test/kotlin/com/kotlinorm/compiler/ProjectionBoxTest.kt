@@ -47,6 +47,12 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun kpojoExpansionGeneratedProjection() = box("kpojoExpansionGeneratedProjection")
 
     /**
+     * Verifies explicit KPojo metadata overrides are excluded from whole-source projection fields.
+     */
+    @Test
+    fun metadataOverridesExcludedFromProjectionFields() = box("metadataOverridesExcludedFromProjectionFields")
+
+    /**
      * Verifies collection literal and listOf projection forms feed generated receivers.
      */
     @Test

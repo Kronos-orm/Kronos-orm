@@ -72,7 +72,7 @@ fun box(): String {
     val rows = ProjectionParent().select { it.children }.cascade(false).toList(wrapper)
     val row = rows.singleOrNull()
 
-    val columns = row?.kronosColumns().orEmpty()
+    val columns = row?.__columns.orEmpty()
     val fields = row?.toDataMap().orEmpty()
 
     val failures = listOfNotNull(

@@ -24,69 +24,61 @@ import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.LRUCache
+import com.kotlinorm.utils.buildRuntimeFieldMap
 import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.resolvePrimaryKey
+import com.kotlinorm.utils.runtimeBind
+import com.kotlinorm.utils.runtimeColumns
+import com.kotlinorm.utils.runtimeCreateTimeStrategy
+import com.kotlinorm.utils.runtimeLogicDeleteStrategy
+import com.kotlinorm.utils.runtimeOptimisticLockStrategy
+import com.kotlinorm.utils.runtimeUpdateTimeStrategy
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KClass
 
 val fieldsMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> { kClass ->
-    kPojoAllFieldsCache[kClass]!!.flatMap { field ->
-        listOf(field.name, field.columnName, field.name.uppercase(), field.columnName.uppercase(), field.name.lowercase(), field.columnName.lowercase())
-            .distinct()
-            .map { it to field }
-    }.toMap()
+    buildRuntimeFieldMap(kPojoAllFieldsCache[kClass]!!)
 }
 
 val insertSqlCache = LRUCache<Pair<KClass<out KPojo>, Boolean>, String>()
 val namedSqlCache = LRUCache<String, ParsedSql>()
 val kPojoInstanceCache = LRUCache<KClass<out KPojo>, KPojo> { it.createInstance() }
 val kPojoAllFieldsCache = LRUCache<KClass<out KPojo>, LinkedHashSet<Field>> { kClass ->
-    kPojoInstanceCache[kClass]!!.kronosColumns().toLinkedSet()
+    kPojoInstanceCache[kClass]!!.runtimeColumns().toLinkedSet()
 }
 
 val kPojoAllColumnsCache = LRUCache<KClass<out KPojo>, List<Field>> { kClass ->
-    kPojoInstanceCache[kClass]!!.kronosColumns().filter { it.isColumn }
+    kPojoInstanceCache[kClass]!!.runtimeColumns().filter { it.isColumn }
 }
 
 val kPojoFieldMapCache = LRUCache<KClass<out KPojo>, Map<String, Field>> { kClass ->
-    kPojoInstanceCache[kClass]!!.kronosColumns().associateBy { it.name }
+    kPojoInstanceCache[kClass]!!.runtimeColumns().associateBy { it.name }
 }
 
 val kPojoPrimaryKeyCache = LRUCache<KClass<out KPojo>, Field> { kClass ->
-    kPojoAllColumnsCache[kClass]!!.firstOrNull { it.primaryKey != PrimaryKeyType.NOT } ?: primaryKeyStrategy
-        .takeIf { it.enabled }?.field.takeIf { field ->
-            kPojoAllColumnsCache[kClass]!!.any { it.name == field?.name }
-        }
-    ?: error("No primary key found for ${kClass.simpleName}!")
+    resolvePrimaryKey(kClass, kPojoAllColumnsCache[kClass]!!)
 }
 
 val kPojoCreateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosCreateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
-            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
-        }
+        kPojo.runtimeCreateTimeStrategy().runtimeBind(kPojo.__tableName, kPojoAllColumnsCache[kClass]!!)
     }
 }
 
 val kPojoUpdateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosUpdateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
-            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
-        }
+        kPojo.runtimeUpdateTimeStrategy().runtimeBind(kPojo.__tableName, kPojoAllColumnsCache[kClass]!!)
     }
 }
 
 val kPojoLogicDeleteCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
-            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
-        }
+        kPojo.runtimeLogicDeleteStrategy().runtimeBind(kPojo.__tableName, kPojoAllColumnsCache[kClass]!!)
     }
 }
 
 val kPojoOptimisticLockCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosOptimisticLock().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
-            kPojoAllColumnsCache[kClass]!!.any { col-> col.name == field.name }
-        }
+        kPojo.runtimeOptimisticLockStrategy().runtimeBind(kPojo.__tableName, kPojoAllColumnsCache[kClass]!!)
     }
 }

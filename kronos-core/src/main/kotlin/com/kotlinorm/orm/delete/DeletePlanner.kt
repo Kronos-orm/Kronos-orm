@@ -8,9 +8,6 @@
 package com.kotlinorm.orm.delete
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.cache.kPojoLogicDeleteCache
-import com.kotlinorm.cache.kPojoOptimisticLockCache
-import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.toSqlExpr
@@ -30,9 +27,9 @@ import com.kotlinorm.utils.execute
 internal class DeletePlanner<T : KPojo>(
     private val context: OrmContext<T>
 ) {
-    private val logicDeleteStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoLogicDeleteCache[context.kClass] }
-    private val updateTimeStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoUpdateTimeCache[context.kClass] }
-    private val optimisticStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoOptimisticLockCache[context.kClass] }
+    private val logicDeleteStrategy = context.logicDeleteStrategy
+    private val updateTimeStrategy = context.updateTimeStrategy
+    private val optimisticStrategy = context.optimisticLockStrategy
 
     fun usesLogicDelete(): Boolean =
         context.logicEnabled ?: (logicDeleteStrategy?.enabled ?: false)

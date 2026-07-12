@@ -79,7 +79,7 @@ fun box(): String {
     val listRow = clause.toList(wrapper).singleOrNull()
     val one = clause.first(wrapper)
     val oneOrNull = clause.firstOrNull(wrapper)
-    val fieldNames = one.kronosColumns().map { it.name }.toSet()
+    val fieldNames = one.__columns.map { it.name }.toSet()
 
     val failures = listOfNotNull(
         expect(listRow?.id == 1) { "toList id was ${listRow?.id}" },

@@ -42,11 +42,11 @@ fun expectStrategyDisable(condition: Boolean, message: () -> String): String? =
     if (condition) null else "Fail: ${message()}"
 
 fun box(): String {
-    val classDisabled = StrategyClassDisabledUser().kronosCreateTime()
+    val classDisabled = StrategyClassDisabledUser().__createTime
     val propertyDisabled = StrategyPropertyDisabledUser()
-    val updateTime = propertyDisabled.kronosUpdateTime()
-    val logicDelete = propertyDisabled.kronosLogicDelete()
-    val optimisticLock = propertyDisabled.kronosOptimisticLock()
+    val updateTime = propertyDisabled.__updateTime
+    val logicDelete = propertyDisabled.__logicDelete
+    val optimisticLock = propertyDisabled.__optimisticLock
 
     val failures = listOfNotNull(
         expectStrategyDisable(!classDisabled.enabled) { "class createTime enabled" },

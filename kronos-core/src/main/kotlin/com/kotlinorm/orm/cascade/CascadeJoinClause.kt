@@ -20,12 +20,12 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.First
 import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 
 /**
@@ -58,7 +58,7 @@ object CascadeJoinClause {
     fun build(
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
-        listOfPojo: List<Pair<KClass<KPojo>, KPojo>>,
+        listOfPojo: List<Pair<KClass<out KPojo>, KPojo>>,
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
         selectFields: MutableMap<String, Field>,
@@ -68,10 +68,11 @@ object CascadeJoinClause {
             cascadeAllowed,
             cascadeSelectedProps,
             listOfPojo.map {
+                val metadata = it.second.resolveRuntimeMetadata()
                 Triple(
-                    it.first,
+                    metadata.kClass,
                     it.second,
-                    kPojoAllFieldsCache[it.first]!!.filter { col -> selectFields.values.contains(col) }
+                    metadata.allFields.filter { col -> selectFields.values.contains(col) }
                 )
             },
             operationType,
@@ -97,7 +98,7 @@ object CascadeJoinClause {
     private fun generateTask(
         cascadeAllowed: Set<Field>? = null,
         cascadeSelectedProps: Set<Field>,
-        listOfColumns: List<Triple<KClass<KPojo>, KPojo, List<Field>>>,
+        listOfColumns: List<Triple<KClass<out KPojo>, KPojo, List<Field>>>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {

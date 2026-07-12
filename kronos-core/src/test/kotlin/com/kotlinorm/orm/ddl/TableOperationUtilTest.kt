@@ -1,16 +1,20 @@
 package com.kotlinorm.orm.ddl
 
+import com.kotlinorm.Kronos
+import com.kotlinorm.annotations.Ignore
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -21,17 +25,32 @@ import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlIndexDefinition
 import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
 import com.kotlinorm.syntax.table.SqlTable
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ManualDdlKPojo(
-    private val columns: MutableList<Field>,
-    private val indexes: MutableList<KTableIndex> = mutableListOf()
-) : com.kotlinorm.interfaces.KPojo {
+    columns: MutableList<Field>,
+    indexes: MutableList<KTableIndex> = mutableListOf()
+) : KPojo {
+    @Ignore([IgnoreAction.ALL])
+    override var __kClass: KClass<out KPojo> = KPojo::class
+    @Ignore([IgnoreAction.ALL])
     override var __tableName: String = "manual_ddl"
+    @Ignore([IgnoreAction.ALL])
     override var __tableComment: String = "manual table"
-    override fun kronosColumns(): MutableList<Field> = columns
-    override fun kronosTableIndex(): MutableList<KTableIndex> = indexes
+    @Ignore([IgnoreAction.ALL])
+    override var __columns: MutableList<Field> = columns
+    @Ignore([IgnoreAction.ALL])
+    override var __tableIndexes: MutableList<KTableIndex> = indexes
+    @Ignore([IgnoreAction.ALL])
+    override var __createTime = Kronos.createTimeStrategy
+    @Ignore([IgnoreAction.ALL])
+    override var __updateTime = Kronos.updateTimeStrategy
+    @Ignore([IgnoreAction.ALL])
+    override var __logicDelete = Kronos.logicDeleteStrategy
+    @Ignore([IgnoreAction.ALL])
+    override var __optimisticLock = Kronos.optimisticLockStrategy
 }
 
 class TableOperationUtilTest {

@@ -18,10 +18,10 @@ data class StrategyUser(
 
 fun box(): String {
     val user = StrategyUser()
-    val createTime = user.kronosCreateTime()
-    val updateTime = user.kronosUpdateTime()
-    val logicDelete = user.kronosLogicDelete()
-    val optimisticLock = user.kronosOptimisticLock()
+    val createTime = user.__createTime
+    val updateTime = user.__updateTime
+    val logicDelete = user.__logicDelete
+    val optimisticLock = user.__optimisticLock
 
     return when {
         !createTime.enabled -> "Fail: createTime disabled"

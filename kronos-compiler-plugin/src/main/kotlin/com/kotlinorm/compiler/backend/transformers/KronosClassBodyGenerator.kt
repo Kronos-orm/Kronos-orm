@@ -92,17 +92,16 @@ import org.jetbrains.kotlin.name.Name
 /**
  * Kronos Class Body Generator
  *
- * Provides `DeclarationIrBuilder` extension functions that generate the IR bodies
- * for each KPojo interface method implemented by [KronosIrClassTransformer].
+ * Provides `DeclarationIrBuilder` extension functions that generate IR bodies
+ * and property initializers for KPojo members implemented by [KronosIrClassTransformer].
  *
- * Each function produces an `IrBlockBody` that is assigned to the corresponding
- * fake-override declaration:
- * - [createKronosColumns] — builds a `listOf(Field(...), ...)` expression.
- * - [createTableName] — returns the table name derived from `@Table` or the class name.
- * - [createTableComment] — returns the table comment string.
- * - [createKronosTableIndex] — returns the list of table indexes.
- * - [createKronosSpecialField] — returns the field annotated with a special annotation, or null.
- * - [createKClassFunction] — returns the `KClass` reference of the class.
+ * Metadata helpers produce `IrExpressionBody` initializers for backing fields:
+ * - [createColumns] — builds a `mutableListOf(Field(...), ...)` expression.
+ * - [createTableName] — builds the table name derived from `@Table` or the class name.
+ * - [createTableComment] — builds the table comment string.
+ * - [createTableIndexes] — builds the mutable list of table indexes.
+ * - [createKronosSpecialField] — builds the special strategy value.
+ * - [createKClassProperty] — builds the `KClass` reference of the class.
  * - [createToDataMap] — serializes all column properties into a `MutableMap`.
  * - [createPropertyGetter] / [createPropertySetter] — dynamic property access by name.
  * - [createFromMapData] — populates the instance from a `Map<String, Any?>`.
@@ -113,18 +112,16 @@ import org.jetbrains.kotlin.name.Name
 // ============================================================================
 
 /**
- * Generates: override fun kronosColumns() = listOf(Field(...), ...)
+ * Generates: var __columns: MutableList<Field> = mutableListOf(Field(...), ...)
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKronosColumns(irClass: IrClass, metadataClass: IrClass = irClass): IrBlockBody {
+fun DeclarationIrBuilder.createColumns(irClass: IrClass, metadataClass: IrClass = irClass): IrExpressionBody {
     val fields = irClass.properties
         .filter { !it.isIgnoredForAll() }
         .map { buildFieldFromProperty(it, metadataClass) }
         .toList()
-    return irBlockBody {
-        +irReturn(buildListOf(fieldClassSymbol.defaultType, fields))
-    }
+    return irExprBody(buildMutableListOf(fieldClassSymbol.defaultType, fields))
 }
 
 /**
@@ -143,7 +140,7 @@ fun DeclarationIrBuilder.createTableComment(irClass: IrClass): IrExpressionBody 
     irExprBody(irClass.getKDocString())
 
 /**
- * Generates: override fun kronosTableIndex() = listOf(KTableIndex(...), ...)
+ * Generates: var __tableIndexes: MutableList<KTableIndex> = mutableListOf(KTableIndex(...), ...)
  *
  * Reads @TableIndex annotations from the class and constructs KTableIndex instances.
  * The @TableIndex annotation parameters (name, columns, type, method, concurrently)
@@ -151,51 +148,55 @@ fun DeclarationIrBuilder.createTableComment(irClass: IrClass): IrExpressionBody 
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKronosTableIndex(irClass: IrClass): IrBlockBody =
-    irBlockBody {
-        val kTableIndexClassId = ClassId.topLevel(FqName("com.kotlinorm.beans.dsl.KTableIndex"))
-        val kTableIndexSymbol = context.referenceClass(kTableIndexClassId)
-            ?: error("KTableIndex class not found")
-        val kTableIndexConstructor = kTableIndexSymbol.constructors.first()
-        val listType = kTableIndexSymbol.defaultType
+fun DeclarationIrBuilder.createTableIndexes(irClass: IrClass): IrExpressionBody {
+    val kTableIndexClassId = ClassId.topLevel(FqName("com.kotlinorm.beans.dsl.KTableIndex"))
+    val kTableIndexSymbol = context.referenceClass(kTableIndexClassId)
+        ?: error("KTableIndex class not found")
+    val kTableIndexConstructor = kTableIndexSymbol.constructors.first()
+    val listType = kTableIndexSymbol.defaultType
 
-        val tableIndexAnnotations = irClass.annotations.filter {
-            it.symbol.owner.returnType.classFqName == AnnotationFqNames.TableIndex
-        }
-
-        val indexExpressions = tableIndexAnnotations.map { annotation ->
-            val name = annotation.arguments.getOrNull(0).stringValue()
-            val columns = annotation.arguments.getOrNull(1).stringArrayValue()
-            val type = annotation.arguments.getOrNull(2).stringValue()
-            val method = annotation.arguments.getOrNull(3).stringValue()
-            val concurrently = annotation.arguments.getOrNull(4).booleanValue()
-
-            irCall(kTableIndexConstructor).apply {
-                arguments[0] = irString(name)
-                arguments[1] = irVararg(
-                    context.irBuiltIns.stringType,
-                    columns.map { irString(it) }
-                )
-                arguments[2] = irString(type)
-                arguments[3] = irString(method)
-                arguments[4] = irBoolean(concurrently)
-            }
-        }
-
-        +irReturn(buildListOf(listType, indexExpressions))
+    val tableIndexAnnotations = irClass.annotations.filter {
+        it.symbol.owner.returnType.classFqName == AnnotationFqNames.TableIndex
     }
 
+    val indexExpressions = tableIndexAnnotations.map { annotation ->
+        val name = annotation.arguments.getOrNull(0).stringValue()
+        val columns = annotation.arguments.getOrNull(1).stringArrayValue()
+        val type = annotation.arguments.getOrNull(2).stringValue()
+        val method = annotation.arguments.getOrNull(3).stringValue()
+        val concurrently = annotation.arguments.getOrNull(4).booleanValue()
+
+        irCall(kTableIndexConstructor).apply {
+            arguments[0] = irString(name)
+            arguments[1] = irVararg(
+                context.irBuiltIns.stringType,
+                columns.map { irString(it) }
+            )
+            arguments[2] = irString(type)
+            arguments[3] = irString(method)
+            arguments[4] = irBoolean(concurrently)
+        }
+    }
+
+    return irExprBody(buildMutableListOf(listType, indexExpressions))
+}
+
 /**
- * Generates: override fun kronosCreateTime/UpdateTime/LogicDelete/OptimisticLock(): KronosCommonStrategy
+ * Generates: var __createTime/__updateTime/__logicDelete/__optimisticLock: KronosCommonStrategy = ...
  *
  * If a property with the given annotation is found:
- *   return KronosCommonStrategy(enabled, Field("column_name", "propertyName"))
+ *   KronosCommonStrategy(enabled, Field("column_name", "propertyName"))
  * Otherwise:
- *   return the global default strategy from Kronos object
+ *   the global default strategy from Kronos object
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKronosSpecialField(irClass: IrClass, annotationFqName: FqName): IrBlockBody {
+fun DeclarationIrBuilder.createKronosSpecialField(irClass: IrClass, annotationFqName: FqName): IrExpressionBody =
+    irExprBody(buildKronosSpecialField(irClass, annotationFqName))
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+private fun IrBuilderWithScope.buildKronosSpecialField(irClass: IrClass, annotationFqName: FqName): IrExpression {
     // Check class-level annotation first (e.g., @CreateTime(enable = false) on the class)
     val classAnno = irClass.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
     if (classAnno != null) {
@@ -207,75 +208,65 @@ fun DeclarationIrBuilder.createKronosSpecialField(irClass: IrClass, annotationFq
         }
         if (!classEnabled) {
             // Class-level annotation explicitly disables the strategy
-            return irBlockBody {
-                +irReturn(
-                    irCall(kronosCommonStrategyConstructorSymbol).apply {
-                        arguments[0] = irBoolean(false)
-                        arguments[1] = irCall(fieldConstructorSymbol).apply {
-                            arguments[0] = irString("")
-                            arguments[1] = irString("")
-                        }
-                    }
-                )
+            return irCall(kronosCommonStrategyConstructorSymbol).apply {
+                arguments[0] = irBoolean(false)
+                arguments[1] = irCall(fieldConstructorSymbol).apply {
+                    arguments[0] = irString("")
+                    arguments[1] = irString("")
+                }
             }
         }
     }
 
     val prop = irClass.properties.firstOrNull { it.hasAnnotation(annotationFqName) }
-    return irBlockBody {
-        if (prop != null) {
-            // Check if annotation explicitly disables the strategy: @LogicDelete(false)
-            val anno = prop.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
-            val enabled = if (anno != null && anno.arguments.isNotEmpty()) {
-                val firstArg = anno.arguments[0]
-                !(firstArg is IrConst && firstArg.value == false)
-            } else {
-                true
-            }
-            val fieldExpr = buildFieldFromProperty(prop)
-            +irReturn(
-                irCall(kronosCommonStrategyConstructorSymbol).apply {
-                    arguments[0] = irBoolean(enabled)
-                    arguments[1] = fieldExpr
-                }
-            )
+    if (prop != null) {
+        // Check if annotation explicitly disables the strategy: @LogicDelete(false)
+        val anno = prop.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
+        val enabled = if (anno != null && anno.arguments.isNotEmpty()) {
+            val firstArg = anno.arguments[0]
+            !(firstArg is IrConst && firstArg.value == false)
         } else {
-            // No annotated property — return the global default from Kronos object
-            val strategyName = when (annotationFqName) {
-                AnnotationFqNames.CreateTime -> "createTimeStrategy"
-                AnnotationFqNames.UpdateTime -> "updateTimeStrategy"
-                AnnotationFqNames.LogicDelete -> "logicDeleteStrategy"
-                AnnotationFqNames.Version -> "optimisticLockStrategy"
-                else -> error("Unsupported common strategy annotation: $annotationFqName")
-            }
-            val getter = kronosObjectSymbol.owner.declarations
-                .filterIsInstance<IrProperty>()
-                .first { it.name.asString() == strategyName }
-                .getter ?: error("Kronos.$strategyName getter is missing")
-            +irReturn(
-                irCall(getter.symbol).apply {
-                    dispatchReceiver = irGetObject(kronosObjectSymbol)
-                }
-            )
+            true
         }
+        val fieldExpr = buildFieldFromProperty(prop)
+        return irCall(kronosCommonStrategyConstructorSymbol).apply {
+            arguments[0] = irBoolean(enabled)
+            arguments[1] = fieldExpr
+        }
+    }
+
+    // No annotated property — return the global default from Kronos object
+    val strategyName = when (annotationFqName) {
+        AnnotationFqNames.CreateTime -> "createTimeStrategy"
+        AnnotationFqNames.UpdateTime -> "updateTimeStrategy"
+        AnnotationFqNames.LogicDelete -> "logicDeleteStrategy"
+        AnnotationFqNames.Version -> "optimisticLockStrategy"
+        else -> error("Unsupported common strategy annotation: $annotationFqName")
+    }
+    val getter = kronosObjectSymbol.owner.declarations
+        .filterIsInstance<IrProperty>()
+        .first { it.name.asString() == strategyName }
+        .getter ?: error("Kronos.$strategyName getter is missing")
+    return irCall(getter.symbol).apply {
+        dispatchReceiver = irGetObject(kronosObjectSymbol)
     }
 }
 
 /**
- * Generates: override fun kClass() = User::class
+ * Generates: var __kClass: KClass<out KPojo> = User::class
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKClassFunction(irClass: IrClass): IrBlockBody =
-    irBlockBody {
-        val kClassRef = IrClassReferenceImpl(
-            startOffset, endOffset,
+fun DeclarationIrBuilder.createKClassProperty(irClass: IrClass): IrExpressionBody =
+    irExprBody(
+        IrClassReferenceImpl(
+            startOffset,
+            endOffset,
             context.irBuiltIns.kClassClass.typeWith(irClass.defaultType),
             irClass.symbol,
             irClass.defaultType
         )
-        +irReturn(kClassRef)
-    }
+    )
 
 /**
  * Generates: override fun toDataMap() = mutableMapOf("prop" to this.prop, ...)
@@ -472,17 +463,17 @@ private fun IrBuilderWithScope.buildTableNamingStrategyCall(className: String): 
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-private fun IrBuilderWithScope.buildListOf(
+private fun IrBuilderWithScope.buildMutableListOf(
     elementType: org.jetbrains.kotlin.ir.types.IrType,
     elements: List<IrExpression>
 ): IrExpression {
-    val listOfFunctions = context.referenceFunctions(
-        CallableId(FqName("kotlin.collections"), null, Name.identifier("listOf"))
+    val mutableListOfFunctions = context.referenceFunctions(
+        CallableId(FqName("kotlin.collections"), null, Name.identifier("mutableListOf"))
     )
-    val listOfSymbol = listOfFunctions.first {
+    val mutableListOfSymbol = mutableListOfFunctions.first {
         it.owner.parameters.valueParameters.singleOrNull()?.isVararg == true
     }
-    return irCall(listOfSymbol).apply {
+    return irCall(mutableListOfSymbol).apply {
         typeArguments[0] = elementType
         arguments[0] = irVararg(elementType, elements)
     }

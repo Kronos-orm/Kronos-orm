@@ -34,7 +34,7 @@ data class SortMatrixUser(
     var name: String? = null,
     var status: Int? = null,
 ) : KPojo {
-    fun column(name: String): Field = kronosColumns().single { it.name == name }
+    fun column(name: String): Field = __columns.single { it.name == name }
 }
 
 @Table(name = "tb_sort_matrix_order")

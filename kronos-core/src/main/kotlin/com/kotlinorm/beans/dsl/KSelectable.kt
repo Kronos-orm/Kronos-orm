@@ -49,10 +49,14 @@ abstract class KSelectable<Selected : KPojo>(
     @Suppress("UNCHECKED_CAST")
     internal fun resultColumnTypes(fieldsByLabel: Map<String, Field> = emptyMap()): Map<String, KType> {
         val selectedClass = selectedType.classifier as? KClass<*> ?: return emptyMap()
-        val projectionTypes = fieldsMapCache[selectedClass as KClass<KPojo>]
-            ?.mapNotNull { (label, field) -> field.kType?.let { label to it } }
-            ?.toMap()
-            .orEmpty()
+        val projectionTypes = if (selectedClass == KPojo::class) {
+            emptyMap()
+        } else {
+            fieldsMapCache[selectedClass as KClass<KPojo>]
+                ?.mapNotNull { (label, field) -> field.kType?.let { label to it } }
+                ?.toMap()
+                .orEmpty()
+        }
         return buildMap {
             putAll(projectionTypes)
             fieldsByLabel.forEach { (label, field) ->

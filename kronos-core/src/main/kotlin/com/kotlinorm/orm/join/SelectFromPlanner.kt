@@ -35,6 +35,7 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.utils.databaseBooleanLiteral
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.resolveRuntimeMetadata
 
 internal class SelectFromPlanner(
     private val context: SelectFromContext<*, *, *>
@@ -166,9 +167,7 @@ internal class SelectFromPlanner(
     private fun joinCondition(joinable: KJoinable, dataSource: KronosDataSourceWrapper): SqlExpr? {
         var condition = joinable.condition
         if (joinable.tableName !in context.derivedJoinQueries) {
-            joinable.kPojo.kronosLogicDelete()
-                .takeIf { strategy -> strategy.enabled }
-                ?.bind(joinable.kPojo.__tableName)
+            joinable.kPojo.resolveRuntimeMetadata().logicDeleteStrategy
                 ?.execute(defaultValue = false) { field, _ ->
                     condition = context.and(
                         condition,

@@ -7,7 +7,6 @@
 
 package com.kotlinorm.orm.statement
 
-import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -22,17 +21,16 @@ internal object OrmDmlRenderer {
         sqlStatement: SqlStatement
     ): Pair<String, Map<String, Any?>> {
         val dataSource = wrapper.orDefault()
-        val fieldMap = fieldsMapCache[context.kClass]!!
         val renderedSqlText = renderStatement(
             dataSource = dataSource,
             statement = sqlStatement,
             parameterValues = context.parameterValues(),
-            fieldsMap = fieldMap
+            fieldsMap = context.fieldMap
         ).sql
         return renderedSqlText to context.renderedDatabaseParameters(
             dataSource,
             renderedSqlText,
-            fieldMap,
+            context.fieldMap,
             ::toDatabaseValue
         )
     }

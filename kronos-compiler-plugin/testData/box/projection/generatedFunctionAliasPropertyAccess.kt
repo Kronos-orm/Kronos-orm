@@ -70,7 +70,7 @@ fun box(): String {
     val row = GeneratedFunctionAliasUser()
         .select { [it.id, f.length(it.username).alias("nameLength")] }
         .first(wrapper)
-    val fieldNames = row.kronosColumns().map { it.name }.toSet()
+    val fieldNames = row.__columns.map { it.name }.toSet()
 
     val failures = listOfNotNull(
         expectGeneratedFunctionAlias(row.id == 9) { "id was ${row.id}" },

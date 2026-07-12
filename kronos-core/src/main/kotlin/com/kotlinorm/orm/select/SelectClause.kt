@@ -25,7 +25,6 @@ import com.kotlinorm.beans.dsl.KTableForSort
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
@@ -86,7 +85,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     internal override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = planner.planTotalCount(dataSource)
-        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, fieldsMapCache[context.kClass]!!)
+        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, context.fieldMap)
         return KronosQueryTask(
             KronosAtomicQueryTask(
                 sql = renderedSql.sql,
@@ -252,7 +251,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = toSqlQueryPlan(dataSource)
-        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, fieldsMapCache[context.kClass]!!)
+        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, context.fieldMap)
         val finalSelectFields = if (context.selectAll) {
             (context.allFields + context.cascadeFields).toLinkedSet()
         } else {

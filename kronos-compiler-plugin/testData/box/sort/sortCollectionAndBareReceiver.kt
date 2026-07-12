@@ -32,7 +32,7 @@ data class SortCollectionUser(
     var name: String? = null,
     var score: Int? = null,
 ) : KPojo {
-    fun column(name: String): Field = kronosColumns().single { it.name == name }
+    fun column(name: String): Field = __columns.single { it.name == name }
 }
 
 fun SortCollectionUser.collectItems(block: ToSort<SortCollectionUser, Any?>): List<KTableForSort.SortItem> {

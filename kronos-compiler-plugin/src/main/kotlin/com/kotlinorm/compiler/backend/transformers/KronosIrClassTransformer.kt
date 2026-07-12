@@ -70,16 +70,16 @@ import org.jetbrains.kotlin.name.FqName
  * Kronos IR Class Transformer
  *
  * Transforms classes that implement the `KPojo` interface by replacing their
- * fake-override functions with real, compiler-generated implementations.
+ * fake-override functions and properties with real, compiler-generated implementations.
  *
  * The following methods/properties are generated for each KPojo class:
- * - `kronosColumns()` — returns the list of [Field] descriptors for all column properties.
+ * - `__kClass` — property holding the concrete KClass reference for static KPojo classes.
+ * - `__columns` — property holding the list of [Field] descriptors for all column properties.
  * - `__tableName` — property holding the table name (from `@Table` annotation or class name).
  * - `__tableComment` — property holding the table comment.
- * - `kronosTableIndex()` — returns the list of table indexes.
- * - `kronosCreateTime()` / `kronosUpdateTime()` / `kronosLogicDelete()` / `kronosOptimisticLock()`
- *   — returns the special-purpose field annotated with the corresponding annotation, or null.
- * - `kClass()` — returns the KClass reference of the class.
+ * - `__tableIndexes` — property holding the list of table indexes.
+ * - `__createTime` / `__updateTime` / `__logicDelete` / `__optimisticLock`
+ *   — properties holding the special-purpose strategies annotated on the class.
  * - `toDataMap()` — serializes the instance to a `MutableMap<String, Any?>`.
  * - `get(name)` / `set(name, value)` — dynamic property access by column name.
  * - `fromMapData()` / `safeFromMapData()` — populates the instance from a map.
@@ -105,13 +105,6 @@ class KronosIrClassTransformer(
 
         with(pluginContext) {
             when (declaration.name.asString()) {
-                "kronosColumns" -> replaceFakeBody { createKronosColumns(irClass, metadataClass) }
-                "kronosTableIndex" -> replaceFakeBody { createKronosTableIndex(irClass) }
-                "kronosCreateTime" -> replaceFakeBody { createKronosSpecialField(irClass, AnnotationFqNames.CreateTime) }
-                "kronosUpdateTime" -> replaceFakeBody { createKronosSpecialField(irClass, AnnotationFqNames.UpdateTime) }
-                "kronosLogicDelete" -> replaceFakeBody { createKronosSpecialField(irClass, AnnotationFqNames.LogicDelete) }
-                "kronosOptimisticLock" -> replaceFakeBody { createKronosSpecialField(irClass, AnnotationFqNames.Version) }
-                "kClass" -> replaceFakeBody { createKClassFunction(irClass) }
                 "toDataMap" -> replaceFakeBody { createToDataMap(irClass, declaration) }
                 "get" -> replaceFakeBody { createPropertyGetter(irClass, declaration) }
                 "set" -> replaceFakeBody { createPropertySetter(irClass, declaration) }
@@ -125,7 +118,7 @@ class KronosIrClassTransformer(
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitPropertyNew(declaration: IrProperty): IrStatement {
-        if (declaration.backingField == null) {
+        if (declaration.isFakeOverride && declaration.backingField == null) {
             fun replaceFakeProp(initializer: () -> IrExpressionBody) {
                 declaration.isFakeOverride = false
                 declaration.addBackingField { type = declaration.getter!!.returnType }
@@ -138,8 +131,15 @@ class KronosIrClassTransformer(
             with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {
                 with(pluginContext) {
                     when (declaration.name.asString()) {
+                        "__kClass" -> replaceFakeProp { createKClassProperty(irClass) }
+                        "__columns" -> replaceFakeProp { createColumns(irClass, metadataClass) }
                         "__tableName" -> replaceFakeProp { createTableName(metadataClass) }
                         "__tableComment" -> replaceFakeProp { createTableComment(metadataClass) }
+                        "__tableIndexes" -> replaceFakeProp { createTableIndexes(irClass) }
+                        "__createTime" -> replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.CreateTime) }
+                        "__updateTime" -> replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.UpdateTime) }
+                        "__logicDelete" -> replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.LogicDelete) }
+                        "__optimisticLock" -> replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.Version) }
                     }
                 }
             }

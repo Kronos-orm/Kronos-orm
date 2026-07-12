@@ -93,11 +93,11 @@ class CoverageReportTest(unittest.TestCase):
         self.assertIn(":x: **Coverage gate failed.**", report)
         self.assertIn(":green_circle: **PASS**", report)
         self.assertIn(":red_circle: **DOWN**", report)
-        self.assertIn(":blue_circle: **NEW**", report)
+        self.assertIn(":large_blue_circle: **NEW**", report)
         self.assertIn(":yellow_circle: **MISSING**", report)
         self.assertIn(
             "**Modules:** :green_circle: 1 PASS · :red_circle: 1 DOWN · "
-            ":blue_circle: 1 NEW · :yellow_circle: 1 MISSING",
+            ":large_blue_circle: 1 NEW · :yellow_circle: 1 MISSING",
             report,
         )
         self.assertIn(

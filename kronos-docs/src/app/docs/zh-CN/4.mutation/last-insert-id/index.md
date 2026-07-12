@@ -3,7 +3,7 @@
 
 ## 使用场景
 
-`LastInsertIdPlugin` 用于在自增主键插入后读取数据库生成的 ID。
+当一次 insert 需要返回数据库生成的自增主键时，调用 `.withId()`。
 
 ```kotlin group="KPojo" name="User.kt" icon="kotlin"
 import com.kotlinorm.annotations.PrimaryKey
@@ -17,55 +17,50 @@ data class User(
 ```
 
 > **Note**
-> `lastInsertId` 适用于使用 `@PrimaryKey(identity = true)` 且主键值由数据库生成的插入操作。
+> `lastInsertId` 适用于使用 `@PrimaryKey(identity = true)` 且主键值保持为 `null` 的插入。
 
-## 从插入结果读取 {{ $.title("lastInsertId") }}
+## 读取 {{ $.title("lastInsertId") }}
 
-需要让所有自增主键插入都读取生成 ID 时，启用 `LastInsertIdPlugin`。
+在需要生成 ID 的那次 insert 上调用 `.withId()`。
 
 ```kotlin group="Read Id" name="kotlin" icon="kotlin"
-import com.kotlinorm.plugins.LastInsertIdPlugin
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-
-LastInsertIdPlugin.enabled = true
-
 val result = User(name = "Kronos")
     .insert()
+    .withId()
     .execute()
 
 val affectedRows = result.affectedRows
 val lastInsertId = result.lastInsertId
 ```
 
-`execute()` 返回 `KronosOperationResult`。`affectedRows` 来自插入执行结果，`lastInsertId` 来自操作结果暂存区。使用内置 `KronosJdbcWrapper` 时，Kronos 会在执行 insert 时读取 JDBC generated keys。
+`execute()` 返回 `KronosOperationResult`。`affectedRows` 是插入行数，`lastInsertId` 是 wrapper 返回或内部方言 fallback 读取到的自增主键值。
 
-## 禁用{{ $.title("lastInsertId") }}插件
+## 不返回 ID 的情况
 
-应用默认不需要收集自增 ID 时，直接设置 `LastInsertIdPlugin.enabled`。
+没有 `.withId()` 时，Kronos 不会请求生成 ID。
 
-```kotlin group="Disable" name="kotlin" icon="kotlin"
-import com.kotlinorm.plugins.LastInsertIdPlugin
+```kotlin group="No Id" name="kotlin" icon="kotlin"
+val result = User(name = "Kronos")
+    .insert()
+    .execute()
 
-LastInsertIdPlugin.enabled = false
+val lastInsertId = result.lastInsertId // null
 ```
 
-单次插入仍然需要读取生成 ID 时，调用 `.withId()`。
+如果主键值已经赋好，insert 会直接使用该值，`lastInsertId` 为空。
 
-```kotlin group="Single Insert" name="kotlin" icon="kotlin"
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-
-val result = User(name = "Kronos")
+```kotlin group="Assigned Id" name="kotlin" icon="kotlin"
+val result = User(id = 1001, name = "Kronos")
     .insert()
     .withId()
     .execute()
 
-val lastInsertId = result.lastInsertId
+val lastInsertId = result.lastInsertId // null
 ```
 
-## wrapper 回退路径使用的方言 SQL
+## 方言 fallback SQL
 
-通过后续查询读取生成 ID 的 wrapper 会使用当前数据源方言。
+内置 `KronosJdbcWrapper` 会优先在 insert 执行时读取 JDBC generated keys。若 wrapper 无法直接返回 generated keys，Kronos 会使用当前方言的后续查询 SQL。
 
 ```sql group="Dialect SQL" name="Mysql" icon="mysql"
 SELECT LAST_INSERT_ID()
@@ -84,5 +79,5 @@ SELECT SCOPE_IDENTITY()
 ```
 
 ```sql group="Dialect SQL" name="Oracle" icon="oracle"
-SELECT * FROM DUAL
+SELECT MAX("ID") FROM "USER"
 ```

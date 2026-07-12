@@ -13,6 +13,7 @@ import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
+import com.kotlinorm.integration.suites.StrategyIntegrationSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
@@ -35,3 +36,4 @@ class MysqlFunctionAndParameterIntegrationTest : FunctionAndParameterIntegration
 class MysqlTransactionIntegrationTest : TransactionIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlCodegenIntegrationTest : CodegenIntegrationSuite(mysql)
+class MysqlStrategyIntegrationTest : StrategyIntegrationSuite(mysql, StandardIntegrationScenarioProfile)

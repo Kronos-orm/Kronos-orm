@@ -99,9 +99,9 @@ WHERE `id` = :id
   AND `deleted` = 0
 ```
 
-## Insert and upsert initialize the marker
+## Insert and upsert maintain the marker
 
-Insert initializes the logical delete field with the active value. `onConflict()` upsert also includes that field in the inserted columns when the strategy is active.
+Insert initializes the logical delete field with the active value. When match-field upsert finds a logically deleted row, Kronos updates that row and restores the logical delete field to the active value. `onConflict()` upsert also includes that field in the inserted columns when the strategy is active, and writes the active value during conflict update.
 
 ```kotlin group="Insert" name="kotlin" icon="kotlin"
 User(name = "Kronos")
@@ -117,6 +117,20 @@ VALUES (:name, :deleted)
 ```text group="Insert" name="params"
 name = "Kronos"
 deleted = 0
+```
+
+```kotlin group="Upsert restore" name="kotlin" icon="kotlin"
+User(id = 1, name = "Kronos")
+    .upsert { it.name }
+    .on { it.id }
+    .execute()
+```
+
+```sql group="Upsert restore" name="update" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew,
+    `deleted` = :deletedNew
+WHERE `id` = :id
 ```
 
 ## DataGuard boundary

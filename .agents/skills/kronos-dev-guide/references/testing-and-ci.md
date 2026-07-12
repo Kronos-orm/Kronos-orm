@@ -335,19 +335,36 @@ kover {
 
 ### Where Version Lives
 Two files (must stay in sync):
-1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.1.0-SNAPSHOT"`
-2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.1.0-SNAPSHOT"`
+1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.2.1"`
+2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.2.1"`
 
 ### Bump Script
 `.github/scripts/bump-version.sh`:
 ```bash
 bump-version.sh set 1.2.3            # set explicit version
-bump-version.sh next-snapshot         # 0.1.0 → 0.1.1-SNAPSHOT
-bump-version.sh release-from-current  # 0.1.1-SNAPSHOT → 0.1.1
-bump-version.sh next-release          # 0.1.0 → 0.1.1
+bump-version.sh next-snapshot         # 0.2.1 → 0.2.2-SNAPSHOT
+bump-version.sh release-from-current  # 0.2.1-SNAPSHOT → 0.2.1
+bump-version.sh next-release          # 0.2.1 → 0.2.2
 ```
 
 Parses `MAJOR.MINOR.PATCH`, increments PATCH, uses `sed` to update both files. Handles macOS vs Linux `sed` differences.
+
+### Release Version Upgrade Checklist
+
+When preparing a stable release, do not stop after changing the two code version fields. Update every user-facing version surface in the same change:
+
+- Run `bash .github/scripts/bump-version.sh set <stable-version>` to update `publishing.gradle.kts` and `KronosGradlePlugin.kt`.
+- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.2.2-SNAPSHOT` / `0.2.2--SNAPSHOT`.
+- Update `README.MD` and `README-zh_CN.MD`: Maven Central snapshot badge, Kotlin compatibility table, Gradle Kotlin/Groovy snippets, Maven dependency snippets, and plugin dependency snippets.
+- Update docs release notes in both languages: add a new top section for `<stable-version>` and update `8.resources/release-notes/ng-doc.page.ts` `@status:primary`.
+- Update non-macro docs surfaces: `kronos-docs/src/app/routes/home/home.component.ts`, blog snippets under `kronos-docs/src/assets/blogs/*`, `kronos-gradle-plugin/README.md`, and `kronos-maven-plugin/README.md`.
+- Update skill docs that contain copyable user dependencies or version guidance: `.agents/skills/kronos-orm-guide/**`, `.agents/skills/kronos-dev-docs/SKILL.md`, and this dev guide.
+- Keep historical release notes and compatibility rows for old versions unchanged unless their wording is wrong.
+- Scan for stale release strings before finishing:
+
+```bash
+rg -n "0\\.2\\.0|0\\.2\\.1-SNAPSHOT|0\\.2\\.1--SNAPSHOT" build-logic kronos-gradle-plugin kronos-maven-plugin kronos-docs README.MD README-zh_CN.MD .agents/skills -g '!kronos-docs/node_modules' -g '!kronos-docs/dist' -g '!**/build/**'
+```
 
 ### Dependency Versions
 All dependency versions in `gradle/libs.versions.toml`:

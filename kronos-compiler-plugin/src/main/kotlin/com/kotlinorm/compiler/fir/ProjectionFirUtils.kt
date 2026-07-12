@@ -114,6 +114,40 @@ internal fun FirStatement.excludedProjectionSourceFieldNames(sourceFieldNames: S
     return if (name in sourceFieldNames) setOf(name) else emptySet()
 }
 
+internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
+    sourceType: ConeKotlinType,
+    sourceFieldNames: Set<String>,
+    sourceValueNames: Set<Name>,
+    resolvedType: (FirStatement) -> ConeKotlinType?
+): Set<String>? {
+    if (calleeReference.name.asString() != "minus") return null
+    val receiver = sourceMinusReceiver()?.projectionStatementOrNull() ?: return null
+    val excludedNames = when (receiver) {
+        is FirPropertyAccessExpression -> {
+            if (!receiver.isProjectionSourceValueAccess(sourceType, sourceValueNames, resolvedType(receiver))) {
+                return null
+            }
+            linkedSetOf<String>()
+        }
+        is FirFunctionCall -> receiver.sourceMinusExcludedProjectionFieldNames(
+            sourceType,
+            sourceFieldNames,
+            sourceValueNames,
+            resolvedType
+        )?.toCollection(linkedSetOf()) ?: return null
+        else -> return null
+    }
+    argumentList.arguments.flatMapTo(excludedNames) { argument ->
+        argument.excludedProjectionSourceFieldNames(sourceFieldNames)
+    }
+    return excludedNames
+}
+
+private fun FirFunctionCall.sourceMinusReceiver(): FirStatement? =
+    (explicitReceiver as? FirStatement)
+        ?: (extensionReceiver as? FirStatement)
+        ?: (dispatchReceiver as? FirStatement)
+
 internal fun FirProperty.isKronosColumn(session: FirSession): Boolean {
     if (hasAnnotation(IgnoreAnnotationClassId, session)) return false
     if (hasAnnotation(CascadeAnnotationClassId, session)) return false

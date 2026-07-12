@@ -364,7 +364,7 @@ def status_label(status: str) -> str:
     labels = {
         "PASS": ":green_circle: **PASS**",
         "DOWN": ":red_circle: **DOWN**",
-        "NEW": ":blue_circle: **NEW**",
+        "NEW": ":large_blue_circle: **NEW**",
         "MISSING": ":yellow_circle: **MISSING**",
         "FAIL": ":red_circle: **FAIL**",
     }
@@ -392,7 +392,7 @@ def status_summary(rows: list[dict[str, Any]]) -> str:
         "**Modules:** "
         f":green_circle: {counts['PASS']} PASS · "
         f":red_circle: {counts['DOWN']} DOWN · "
-        f":blue_circle: {counts['NEW']} NEW · "
+        f":large_blue_circle: {counts['NEW']} NEW · "
         f":yellow_circle: {counts['MISSING']} MISSING"
     )
 

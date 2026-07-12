@@ -145,7 +145,7 @@ class TaskUtilTest {
             ),
             operationType = KOperationType.UPDATE
         )
-        val actionResult = KronosOperationResult(1).apply { stash["lastInsertId"] = 9L }
+        val actionResult = KronosOperationResult(1, lastInsertId = 9L)
         val batchResult = KronosOperationResult(3)
         val queryRows = listOf(1, 2)
 

@@ -341,11 +341,9 @@ class MyFeatureTest {
 
         @BeforeAll @JvmStatic
         fun setup() {
-            Kronos.init {
-                dataSource = { mysqlWrapper }
-                fieldNamingStrategy = lineHumpNamingStrategy
-                tableNamingStrategy = lineHumpNamingStrategy
-            }
+            Kronos.dataSource = { mysqlWrapper }
+            Kronos.fieldNamingStrategy = lineHumpNamingStrategy
+            Kronos.tableNamingStrategy = lineHumpNamingStrategy
             mysqlWrapper.table.syncTable(TestEntity())
         }
 
@@ -433,16 +431,17 @@ kronos {
 ## Release a New Version
 
 ### Snapshot (automatic)
-Push to `release/0.1.0` → CI runs `publishAllToCentralSnapshots`.
+Push a `-SNAPSHOT` version to `main` → CI runs `publishAllToCentralSnapshots`.
 
 ### Release
-1. Update version: `bash .github/scripts/bump-version.sh set 0.1.0` (remove -SNAPSHOT)
-2. Commit: `git commit -am "chore(version): prepare release 0.1.0"`
-3. Create PR to `main`
-4. Merge PR → CI automatically:
-   - Tags `v0.1.0`
+1. Update version: `bash .github/scripts/bump-version.sh set 0.2.1` (remove -SNAPSHOT)
+2. Complete the "Release Version Upgrade Checklist" in `references/testing-and-ci.md`.
+3. Commit: `git commit -am "chore(version): prepare release 0.2.1"`
+4. Create PR to `main`
+5. Merge PR → CI automatically:
+   - Tags `v0.2.1`
    - Publishes to Maven Central (signed)
-   - Bumps to `0.1.1-SNAPSHOT`
+   - Opens the next `0.2.2-SNAPSHOT` PR
    - Commits and pushes
 
 ### Manual Release

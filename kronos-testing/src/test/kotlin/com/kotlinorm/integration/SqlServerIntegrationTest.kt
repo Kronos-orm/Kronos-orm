@@ -12,6 +12,7 @@ import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
+import com.kotlinorm.integration.suites.StrategyIntegrationSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
@@ -33,3 +34,4 @@ class SqlServerValueTypeIntegrationTest : ValueTypeIntegrationSuite(sqlServer, S
 class SqlServerFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerTransactionIntegrationTest : TransactionIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerStrategyIntegrationTest : StrategyIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)

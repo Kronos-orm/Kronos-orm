@@ -5,7 +5,7 @@
 
 Use `KPojo.upsert().on(...).cascade(...).execute()` to upsert a root record and let the declared `@Cascade` relationships participate in the operation.
 
-Cascade upsert uses the fallback upsert flow described in {{ $.keyword("mutation/upsert", ["Upsert Records"]) }}:
+Cascade upsert uses the match-field upsert flow described in {{ $.keyword("mutation/upsert", ["Upsert Records"]) }}:
 
 ```text
 1. Check whether the root record exists by the fields passed to `on { ... }`.
@@ -274,7 +274,7 @@ The profile object in memory is ignored by this database call.
 
 ## Logic delete and optimistic lock fields
 
-Fallback cascade upsert follows the same strategy fields as insert and update. On the insert branch, `@LogicDelete` and `@Version` fields receive their configured initial values. On the update branch, logically deleted rows can be matched by the `on` fields, the logic-delete column is restored to the normal value, and the version column is incremented by the update strategy.
+Cascade upsert follows the same strategy fields as insert and update. On the insert branch, `@LogicDelete` and `@Version` fields receive their configured initial values. On the update branch, logically deleted rows can be matched by the `on` fields, the logic-delete column is restored to the normal value, and the version column is incremented by the update strategy.
 
 ```kotlin group="Strategy fields 1" name="kotlin" icon="kotlin" {6-9,18-21}
 @Table("account_flag")
@@ -391,7 +391,7 @@ The parent insert omits the identity id.
 After the parent insert returns the generated id, child.parentId is filled before the child insert runs.
 ```
 
-`onConflict()` builds a single native root upsert statement. Use the fallback flow shown above when this call needs the cascade tree.
+`onConflict()` handles only the root upsert. Use the match-field upsert flow shown above when this call needs the cascade tree.
 
 ```kotlin group="onConflict 1" name="kotlin" icon="kotlin" {5}
 Product(id = 100, tenantId = 7, code = "A-100", name = "Desk")
@@ -411,5 +411,6 @@ Result shape:
 
 ```text group="onConflict 2" name="result"
 The generated task contains the root product upsert statement.
-Database uniqueness on the conflict fields is required for native conflict handling.
+Database uniqueness on the conflict fields is required for `onConflict()`.
+If `on { ... }` is omitted, Kronos infers the conflict fields from primary-key values or declared unique indexes.
 ```

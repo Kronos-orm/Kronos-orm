@@ -5,6 +5,7 @@ import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
@@ -19,6 +20,8 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
@@ -200,7 +203,148 @@ data class CascadeRestrictChild(
     var parent: CascadeRestrictParent? = null
 ) : KPojo
 
+@Table("cascade_insert_parent")
+data class CascadeInsertParent(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    var name: String? = null,
+    @Cascade(["id"], ["parentId"])
+    var children: List<CascadeInsertChild>? = null
+) : KPojo
+
+@Table("cascade_insert_child")
+data class CascadeInsertChild(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    var parentId: Int? = null,
+    var name: String? = null
+) : KPojo
+
+@Table("cascade_insert_reverse_parent")
+data class CascadeInsertReverseParent(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    var name: String? = null,
+    var children: List<CascadeInsertReverseChild>? = null
+) : KPojo
+
+@Table("cascade_insert_reverse_child")
+data class CascadeInsertReverseChild(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    var parentId: Int? = null,
+    var name: String? = null,
+    @Cascade(["parentId"], ["id"])
+    var parent: CascadeInsertReverseParent? = null
+) : KPojo
+
 class CascadeClauseBehaviorTest : MysqlTestBase() {
+
+    @Test
+    fun `cascade insert requests generated keys and patches child foreign keys`() {
+        val child = CascadeInsertChild(name = "child")
+        val parent = CascadeInsertParent(name = "root", children = listOf(child))
+        val wrapper = CascadeRecordingWrapper(generatedKeys = mutableListOf(101L, 201L))
+
+        val result = parent.insert().execute(wrapper)
+
+        assertEquals(101L, result.lastInsertId)
+        assertEquals(101, parent.id)
+        assertEquals(201, child.id)
+        assertEquals(101, child.parentId)
+        assertEquals(
+            listOf(
+                "INSERT INTO `cascade_insert_parent` (`name`) VALUES (:name)",
+                "INSERT INTO `cascade_insert_child` (`parent_id`, `name`) VALUES (:parentId, :name)"
+            ),
+            wrapper.actionSql
+        )
+        assertEquals(
+            listOf(
+                mapOf<String, Any?>("name" to "root"),
+                mapOf<String, Any?>("parentId" to 101, "name" to "child")
+            ),
+            wrapper.actionParams
+        )
+        assertEquals(
+            listOf<GeneratedKeyRequest?>(
+                GeneratedKeyRequest("cascade_insert_parent", "id"),
+                GeneratedKeyRequest("cascade_insert_child", "id")
+            ),
+            wrapper.actionGeneratedKeyRequests
+        )
+    }
+
+    @Test
+    fun `cascade insert discovers child-owned relation mapping from allowed parent field`() {
+        val child = CascadeInsertReverseChild(name = "child")
+        val parent = CascadeInsertReverseParent(name = "root", children = listOf(child))
+        val wrapper = CascadeRecordingWrapper(generatedKeys = mutableListOf(101L, 201L))
+
+        val result = parent.insert()
+            .cascade { [CascadeInsertReverseParent::children] }
+            .execute(wrapper)
+
+        assertEquals(101L, result.lastInsertId)
+        assertEquals(101, parent.id)
+        assertEquals(201, child.id)
+        assertEquals(101, child.parentId)
+        assertEquals(
+            listOf(
+                "INSERT INTO `cascade_insert_reverse_parent` (`name`) VALUES (:name)",
+                "INSERT INTO `cascade_insert_reverse_child` (`parent_id`, `name`) VALUES (:parentId, :name)"
+            ),
+            wrapper.actionSql
+        )
+        assertEquals(
+            listOf(
+                mapOf<String, Any?>("name" to "root"),
+                mapOf<String, Any?>("parentId" to 101, "name" to "child")
+            ),
+            wrapper.actionParams
+        )
+        assertEquals(
+            listOf<GeneratedKeyRequest?>(
+                GeneratedKeyRequest("cascade_insert_reverse_parent", "id"),
+                GeneratedKeyRequest("cascade_insert_reverse_child", "id")
+            ),
+            wrapper.actionGeneratedKeyRequests
+        )
+    }
+
+    @Test
+    fun `select cascade scans explicitly allowed relation fields outside sql projection`() {
+        val parent = CascadeSelectBehaviorParent(id = 1)
+        val children = listOf(
+            CascadeSelectBehaviorChild(id = 11, parentId = 1, name = "alpha"),
+            CascadeSelectBehaviorChild(id = 12, parentId = 1, name = "beta")
+        )
+        val wrapper = CascadeRecordingWrapper(queryResults = mutableListOf(listOf(parent), children))
+
+        val rows = CascadeSelectBehaviorParent()
+            .select()
+            .cascade { [CascadeSelectBehaviorParent::children] }
+            .toList<CascadeSelectBehaviorParent>(wrapper)
+
+        assertEquals(
+            listOf(ParentChildrenShape(1, listOf(11, 12))),
+            rows.map { ParentChildrenShape(it.id, it.children!!.map { child -> child.id }) }
+        )
+        assertEquals(
+            listOf(
+                "SELECT `id`, `child_id` AS `childId` FROM `cascade_select_parent`",
+                "SELECT `id`, `parent_id` AS `parentId`, `name` FROM `cascade_select_child` WHERE `parent_id` = :parentId"
+            ),
+            wrapper.querySql
+        )
+        assertEquals(
+            listOf(
+                emptyMap(),
+                mapOf<String, Any?>("parentId" to 1)
+            ),
+            wrapper.queryParams
+        )
+    }
 
     @Test
     fun `setValues assigns collection children with a single batch query`() {
@@ -925,12 +1069,14 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
 
     private class CascadeRecordingWrapper(
         private val queryResults: MutableList<List<KPojo>> = mutableListOf(),
-        private val objectResults: MutableList<KPojo?> = mutableListOf()
+        private val objectResults: MutableList<KPojo?> = mutableListOf(),
+        private val generatedKeys: MutableList<Long> = mutableListOf()
     ) : KronosDataSourceWrapper {
         val querySql = mutableListOf<String>()
         val queryParams = mutableListOf<Map<String, Any?>>()
         val actionSql = mutableListOf<String>()
         val actionParams = mutableListOf<Map<String, Any?>>()
+        val actionGeneratedKeyRequests = mutableListOf<GeneratedKeyRequest?>()
         override val url: String = "jdbc:mysql://localhost:3306/kronos"
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
@@ -950,6 +1096,11 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         override fun update(task: KAtomicActionTask): Int {
             actionSql += task.sql
             actionParams += task.paramMap
+            actionGeneratedKeyRequests += task.generatedKeyRequest
+            generatedKeys.removeFirstOrNull()?.let { generatedKey ->
+                task.generatedKeys += generatedKey
+                task.lastInsertId = generatedKey
+            }
             return 1
         }
 

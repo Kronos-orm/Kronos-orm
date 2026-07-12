@@ -79,12 +79,20 @@ object CascadeSelectClause {
         operationType: KOperationType,
         cascadeSelectedProps: Set<Field>
     ) = if (cascade) {
+        val tableName = pojo.__tableName
         val selectedFieldNames = selectFields.map { it.name }.toSet()
+        val allowedCascadeFieldNames = cascadeAllowed
+            ?.filter { it.tableName == tableName }
+            ?.map { it.name }
+            ?.toSet()
+            .orEmpty()
         generateTask(
             cascadeAllowed,
             pojo,
             kClass,
-            kPojoAllFieldsCache[kClass]!!.filter { it.name in selectedFieldNames },
+            kPojoAllFieldsCache[kClass]!!.filter {
+                it.name in selectedFieldNames || it.name in allowedCascadeFieldNames
+            },
             operationType,
             rootTask,
             cascadeSelectedProps

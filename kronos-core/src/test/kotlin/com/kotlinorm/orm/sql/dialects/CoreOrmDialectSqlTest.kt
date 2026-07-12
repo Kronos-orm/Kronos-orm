@@ -204,28 +204,28 @@ class CoreOrmDialectSqlTest {
     }
 
     @Test
-    fun `native upsert renders complete sql for every supported dialect`() {
+    fun `on conflict upsert renders complete sql for every supported dialect`() {
         initializeCoreSqlTestDefaults()
 
         val expected = mapOf(
             DBType.Mysql to ExpectedTask(
-                "INSERT INTO `tb_user` (`id`, `username`, `score`, `deleted`) VALUES (:id, :username, :score, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
+                "INSERT INTO `tb_user` (`id`, `username`, `score`, `deleted`) VALUES (:id, :username, :score, :deleted) ON DUPLICATE KEY UPDATE `username` = :username, `deleted` = :deleted",
                 mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             ),
             DBType.Postgres to ExpectedTask(
-                """INSERT INTO "tb_user" ("id", "username", "score", "deleted") VALUES (:id, :username, :score, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username""",
+                """INSERT INTO "tb_user" ("id", "username", "score", "deleted") VALUES (:id, :username, :score, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username, "deleted" = :deleted""",
                 mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to false)
             ),
             DBType.SQLite to ExpectedTask(
-                """INSERT INTO "tb_user" ("id", "username", "score", "deleted") VALUES (:id, :username, :score, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username""",
+                """INSERT INTO "tb_user" ("id", "username", "score", "deleted") VALUES (:id, :username, :score, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username, "deleted" = :deleted""",
                 mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             ),
             DBType.Mssql to ExpectedTask(
-                "MERGE INTO [tb_user] AS [t1] USING (SELECT :id AS [id], :username AS [username], :score AS [score], :deleted AS [deleted]) AS [t2] ON ([t1].[id] = [t2].[id]) WHEN MATCHED THEN UPDATE SET [t1].[username] = :username WHEN NOT MATCHED THEN INSERT ([id], [username], [score], [deleted]) VALUES (:id, :username, :score, :deleted);",
+                "MERGE INTO [tb_user] AS [t1] USING (SELECT :id AS [id], :username AS [username], :score AS [score], :deleted AS [deleted]) AS [t2] ON ([t1].[id] = [t2].[id]) WHEN MATCHED THEN UPDATE SET [t1].[username] = :username, [t1].[deleted] = :deleted WHEN NOT MATCHED THEN INSERT ([id], [username], [score], [deleted]) VALUES (:id, :username, :score, :deleted);",
                 mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             ),
             DBType.Oracle to ExpectedTask(
-                """MERGE INTO "TB_USER" "T1" USING (SELECT :id AS "ID", :username AS "USERNAME", :score AS "SCORE", :deleted AS "DELETED") "T2" ON ("T1"."ID" = "T2"."ID") WHEN MATCHED THEN UPDATE SET "T1"."USERNAME" = :username WHEN NOT MATCHED THEN INSERT ("ID", "USERNAME", "SCORE", "DELETED") VALUES (:id, :username, :score, :deleted)""",
+                """MERGE INTO "TB_USER" "T1" USING (SELECT :id AS "ID", :username AS "USERNAME", :score AS "SCORE", :deleted AS "DELETED") "T2" ON ("T1"."ID" = "T2"."ID") WHEN MATCHED THEN UPDATE SET "T1"."USERNAME" = :username, "T1"."DELETED" = :deleted WHEN NOT MATCHED THEN INSERT ("ID", "USERNAME", "SCORE", "DELETED") VALUES (:id, :username, :score, :deleted)""",
                 mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             )
         )
@@ -233,7 +233,6 @@ class CoreOrmDialectSqlTest {
         coreSqlDialects.forEach { dialect ->
             val task = DialectUser(id = 1, username = "neo")
                 .upsert { it.username }
-                .on { it.id }
                 .onConflict()
                 .build(dialect.wrapper)
                 .atomicTasks

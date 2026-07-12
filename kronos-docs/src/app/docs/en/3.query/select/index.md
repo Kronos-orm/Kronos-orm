@@ -97,7 +97,7 @@ val withAlias = User()
     .toList()
 ```
 
-`[]` is the recommended form. `listOf`, `arrayOf`, `mutableListOf`, and `setOf` can build the same projection list, for example `select { arrayOf<Any?>(it, it.id.alias("sourceId")) }`. See {{ $.keyword("query/projection", ["Projection"]) }} for the complete matrix and generated result properties.
+`[]` can also contain `it - ...` items, such as `[it - it.id, "count(*) as total"]` or `[it - [it.id, it.age], it.id.alias("sourceId")]`. See {{ $.keyword("query/projection", ["Projection"]) }} for generated result properties.
 
 ```kotlin group="Case 1-2" name="kotlin" icon="kotlin"
 val rows: List<Map<String, Any?>> = User()

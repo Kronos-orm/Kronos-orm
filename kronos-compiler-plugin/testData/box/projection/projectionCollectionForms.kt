@@ -59,6 +59,12 @@ fun box(): String {
     val listClause = ProjectionCollectionFormsUser()
         .select { listOf<Any?>(it, it.id.alias("listId")) }
         .orderBy { it.listId.asc() }
+    val nestedMinusLiteralClause = ProjectionCollectionFormsUser()
+        .select { [it - [it.id, it.status], it.id.alias("iid")] }
+        .orderBy { it.iid.asc() }
+    val chainedMinusLiteralClause = ProjectionCollectionFormsUser()
+        .select { [it - it.id - it.username, it.username.alias("uname")] }
+        .orderBy { it.uname.desc() }
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {
@@ -89,12 +95,19 @@ fun box(): String {
         val listUsername: String? = listSelected.username
         val listStatus: Int? = listSelected.status
         val listId: Int? = listSelected.listId
+        val nestedMinusSelected = nestedMinusLiteralClause.first()
+        val nestedMinusUsername: String? = nestedMinusSelected.username
+        val nestedMinusId: Int? = nestedMinusSelected.iid
+        val chainedMinusSelected = chainedMinusLiteralClause.first()
+        val chainedMinusStatus: Int? = chainedMinusSelected.status
+        val chainedMinusUsername: String? = chainedMinusSelected.uname
         return "Fail: selected values unexpectedly evaluated as " +
             "$arraySourceId/$arrayUsername/$arrayStatus/$arrayId/" +
             "$mutableSourceId/$mutableUsername/$mutableSourceStatus/$mutableId/" +
             "$setSourceId/$setUsername/$setStatus/$setId/$singleId/" +
             "$literalSourceId/$literalUsername/$literalStatus/$literalId/" +
-            "$listSourceId/$listUsername/$listStatus/$listId"
+            "$listSourceId/$listUsername/$listStatus/$listId/" +
+            "$nestedMinusUsername/$nestedMinusId/$chainedMinusStatus/$chainedMinusUsername"
     }
 
     val arrayStatement = arrayClause.toSqlQuery() as SqlQuery.Select
@@ -103,6 +116,8 @@ fun box(): String {
     val singleLiteralStatement = singleLiteralClause.toSqlQuery() as SqlQuery.Select
     val multiLiteralStatement = multiLiteralClause.toSqlQuery() as SqlQuery.Select
     val listStatement = listClause.toSqlQuery() as SqlQuery.Select
+    val nestedMinusLiteralStatement = nestedMinusLiteralClause.toSqlQuery() as SqlQuery.Select
+    val chainedMinusLiteralStatement = chainedMinusLiteralClause.toSqlQuery() as SqlQuery.Select
 
     val failures = listOfNotNull(
         expect(arrayStatement.selectAliases() == listOf("id", "username", "status", "arrayId")) {
@@ -140,6 +155,18 @@ fun box(): String {
         },
         expect(listStatement.hasOrderByColumn("listId", SqlOrdering.Asc)) {
             "list order by was ${listStatement.allOrderBy()}"
+        },
+        expect(nestedMinusLiteralStatement.selectAliases() == listOf("username", "iid")) {
+            "nested minus literal aliases were ${nestedMinusLiteralStatement.selectAliases()}"
+        },
+        expect(nestedMinusLiteralStatement.hasOrderByColumn("iid", SqlOrdering.Asc)) {
+            "nested minus literal order by was ${nestedMinusLiteralStatement.allOrderBy()}"
+        },
+        expect(chainedMinusLiteralStatement.selectAliases() == listOf("status", "uname")) {
+            "chained minus literal aliases were ${chainedMinusLiteralStatement.selectAliases()}"
+        },
+        expect(chainedMinusLiteralStatement.hasOrderByColumn("uname", SqlOrdering.Desc)) {
+            "chained minus literal order by was ${chainedMinusLiteralStatement.allOrderBy()}"
         },
     )
 

@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.upsert
 
+import com.kotlinorm.Kronos.primaryKeyStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -47,6 +48,7 @@ import com.kotlinorm.orm.sql.toSqlParameterEq
 import com.kotlinorm.orm.statement.ParameterSource
 import com.kotlinorm.orm.update.updateWithType
 import com.kotlinorm.syntax.SqlIdentifier
+import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.statement.SqlAssignmentTarget
@@ -228,26 +230,38 @@ class UpsertClause<T : KPojo>(
         val paramMap = (paramMap.filter { it.key in (toUpdateFields + toInsertFields + onFields).map { f -> f.name } }).toMutableMap()
 
         if (onConflict) {
-            // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-            logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
+            createTimeStrategy?.execute(true) { field, value ->
                 toInsertFields += field
-                paramMap[field.name] = toDatabaseParameterValue(dataSource, fieldMap, field.name, false, mapOf(field.name to field))
-            }
-
-            createTimeStrategy?.execute{ field, value ->
-                onFields -= field
-                toInsertFields += field
+                toUpdateFields -= field
                 paramMap[field.name] = value
             }
 
-            // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
             updateTimeStrategy?.execute(true) { field, value ->
-                onFields -= field
                 toInsertFields += field
                 toUpdateFields += field
                 paramMap[field.name] = value
             }
-            val statement = toSqlUpsertStatement(paramMap, dataSource)
+
+            logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
+                toInsertFields += field
+                toUpdateFields += field
+                paramMap[field.name] = toDatabaseBooleanValue(dataSource, field, false)
+            }
+
+            optimisticStrategy?.execute(defaultValue = 0) { field, value ->
+                toInsertFields += field
+                toUpdateFields += field
+                paramMap[field.name] = value
+                paramMap["${field.name}2PlusNew"] = 1
+                conflictAssignmentValues[field] = SqlExpr.Binary(
+                    SqlExpr.Column(tableName = tableName, columnName = field.columnName),
+                    SqlBinaryOperator.Plus,
+                    SqlExpr.Parameter(SqlParameter.Named("${field.name}2PlusNew"))
+                )
+            }
+
+            val conflictFields = inferConflictFields(paramMap)
+            val statement = toSqlUpsertStatement(paramMap, dataSource, conflictFields, requireConflictTarget = true)
             val rendered = renderStatement(dataSource, statement, paramMap, fieldMap)
             return KronosAtomicActionTask(
                 rendered.sql,
@@ -257,7 +271,7 @@ class UpsertClause<T : KPojo>(
             ).toKronosActionTask()
         } else {
             val tasks: List<KronosAtomicActionTask> = []
-            val fallbackStatement = toSqlUpsertStatement(paramMap, dataSource)
+            val fallbackStatement = toSqlUpsertStatement(paramMap, dataSource, onFields.toList(), requireConflictTarget = false)
             return tasks.toKronosActionTask().doBeforeExecute { dataSource ->
 
                 lock = lock ?: SqlLock.Update().takeIf { optimisticStrategy?.enabled != true }
@@ -289,6 +303,7 @@ class UpsertClause<T : KPojo>(
                             with(context) {
                                 cascadeAllowed = this@UpsertClause.cascadeAllowed
                                 logicEnabled = false
+                                restoreLogicDeleteOnUpdate = this@UpsertClause.logicDeleteStrategy?.enabled == true
                                 andWhereAll(
                                     this@UpsertClause.onFields
                                         .filter { it.isColumn && it.name in paramMap.keys }
@@ -307,10 +322,6 @@ class UpsertClause<T : KPojo>(
                                     paramMap[field.name]
                                 }
                                 setValue(field, value)
-                            }
-                            this@UpsertClause.logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
-                                this@UpsertClause.toUpdateFields += field
-                                setValue(field + "New", toDatabaseBooleanValue(dataSource, field, false))
                             }
                         }
                     updateClause.build(dataSource)
@@ -336,13 +347,18 @@ class UpsertClause<T : KPojo>(
 
     private fun toSqlUpsertStatement(
         parameterValues: MutableMap<String, Any?>,
-        dataSource: KronosDataSourceWrapper
+        dataSource: KronosDataSourceWrapper,
+        conflictFields: List<Field>,
+        requireConflictTarget: Boolean
     ): SqlDmlStatement.Upsert {
+        require(!requireConflictTarget || conflictFields.isNotEmpty()) {
+            "Unable to infer upsert conflict target for $tableName. Use on { ... } or define a valued primary/unique key."
+        }
         val insertColumns = toInsertFields.map { field -> SqlIdentifier.of(field.columnName) }
         val insertValues = toInsertFields.map { field ->
             SqlExpr.Parameter(SqlParameter.Named(field.name))
         }
-        val conflictColumns = onFields.map { field -> SqlIdentifier.of(field.columnName) }
+        val conflictColumns = conflictFields.map { field -> SqlIdentifier.of(field.columnName) }
         val updatePairs = toUpdateFields.map { field ->
             val targetField = allFields.find { it.name == field.name } ?: field
             val value = conflictAssignmentValues[field]?.toUpsertAssignmentExpr(targetField, parameterValues, dataSource)
@@ -360,6 +376,34 @@ class UpsertClause<T : KPojo>(
             conflictTarget = SqlConflictTarget(columns = conflictColumns),
             action = SqlUpsertAction.Update(updatePairs)
         )
+    }
+
+    private fun inferConflictFields(parameterValues: Map<String, Any?>): List<Field> {
+        if (onFields.isNotEmpty()) return onFields.toList()
+
+        val columns = allFields.filter { it.isColumn }
+        val primaryField = columns.firstOrNull { it.primaryKey != PrimaryKeyType.NOT }
+            ?: primaryKeyStrategy.takeIf { it.enabled }?.field?.let { strategyField ->
+                columns.firstOrNull { it.name == strategyField.name || it.columnName == strategyField.columnName }
+            }
+        if (primaryField != null &&
+            !(primaryField.primaryKey == PrimaryKeyType.IDENTITY && parameterValues[primaryField.name] == null) &&
+            parameterValues[primaryField.name] != null
+        ) {
+            return listOf(primaryField)
+        }
+
+        val fieldMap = fieldsMapCache[kClass]!!
+        return pojo.kronosTableIndex()
+            .asSequence()
+            .filter { it.type.equals("UNIQUE", ignoreCase = true) || it.method.equals("UNIQUE", ignoreCase = true) }
+            .map { index -> index.columns.mapNotNull { column -> fieldMap[column] }.distinct() }
+            .firstOrNull { fields ->
+                fields.isNotEmpty() &&
+                    fields.size == fields.map { it.columnName }.distinct().size &&
+                    fields.all { field -> parameterValues[field.name] != null }
+            }
+            .orEmpty()
     }
 
     private fun Any?.toUpsertAssignmentExpr(

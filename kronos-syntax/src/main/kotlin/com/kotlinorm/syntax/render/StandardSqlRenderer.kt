@@ -11,6 +11,8 @@ import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.*
 import com.kotlinorm.syntax.group.SqlGroup
 import com.kotlinorm.syntax.group.SqlGroupingItem
+import com.kotlinorm.syntax.inspect.SqlNodeRewriter
+import com.kotlinorm.syntax.inspect.SqlTreeRewriter
 import com.kotlinorm.syntax.limit.SqlFetch
 import com.kotlinorm.syntax.limit.SqlFetchMode
 import com.kotlinorm.syntax.limit.SqlFetchUnit
@@ -284,7 +286,7 @@ open class StandardSqlRenderer(
             is SqlUpsertAction.Update -> {
                 append(" WHEN MATCHED THEN UPDATE SET ")
                 append(action.setPairs.joinToString(", ") {
-                    "${renderAssignmentTarget(qualifyAssignmentTarget(it.target, SqlIdentifier.of("t1")))} = ${renderMergeSourceExpr(it.value)}"
+                    "${renderAssignmentTarget(qualifyAssignmentTarget(it.target, SqlIdentifier.of("t1")))} = ${renderMergeSourceExpr(it.value, statement.table.identifier)}"
                 })
                 action.where?.let { append(" WHERE ${renderExpr(it)}") }
             }
@@ -1447,9 +1449,20 @@ open class StandardSqlRenderer(
         is SqlAssignmentTarget.Column -> target.copy(qualifier = target.qualifier ?: qualifier)
     }
 
-    private fun renderMergeSourceExpr(expr: SqlExpr): String = when (expr) {
-        is SqlExpr.ExcludedColumn -> renderQualifiedIdentifier(SqlIdentifier.of("t2"), expr.identifier)
-        else -> renderExpr(expr)
+    private fun renderMergeSourceExpr(expr: SqlExpr, targetTable: SqlIdentifier): String {
+        val rewritten = object : SqlNodeRewriter {
+            override fun rewriteExpr(expr: SqlExpr): SqlExpr = when (expr) {
+                is SqlExpr.ExcludedColumn -> SqlExpr.SourceColumn(expr.identifier, SqlIdentifier.of("t2"))
+                is SqlExpr.Column -> if (expr.qualifier != null && expr.qualifier.last == targetTable.last) {
+                    expr.copy(qualifier = SqlIdentifier.of("t1"))
+                } else {
+                    expr
+                }
+                is SqlExpr.Subquery -> expr
+                else -> SqlTreeRewriter.rewriteExpr(expr, this)
+            }
+        }.rewriteExpr(expr)
+        return renderExpr(rewritten)
     }
 
     private fun renderFunctionName(name: SqlIdentifier): String =

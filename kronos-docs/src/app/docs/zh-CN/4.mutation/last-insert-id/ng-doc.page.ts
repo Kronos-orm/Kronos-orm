@@ -3,10 +3,10 @@ import MutationCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * LastInsertId是一个Kronos插件，用于获取最后插入的ID。
+ * 从 insert 结果读取数据库生成的自增主键 ID。
  * @status:info 新
  */
-const LastInsertIdPluginPage: NgDocPage = {
+const LastInsertIdPage: NgDocPage = {
     title: `获取最后插入的 ID`,
     mdFile: './index.md',
     category: MutationCategory,
@@ -16,4 +16,4 @@ const LastInsertIdPluginPage: NgDocPage = {
     demos: {AnimateLogoComponent}
 };
 
-export default LastInsertIdPluginPage;
+export default LastInsertIdPage;

@@ -22,8 +22,11 @@ import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.beans.task.lastInsertIdFallbackSql
 import com.kotlinorm.enums.KOperationType.SELECT
+import com.kotlinorm.enums.KOperationType.INSERT
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.QueryType.First
 import com.kotlinorm.enums.QueryType.ToList
@@ -33,9 +36,8 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.plugins.LastInsertIdPlugin
-import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import kotlin.reflect.typeOf
 
 /**
  * Executes the given atomic action task using the provided data source wrapper.
@@ -54,15 +56,35 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
     } else {
         dataSource.update(task)
     }
-    ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, dataSource) }
-    if (task.stash["queryId"] == true && task.stash["lastInsertId"] == null) {
-        LastInsertIdPlugin.doAfterAction(task, dataSource)
+    if (task !is KBatchTask) {
+        task.captureGeneratedKeyFallback(dataSource)
     }
+    ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, dataSource) }
     stash.putAll(task.stash)
-    return logAndReturn(KronosOperationResult(affectRows).apply {
+    return logAndReturn(KronosOperationResult(affectRows, task.lastInsertId).apply {
         stash.putAll(task.stash)
     })
 }
+
+private fun KAtomicActionTask.captureGeneratedKeyFallback(dataSource: KronosDataSourceWrapper) {
+    val request = generatedKeyRequest ?: return
+    if (operationType != INSERT || lastInsertId != null) return
+
+    val fallbackValue = dataSource.first(
+        KronosAtomicQueryTask(
+            request.lastInsertIdFallbackSql(dataSource.dbType),
+            targetType = typeOf<Long?>()
+        )
+    )
+    lastInsertId = fallbackValue.toLongOrZero()
+}
+
+private fun Any?.toLongOrZero(): Long? =
+    when (this) {
+        null -> 0L
+        is Number -> toLong()
+        else -> toString().toLongOrNull()
+    }
 
 var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Unit = { task, result, queryType ->
     fun resultArr(): Array<KLogMessage> {

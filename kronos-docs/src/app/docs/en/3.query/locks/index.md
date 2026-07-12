@@ -38,11 +38,13 @@ val users = User()
 
 Shared and update locks are rendered by the SQL dialect. Keep lock usage close to the transaction boundary that needs the locked read.
 
-## Upsert fallback can use a lock
+## Regular upsert can use a lock
 
-Fallback upsert checks whether a row exists before choosing update or insert. Use `.lock(...)` when that existence check should be locked. Calling `.lock()` also disables the optimistic-lock fallback path for this upsert operation.
+Regular `upsert().on { ... }` checks whether a matching row exists before choosing update or insert. The match query uses `SqlLock.Update()` by default when the optimistic lock strategy is not enabled. Use `.lock(...)` to make the lock explicit or to set a different lock.
 
 ```kotlin group="Lock 3" name="upsert" icon="kotlin"
+import com.kotlinorm.syntax.statement.SqlLock
+
 User(id = 1, name = "Kronos")
     .upsert { it.name }
     .on { it.id }
@@ -54,7 +56,7 @@ For conflict-field and update-field examples, see {{ $.keyword("mutation/upsert"
 
 ## Optimistic locking is a mutation strategy
 
-Optimistic lock behavior is configured through `@Version` or `Kronos.optimisticLockStrategy`. It initializes and increments the version field during insert, update, logical delete, and fallback upsert paths.
+Optimistic lock behavior is configured through `@Version` or `Kronos.optimisticLockStrategy`. It initializes and increments the version field during insert, update, logical delete, and upsert paths.
 
 ```kotlin group="Lock 4" name="version" icon="kotlin"
 data class Product(

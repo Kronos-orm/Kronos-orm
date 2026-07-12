@@ -99,9 +99,9 @@ WHERE `id` = :id
   AND `deleted` = 0
 ```
 
-## 插入和更新插入会初始化标记
+## 插入和 upsert 会维护标记
 
-insert 会把逻辑删除字段初始化为活动值。策略启用时，`onConflict()` upsert 也会把该字段加入插入列。
+insert 会把逻辑删除字段初始化为活动值。按匹配字段执行 upsert 时，如果匹配到已逻辑删除的记录，Kronos 会更新这条记录并把逻辑删除字段恢复为活动值。策略启用时，`onConflict()` upsert 也会把该字段加入插入列，并在冲突更新时写回活动值。
 
 ```kotlin group="Insert" name="kotlin" icon="kotlin"
 User(name = "Kronos")
@@ -117,6 +117,20 @@ VALUES (:name, :deleted)
 ```text group="Insert" name="params"
 name = "Kronos"
 deleted = 0
+```
+
+```kotlin group="Upsert restore" name="kotlin" icon="kotlin"
+User(id = 1, name = "Kronos")
+    .upsert { it.name }
+    .on { it.id }
+    .execute()
+```
+
+```sql group="Upsert restore" name="update" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew,
+    `deleted` = :deletedNew
+WHERE `id` = :id
 ```
 
 ## DataGuard 边界

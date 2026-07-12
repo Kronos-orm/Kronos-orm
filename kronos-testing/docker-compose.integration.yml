@@ -52,7 +52,7 @@ services:
       retries: 30
 
   oracle:
-    image: gvenzl/oracle-free:slim
+    image: "${ORACLE_DOCKER_IMAGE:-ghcr.io/gvenzl/oracle-free:23.9-slim}"
     container_name: kronos-testing-oracle
     environment:
       ORACLE_PASSWORD: "${ORACLE_SYS_PASSWORD:-YourStrong!Passw0rd}"

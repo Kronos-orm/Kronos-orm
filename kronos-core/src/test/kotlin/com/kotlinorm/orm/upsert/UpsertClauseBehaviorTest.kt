@@ -16,12 +16,21 @@
 
 package com.kotlinorm.orm.upsert
 
+import com.kotlinorm.Kronos
+import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.TableIndex
+import com.kotlinorm.annotations.UpdateTime
+import com.kotlinorm.annotations.Version
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
 import com.kotlinorm.testfixtures.cascade.onetoone.CarDetails
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KAtomicActionTask
@@ -38,6 +47,7 @@ import com.kotlinorm.syntax.statement.SqlUpsertAction
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -53,7 +63,6 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
                 "count" to SqlExpr.NumberLiteral("10"),
                 "name" to KronosFunctionExpr(SqlExpr.StringLiteral("patched"), "literal")
             )
-            .on { it.id }
             .onConflict()
             .build()
 
@@ -95,7 +104,6 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
         val task = UpsertBehaviorUser(id = 8, name = "seed", count = 5)
             .upsert { it.name }
             .patch("name" to countField)
-            .on { it.id }
             .onConflict()
             .build()
 
@@ -114,8 +122,111 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
-    fun `fallback upsert executes insert when conflict row is absent`() {
-        val wrapper = UpsertFallbackWrapper(countResult = 0)
+    fun `on conflict explicit target overrides primary key target`() {
+        val task = UpsertBehaviorUser(id = 9, name = "business-key", count = 6)
+            .upsert { it.count }
+            .on { it.name }
+            .onConflict()
+            .build()
+
+        val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
+        assertEquals(listOf(SqlIdentifier.of("name")), statement.primaryKeys)
+        assertEquals(SqlConflictTarget(columns = listOf(SqlIdentifier.of("name"))), statement.conflictTarget)
+    }
+
+    @Test
+    fun `on conflict infers global primary key strategy target when model has no primary annotation`() {
+        val previousStrategy = Kronos.primaryKeyStrategy
+        Kronos.primaryKeyStrategy = KronosCommonStrategy(
+            enabled = true,
+            field = Field("code", "code", primaryKey = PrimaryKeyType.DEFAULT)
+        )
+
+        try {
+            val pojo = UpsertGlobalKeyUser(code = "A-100", name = "Desk")
+            val task = pojo
+                .upsert { it.name }
+                .onConflict()
+                .build()
+
+            assertEquals("code", pojo.kronosPrimaryKey().field.name)
+            val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
+            assertEquals(listOf(SqlIdentifier.of("code")), statement.primaryKeys)
+            assertEquals(SqlConflictTarget(columns = listOf(SqlIdentifier.of("code"))), statement.conflictTarget)
+        } finally {
+            Kronos.primaryKeyStrategy = previousStrategy
+        }
+    }
+
+    @Test
+    fun `on conflict infers single unique index target when primary key value is absent`() {
+        val pojo = UpsertUniqueUser(email = "ada@example.com", name = "Ada")
+        val task = pojo
+            .upsert { it.name }
+            .onConflict()
+            .build()
+
+        val columnByName = pojo.kronosColumns().associateBy { it.columnName }
+        assertEquals(listOf("email"), pojo.kronosTableIndex().single().columns.toList())
+        assertEquals(listOf("email"), pojo.kronosTableIndex().single().columns.map { columnByName.getValue(it).name })
+
+        val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
+        assertEquals(listOf(SqlIdentifier.of("email")), statement.primaryKeys)
+        assertEquals(SqlConflictTarget(columns = listOf(SqlIdentifier.of("email"))), statement.conflictTarget)
+    }
+
+    @Test
+    fun `on conflict infers composite unique index target from table index metadata`() {
+        val pojo = UpsertTenantUser(tenantId = 7, email = "ada@example.com", name = "Ada")
+        val task = pojo
+            .upsert { it.name }
+            .onConflict()
+            .build()
+
+        val columnByName = pojo.kronosColumns().associateBy { it.columnName }
+        assertEquals(listOf("tenant_id", "email"), pojo.kronosTableIndex().single().columns.toList())
+        assertEquals(listOf("tenantId", "email"), pojo.kronosTableIndex().single().columns.map { columnByName.getValue(it).name })
+
+        val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
+        assertEquals(listOf(SqlIdentifier.of("tenant_id"), SqlIdentifier.of("email")), statement.primaryKeys)
+        assertEquals(
+            SqlConflictTarget(columns = listOf(SqlIdentifier.of("tenant_id"), SqlIdentifier.of("email"))),
+            statement.conflictTarget
+        )
+    }
+
+    @Test
+    fun `on conflict strategy fields initialize insert values and update conflict row`() {
+        val task = UpsertStrategyUser(id = 10, name = "strategy")
+            .upsert { it.name }
+            .onConflict()
+            .build()
+
+        val atomicTask = task.atomicTasks.single()
+
+        assertEquals(
+                "INSERT INTO `upsert_strategy_user` (`id`, `name`, `created_at`, `updated_at`, `deleted`, `version`) " +
+                    "VALUES (:id, :name, :createdAt, :updatedAt, :deleted, :version) " +
+                    "ON DUPLICATE KEY UPDATE `name` = :name, `updated_at` = :updatedAt, `deleted` = :deleted, `version` = `upsert_strategy_user`.`version` + :version2PlusNew",
+            atomicTask.sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 10,
+                "name" to "strategy",
+                "createdAt" to atomicTask.paramMap["createdAt"],
+                "updatedAt" to atomicTask.paramMap["updatedAt"],
+                "deleted" to 0,
+                "version" to 0,
+                "version2PlusNew" to 1,
+            ),
+            atomicTask.paramMap
+        )
+    }
+
+    @Test
+    fun `match field upsert executes insert when conflict row is absent`() {
+        val wrapper = UpsertMatchWrapper(countResult = 0)
 
         val result = UpsertBehaviorUser(id = 1, name = "inserted", count = 3)
             .upsert { it.name }
@@ -139,8 +250,8 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
-    fun `fallback upsert executes update when conflict row exists`() {
-        val wrapper = UpsertFallbackWrapper(countResult = 1)
+    fun `match field upsert executes update when conflict row exists`() {
+        val wrapper = UpsertMatchWrapper(countResult = 1)
 
         val result = UpsertBehaviorUser(id = 2, name = "updated", count = 4)
             .upsert { it.name }
@@ -164,8 +275,40 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
-    fun `fallback upsert build exposes selected action as upsert metadata after execute`() {
-        val wrapper = UpsertFallbackWrapper(countResult = 1)
+    fun `match field upsert restores logic deleted row instead of inserting duplicate key`() {
+        val wrapper = UpsertMatchWrapper(countResult = 1)
+
+        val result = UpsertStrategyUser(id = 11, name = "restored")
+            .upsert { it.name }
+            .on { it.id }
+            .cascade(enabled = false)
+            .execute(wrapper)
+
+        assertEquals(1, result.affectedRows)
+        val action = wrapper.actions.single()
+        assertEquals(
+            listOf(
+                QueryShape("SELECT COUNT(1) FROM `upsert_strategy_user` WHERE `id` = :id LIMIT 1", mapOf("id" to 11)),
+                ActionShape(
+                    "UPDATE `upsert_strategy_user` SET `name` = :nameNew, `updated_at` = :updatedAtNew, `deleted` = :deletedNew, `version` = `version` + :version2PlusNew WHERE `id` = :id",
+                    mapOf(
+                        "id" to 11,
+                        "nameNew" to "restored",
+                        "updatedAtNew" to action.params["updatedAtNew"],
+                        "deletedNew" to 0,
+                        "version2PlusNew" to 1,
+                    ),
+                    KOperationType.UPSERT,
+                    "Upsert"
+                )
+            ),
+            wrapper.shapes()
+        )
+    }
+
+    @Test
+    fun `match field upsert build exposes selected action as upsert metadata after execute`() {
+        val wrapper = UpsertMatchWrapper(countResult = 1)
         val task = UpsertBehaviorUser(id = 3, name = "metadata", count = 5)
             .upsert { it.name }
             .on { it.id }
@@ -220,6 +363,46 @@ data class UpsertBehaviorUser(
     var count: Int? = null
 ) : KPojo
 
+@Table("upsert_global_key_user")
+data class UpsertGlobalKeyUser(
+    var code: String? = null,
+    var name: String? = null,
+) : KPojo
+
+@Table("upsert_unique_user")
+@TableIndex("uk_upsert_unique_user_email", ["email"], type = "UNIQUE")
+data class UpsertUniqueUser(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    var email: String? = null,
+    var name: String? = null,
+) : KPojo
+
+@Table("upsert_tenant_user")
+@TableIndex("uk_upsert_tenant_user_tenant_email", ["tenant_id", "email"], type = "UNIQUE")
+data class UpsertTenantUser(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    var tenantId: Int? = null,
+    var email: String? = null,
+    var name: String? = null,
+) : KPojo
+
+@Table("upsert_strategy_user")
+data class UpsertStrategyUser(
+    @PrimaryKey
+    var id: Int? = null,
+    var name: String? = null,
+    @CreateTime
+    var createdAt: LocalDateTime? = null,
+    @UpdateTime
+    var updatedAt: LocalDateTime? = null,
+    @LogicDelete
+    var deleted: Boolean? = null,
+    @Version
+    var version: Int? = null
+) : KPojo
+
 private data class QueryShape(
     val sql: String,
     val params: Map<String, Any?>
@@ -232,7 +415,7 @@ private data class ActionShape(
     val statementType: String?
 )
 
-private class UpsertFallbackWrapper(
+private class UpsertMatchWrapper(
     private val countResult: Int
 ) : SampleMysqlJdbcWrapper() {
     val queries = mutableListOf<QueryShape>()

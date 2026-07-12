@@ -210,6 +210,56 @@ class TaskAndSqlExecutorBehaviorTest {
         )
     }
 
+    @Test
+    fun `action task executes before main and after hooks in one transaction boundary`() {
+        val wrapper = RecordingWrapper(batchResult = intArrayOf(1, 1))
+        val insertUserSql = "INSERT INTO user (id, name) VALUES (:id, :name)"
+        val task = KronosActionTask().also {
+            it.atomicTasks += KronosAtomicActionTask(
+                sql = insertUserSql,
+                paramMap = mapOf("id" to 1, "name" to "alpha"),
+                operationType = KOperationType.INSERT
+            )
+        }
+
+        task.doBeforeExecute { dataSource ->
+            dataSource.first(
+                KronosAtomicQueryTask(
+                    sql = "SELECT id FROM user WHERE email = :email",
+                    paramMap = mapOf("email" to "alpha@example.com"),
+                    targetType = typeOf<Map<String, Any?>?>()
+                )
+            )
+            atomicTasks += KronosAtomicActionTask(
+                sql = insertUserSql,
+                paramMap = mapOf("id" to 2, "name" to "beta"),
+                operationType = KOperationType.INSERT
+            )
+        }.doAfterExecute { dataSource ->
+            (dataSource as RecordingWrapper).recordTransactionProbe("after hook")
+            dataSource.update(
+                KronosAtomicActionTask(
+                    sql = "INSERT INTO user_audit (user_id) VALUES (:user_id)",
+                    paramMap = mapOf("user_id" to 2),
+                    operationType = KOperationType.INSERT
+                )
+            )
+        }
+
+        val result = task.execute(wrapper)
+
+        assertEquals(2, result.affectedRows)
+        assertEquals(
+            listOf(
+                TransactionProbe("query:SELECT id FROM user WHERE email = :email", true),
+                TransactionProbe("batch:INSERT INTO user (id, name) VALUES (:id, :name):2", true),
+                TransactionProbe("after hook", true),
+                TransactionProbe("action:INSERT INTO user_audit (user_id) VALUES (:user_id)", true)
+            ),
+            wrapper.transactionProbes
+        )
+    }
+
     private data class QueryTaskShape(val sql: String, val params: Map<String, Any?>, val targetType: KType)
     private data class ActionTaskShape(val sql: String, val params: Map<String, Any?>, val operationType: KOperationType)
     private data class BatchTaskShape(
@@ -217,6 +267,7 @@ class TaskAndSqlExecutorBehaviorTest {
         val params: List<Map<String, Any?>>,
         val operationType: KOperationType
     )
+    private data class TransactionProbe(val event: String, val inTransaction: Boolean)
 
     private class RecordingWrapper(
         private val listResult: List<Map<String, Any?>> = emptyList(),
@@ -229,17 +280,25 @@ class TaskAndSqlExecutorBehaviorTest {
         val queries = mutableListOf<KAtomicQueryTask>()
         val actions = mutableListOf<KAtomicActionTask>()
         val batchActions = mutableListOf<KronosAtomicBatchTask>()
+        val transactionProbes = mutableListOf<TransactionProbe>()
+        private var inTransaction: Boolean = false
         override val url: String = "jdbc:mysql://localhost:3306/kronos"
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
 
+        fun recordTransactionProbe(event: String) {
+            transactionProbes += TransactionProbe(event, inTransaction)
+        }
+
         override fun toList(task: KAtomicQueryTask): List<Any?> {
             queries += task
+            recordTransactionProbe("query:${task.sql}")
             return if (task.targetType == typeOf<Map<String, Any?>>()) listResult else typedListResult
         }
 
         override fun first(task: KAtomicQueryTask): Any? {
             queries += task
+            recordTransactionProbe("query:${task.sql}")
             return if (task.targetType == typeOf<Map<String, Any?>>() ||
                 task.targetType == typeOf<Map<String, Any?>?>()
             ) {
@@ -251,11 +310,13 @@ class TaskAndSqlExecutorBehaviorTest {
 
         override fun update(task: KAtomicActionTask): Int {
             actions += task
+            recordTransactionProbe("action:${task.sql}")
             return updateResult
         }
 
         override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
             batchActions += task
+            recordTransactionProbe("batch:${task.sql}:${task.paramMapArr?.size ?: 0}")
             return batchResult
         }
 
@@ -263,6 +324,14 @@ class TaskAndSqlExecutorBehaviorTest {
             isolation: TransactionIsolation?,
             timeout: Int?,
             block: TransactionScope.() -> Any?
-        ): Any? = TransactionScope().block()
+        ): Any? {
+            val wasInTransaction = inTransaction
+            inTransaction = true
+            return try {
+                TransactionScope().block()
+            } finally {
+                inTransaction = wasInTransaction
+            }
+        }
     }
 }

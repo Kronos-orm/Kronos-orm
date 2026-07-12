@@ -9,7 +9,7 @@ These events can help you observe task execution, or run specific logic before a
 
 Kronos events expose the task `operationType`, SQL text, parameter map, structured statement, and the active `KronosDataSourceWrapper`. By listening to these events, you can intercept tasks, record logs, send notifications, or inspect task content before it is executed.
 
-The `Logging`, `LastInsertId`, and `DataGuard` plugins are all implemented through the task event plugin mechanism.
+`DataGuardPlugin` is the built-in guard implemented through the task event plugin mechanism. Generated identity ID retrieval is part of insert execution.
 
 ### Create a task event plugin
 
@@ -19,13 +19,13 @@ You can define behavior by implementing these callbacks:
 
 - `doBeforeQuery`: triggered before a query task is executed.
 - `doAfterQuery`: triggered after a query task is executed.
-- `doBeforeAction`: triggered before an action task is executed, including `create`, `drop`, `alter`, `truncate`, `insert`, `update`, `delete`, and native `upsert`.
-- `doAfterAction`: triggered after an action task is executed, including `create`, `drop`, `alter`, `truncate`, `insert`, `update`, `delete`, and native `upsert`.
+- `doBeforeAction`: triggered before an action task is executed, including `create`, `drop`, `alter`, `truncate`, `insert`, `update`, `delete`, and `onConflict()` upsert.
+- `doAfterAction`: triggered after an action task is executed, including `create`, `drop`, `alter`, `truncate`, `insert`, `update`, `delete`, and `onConflict()` upsert.
 
 > **Note**
 > Why is there no dedicated `doBeforeUpsert` event?
 >
-> Task event plugins use query callbacks and action callbacks. Fallback `upsert()` emits the existence query and then the insert or update branch. Native `onConflict()` upsert is an action task whose `operationType` is `KOperationType.UPSERT`.
+> Task event plugins use query callbacks and action callbacks. Regular `upsert()` emits a match query and then the insert or update action branch. `onConflict()` upsert is an action task whose `operationType` is `KOperationType.UPSERT`.
 
 Task event function types are `QueryTaskEvent?` or `ActionTaskEvent?`. Set a callback to `null` to disable the corresponding event.
 
@@ -61,7 +61,7 @@ class MyTaskEventPlugin : TaskEventPlugin {
                 println("Updated with params: ${task.paramMap}")
             }
             KOperationType.UPSERT -> {
-                println("Native upsert with params: ${task.paramMap}")
+                println("Upsert with params: ${task.paramMap}")
             }
             else -> {
                 println("Action ${task.operationType} completed")

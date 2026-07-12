@@ -12,6 +12,7 @@ import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
+import com.kotlinorm.integration.suites.StrategyIntegrationSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
@@ -33,3 +34,4 @@ class PostgresValueTypeIntegrationTest : ValueTypeIntegrationSuite(postgres, Sta
 class PostgresFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresTransactionIntegrationTest : TransactionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresStrategyIntegrationTest : StrategyIntegrationSuite(postgres, StandardIntegrationScenarioProfile)

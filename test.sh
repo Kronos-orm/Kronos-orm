@@ -1,7 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-script_path="${BASH_SOURCE[0]}"
+if [[ -n "${BASH_SOURCE:-}" ]]; then
+  script_path="${BASH_SOURCE[0]}"
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
+  script_path="${(%):-%N}"
+else
+  script_path="$0"
+fi
+
 script_dir="$(cd "$(dirname "$script_path")" && pwd)"
 compose_file="${script_dir}/kronos-testing/docker-compose.integration.yml"
 

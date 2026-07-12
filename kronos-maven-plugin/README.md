@@ -13,7 +13,7 @@ Add to `kotlin-maven-plugin` configuration:
     <dependency>
         <groupId>com.kotlinorm</groupId>
         <artifactId>kronos-maven-plugin</artifactId>
-        <version>0.2.0</version>
+        <version>0.2.1</version>
     </dependency>
 </dependencies>
 ```

@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.databaseBooleanLiteral
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.toDatabaseBooleanValue
 
 internal class UpdatePlanner<T : KPojo>(
     private val context: OrmContext<T>
@@ -79,6 +80,12 @@ internal class UpdatePlanner<T : KPojo>(
                         databaseBooleanLiteral(dataSource, field, false)
                     )
                 )
+            }
+        } else if (context.restoreLogicDeleteOnUpdate) {
+            logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
+                val parameterName = "${field.name}New"
+                context.bind(parameterName, toDatabaseBooleanValue(dataSource, field, false), field, ParameterSource.Strategy)
+                context.set(field, SqlExpr.Parameter(SqlParameter.Named(parameterName)))
             }
         }
 

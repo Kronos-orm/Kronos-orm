@@ -164,7 +164,7 @@ val rows: List<UserSummary> = User()
 
 The selected output names must match the DTO property names you want to fill.
 
-## Full projections, exclusions, and collection forms
+## Full projections, exclusions, and []
 
 `select()` without a lambda returns the source KPojo type. Inside an explicit `select { ... }`, `it` represents all database columns of the current KPojo and produces a generated projection result type. Returning it directly or placing it inside `[]` has the same effect. Use `-` to remove one or more fields.
 
@@ -174,6 +174,8 @@ val allInList = User().select { [it] }.toList()
 
 val withoutAge = User().select { it - it.age }.toList()
 val withoutAgeInList = User().select { [it - it.age] }.toList()
+val withoutIdAndAge = User().select { it - it.id - it.age }.toList()
+val withoutIdAndAgeWithAlias = User().select { [it - [it.id, it.age], it.id.alias("sourceId")] }.toList()
 ```
 
 ```kotlin group="Exclude projection" name="kotlin" icon="kotlin"
@@ -186,6 +188,8 @@ val rows = User()
 SELECT `id`, `name`
 FROM `user`
 ```
+
+The right side of `-` may also use `[]`, so `[it - [it.id, it.age], it.id.alias("sourceId")]` is a valid projection list.
 
 A full projection can share a list with ordinary fields, aliases, or function projections. Expanded fields keep their source order, and following items are appended to the generated result type.
 
@@ -203,24 +207,7 @@ SELECT `id`, `name`, `age`, `id` AS `sourceId`
 FROM `user`
 ```
 
-`[]` is the recommended form. These Kotlin collection constructors also expand `it` with the same rules and generate the same projection properties:
-
-```kotlin name="kotlin" icon="kotlin"
-val fromList = User().select {
-    listOf<Any?>(it, it.id.alias("sourceId"))
-}
-val fromArray = User().select {
-    arrayOf<Any?>(it, it.id.alias("sourceId"))
-}
-val fromMutableList = User().select {
-    mutableListOf<Any?>(it, it.id.alias("sourceId"))
-}
-val fromSet = User().select {
-    setOf<Any?>(it, it.id.alias("sourceId"))
-}
-```
-
-Use these forms when most columns should be returned with a few exclusions, or when aliases should be appended after a full projection. Final projection output names must remain unique.
+Use `it - ...` when most columns should be returned with a few exclusions, or when aliases should be appended after a full projection. Final projection output names must remain unique.
 
 ## Project from join queries
 

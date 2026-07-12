@@ -701,18 +701,11 @@ fun analyzeMinusFields(
     call: IrCall,
     errorReporter: ErrorReporter
 ): List<IrExpression> {
-    // Get the receiver (should be KPojo instance)
-    val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
-    val receiverType = receiver?.type ?: error(ErrorMessages.cannotFindClassForMinus(null))
+    val (source, excludedFields) = collectSourceMinusFields(call)
+        ?: return emptyList()
+    val receiverType = source.type
     val irClass = receiverType.classOrNull!!.owner
-    
-    // Get the excluded fields
-    val excludedFields = mutableSetOf<String>()
-    val argument = call.getValueArgumentSafe(0)
-    
-    // Recursively collect excluded field names
-    collectExcludedFieldNames(argument, excludedFields)
-    
+
     // Get all column properties except excluded ones
     val fields = mutableListOf<IrExpression>()
     val columnProperties = irClass.properties.filter { it.isColumnType() }.toList()
@@ -724,6 +717,22 @@ fun analyzeMinusFields(
     }
     
     return fields
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun collectSourceMinusFields(call: IrCall): Pair<IrExpression, MutableSet<String>>? {
+    if (call.origin != IrStatementOrigin.MINUS) return null
+    val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
+    val (source, excludedFields) = if (receiver is IrCall && receiver.origin == IrStatementOrigin.MINUS) {
+        val (innerSource, innerExcludedFields) = collectSourceMinusFields(receiver) ?: return null
+        innerSource to innerExcludedFields.toCollection(linkedSetOf())
+    } else {
+        if (!receiver.type.isKPojoType()) return null
+        receiver to linkedSetOf<String>()
+    }
+    collectExcludedFieldNames(call.getValueArgumentSafe(0), excludedFields)
+    return source to excludedFields
 }
 
 /**

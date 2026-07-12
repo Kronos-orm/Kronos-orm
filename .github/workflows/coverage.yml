@@ -46,6 +46,7 @@ jobs:
             echo "ORACLE_USERNAME=${ORACLE_USERNAME}"
             echo "ORACLE_PASSWORD=${ORACLE_PASSWORD}"
             echo "ORACLE_SYS_PASSWORD=${ORACLE_SYS_PASSWORD}"
+            echo "ORACLE_DOCKER_IMAGE=${ORACLE_DOCKER_IMAGE:-ghcr.io/gvenzl/oracle-free:23.9-slim}"
           } >> "$GITHUB_ENV"
 
       - name: Start integration databases

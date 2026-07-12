@@ -131,7 +131,7 @@ var createTime: String? = null
 
 ## @LogicDelete
 
-标记逻辑删除字段。启用后 delete 操作变为 UPDATE（设置标记值），select 自动过滤已删除记录。
+标记逻辑删除字段。启用后 delete 操作变为 UPDATE（设置标记值），select 自动过滤已删除记录。普通 upsert 匹配到已逻辑删除记录时会更新原行并恢复活动值；`onConflict()` upsert 会在插入列和冲突更新赋值中维护活动值。
 
 ```kotlin
 // 属性级别
@@ -147,7 +147,7 @@ data class User(var id: Int? = null) : KPojo
 
 ## @Version
 
-标记乐观锁版本字段。insert 会初始化版本号，update 和逻辑删除会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
+标记乐观锁版本字段。insert 会初始化版本号，update、逻辑删除和 upsert 更新分支会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
 
 ```kotlin
 data class User(

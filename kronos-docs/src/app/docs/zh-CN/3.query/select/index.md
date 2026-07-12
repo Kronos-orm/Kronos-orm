@@ -97,7 +97,7 @@ val withAlias = User()
     .toList()
 ```
 
-`[]` 是推荐写法。`listOf`、`arrayOf`、`mutableListOf` 和 `setOf` 也可以构造同样的投影列表，例如 `select { arrayOf<Any?>(it, it.id.alias("sourceId")) }`。完整矩阵和生成结果属性见 {{ $.keyword("query/projection", ["投影"]) }}。
+`[]` 里也可以放 `it - ...` 项，例如 `[it - it.id, "count(*) as total"]` 或 `[it - [it.id, it.age], it.id.alias("sourceId")]`。生成结果属性见 {{ $.keyword("query/projection", ["投影"]) }}。
 
 ```kotlin group="Case 1-2" name="kotlin" icon="kotlin"
 val rows: List<Map<String, Any?>> = User()

@@ -3,10 +3,10 @@ import MutationCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * LastInsertId is a Kronos plugin that retrieves the last inserted ID.
+ * Reads database-generated identity IDs from insert results.
  * @status:info NEW
  */
-const LastInsertIdPluginPage: NgDocPage = {
+const LastInsertIdPage: NgDocPage = {
     title: `Last Insert ID`,
     mdFile: './index.md',
     category: MutationCategory,
@@ -16,4 +16,4 @@ const LastInsertIdPluginPage: NgDocPage = {
     demos: {AnimateLogoComponent}
 };
 
-export default LastInsertIdPluginPage;
+export default LastInsertIdPage;

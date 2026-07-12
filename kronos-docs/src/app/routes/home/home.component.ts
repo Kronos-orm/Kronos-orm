@@ -72,11 +72,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     readonly installCode = [
         'plugins {',
-        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.0"',
+        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.1"',
         '}',
         '',
         'dependencies {',
-        '    implementation("com.kotlinorm:kronos-core:0.2.0")',
+        '    implementation("com.kotlinorm:kronos-core:0.2.1")',
         '}'
     ];
 
@@ -154,10 +154,8 @@ export class HomeComponent implements OnInit, OnDestroy {
                 '  .page(1, 10)',
                 '  .queryList()',
                 '',
-                'val id = with(LastInsertIdPlugin) {',
-                '  User(username = "test", age = 18)',
-                '    .insert().withId().execute().lastInsertId',
-                '}',
+                'val id = User(username = "test", age = 18)',
+                '  .insert().withId().execute().lastInsertId',
                 '',
                 'User(id = id, age = 19)',
                 '  .update().by { it.id }.execute()',

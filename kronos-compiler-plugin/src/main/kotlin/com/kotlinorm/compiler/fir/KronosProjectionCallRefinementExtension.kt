@@ -232,17 +232,13 @@ class KronosProjectionCallRefinementExtension(
         sourceType: ConeKotlinType,
         sourceValueNames: Set<Name>
     ): List<KronosProjectionField>? {
-        if (calleeReference.name.asString() != "minus") return null
-        val receiver = explicitReceiver as? FirStatement ?: return null
-        val sourceAccess = receiver.projectionStatementOrNull() as? FirPropertyAccessExpression ?: return null
-        if (!sourceAccess.isProjectionSourceValueAccess(sourceType, sourceValueNames, sourceAccess.coneTypeOrNull)) {
-            return null
-        }
         val sourceFields = readSourceFields(sourceType)
         val sourceFieldNames = sourceFields.mapTo(linkedSetOf()) { it.name.asString() }
-        val excludedNames = argumentList.arguments.flatMapTo(linkedSetOf()) { argument ->
-            argument.excludedProjectionSourceFieldNames(sourceFieldNames)
-        }
+        val excludedNames = sourceMinusExcludedProjectionFieldNames(
+            sourceType,
+            sourceFieldNames,
+            sourceValueNames
+        ) { statement -> statement.resolvedConeType() } ?: return null
         return sourceFields.filterNot { it.name.asString() in excludedNames }
     }
 

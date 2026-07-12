@@ -7,6 +7,12 @@
 
 ## Update Logs
 
+### 0.2.1
+
+- ✨ Support `it - [it.id, it.age]` inside projection `[]`, including mixed projection lists such as `[it - [it.id, it.age], it.id.alias("sourceId")]`.
+- 🔧 Make the release workflow's next SNAPSHOT PR step idempotent so reruns skip an already-open version PR instead of failing on an existing branch.
+- 📚 Refresh README, documentation macros, user-facing examples, and AI skill references for `0.2.1`.
+
 ### 0.2.0
 
 > **Warning**
@@ -59,7 +65,7 @@ Query tasks and the conversion pipeline now carry complete Kotlin `KType` metada
 
 - ✨ Preserve complete Kotlin `KType` metadata across fields, query tasks, serializers, and value transformers, including nested generic collections such as `List<List<String>>` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix Kotlinx Serialization deserialization for generic collection and data-class fields, and preserve selected `null` values in map and scalar query results ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
-- 🐛 Fix generated projection types for `select { it }`, `select { [it] }`, KPojo-minus projections, and mixed full-row plus alias projections across collection literals, `listOf`, `arrayOf`, `mutableListOf`, and `setOf` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 🐛 Fix generated projection types for `select { it }`, `select { [it] }`, KPojo-minus projections, and mixed full-row plus alias projections using `[]` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix SQLite UNION rendering, SQLite schema synchronization, default string values, and other ORM edge cases found by expanded compiler, core, and integration tests ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 💪 Expand projection, serialization, nullable-result, schema-sync, and cross-database regression coverage; update the README, user docs, AI skill guide, Gradle plugin, and IDEA plugin for `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 

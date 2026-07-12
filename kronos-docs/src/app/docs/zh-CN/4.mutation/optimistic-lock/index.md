@@ -121,7 +121,9 @@ WHERE `id` = :id
 
 ## Upsert 使用已配置的 mutation 路径
 
-fallback `upsert()` 会先查询是否存在，再执行 `update()` 或 `insert()`。更新分支与普通 update 一样递增版本，插入分支与普通 insert 一样初始化版本。
+按匹配字段执行 `upsert()` 时，Kronos 会根据匹配结果执行 `update()` 或 `insert()`。更新分支与普通 update 一样递增版本，插入分支与普通 insert 一样初始化版本。
+
+`onConflict()` upsert 也会在插入时初始化版本，并在冲突更新赋值中递增版本。
 
 ```kotlin group="Upsert" name="kotlin" icon="kotlin"
 Product(id = 1, name = "Keyboard")
@@ -130,7 +132,7 @@ Product(id = 1, name = "Keyboard")
     .execute()
 ```
 
-```sql group="Upsert" name="fallback SQL" icon="mysql"
+```sql group="Upsert" name="match SQL" icon="mysql"
 SELECT COUNT(1)
 FROM `product`
 WHERE `id` = :id
@@ -145,6 +147,14 @@ WHERE `id` = :id
 -- insert branch
 INSERT INTO `product` (`id`, `name`, `version`, `deleted`)
 VALUES (:id, :name, :version, :deleted)
+```
+
+```sql group="Upsert Conflict" name="Mysql" icon="mysql"
+INSERT INTO `product` (`id`, `name`, `version`, `deleted`)
+VALUES (:id, :name, :version, :deleted)
+ON DUPLICATE KEY UPDATE
+    `name` = :name,
+    `version` = `version` + :version2PlusNew
 ```
 
 `on(...)` 和 `onConflict()` 示例见 {{ $.keyword("mutation/upsert", ["更新插入"]) }}。

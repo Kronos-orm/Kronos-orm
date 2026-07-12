@@ -244,7 +244,6 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
     override fun upsertUser(record: IntegrationUserRecord) {
         record.toIntegrationUser()
             .upsert { [it.name, it.score, it.status] }
-            .on { it.id }
             .onConflict()
             .execute()
     }

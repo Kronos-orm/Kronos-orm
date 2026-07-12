@@ -2,7 +2,9 @@ package kronos
 
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import java.net.URI
+import org.gradle.api.publish.PublishingExtension
 
 /*
  * This plugin configures publishing for a project.
@@ -24,7 +26,7 @@ plugins {
 value class PublishConfiguration(val project: Project) {
     init {
         project.group = "com.kotlinorm"
-        project.version = "0.2.1-SNAPSHOT"
+        project.version = "0.2.1"
         project.description = when (project.name) {
             "kronos-core" -> "Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of Kronos, which provides basic ORM functions."
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
@@ -68,7 +70,7 @@ val aliyun = AliyunMvn()
 
 val snapshot = SnapshotMvn()
 
-mavenPublishing {
+configure<MavenPublishBaseExtension> {
     configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
     coordinates(publish.group, publish.name, publish.version)
 
@@ -118,7 +120,7 @@ mavenPublishing {
     publishToMavenCentral(true)
 }
 
-publishing {
+configure<PublishingExtension> {
     repositories {
         if (aliyun.publishRequired) {
             maven {

@@ -70,6 +70,10 @@ val aliyun = AliyunMvn()
 
 val snapshot = SnapshotMvn()
 
+val publishingToMavenLocal = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("MavenLocal", ignoreCase = true)
+}
+
 configure<MavenPublishBaseExtension> {
     configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
     coordinates(publish.group, publish.name, publish.version)
@@ -113,7 +117,7 @@ configure<MavenPublishBaseExtension> {
         }
     }
 
-    if (!snapshot.publishRequired) {
+    if (!snapshot.publishRequired && !publishingToMavenLocal) {
         signAllPublications()
     }
 

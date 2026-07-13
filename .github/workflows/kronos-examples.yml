@@ -124,6 +124,35 @@ jobs:
               path.write_text(text)
           PY
 
+      - name: Point examples to current Kronos API
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          solon_controller = Path("kronos-example-solon/src/main/kotlin/com/kotlinorm/example/solon/DemoController.kt")
+          legacy_call = "user.kronosColumns().map {"
+          current_call = "user.__columns.map {"
+          example_roots = [
+              Path("kronos-example-ktor"),
+              Path("kronos-example-spring-boot"),
+              Path("kronos-example-solon"),
+          ]
+
+          text = solon_controller.read_text()
+          if legacy_call in text:
+              solon_controller.write_text(text.replace(legacy_call, current_call, 1))
+
+          stale_files = []
+          for root in example_roots:
+              for path in sorted(root.glob("**/*.kt")):
+                  if "kronosColumns(" in path.read_text():
+                      stale_files.append(str(path))
+
+          if stale_files:
+              raise SystemExit("legacy Kronos metadata API remains in examples:\n" + "\n".join(stale_files))
+          PY
+
       - name: Run Ktor example smoke tests
         working-directory: kronos-example-ktor
         run: ./gradlew test --no-daemon --console=plain

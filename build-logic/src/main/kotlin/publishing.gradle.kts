@@ -5,6 +5,7 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import java.net.URI
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.plugins.signing.Sign
 
 /*
  * This plugin configures publishing for a project.
@@ -70,6 +71,9 @@ val aliyun = AliyunMvn()
 
 val snapshot = SnapshotMvn()
 
+fun publishingToMavenLocalTaskGraph(): Boolean =
+    gradle.taskGraph.allTasks.any { task -> task.name.contains("MavenLocal", ignoreCase = true) }
+
 val publishingToMavenLocal = gradle.startParameter.taskNames.any { taskName ->
     taskName.contains("MavenLocal", ignoreCase = true)
 }
@@ -124,6 +128,10 @@ configure<MavenPublishBaseExtension> {
     publishToMavenCentral(true)
 }
 
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { !publishingToMavenLocalTaskGraph() }
+}
 configure<PublishingExtension> {
     repositories {
         if (aliyun.publishRequired) {

@@ -68,13 +68,13 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 ```kotlin
 plugins {
     kotlin("jvm") version "2.4.0"
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.1"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.2"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.2.1")
+    implementation("com.kotlinorm:kronos-core:0.2.2")
     // JDBC 包装器（可选，提供开箱即用的数据源支持）
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.1")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.2")
     // JDBC Driver 与连接池使用和数据库/JDK 匹配的最新稳定版
     implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
@@ -87,7 +87,7 @@ dependencies {
 <dependency>
     <groupId>com.kotlinorm</groupId>
     <artifactId>kronos-core</artifactId>
-    <version>0.2.1</version>
+    <version>0.2.2</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ dependencies {
 
 要求：JDK 8+，Kotlin 2.4.0+
 
-技能中的 Kronos 推荐稳定版本直接写 `0.2.1`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+技能中的 Kronos 推荐稳定版本直接写 `0.2.2`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
 
 ---
 
@@ -338,7 +338,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.1")
+    implementation("com.kotlinorm:kronos-logging:0.2.2")
 }
 ```
 
@@ -358,7 +358,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.1")
+    implementation("com.kotlinorm:kronos-logging:0.2.2")
     implementation("commons-logging:commons-logging:<latest-stable>")
 }
 ```
@@ -481,15 +481,15 @@ DataGuardPlugin.disable()
 
 `kronos-codegen` 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.2`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.2")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.2")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.2")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -665,7 +665,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 }
 ```
 
-连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.2.1`。
+连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.2.2`。
 
 生产连接检查要覆盖连接池大小、连接/网络/查询/空闲超时、validation query 或 JDBC validation method、SSL/TLS 与证书配置、secret 来源、时区/编码 URL 参数，以及数据库服务端、JDK、认证和 TLS 能力对应的 driver 稳定分支。
 
@@ -1575,7 +1575,7 @@ val (sql, params, atomicTasks) = truncateTask
 
 ## 故障排查入口
 
-- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.1`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.1` 和数据库 driver 的当前稳定版。
+- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.2`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.2` 和数据库 driver 的当前稳定版。
 - 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
 - 检查 KPojo generated members：`__kClass`、`__tableName`、`__tableComment`、`__columns`、`__tableIndexes`、`__createTime`、`__updateTime`、`__logicDelete`、`__optimisticLock` 和 `toDataMap()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。

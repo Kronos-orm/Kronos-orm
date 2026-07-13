@@ -7,6 +7,11 @@
 
 ## 📝 更新日志
 
+### 0.2.2
+
+- 🐛 将 `kronos-syntax` 作为 `kronos-core` 的 API 依赖发布，使下游项目在未直接声明 `kronos-syntax` 时也能编译暴露 syntax 类型的 DSL 调用。
+- 📦 准备稳定版 `0.2.2` 发布，并同步安装片段、文档宏、示例和 AI skill 指南。
+
 ### 0.2.1
 
 - ✨ 支持在投影 `[]` 中使用 `it - [it.id, it.age]`，包括 `[it - [it.id, it.age], it.id.alias("sourceId")]` 这类混合投影列表。

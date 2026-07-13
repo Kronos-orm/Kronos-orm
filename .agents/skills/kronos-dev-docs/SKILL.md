@@ -59,7 +59,7 @@ They are generated output or dependencies unless the user explicitly asks otherw
 
 Use the current repository implementation as the source of truth.
 
-- Use stable release-style versions such as `0.2.1` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
+- Use stable release-style versions such as `0.2.2` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
 - In `kronos-docs/src/app/docs` Markdown, source current Kronos versions from the docs macros instead of hard-coding them. Use `{{ $.kronosVersion() }}`, `{{ $.kronosSnapshotVersion() }}`, and `{{ $.kronosSnapshotBadgeVersion() }}` after the page imports its language macro file.
 - README files, homepage TypeScript snippets, module READMEs, and blog assets do not share the `kronos-docs` Markdown macro pipeline; keep their version text explicit or use local constants when the file already has that pattern.
 - Verify the current repository development version from `build-logic/src/main/kotlin/publishing.gradle.kts` before changing source-development or snapshot-specific text.
@@ -190,7 +190,7 @@ These scans are not automatic proof of failure. Inspect matches and decide wheth
 
 Known high-risk patterns:
 
-- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.2.1`.
+- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.2.2`.
 - Hard-coded current Kronos versions in `kronos-docs/src/app/docs` Markdown when the value should come from `$.kronosVersion()` or the snapshot macros.
 - Broken version macro text such as `{{ 9kronosVersion() }}` after shell or Perl replacements.
 - `latest.release` in copyable dependency examples.

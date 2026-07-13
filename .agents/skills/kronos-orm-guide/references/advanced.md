@@ -634,7 +634,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.1")
+    implementation("com.kotlinorm:kronos-logging:0.2.2")
 }
 ```
 
@@ -718,15 +718,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.2`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.2")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.2")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.2")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```

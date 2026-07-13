@@ -336,16 +336,16 @@ kover {
 
 ### Where Version Lives
 Two files (must stay in sync):
-1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.2.1"`
-2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.2.1"`
+1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.2.2"`
+2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.2.2"`
 
 ### Bump Script
 `.github/scripts/bump-version.sh`:
 ```bash
 bump-version.sh set 1.2.3            # set explicit version
-bump-version.sh next-snapshot         # 0.2.1 → 0.2.2-SNAPSHOT
-bump-version.sh release-from-current  # 0.2.1-SNAPSHOT → 0.2.1
-bump-version.sh next-release          # 0.2.1 → 0.2.2
+bump-version.sh next-snapshot         # 0.2.2 → 0.2.3-SNAPSHOT
+bump-version.sh release-from-current  # 0.2.3-SNAPSHOT → 0.2.2
+bump-version.sh next-release          # 0.2.2 → 0.2.2
 ```
 
 Parses `MAJOR.MINOR.PATCH`, increments PATCH, uses `sed` to update both files. Handles macOS vs Linux `sed` differences.
@@ -355,7 +355,7 @@ Parses `MAJOR.MINOR.PATCH`, increments PATCH, uses `sed` to update both files. H
 When preparing a stable release, do not stop after changing the two code version fields. Update every user-facing version surface in the same change:
 
 - Run `bash .github/scripts/bump-version.sh set <stable-version>` to update `publishing.gradle.kts` and `KronosGradlePlugin.kt`.
-- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.2.2-SNAPSHOT` / `0.2.2--SNAPSHOT`.
+- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.2.3-SNAPSHOT` / `0.2.3--SNAPSHOT`.
 - Update `README.MD` and `README-zh_CN.MD`: Maven Central snapshot badge, Kotlin compatibility table, Gradle Kotlin/Groovy snippets, Maven dependency snippets, and plugin dependency snippets.
 - Update docs release notes in both languages: add a new top section for `<stable-version>` and update `8.resources/release-notes/ng-doc.page.ts` `@status:primary`.
 - Update non-macro docs surfaces: `kronos-docs/src/app/routes/home/home.component.ts`, blog snippets under `kronos-docs/src/assets/blogs/*`, `kronos-gradle-plugin/README.md`, and `kronos-maven-plugin/README.md`.

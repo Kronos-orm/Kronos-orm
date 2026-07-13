@@ -7,6 +7,11 @@
 
 ## Update Logs
 
+### 0.2.2
+
+- 🐛 Publish `kronos-syntax` as an API dependency of `kronos-core` so downstream projects can compile DSL calls that expose syntax types without declaring `kronos-syntax` directly.
+- 📦 Prepare the stable `0.2.2` release and update install snippets, documentation macros, examples, and AI skill guidance.
+
 ### 0.2.1
 
 - ✨ Support `it - [it.id, it.age]` inside projection `[]`, including mixed projection lists such as `[it - [it.id, it.age], it.id.alias("sourceId")]`.

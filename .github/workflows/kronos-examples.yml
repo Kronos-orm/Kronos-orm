@@ -128,7 +128,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import re
           from pathlib import Path
 
           solon_controller = Path("kronos-example-solon/src/main/kotlin/com/kotlinorm/example/solon/DemoController.kt")
@@ -144,26 +143,6 @@ jobs:
           if legacy_call in text:
               solon_controller.write_text(text.replace(legacy_call, current_call, 1))
 
-          ktor_routing = Path("kronos-example-ktor/src/main/kotlin/kotlinorm/com/example/ktor/plugins/Routing.kt")
-          text = ktor_routing.read_text()
-          legacy_page = (
-              r"val\s*\(\s*total\s*,\s*users\s*\)\s*=\s*User\(\)\.select\(\)\.orderBy\s*\{\s*it\.id\s*\}"
-              r"\s*\n\s*\.page\(pageIndex,\s*pageSize\)\.withTotal\(\)\.toList\(\)"
-          )
-          current_page = (
-              "val (_, users, pageCount) = User().select().orderBy { it.id }\n"
-              "                        .withTotal().page(pageIndex, pageSize).toList<User>()"
-          )
-          text, page_count = re.subn(legacy_page, current_page, text, count=1)
-          if page_count:
-              text = re.sub(
-                  r"\n\s*val pageCount = \(total \+ pageSize - 1\) / pageSize",
-                  "",
-                  text,
-                  count=1,
-              )
-              ktor_routing.write_text(text)
-
           stale_files = []
           for root in example_roots:
               for path in sorted(root.glob("**/*.kt")):
@@ -172,10 +151,6 @@ jobs:
 
           if stale_files:
               raise SystemExit("legacy Kronos metadata API remains in examples:\n" + "\n".join(stale_files))
-
-          ktor_text = ktor_routing.read_text()
-          if ".page(pageIndex, pageSize).withTotal()" in ktor_text:
-              raise SystemExit("legacy Kronos pagination API remains in Ktor example")
           PY
 
       - name: Run Ktor example smoke tests

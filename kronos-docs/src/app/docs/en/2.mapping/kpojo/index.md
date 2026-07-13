@@ -3,7 +3,7 @@
 
 ## Define a KPojo
 
-`KPojo` is the table model interface used by Kronos. When a class implements `KPojo`, the compiler plugin generates table name, column metadata, primary-key strategy, `toDataMap()`, and other runtime metadata. ORM operations then read the table shape and field values from this class.
+`KPojo` is the table model interface used by Kronos. When a class implements `KPojo`, Kronos can read table metadata, `toDataMap()`, and object values from it. ORM operations then use the table shape and field values from this class.
 
 Start the first model with a small `data class`. Use nullable properties with default values so Kronos can create objects for queries, inserts, updates, and result mapping.
 
@@ -46,13 +46,19 @@ val users: List<User> = User()
 
 ## Metadata exposed by KPojo
 
-After compilation, Kronos can read the table name, field list, and object values from the model. Application code usually does not call these methods directly, but they show how ORM SQL is built.
+After compilation, Kronos can read the table name, table comment, field list, indexes, strategy fields, and object values from the model. Application code usually does not read every metadata property directly, but these properties show how ORM SQL is built.
 
 ```kotlin group="KPojo 3" name="metadata" icon="kotlin"
 val user = User(id = 1, name = "Ada")
 
 val tableName = user.__tableName
-val columns = user.kronosColumns().map { it.name }
+val tableComment = user.__tableComment
+val columns = user.__columns.map { it.name }
+val indexes = user.__tableIndexes
+val createTime = user.__createTime
+val updateTime = user.__updateTime
+val logicDelete = user.__logicDelete
+val optimisticLock = user.__optimisticLock
 val values = user.toDataMap()
 ```
 
@@ -63,6 +69,44 @@ values -> {id=1, name=Ada, age=null}
 ```
 
 `@Ignore`, cascade properties, serialized properties, and time strategies can change the field list or write parameters. See {{ $.keyword("mapping/annotations", ["Annotations"]) }} for the complete rules.
+
+## Dynamic object tables
+
+When the table shape is only known at runtime, create an object that implements `KPojo` and set `__kClass` to `KPojo::class`. The object carries metadata properties and ordinary Kotlin properties, so it can be used with the same select DSL. Mark explicit metadata overrides with `@Ignore([IgnoreAction.ALL])` so they are not treated as table columns.
+
+```kotlin group="KPojo Dynamic" name="dynamic table" icon="kotlin"
+import com.kotlinorm.annotations.Ignore
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableIndex
+import com.kotlinorm.enums.IgnoreAction
+import com.kotlinorm.interfaces.KPojo
+
+val runtimeUser = object : KPojo {
+    @Ignore([IgnoreAction.ALL])
+    override var __kClass: kotlin.reflect.KClass<out KPojo> = KPojo::class
+    @Ignore([IgnoreAction.ALL])
+    override var __tableName = "tb_runtime_user"
+    @Ignore([IgnoreAction.ALL])
+    override var __tableComment = "runtime user table"
+    @Ignore([IgnoreAction.ALL])
+    override var __columns = mutableListOf(
+        Field("id", "id"),
+        Field("name", "name")
+    )
+    @Ignore([IgnoreAction.ALL])
+    override var __tableIndexes = mutableListOf<KTableIndex>()
+
+    var id: Int? = 6
+    var name: String? = null
+}
+
+val user = runtimeUser
+    .select()
+    .where { it.id == 6 }
+    .firstOrNull()
+```
+
+Use a dynamic object table for runtime-selected table names or column lists. For static application models, prefer normal `data class` KPojo definitions with annotations.
 
 ## Create a table and query it
 

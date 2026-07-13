@@ -101,10 +101,10 @@ class KotlinXSerializationTest {
             active = false
         )
         val holder = SerializableHolder(id = 1, payload = payload)
-        val payloadField = holder.kronosColumns().single { it.name == "payload" }
-        val profileDataField = holder.kronosColumns().single { it.name == "profileData" }
-        val listDataField = holder.kronosColumns().single { it.name == "listData" }
-        val matrixDataField = holder.kronosColumns().single { it.name == "matrixData" }
+        val payloadField = holder.__columns.single { it.name == "payload" }
+        val profileDataField = holder.__columns.single { it.name == "profileData" }
+        val listDataField = holder.__columns.single { it.name == "listData" }
+        val matrixDataField = holder.__columns.single { it.name == "matrixData" }
 
         assertTrue(payloadField.serializable)
         assertEquals(

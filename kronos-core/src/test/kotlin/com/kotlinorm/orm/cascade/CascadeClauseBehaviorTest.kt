@@ -356,7 +356,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             CascadeSelectBehaviorChild(id = 21, parentId = 2, name = "gamma")
         )
         val wrapper = CascadeRecordingWrapper(queryResults = mutableListOf(children))
-        val field = CascadeSelectBehaviorParent().kronosColumns().single { it.name == "children" }
+        val field = CascadeSelectBehaviorParent().__columns.single { it.name == "children" }
         val validRef = ValidCascade(field, field.cascade!!, CascadeSelectBehaviorChild(), CascadeSelectBehaviorParent().__tableName)
 
         CascadeSelectClause.setValues(
@@ -397,7 +397,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             CascadeCompositeChild(id = 21, parentId1 = 2, parentId2 = 20, name = "beta")
         )
         val wrapper = CascadeRecordingWrapper(queryResults = mutableListOf(children))
-        val field = CascadeCompositeParent().kronosColumns().single { it.name == "children" }
+        val field = CascadeCompositeParent().__columns.single { it.name == "children" }
         val validRef = ValidCascade(field, field.cascade!!, CascadeCompositeChild(), CascadeCompositeParent().__tableName)
 
         CascadeSelectClause.setValues(
@@ -443,7 +443,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val wrapper = CascadeRecordingWrapper(
             queryResults = mutableListOf(emptyList(), emptyList())
         )
-        val field = CascadeSelectBehaviorParent().kronosColumns().single { it.name == "children" }
+        val field = CascadeSelectBehaviorParent().__columns.single { it.name == "children" }
         val validRef = ValidCascade(field, field.cascade!!, CascadeSelectBehaviorChild(), CascadeSelectBehaviorParent().__tableName)
 
         CascadeSelectClause.setValues(
@@ -475,7 +475,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val parent = CascadeSelectBehaviorParent(id = 1, childId = 11)
         val child = CascadeSelectBehaviorChild(id = 11, parentId = 1, name = "alpha")
         val wrapper = CascadeRecordingWrapper(objectResults = mutableListOf(child))
-        val field = CascadeSelectBehaviorParent().kronosColumns().single { it.name == "child" }
+        val field = CascadeSelectBehaviorParent().__columns.single { it.name == "child" }
         val validRef = ValidCascade(field, field.cascade!!, CascadeSelectBehaviorChild(), CascadeSelectBehaviorParent().__tableName)
 
         CascadeSelectClause.setValues(
@@ -611,7 +611,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             operationType = KOperationType.UPDATE
         )
         val wrapper = CascadeRecordingWrapper(queryResults = mutableListOf(emptyList<KPojo>()))
-        val idField = CascadeDeleteBehaviorParent().kronosColumns().single { it.name == "id" }
+        val idField = CascadeDeleteBehaviorParent().__columns.single { it.name == "id" }
 
         @Suppress("UNCHECKED_CAST")
         val task = CascadeUpdateClause.build(
@@ -649,7 +649,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             operationType = KOperationType.UPDATE
         )
         val wrapper = CascadeRecordingWrapper(queryResults = mutableListOf(emptyList<KPojo>()))
-        val idField = CascadeActionParent().kronosColumns().single { it.name == "id" }
+        val idField = CascadeActionParent().__columns.single { it.name == "id" }
 
         @Suppress("UNCHECKED_CAST")
         val task = CascadeUpdateClause.build(
@@ -691,7 +691,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val wrapper = CascadeRecordingWrapper(
             queryResults = mutableListOf(listOf(parent), listOf(child))
         )
-        val idField = CascadeActionParent().kronosColumns().single { it.name == "id" }
+        val idField = CascadeActionParent().__columns.single { it.name == "id" }
 
         @Suppress("UNCHECKED_CAST")
         val task = CascadeUpdateClause.build(

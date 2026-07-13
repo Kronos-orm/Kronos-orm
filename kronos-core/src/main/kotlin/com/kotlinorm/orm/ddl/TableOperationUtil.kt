@@ -110,7 +110,7 @@ fun columnDiffer(
     current: List<Field>
 ): TableColumnDiff {
     fun String.columnKey(): String =
-        if (dbType == DBType.Oracle) uppercase() else this
+        if (dbType == DBType.Oracle || dbType == DBType.Mssql) uppercase() else this
 
     val currentByName = current.associateBy { it.columnName.columnKey() }
     val expectedNames = expect.map { it.columnName.columnKey() }.toSet()
@@ -122,10 +122,10 @@ fun columnDiffer(
         } else null
     }
 
-    val need2Move = if (dbType == DBType.SQLite) emptyList() else moveColumn(expect, current)
+    val need2Move = if (dbType == DBType.SQLite) emptyList() else moveColumn(expect, current, dbType)
     val toModified = expect.mapIndexedNotNull { index, col ->
         val tableColumn = currentByName[col.columnName.columnKey()]
-        if (tableColumn != null && (!col.sameDefinitionAs(tableColumn, dbType) || col.columnName in need2Move)
+        if (tableColumn != null && (!col.sameDefinitionAs(tableColumn, dbType) || col.columnName.columnKey() in need2Move)
         ) {
             Triple(col, if (index == 0) null else expect[index - 1], tableColumn)
         } else null
@@ -170,12 +170,15 @@ fun indexDiffer(
  */
 fun moveColumn(
     expect: List<Field>,
-    current: List<Field>
+    current: List<Field>,
+    dbType: DBType? = null
 ): List<String> {
+    fun String.columnKey(): String =
+        if (dbType == DBType.Oracle || dbType == DBType.Mssql) uppercase() else this
 
     // 取交集
-    val expectedNames = expect.map { it.columnName }.toSet()
-    val currentNames = current.map { it.columnName }.toSet()
+    val expectedNames = expect.map { it.columnName.columnKey() }.toSet()
+    val currentNames = current.map { it.columnName.columnKey() }.toSet()
 
     val filteredExpect = expectedNames.intersect(currentNames).toList()
     val filteredCurrent = currentNames.intersect(expectedNames).toList()

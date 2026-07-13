@@ -17,7 +17,7 @@ class PostgresTest {
 
     @Test
     fun testLongColumnTypeInference() {
-        val column = Account().kronosColumns()[0]
+        val column = Account().__columns[0]
         val statement = PostgresqlStatements.createTable(
             DatabaseCreateTable("account", null, listOf(column), emptyList())
         ).first()

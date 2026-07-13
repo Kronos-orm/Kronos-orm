@@ -21,7 +21,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.select.selectWithType
@@ -33,6 +32,7 @@ import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
@@ -43,7 +43,7 @@ object CascadeUpdateClause {
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
         targetType: KType,
-        kClass: KClass<KPojo>,
+        kClass: KClass<out KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         where: SqlExpr?,
@@ -57,18 +57,19 @@ object CascadeUpdateClause {
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
         targetType: KType,
-        kClass: KClass<KPojo>,
+        kClass: KClass<out KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         where: SqlExpr?,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
+        val metadata = pojo.resolveRuntimeMetadata()
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
         val validCascades = findValidRefs( // 获取有效的引用
-            kClass,
-            kPojoAllFieldsCache[kClass]!!,
+            metadata.kClass,
+            metadata.allFields,
             KOperationType.UPDATE,
-            cascadeAllowed?.filter { it.tableName == pojo.__tableName}?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
+            cascadeAllowed?.filter { it.tableName == metadata.tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
             cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
         ).filter { !it.mapperByThis }
 

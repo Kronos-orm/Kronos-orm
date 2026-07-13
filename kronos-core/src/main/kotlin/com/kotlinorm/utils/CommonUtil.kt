@@ -107,7 +107,7 @@ fun getSafeValue(
     if (strictSetValue) {
         return map[key]
     }
-    val column = kPojo.kronosColumns().find { it.name == key }
+    val column = kPojo.resolveRuntimeMetadata().allFields.find { it.name == key }
     return map[key]?.let { value ->
         val targetClass = kType.classifier as? KClass<*> ?: return@let value
         if (targetClass == value::class) {

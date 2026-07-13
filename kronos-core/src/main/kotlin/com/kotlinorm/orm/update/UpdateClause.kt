@@ -24,8 +24,6 @@ import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.cache.kPojoAllColumnsCache
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -47,6 +45,7 @@ import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KType
 
@@ -55,13 +54,19 @@ class UpdateClause<T : KPojo>(
     private val targetType: KType,
     setUpdateFields: ToSelect<T, Any?> = null
 ) {
+    private val metadata = pojo.resolveRuntimeMetadata()
     internal val context = OrmContext(
         pojo = pojo,
-        kClass = pojo.kClass(),
-        tableName = pojo.__tableName,
+        kClass = metadata.kClass,
+        tableName = metadata.tableName,
         operationType = KOperationType.UPDATE,
-        fields = kPojoAllColumnsCache[pojo.kClass()]!!,
-        allFields = kPojoAllFieldsCache[pojo.kClass()]!!.toList()
+        fields = metadata.allColumns,
+        allFields = metadata.allFields.toList(),
+        fieldMap = metadata.fieldMap,
+        createTimeStrategy = metadata.createTimeStrategy,
+        updateTimeStrategy = metadata.updateTimeStrategy,
+        logicDeleteStrategy = metadata.logicDeleteStrategy,
+        optimisticLockStrategy = metadata.optimisticLockStrategy
     )
     private val planner = UpdatePlanner(context)
     private val assignmentParameterCounter = mutableMapOf<String, Int>()

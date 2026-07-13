@@ -148,7 +148,7 @@ class SetTransformer(
                             val setValueArgument = if (value.isSelectableTypeHintValue()) {
                                 valueExpression
                             } else {
-                                valueExpression.deepCopyWithSymbols()
+                                valueExpression.copySetRuntimeValue()
                             }
                             statements += builder.irCall(setValueMethodSymbol).apply {
                                 dispatchReceiver = receiver()
@@ -168,7 +168,7 @@ class SetTransformer(
                                 dispatchReceiver = receiver()
                                 arguments[1] = builder.irString(if (element.origin == IrStatementOrigin.PLUSEQ) "+" else "-")
                                 arguments[2] = fieldExpr
-                                arguments[3] = value.deepCopyWithSymbols()
+                                arguments[3] = value.copySetRuntimeValue()
                             }
                         }
                     }
@@ -179,6 +179,10 @@ class SetTransformer(
         }
 
         return statements
+    }
+
+    private fun IrExpression.copySetRuntimeValue(): IrExpression {
+        return deepCopyWithSymbols(initialParent = irFunction)
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)

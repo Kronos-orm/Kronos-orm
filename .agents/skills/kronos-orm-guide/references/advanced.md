@@ -227,6 +227,8 @@ where { (it.age == nullableAge).ifNoValue(NoValueStrategyType.True) }
 where { (it.age == nullableAge).ifNoValue(NoValueStrategyType.False) }
 ```
 
+字面量 `where { it.age == null }` / `where { it.age != null }` 表示 SQL `IS NULL` / `IS NOT NULL`；动态变量为 `null` 时才进入无值策略。
+
 ---
 
 ## 序列化
@@ -560,7 +562,7 @@ User(id = 7, name = "seed", count = 2)
     .onConflict()
     .execute()
 
-val countField = User().kronosColumns().single { it.name == "count" }
+val countField = User().__columns.single { it.name == "count" }
 
 User(id = 8, name = "seed", count = 5)
     .upsert { it.name }

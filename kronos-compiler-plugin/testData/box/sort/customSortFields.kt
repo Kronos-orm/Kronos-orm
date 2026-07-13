@@ -12,7 +12,7 @@ data class CustomSortUser(
     var id: Int? = null,
     var name: String? = null,
 ) : KPojo {
-    fun column(name: String): Field = kronosColumns().single { it.name == name }
+    fun column(name: String): Field = __columns.single { it.name == name }
 }
 
 fun CustomSortUser.collectSort(block: ToSort<CustomSortUser, Any?>): List<Pair<Field, SqlOrdering>> {

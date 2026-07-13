@@ -12,7 +12,7 @@ data class OfficialUser(
 fun box(): String {
     val user = OfficialUser(7, "Ada")
     val map = user.toDataMap()
-    val columnNames = user.kronosColumns().map { it.name }.toSet()
+    val columnNames = user.__columns.map { it.name }.toSet()
 
     return when {
         user.__tableName != "tb_official_user" -> "Fail: table name was ${user.__tableName}"

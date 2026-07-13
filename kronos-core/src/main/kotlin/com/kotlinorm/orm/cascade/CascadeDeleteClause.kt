@@ -34,6 +34,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
@@ -71,7 +72,7 @@ object CascadeDeleteClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>?,
         targetType: KType,
-        kClass: KClass<KPojo>,
+        kClass: KClass<out KPojo>,
         pojo: T,
         where: SqlExpr?,
         paramMap: Map<String, Any?>,
@@ -85,7 +86,7 @@ object CascadeDeleteClause {
             pojo,
             where,
             paramMap,
-            pojo.kronosColumns(),
+            pojo.resolveRuntimeMetadata().allFields.toList(),
             logic,
             rootTask
         ) else rootTask.toKronosActionTask()
@@ -105,7 +106,7 @@ object CascadeDeleteClause {
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>?,
         targetType: KType,
-        kClass: KClass<KPojo>,
+        kClass: KClass<out KPojo>,
         pojo: T,
         where: SqlExpr?,
         paramMap: Map<String, Any?>,

@@ -35,7 +35,7 @@ import kotlin.reflect.KClass
 class KJoinable (
     val tableName: String,
     val joinType: SqlJoinType,
-    val kClass: KClass<KPojo>,
+    val kClass: KClass<out KPojo>,
     val kPojo: KPojo,
     val condition: SqlExpr? = null,
     val tableAliasOverrides: Map<String, String> = emptyMap()

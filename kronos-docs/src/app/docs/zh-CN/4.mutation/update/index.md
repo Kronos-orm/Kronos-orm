@@ -102,6 +102,26 @@ SET "age" = "age" + :age2PlusNew
 WHERE "id" = :id
 ```
 
+### 使用 Kotlin 表达式作为赋值
+
+`set` 赋值右侧可以是普通运行时 Kotlin 表达式。Kronos 会把表达式结果绑定为本次更新值。
+
+```kotlin group="Expression assignment" name="kotlin" icon="kotlin"
+fun displayName(): String? = null
+
+User(id = 1)
+    .update()
+    .set { it.name = displayName() ?: "匿名" }
+    .where()
+    .execute()
+```
+
+```sql group="Expression assignment" name="Mysql" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
+```
+
 ### 使用标量子查询赋值
 
 当更新值来自另一条查询时，可以在`set`中使用标量子查询。子查询选择一列，并使用`limit(1)`限定单值。

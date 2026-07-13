@@ -65,7 +65,7 @@ fun box(): String {
     val row = StringLiteralProjectionUser()
         .select { "computedAlias" }
         .first(wrapper)
-    val fieldNames = row.kronosColumns().map { it.name }
+    val fieldNames = row.__columns.map { it.name }
 
     val failures = listOfNotNull(
         expectStringLiteralProjection(row.computedAlias == "ready") { "computedAlias was ${row.computedAlias}" },

@@ -13,7 +13,7 @@ data class DiverseSetUser(
     var active: Boolean? = null,
     var amount: BigDecimal? = null,
 ) : KPojo {
-    fun column(name: String): Field = kronosColumns().single { it.name == name }
+    fun column(name: String): Field = __columns.single { it.name == name }
 }
 
 fun DiverseSetUser.collectSet(block: ToSet<DiverseSetUser, Unit>): Pair<List<Field>, Map<Field, Any?>> {

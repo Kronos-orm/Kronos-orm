@@ -3,7 +3,7 @@
 
 ## 定义 KPojo
 
-`KPojo` 是 Kronos 的表模型接口。一个类实现 `KPojo` 后，编译器插件会为它生成表名、列信息、主键策略和 `toDataMap()` 等运行时元数据，ORM 操作就可以从这个类读取表结构和字段值。
+`KPojo` 是 Kronos 的表模型接口。一个类实现 `KPojo` 后，Kronos 可以从它读取表元数据、`toDataMap()` 和对象值，ORM 操作就可以使用这个类上的表结构和字段值。
 
 第一个模型建议从一个小的 `data class` 开始。属性使用可空类型并提供默认值，方便 Kronos 在查询、插入、更新和结果映射时创建对象。
 
@@ -46,13 +46,19 @@ val users: List<User> = User()
 
 ## KPojo 会提供哪些元数据
 
-编译后，Kronos 可以从模型读取表名、字段列表和对象值。普通业务代码通常不需要直接调用这些方法，但它们解释了 ORM 如何生成 SQL。
+编译后，Kronos 可以从模型读取表名、表注释、字段列表、索引、策略字段和对象值。普通业务代码通常不需要读取每个元数据属性，但它们解释了 ORM 如何生成 SQL。
 
 ```kotlin group="KPojo 3" name="metadata" icon="kotlin"
 val user = User(id = 1, name = "Ada")
 
 val tableName = user.__tableName
-val columns = user.kronosColumns().map { it.name }
+val tableComment = user.__tableComment
+val columns = user.__columns.map { it.name }
+val indexes = user.__tableIndexes
+val createTime = user.__createTime
+val updateTime = user.__updateTime
+val logicDelete = user.__logicDelete
+val optimisticLock = user.__optimisticLock
 val values = user.toDataMap()
 ```
 
@@ -63,6 +69,44 @@ values -> {id=1, name=Ada, age=null}
 ```
 
 `@Ignore`、级联属性、序列化属性和时间策略会影响字段列表或写入参数。完整规则见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
+
+## 动态对象表
+
+表结构只在运行时确定时，可以创建一个手动实现 `KPojo` 的对象，并把 `__kClass` 设为 `KPojo::class`。这个对象同时携带元数据属性和普通 Kotlin 属性，因此可以继续使用 select DSL。显式重载的元数据属性需要标记 `@Ignore([IgnoreAction.ALL])`，避免它们被当作表字段。
+
+```kotlin group="KPojo Dynamic" name="dynamic table" icon="kotlin"
+import com.kotlinorm.annotations.Ignore
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableIndex
+import com.kotlinorm.enums.IgnoreAction
+import com.kotlinorm.interfaces.KPojo
+
+val runtimeUser = object : KPojo {
+    @Ignore([IgnoreAction.ALL])
+    override var __kClass: kotlin.reflect.KClass<out KPojo> = KPojo::class
+    @Ignore([IgnoreAction.ALL])
+    override var __tableName = "tb_runtime_user"
+    @Ignore([IgnoreAction.ALL])
+    override var __tableComment = "runtime user table"
+    @Ignore([IgnoreAction.ALL])
+    override var __columns = mutableListOf(
+        Field("id", "id"),
+        Field("name", "name")
+    )
+    @Ignore([IgnoreAction.ALL])
+    override var __tableIndexes = mutableListOf<KTableIndex>()
+
+    var id: Int? = 6
+    var name: String? = null
+}
+
+val user = runtimeUser
+    .select()
+    .where { it.id == 6 }
+    .firstOrNull()
+```
+
+动态对象表适合运行时决定表名或字段列表的场景。静态业务模型仍优先使用普通 `data class` KPojo 和注解定义。
 
 ## 创建表和查询
 

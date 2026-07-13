@@ -1068,7 +1068,10 @@ fun IrExpression.isKPojoProperty(): Boolean {
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrExpression.isKronosFieldExpression(): Boolean {
-    if (isKPojoProperty()) return true
-    val call = this as? IrCall ?: return false
-    return call.isKronosFunction() || call.operatorFunctionName() != null
+    return when {
+        isKPojoProperty() -> true
+        this !is IrCall -> false
+        isKronosFunction() -> true
+        else -> operatorFunctionName() != null
+    }
 }

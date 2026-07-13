@@ -117,6 +117,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun kpojoEquality() = box("kpojoEquality")
 
     /**
+     * Verifies KPojo equality with no column properties is ignored.
+     */
+    @Test
+    fun kpojoEqualityNoColumns() = box("kpojoEqualityNoColumns")
+
+    /**
      * Verifies no-argument comparison properties use current KPojo values.
      */
     @Test
@@ -153,6 +159,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun fieldValueCriteria() = box("fieldValueCriteria")
 
     /**
+     * Verifies literal null predicates and relationship safe-call field RHS expressions.
+     */
+    @Test
+    fun literalNullAndSafeCallFields() = box("literalNullAndSafeCallFields")
+
+    /**
      * Verifies operator function fields work inside comparisons and string match values.
      */
     @Test
@@ -163,6 +175,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
      */
     @Test
     fun fieldInSelectableSubquery() = box("fieldInSelectableSubquery")
+
+    /**
+     * Verifies query.contains(field) conditions produce syntax subquery operands.
+     */
+    @Test
+    fun selectableContainsFieldSubquery() = box("selectableContainsFieldSubquery")
 
     /**
      * Verifies negated field-in-selectable conditions keep syntax subquery operands.

@@ -32,7 +32,7 @@ data class ReferenceCastUser(
     var name: String? = null,
     var status: Int? = null,
 ) : KPojo {
-    fun column(name: String): Field = kronosColumns().single { it.name == name }
+    fun column(name: String): Field = __columns.single { it.name == name }
 }
 
 fun ReferenceCastUser.collectReferenceItems(block: ToReference<ReferenceCastUser, Any?>): List<Field> {

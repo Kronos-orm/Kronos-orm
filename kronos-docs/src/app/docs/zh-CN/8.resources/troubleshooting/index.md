@@ -36,14 +36,14 @@ BUILD SUCCESSFUL
 
 ## 检查 KPojo generated members
 
-`__tableName`、`toDataMap()`、`kronosColumns()` 和动态访问器会在 source set 经过 Kronos 编译后可用。
+`__tableName`、`toDataMap()`、`__columns` 和动态访问器会在 source set 经过 Kronos 编译后可用。
 
 ```kotlin group="KPojo Check" name="kotlin" icon="kotlin"
 val user = User(id = 7, name = "Ada")
 
 println(user.__tableName)
 println(user.toDataMap())
-println(user.kronosColumns().map { it.name })
+println(user.__columns.map { it.name })
 ```
 
 ```text group="KPojo Check" name="output"

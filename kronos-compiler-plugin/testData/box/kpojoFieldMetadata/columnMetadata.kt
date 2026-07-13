@@ -48,7 +48,7 @@ data class ColumnUser(
 ) : KPojo
 
 fun box(): String {
-    val columns = ColumnUser().kronosColumns()
+    val columns = ColumnUser().__columns
     fun column(name: String) = columns.singleOrNull { it.name == name }
         ?: error("missing column $name")
 

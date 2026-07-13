@@ -16,7 +16,7 @@ data class IgnoredUser(
 fun box(): String {
     val user = IgnoredUser(1, "secret", "write", "read", "normal")
     val map = user.toDataMap()
-    val columns = user.kronosColumns().map { it.name }.toSet()
+    val columns = user.__columns.map { it.name }.toSet()
     val patched = IgnoredUser().fromMapData<IgnoredUser>(
         mapOf(
             "id" to 2,

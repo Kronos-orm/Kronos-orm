@@ -299,9 +299,11 @@ with(Kronos) {
 单个条件需要局部空值规则时，在条件表达式上使用 `.ifNoValue(...)`。
 
 ```kotlin group="No value 1" name="ignore" icon="kotlin"
+val name: String? = null
+
 val users = User()
     .select()
-    .where { (it.name == null).ifNoValue(NoValueStrategyType.Ignore) }
+    .where { (it.name == name).ifNoValue(NoValueStrategyType.Ignore) }
     .toList()
 ```
 
@@ -310,12 +312,12 @@ SELECT `id`, `name`
 FROM `user`
 ```
 
-需要生成 SQL `IS NULL` 时，使用 `isNull`。
+需要生成 SQL `IS NULL` 时，使用 `== null` 或 `isNull`。
 
 ```kotlin group="No value 2" name="is null" icon="kotlin"
 val users = User()
     .select()
-    .where { it.name.isNull }
+    .where { it.name == null }
     .toList()
 ```
 

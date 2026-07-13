@@ -22,7 +22,6 @@ import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.First
 import com.kotlinorm.enums.QueryType.ToList
@@ -35,6 +34,7 @@ import com.kotlinorm.syntax.expr.SqlInRightOperand
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.utils.Extensions.patchTo
 import com.kotlinorm.utils.LinkedHashSet
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 
 /**
@@ -73,13 +73,14 @@ object CascadeSelectClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
-        kClass: KClass<KPojo>,
+        kClass: KClass<out KPojo>,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>,
         operationType: KOperationType,
         cascadeSelectedProps: Set<Field>
     ) = if (cascade) {
-        val tableName = pojo.__tableName
+        val metadata = pojo.resolveRuntimeMetadata()
+        val tableName = metadata.tableName
         val selectedFieldNames = selectFields.map { it.name }.toSet()
         val allowedCascadeFieldNames = cascadeAllowed
             ?.filter { it.tableName == tableName }
@@ -89,8 +90,8 @@ object CascadeSelectClause {
         generateTask(
             cascadeAllowed,
             pojo,
-            kClass,
-            kPojoAllFieldsCache[kClass]!!.filter {
+            metadata.kClass,
+            metadata.allFields.filter {
                 it.name in selectedFieldNames || it.name in allowedCascadeFieldNames
             },
             operationType,
@@ -116,13 +117,13 @@ object CascadeSelectClause {
     private fun generateTask(
         cascadeAllowed: Set<Field>?,
         pojo: KPojo,
-        kClass: KClass<KPojo>,
+        kClass: KClass<out KPojo>,
         columns: List<Field>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask,
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
-        val tableName = pojo.__tableName
+        val tableName = pojo.resolveRuntimeMetadata().tableName
         val selectedCascadeProps = cascadeSelectedProps.filter { it.tableName == tableName }
         val validCascades = findValidRefs(
             kClass,
@@ -223,7 +224,7 @@ object CascadeSelectClause {
     ) {
         if (parentRows.isEmpty()) return
         val parentFirst = parentRows.first()
-        val propField = parentFirst.kronosColumns().firstOrNull { it.name == prop }
+        val propField = parentFirst.resolveRuntimeMetadata().allFields.firstOrNull { it.name == prop }
         if (propField == null) {
             val key = "${parentFirst::class.simpleName}.$prop"
             if (cascadeFieldNotFoundWarned.add(key)) {
@@ -279,7 +280,7 @@ object CascadeSelectClause {
             if (parentRows.size > 1 && localProps.size > 1) {
                 val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
                 val remoteFields = remoteProps.map { remoteProp ->
-                    refPojo.kronosColumns().first { it.name == remoteProp }
+                    refPojo.resolveRuntimeMetadata().allFields.first { it.name == remoteProp }
                 }
                 val parentsByKey = linkedMapOf<CascadeKey, MutableList<KPojo>>()
                 for (row in parentRows) {
@@ -312,7 +313,8 @@ object CascadeSelectClause {
             for (row in parentRows) {
                 val fkPairs = buildFkPairs(row.toDataMap()) ?: continue
                 val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class, *fkPairs.toTypedArray())
-                val remoteFields = refPojo.kronosColumns().filter { field -> fkPairs.any { it.first == field.name } }
+                val remoteFields = refPojo.resolveRuntimeMetadata().allFields
+                    .filter { field -> fkPairs.any { it.first == field.name } }
                 val clause = cascadeSelect(refPojo).apply {
                     context.addFieldConditions(remoteFields, fkPairs.toMap())
                 }
@@ -334,7 +336,7 @@ object CascadeSelectClause {
         if (parentsByFk.isEmpty()) return
 
         val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
-        val remoteField = refPojo.kronosColumns().first { it.name == remoteProp }
+        val remoteField = refPojo.resolveRuntimeMetadata().allFields.first { it.name == remoteProp }
         val allChildren = mutableListOf<KPojo>()
         parentsByFk.keys.chunked(MAX_CASCADE_SELECT_PARAMETERS).forEach { keyChunk ->
             val condition = singleFkCondition(remoteField, keyChunk)

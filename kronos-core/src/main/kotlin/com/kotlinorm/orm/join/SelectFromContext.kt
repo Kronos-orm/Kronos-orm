@@ -17,13 +17,15 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.LinkedHashSet
+import com.kotlinorm.utils.KPojoRuntimeMetadata
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 internal class SelectFromContext<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     val root: T1
 ) {
-    private val rootKClass = root.kClass()
+    private var rootMetadata = root.resolveRuntimeMetadata()
 
     lateinit var projectionType: KType
     lateinit var nullableProjectionType: KType
@@ -33,7 +35,8 @@ internal class SelectFromContext<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     var paramMap: MutableMap<String, Any?> = root.toDataMap().toMutableMap()
     var logicDeleteStrategy = rootLogicDeleteStrategy()
     var allFields = rootColumns()
-    var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>> = mutableListOf(rootKClass to root)
+    var listOfPojo: MutableList<Pair<KClass<out KPojo>, KPojo>> = mutableListOf(rootMetadata.kClass to root)
+    private var metadataByPojo: MutableMap<KPojo, KPojoRuntimeMetadata> = mutableMapOf(root to rootMetadata)
 
     var where: SqlExpr? = null
     var having: SqlExpr? = null
@@ -63,11 +66,13 @@ internal class SelectFromContext<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     private val keyCounter = KeyCounter()
 
     fun setSources(vararg sources: KPojo) {
-        tableName = root.__tableName
+        rootMetadata = root.resolveRuntimeMetadata()
+        tableName = rootMetadata.tableName
         paramMap = linkedMapOf<String, Any?>().also { values ->
             sources.forEach { values.putAll(it.toDataMap()) }
         }
-        listOfPojo = sources.map { it.kClass() to it }.toMutableList()
+        metadataByPojo = sources.associateWith { it.resolveRuntimeMetadata() }.toMutableMap()
+        listOfPojo = sources.map { metadataByPojo.getValue(it).kClass to it }.toMutableList()
         logicDeleteStrategy = rootLogicDeleteStrategy()
         allFields = rootColumns()
     }
@@ -103,7 +108,7 @@ internal class SelectFromContext<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     }
 
     fun fieldsMap(): Map<String, Field> {
-        val fields = listOfPojo.flatMap { it.second.kronosColumns() }
+        val fields = listOfPojo.flatMap { metadataByPojo.getValue(it.second).allFields }
         return fields.associateBy { it.name } + fields.associateBy { it.columnName }
     }
 
@@ -118,12 +123,10 @@ internal class SelectFromContext<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     }
 
     private fun rootColumns(): List<Field> =
-        root.kronosColumns().filter { it.isColumn }
+        rootMetadata.allColumns
 
     private fun rootLogicDeleteStrategy() =
-        root.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(root.__tableName)?.takeIf {
-            strategy -> rootColumns().any { it.name == strategy.field.name }
-        }
+        rootMetadata.logicDeleteStrategy
 
     private data class KeyCounter(
         val metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()

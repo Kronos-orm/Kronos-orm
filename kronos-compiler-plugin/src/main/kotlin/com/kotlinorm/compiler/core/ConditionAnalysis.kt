@@ -46,6 +46,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
@@ -130,6 +131,13 @@ private data class ConditionOperand(
     val field: IrExpression?,
     val sqlExpr: IrExpression?
 )
+
+private data class NullGuard(
+    val subject: IrExpression,
+    val isNullWhenTrue: Boolean
+) {
+    fun inverted(): NullGuard = copy(isNullWhenTrue = !isNullWhenTrue)
+}
 
 context(context: IrPluginContext, builder: IrBlockBuilder)
 fun analyzeAndBuildSqlExpr(
@@ -585,6 +593,10 @@ internal fun extractFieldExpression(irFunction: IrFunction, expression: IrExpres
             else -> null
         }
         is IrPropertyReference -> buildFieldFromPropertyRef(expression, errorReporter)
+        is IrBlock -> expression.safeCallNullGuardedFieldExpression()
+            ?.let { extractFieldExpression(irFunction, it, errorReporter) }
+        is IrWhen -> expression.explicitNullGuardedFieldExpression()
+            ?.let { extractFieldExpression(irFunction, it, errorReporter) }
         // Handle !! (not-null assertion) — unwrap and extract from the inner expression
         is IrTypeOperatorCall -> extractFieldExpression(irFunction, expression.argument, errorReporter)
         else -> null
@@ -642,21 +654,172 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
             }
             expression.isKronosFunction() -> {
                 // For function calls, try to extract table name from the first field argument
-                expression.valueArguments.filterNotNull().firstNotNullOfOrNull { arg ->
-                    extractTableNameExpr(arg)
-                }
+                expression.valueArguments.filterNotNull()
+                    .mapNotNull { arg -> extractTableNameExpr(arg) }
+                    .firstOrNull()
             }
             expression.operatorFunctionName() != null -> {
-                expression.operatorOperands().firstNotNullOfOrNull { arg ->
-                    extractTableNameExpr(arg)
-                }
+                expression.operatorOperands()
+                    .mapNotNull { arg -> extractTableNameExpr(arg) }
+                    .firstOrNull()
             }
             else -> null
         }
+        is IrBlock -> expression.safeCallNullGuardedFieldExpression()?.let { extractTableNameExpr(it) }
+        is IrWhen -> expression.explicitNullGuardedFieldExpression()?.let { extractTableNameExpr(it) }
         is IrTypeOperatorCall -> extractTableNameExpr(expression.argument)
         else -> null
     }
 }
+
+private fun IrExpression.isLiteralNullExpression(): Boolean =
+    when (this) {
+        is IrConst -> kind == IrConstKind.Null || value == null
+        is IrTypeOperatorCall -> argument.isLiteralNullExpression()
+        else -> false
+    }
+
+private fun IrBlock.safeCallNullGuardedFieldExpression(): IrExpression? {
+    if (origin != IrStatementOrigin.SAFE_CALL) return null
+    val whenExpression = statements.lastOrNull() as? IrWhen ?: return null
+    return whenExpression.nullGuardedFieldExpression()
+}
+
+private fun IrWhen.explicitNullGuardedFieldExpression(): IrExpression? {
+    if (origin != IrStatementOrigin.IF && origin != IrStatementOrigin.WHEN) return null
+    return nullGuardedFieldExpression()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrWhen.nullGuardedFieldExpression(): IrExpression? {
+    if (branches.size != 2) return null
+
+    val nullBranch = branches.singleOrNull { it.result.isLiteralNullExpression() } ?: return null
+    val fieldBranch = branches.singleOrNull { it !== nullBranch } ?: return null
+    val fieldExpression = fieldBranch.result.directFieldGetterExpression() ?: return null
+    val fieldReceiver = fieldExpression.fieldReceiver() ?: return null
+
+    val nullGuard = nullBranch.condition.nullGuard()
+    val fieldGuard = fieldBranch.condition.nullGuard()
+    val hasNullGuard = nullGuard?.isNullWhenTrue == true
+    val hasFieldGuard = fieldGuard?.isNullWhenTrue == false
+    return when {
+        hasNullGuard &&
+            fieldBranch.condition.isTrueConst() &&
+            fieldReceiver.matchesGuardSubject(nullGuard.subject) -> fieldExpression
+
+        hasFieldGuard &&
+            nullBranch.condition.isTrueConst() &&
+            fieldReceiver.matchesGuardSubject(fieldGuard.subject) -> fieldExpression
+
+        hasNullGuard &&
+            hasFieldGuard &&
+            nullGuard.subject.structurallyMatches(fieldGuard.subject) &&
+            fieldReceiver.matchesGuardSubject(nullGuard.subject) -> fieldExpression
+
+        else -> null
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.directFieldGetterExpression(): IrCall? =
+    when (this) {
+        is IrCall -> {
+            val propName = symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
+            if (origin == IrStatementOrigin.GET_PROPERTY && propName != "value") this else null
+        }
+        is IrTypeOperatorCall -> argument.directFieldGetterExpression()
+        else -> null
+    }
+
+private fun IrExpression.isTrueConst(): Boolean =
+    this is IrConst && value == true
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.nullGuard(): NullGuard? {
+    return when (this) {
+        is IrCall -> when (origin) {
+            IrStatementOrigin.EQEQ -> nullGuardFromEquality(isNullWhenTrue = true)
+            IrStatementOrigin.EXCLEQ -> {
+                if (isEqualityFunction()) {
+                    nullGuardFromEquality(isNullWhenTrue = false)
+                } else {
+                    nullGuardFromExclEqWrapper()
+                }
+            }
+            else -> if (origin == IrStatementOrigin.EXCL || funcName() == "not") {
+                singleNullGuardArgument()?.nullGuard()?.inverted()
+            } else {
+                null
+            }
+        }
+        is IrTypeOperatorCall -> argument.nullGuard()
+        else -> null
+    }
+}
+
+private fun IrCall.singleNullGuardArgument(): IrExpression? =
+    arguments.filterNotNull().singleOrNull()
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.nullGuardFromExclEqWrapper(): NullGuard? {
+    val inner = arguments.filterNotNull().singleOrNull() ?: return null
+    val guard = inner.nullGuard() ?: return null
+    return if (inner is IrCall && inner.origin == IrStatementOrigin.EXCLEQ && inner.isEqualityFunction()) {
+        guard
+    } else {
+        guard.inverted()
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.nullGuardFromEquality(isNullWhenTrue: Boolean): NullGuard? {
+    val left = getValueArgumentSafe(0) ?: return null
+    val right = getValueArgumentSafe(1) ?: return null
+    return when {
+        left.isLiteralNullExpression() && !right.isLiteralNullExpression() ->
+            NullGuard(right, isNullWhenTrue)
+        right.isLiteralNullExpression() && !left.isLiteralNullExpression() ->
+            NullGuard(left, isNullWhenTrue)
+        else -> null
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.isEqualityFunction(): Boolean {
+    val functionName = symbol.owner.name.asString()
+    return functionName == "EQEQ" || functionName == "ieee754equals"
+}
+
+private fun IrExpression.matchesGuardSubject(subject: IrExpression): Boolean =
+    unwrapFieldChainWrapper().structurallyMatches(subject)
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.structurallyMatches(other: IrExpression): Boolean {
+    val left = unwrapFieldChainWrapper()
+    val right = other.unwrapFieldChainWrapper()
+    return when {
+        left is IrGetValue && right is IrGetValue -> left.symbol == right.symbol
+        left is IrCall && right is IrCall -> {
+            if (left.origin != IrStatementOrigin.GET_PROPERTY || right.origin != IrStatementOrigin.GET_PROPERTY) return false
+            if (left.symbol != right.symbol) return false
+            val leftReceiver = left.fieldReceiver() ?: return false
+            val rightReceiver = right.fieldReceiver() ?: return false
+            leftReceiver.structurallyMatches(rightReceiver)
+        }
+        else -> false
+    }
+}
+
+private fun IrExpression.unwrapFieldChainWrapper(): IrExpression =
+    when (this) {
+        is IrTypeOperatorCall -> argument.unwrapFieldChainWrapper()
+        else -> this
+    }
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.fieldReceiver(): IrExpression? =
+    dispatchReceiverArgument ?: extensionReceiverArgument
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrClass.isGeneratedProjectionClass(): Boolean =
@@ -688,6 +851,8 @@ private fun buildEqualSqlExpr(
     not: Boolean,
     errorReporter: ErrorReporter
 ): IrExpression? {
+    buildLiteralNullSqlExpr(irFunction, left, right, not, errorReporter)?.let { return it }
+
     val leftField = extractFieldExpression(irFunction, left, errorReporter)
     val rightField = extractFieldExpression(irFunction, right, errorReporter)
     val leftSql = extractSqlExpression(irFunction, left, errorReporter)
@@ -742,6 +907,33 @@ private fun buildEqualSqlExpr(
             )
         }
     }
+}
+
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildLiteralNullSqlExpr(
+    irFunction: IrFunction,
+    left: IrExpression,
+    right: IrExpression,
+    not: Boolean,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    val fieldSource = when {
+        left.isLiteralNullExpression() && !right.isLiteralNullExpression() -> right
+        right.isLiteralNullExpression() && !left.isLiteralNullExpression() -> left
+        else -> return null
+    }
+    val fieldExpr = extractFieldExpression(irFunction, fieldSource, errorReporter)
+    val sqlExpr = extractSqlExpression(irFunction, fieldSource, errorReporter)
+    if (fieldExpr == null && sqlExpr == null) return null
+
+    return buildConditionSqlExpr(
+        irFunction,
+        field = fieldExpr ?: functionMetadataField(fieldSource),
+        sqlExpr = sqlExpr,
+        kind = ConditionExpressionKind.IsNull,
+        not = not,
+        tableName = extractTableNameExpr(fieldSource)
+    )
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)

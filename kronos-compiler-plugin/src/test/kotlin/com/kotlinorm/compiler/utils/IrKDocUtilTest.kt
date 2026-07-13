@@ -351,4 +351,36 @@ class IrKDocUtilTest {
         val comment = extractDeclarationComment(lines, 2..2)
         assertEquals("Block", comment)
     }
+
+    @Test
+    fun `extractDeclarationComment concatenates adjacent single-line comments above annotations`() {
+        val lines = [
+            "// First",
+            "// Second",
+            "@Column",
+            "val name: String"
+        ]
+        val comment = extractDeclarationComment(lines, 3..3)
+        assertEquals("FirstSecond", comment)
+    }
+
+    @Test
+    fun `extractDeclarationComment returns null when requested range starts out of range`() {
+        val lines = [
+            "// Above",
+            "val name: String"
+        ]
+        val comment = extractDeclarationComment(lines, 2..4)
+        assertNull(comment)
+    }
+
+    @Test
+    fun `realStartOffset handles inline multi-line comment followed by annotation`() {
+        val lines = [
+            "/* comment */",
+            "@Column",
+            "val name: String"
+        ]
+        assertEquals(2, realStartOffset(lines, 0))
+    }
 }

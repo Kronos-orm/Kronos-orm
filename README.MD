@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://www.kotlinorm.com">
-        <img src="https://cdn.leinbo.com/assets/images/kronos/logo_dark.png" alt="logo" height="256" width="256">
+        <img src="assets/logo_dark.png" alt="logo" height="256" width="256">
     </a>
 </p>
 
@@ -41,6 +41,12 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 
 [Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
+
+<p align="center">
+  <a href="https://github.com/Kronos-orm/Kronos-orm/stargazers">
+    <img src="assets/github-star-zoom.svg" alt="Star Kronos ORM on GitHub" width="820">
+  </a>
+</p>
 
 --------
 
@@ -444,7 +450,13 @@ val dataMap: Map<String, Any?> = movie.toDataMap()
 val movie2: Movie = dataMap.mapperTo<Movie>()
 
 val tableName = movie.__tableName // readable and writable
-val columns = movie.kronosColumns()
+val tableComment = movie.__tableComment
+val columns = movie.__columns
+val indexes = movie.__tableIndexes
+val createTime = movie.__createTime
+val updateTime = movie.__updateTime
+val logicDelete = movie.__logicDelete
+val optimisticLock = movie.__optimisticLock
 
 instance["fieldName"]
 instance["fieldName"] = "value"

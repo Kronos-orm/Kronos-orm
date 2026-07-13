@@ -131,14 +131,14 @@ fun box(): String {
     val listStatement = list.toSqlQuery() as SqlQuery.Select
 
     val failures = listOfNotNull(
-        expect(directRow.kronosColumns().map { it.name } == listOf("lastAmount")) {
-            "direct fields were ${directRow.kronosColumns().map { it.name }}"
+        expect(directRow.__columns.map { it.name } == listOf("lastAmount")) {
+            "direct fields were ${directRow.__columns.map { it.name }}"
         },
-        expect(collectionRow.kronosColumns().map { it.name }.toSet() == setOf("id", "latestAmount")) {
-            "collection fields were ${collectionRow.kronosColumns().map { it.name }}"
+        expect(collectionRow.__columns.map { it.name }.toSet() == setOf("id", "latestAmount")) {
+            "collection fields were ${collectionRow.__columns.map { it.name }}"
         },
-        expect(listRow.kronosColumns().map { it.name }.toSet() == setOf("id", "listAmount")) {
-            "list fields were ${listRow.kronosColumns().map { it.name }}"
+        expect(listRow.__columns.map { it.name }.toSet() == setOf("id", "listAmount")) {
+            "list fields were ${listRow.__columns.map { it.name }}"
         },
         expect(directStatement.hasScalarAlias("lastAmount")) { "direct aliases were ${directStatement.aliases()}" },
         expect(collectionStatement.hasScalarAlias("latestAmount")) { "collection aliases were ${collectionStatement.aliases()}" },

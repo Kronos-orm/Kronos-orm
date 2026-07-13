@@ -2,7 +2,7 @@
 
 ## Kotlin Type Inference
 
-Kronos infers a `KColumnType` for each persisted `KPojo` property when the property does not use {{ $.keyword("mapping/annotations", ["Annotation Settings", "@ColumnType column type and length"]) }}. The inferred value is visible from `kronosColumns()` and is used by table DDL.
+Kronos infers a `KColumnType` for each persisted `KPojo` property when the property does not use {{ $.keyword("mapping/annotations", ["Annotation Settings", "@ColumnType column type and length"]) }}. The inferred value is visible from `__columns` and is used by table DDL.
 
 ```kotlin name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.Table
@@ -17,7 +17,7 @@ data class TypeProfile(
     var createdAt: LocalDateTime? = null,
 ) : KPojo
 
-val types = TypeProfile().kronosColumns().associate { it.name to it.type }
+val types = TypeProfile().__columns.associate { it.name to it.type }
 ```
 
 Result:
@@ -63,7 +63,7 @@ Use the table as a compact reference for the automatic mapping. The final DDL ty
 
 ## Override With {{ $.annotation("ColumnType") }}
 
-Use `@ColumnType` to set the column type for one property. The annotation value replaces the inferred type in `kronosColumns()`.
+Use `@ColumnType` to set the column type for one property. The annotation value replaces the inferred type in `__columns`.
 
 ```kotlin name="kotlin" icon="kotlin" {8,10}
 import com.kotlinorm.annotations.ColumnType
@@ -79,7 +79,7 @@ data class OverrideType(
     var externalId: String? = null,
 ) : KPojo
 
-val columns = OverrideType().kronosColumns().associate { it.name to it.type }
+val columns = OverrideType().__columns.associate { it.name to it.type }
 ```
 
 Result:

@@ -6,6 +6,7 @@ import {TranslocoService} from "@jsverse/transloco";
 import {NavigationEnd, Router, RouterLink} from "@angular/router";
 import {NgDocThemeToggleComponent} from "@ng-doc/app";
 import {NgDocThemeService} from "@ng-doc/app/services/theme";
+import {NgDocSidebarService} from "@ng-doc/app/services/sidebar";
 import {NgDocButtonIconComponent, NgDocIconComponent, NgDocTooltipDirective} from "@ng-doc/ui-kit";
 import {WikiComponent} from "../../components/wiki.component";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -37,6 +38,7 @@ export class DocumentationComponent implements OnDestroy {
 
     private destroyRef = inject(DestroyRef);
     private themeService = inject(NgDocThemeService);
+    private sidebarService = inject(NgDocSidebarService);
     private copyObserver: MutationObserver | null = null;
     private turndown: TurndownService;
 
@@ -103,6 +105,23 @@ export class DocumentationComponent implements OnDestroy {
             this.appService.language = routeLanguage;
             this.translocoService.setActiveLang(routeLanguage);
         }
+    }
+
+    get sidebarToggleTooltip(): string {
+        if (this.sidebarService.isMobile) {
+            return 'Open sidebar';
+        }
+
+        return this.sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar';
+    }
+
+    toggleSidebar(): void {
+        if (this.sidebarService.isMobile) {
+            this.sidebarService.toggle();
+            return;
+        }
+
+        this.sidebarCollapsed = !this.sidebarCollapsed;
     }
 
     private injectCopyButton(): void {

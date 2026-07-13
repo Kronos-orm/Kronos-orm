@@ -44,7 +44,7 @@ data class InferredTypeUser(
 ) : KPojo
 
 fun box(): String {
-    val actual = InferredTypeUser().kronosColumns().associate { it.name to it.type }
+    val actual = InferredTypeUser().__columns.associate { it.name to it.type }
     val expected = linkedMapOf(
         "boolValue" to KColumnType.BIT,
         "byteValue" to KColumnType.TINYINT,

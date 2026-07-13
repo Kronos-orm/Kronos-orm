@@ -100,7 +100,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
 
     @Test
     fun `on conflict assignment can reuse another field expression`() {
-        val countField = UpsertBehaviorUser().kronosColumns().single { it.name == "count" }
+        val countField = UpsertBehaviorUser().__columns.single { it.name == "count" }
         val task = UpsertBehaviorUser(id = 8, name = "seed", count = 5)
             .upsert { it.name }
             .patch("name" to countField)
@@ -149,7 +149,6 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
                 .onConflict()
                 .build()
 
-            assertEquals("code", pojo.kronosPrimaryKey().field.name)
             val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
             assertEquals(listOf(SqlIdentifier.of("code")), statement.primaryKeys)
             assertEquals(SqlConflictTarget(columns = listOf(SqlIdentifier.of("code"))), statement.conflictTarget)
@@ -166,9 +165,9 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
             .onConflict()
             .build()
 
-        val columnByName = pojo.kronosColumns().associateBy { it.columnName }
-        assertEquals(listOf("email"), pojo.kronosTableIndex().single().columns.toList())
-        assertEquals(listOf("email"), pojo.kronosTableIndex().single().columns.map { columnByName.getValue(it).name })
+        val columnByName = pojo.__columns.associateBy { it.columnName }
+        assertEquals(listOf("email"), pojo.__tableIndexes.single().columns.toList())
+        assertEquals(listOf("email"), pojo.__tableIndexes.single().columns.map { columnByName.getValue(it).name })
 
         val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
         assertEquals(listOf(SqlIdentifier.of("email")), statement.primaryKeys)
@@ -183,9 +182,9 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
             .onConflict()
             .build()
 
-        val columnByName = pojo.kronosColumns().associateBy { it.columnName }
-        assertEquals(listOf("tenant_id", "email"), pojo.kronosTableIndex().single().columns.toList())
-        assertEquals(listOf("tenantId", "email"), pojo.kronosTableIndex().single().columns.map { columnByName.getValue(it).name })
+        val columnByName = pojo.__columns.associateBy { it.columnName }
+        assertEquals(listOf("tenant_id", "email"), pojo.__tableIndexes.single().columns.toList())
+        assertEquals(listOf("tenantId", "email"), pojo.__tableIndexes.single().columns.map { columnByName.getValue(it).name })
 
         val statement = task.atomicTasks.single().statement as SqlDmlStatement.Upsert
         assertEquals(listOf(SqlIdentifier.of("tenant_id"), SqlIdentifier.of("email")), statement.primaryKeys)

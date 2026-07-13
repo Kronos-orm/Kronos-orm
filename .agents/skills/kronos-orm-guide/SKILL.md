@@ -156,11 +156,47 @@ data class Movie(
 
 Code First 项目以 KPojo 类作为表结构元数据来源。定义 `@Table`、`@Column`、`@PrimaryKey`、`@TableIndex` 等注解后，使用 `Kronos.dataSource.table.createTable(User())` 创建表，或使用 `Kronos.dataSource.table.syncTable(User())` 同步已有表。已有数据库元数据需要反向生成 KPojo 时，使用 Database First / Codegen。
 
+当前 KPojo 元数据 API 使用属性：`__kClass`、`__tableName`、`__tableComment`、`__columns`、`__tableIndexes`、`__createTime`、`__updateTime`、`__logicDelete`、`__optimisticLock`。回答用户时不要把 legacy metadata functions 当作当前 API；读取列元数据用 `__columns`。
+
+动态对象表是手动实现的 `KPojo` 实例，必须把 `__kClass` 设为 `KPojo::class` 作为运行时表模型标记。它适合运行时决定表名或字段列表的场景，静态业务模型仍优先使用普通 `data class` KPojo 和注解。显式重载的元数据属性需要标记 `@Ignore([IgnoreAction.ALL])`，避免它们被当作表字段。
+
+```kotlin
+import com.kotlinorm.annotations.Ignore
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableIndex
+import com.kotlinorm.enums.IgnoreAction
+import com.kotlinorm.interfaces.KPojo
+
+val runtimeUser = object : KPojo {
+    @Ignore([IgnoreAction.ALL])
+    override var __kClass: kotlin.reflect.KClass<out KPojo> = KPojo::class
+    @Ignore([IgnoreAction.ALL])
+    override var __tableName = "tb_runtime_user"
+    @Ignore([IgnoreAction.ALL])
+    override var __tableComment = "runtime user table"
+    @Ignore([IgnoreAction.ALL])
+    override var __columns = mutableListOf(
+        Field("id", "id"),
+        Field("name", "name")
+    )
+    @Ignore([IgnoreAction.ALL])
+    override var __tableIndexes = mutableListOf<KTableIndex>()
+
+    var id: Int? = 6
+    var name: String? = null
+}
+
+val user = runtimeUser
+    .select()
+    .where { it.id == 6 }
+    .firstOrNull()
+```
+
 ---
 
 ## Kotlin 类型与列类型
 
-属性没有显式 `@ColumnType` 时，编译器插件会按 Kotlin 类型推断 `KColumnType`。推断结果可从 `kronosColumns()` 读取，也会参与 `createTable` 和 `syncTable` 的 DDL 渲染。
+属性没有显式 `@ColumnType` 时，编译器插件会按 Kotlin 类型推断 `KColumnType`。推断结果可从 `__columns` 读取，也会参与 `createTable` 和 `syncTable` 的 DDL 渲染。
 
 常用自动映射：
 
@@ -837,6 +873,10 @@ user.update { it.name }.by { it.id }.execute()
 
 // 条件更新
 User().update().set { it.age = 20 }.where { it.name == "Kronos" }.execute()
+
+// set 右侧可以使用普通运行时 Kotlin 表达式
+fun getName(): String? = null
+User(id = 1).update().set { it.name = getName() ?: "匿名" }.where().execute()
 ```
 
 `by` 用于指定匹配条件字段（取对象中的值），`where` 用于自定义条件表达式。
@@ -1206,7 +1246,7 @@ User(id = 7, name = "seed", count = 2)
 `patch(...)` 支持的动态冲突更新值包括 `SqlExpr`、`KronosFunctionExpr`、`Field` 和标量 `KSelectable`：
 
 ```kotlin
-val countField = User().kronosColumns().single { it.name == "count" }
+val countField = User().__columns.single { it.name == "count" }
 
 User(id = 8, name = "seed", count = 5)
     .upsert { it.name }
@@ -1361,8 +1401,14 @@ where { it.name.contains("ron") }
 where { it.name regexp "Kronos.*" }
 
 // NULL 判断
+where { it.name == null }
+where { it.name != null }
 where { it.name.isNull }
 where { it.name.notNull }
+
+// 级联关系字段链推荐用安全调用；Kronos 读取字段元数据，不读取运行时对象
+where { it.directorId == it.director?.id }
+// it.director!!.id 也支持
 
 // 逻辑组合
 where { (it.age > 18) && (it.name like "K%") }
@@ -1391,7 +1437,7 @@ where { (it.age == age).ifNoValue(NoValueStrategyType.Ignore) }
 where { (it.age == age).ifNoValue(NoValueStrategyType.False) }
 ```
 
-`select().where()` 在没有可查询非空字段时保留无条件查询。`update().where()` 和 `delete().where()` 没有可查询字段时进入写入安全检查，建议启用 DataGuard 统一拦截全表写入。逻辑删除字段、级联字段、非数据库列和忽略字段不参与空 `where()` 的 query-by-example 条件。对象属性值为 `null` 时不会由空 `where()` 生成 `IS NULL`；需要 SQL NULL 判断时使用 `where { it.field.isNull }`。
+`select().where()` 在没有可查询非空字段时保留无条件查询。`update().where()` 和 `delete().where()` 没有可查询字段时进入写入安全检查，建议启用 DataGuard 统一拦截全表写入。逻辑删除字段、级联字段、非数据库列和忽略字段不参与空 `where()` 的 query-by-example 条件。对象属性值为 `null` 时不会由空 `where()` 生成 `IS NULL`；需要 SQL NULL 判断时使用 `where { it.field == null }` 或 `where { it.field.isNull }`。动态变量值为 `null` 时仍走无值策略，例如 `where { it.field == value }`。
 
 ---
 
@@ -1531,7 +1577,7 @@ val (sql, params, atomicTasks) = truncateTask
 
 - 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.1`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.1` 和数据库 driver 的当前稳定版。
 - 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
-- 检查 KPojo generated members：`__tableName`、`toDataMap()`、`kronosColumns()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
+- 检查 KPojo generated members：`__kClass`、`__tableName`、`__tableComment`、`__columns`、`__tableIndexes`、`__createTime`、`__updateTime`、`__logicDelete`、`__optimisticLock` 和 `toDataMap()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。
 - 数据源未配置：设置 `Kronos.dataSource = { wrapper }`，或在结果方法中传入具体 `KronosDataSourceWrapper`。
 - 方言输出不符合预期：打印 `wrapper.dbType` 与 `wrapper.sqlDialect`。

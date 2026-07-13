@@ -20,6 +20,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.resolveRuntimeMetadata
 
 /**
  * Holds information about a node in the ORM cascade operation tree.
@@ -74,18 +75,19 @@ data class NodeOfKPojo(
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     var insertIgnore = false // 该字段用于判断是否忽略插入
+    private val metadata = kPojo.resolveRuntimeMetadata()
     internal val dataMap = kPojo.toDataMap()
     internal val validCascades by lazy {
-        val tableName = kPojo.__tableName
+        val tableName = metadata.tableName
         findValidRefs(
-            kPojo.kClass(),
-            kPojo.kronosColumns(),
+            metadata.kClass,
+            metadata.allFields,
             operationType,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(),
             cascadeAllowed.isNullOrEmpty(),
         )
     }
-    val tableName by lazy { kPojo.__tableName }
+    val tableName by lazy { metadata.tableName }
 
     init {
         // Patches data from the parent node to this node. This includes updating fields and parameters

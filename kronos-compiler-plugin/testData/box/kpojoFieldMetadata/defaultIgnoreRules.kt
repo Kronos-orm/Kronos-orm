@@ -28,7 +28,7 @@ data class DefaultIgnoredUser(
 
 fun box(): String {
     val user = DefaultIgnoredUser(1, "secret", "Ada")
-    val columns = user.kronosColumns().map { it.name }.toSet()
+    val columns = user.__columns.map { it.name }.toSet()
     val map = user.toDataMap()
     val patched = DefaultIgnoredUser().fromMapData<DefaultIgnoredUser>(
         mapOf("id" to 2, "secret" to "changed", "name" to "Grace")

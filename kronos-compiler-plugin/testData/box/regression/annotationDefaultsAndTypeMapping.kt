@@ -24,7 +24,7 @@ data class TypeMappedUser(
 ) : KPojo
 
 fun box(): String {
-    val columns = TypeMappedUser().kronosColumns()
+    val columns = TypeMappedUser().__columns
     fun typeOf(name: String): KColumnType {
         return columns.singleOrNull { it.name == name }?.type
             ?: error("missing column $name")

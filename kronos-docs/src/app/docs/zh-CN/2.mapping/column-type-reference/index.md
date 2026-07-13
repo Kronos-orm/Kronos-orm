@@ -16,7 +16,7 @@ data class ColumnTypeCatalog(
     var code: String? = null,
 ) : KPojo
 
-val code = ColumnTypeCatalog().kronosColumns().single { it.name == "code" }
+val code = ColumnTypeCatalog().__columns.single { it.name == "code" }
 ```
 
 结果：

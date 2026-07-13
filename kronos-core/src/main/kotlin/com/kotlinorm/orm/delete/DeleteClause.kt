@@ -22,7 +22,6 @@ import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -40,15 +39,22 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KType
 
 class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
+    private val metadata = pojo.resolveRuntimeMetadata()
     internal val context = OrmContext(
         pojo = pojo,
-        kClass = pojo.kClass(),
-        tableName = pojo.__tableName,
+        kClass = metadata.kClass,
+        tableName = metadata.tableName,
         operationType = KOperationType.DELETE,
-        fields = kPojoAllColumnsCache[pojo.kClass()]!!
+        fields = metadata.allColumns,
+        allFields = metadata.allFields.toList(),
+        fieldMap = metadata.fieldMap,
+        updateTimeStrategy = metadata.updateTimeStrategy,
+        logicDeleteStrategy = metadata.logicDeleteStrategy,
+        optimisticLockStrategy = metadata.optimisticLockStrategy
     )
     private val planner = DeletePlanner(context)
 

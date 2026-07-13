@@ -1,0 +1,170 @@
+name: Kronos example projects
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  MYSQL_DRIVER: com.mysql.cj.jdbc.Driver
+  MYSQL_JDBC_URL: jdbc:mysql://127.0.0.1:3306/kronos_testing
+  MYSQL_USERNAME: kronos
+  MYSQL_PASSWORD: kronos
+
+jobs:
+  examples:
+    name: Run example projects
+    runs-on: ubuntu-22.04
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: kronos_testing
+          MYSQL_USER: kronos
+          MYSQL_PASSWORD: kronos
+          MYSQL_ROOT_PASSWORD: kronos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ukronos -pkronos"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout Kronos
+        uses: actions/checkout@v6
+        with:
+          path: kronos-orm
+          persist-credentials: false
+
+      - name: Checkout Ktor example
+        uses: actions/checkout@v6
+        with:
+          repository: Kronos-orm/kronos-example-ktor
+          path: kronos-example-ktor
+          persist-credentials: false
+
+      - name: Checkout Spring Boot example
+        uses: actions/checkout@v6
+        with:
+          repository: Kronos-orm/kronos-example-spring-boot
+          path: kronos-example-spring-boot
+          persist-credentials: false
+
+      - name: Checkout Solon example
+        uses: actions/checkout@v6
+        with:
+          repository: Kronos-orm/kronos-example-solon
+          path: kronos-example-solon
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Detect Kronos version
+        working-directory: kronos-orm
+        run: |
+          set -euo pipefail
+          version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+          kotlin_version=$(grep -E '^kotlin\s*=\s*"[^"]+"' libs.versions.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+          echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
+          echo "Using Kronos version ${version}"
+          echo "Using Kotlin version ${kotlin_version}"
+
+      - name: Publish current Kronos artifacts to Maven local
+        working-directory: kronos-orm
+        run: ./gradlew publishAllToMavenLocal --no-daemon --console=plain -x test
+
+      - name: Point examples to current Kronos version
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["KRONOS_EXAMPLE_VERSION"]
+          kotlin_version = os.environ["KRONOS_EXAMPLE_KOTLIN_VERSION"]
+          replacements = {
+              "kronos-example-ktor/build.gradle.kts": [
+                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
+                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
+                  (r'implementation\("com\.kotlinorm:kronos-jdbc-wrapper:[^"]+"\)', f'implementation("com.kotlinorm:kronos-jdbc-wrapper:{version}")'),
+              ],
+              "kronos-example-spring-boot/gradle-project/libs.versions.toml": [
+                  (r'kronos = "[^"]+"', f'kronos = "{version}"'),
+              ],
+              "kronos-example-spring-boot/gradle-project/gradle.properties": [
+                  (r'^version=.*$', f'version={version}'),
+                  (r'^kronosVersion=.*$', f'kronosVersion={version}'),
+              ],
+              "kronos-example-spring-boot/maven-project/pom.xml": [
+                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
+              ],
+              "kronos-example-solon/pom.xml": [
+                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
+                  (r'<kotlin.version>[^<]+</kotlin.version>', f'<kotlin.version>{kotlin_version}</kotlin.version>'),
+              ],
+          }
+
+          for file_name, patterns in replacements.items():
+              path = Path(file_name)
+              text = path.read_text()
+              for pattern, replacement in patterns:
+                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+                  if count != 1:
+                      raise SystemExit(f"missing expected pattern in {file_name}: {pattern}")
+              path.write_text(text)
+          PY
+
+      - name: Point examples to current Kronos API
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          solon_controller = Path("kronos-example-solon/src/main/kotlin/com/kotlinorm/example/solon/DemoController.kt")
+          legacy_call = "user.kronosColumns().map {"
+          current_call = "user.__columns.map {"
+          example_roots = [
+              Path("kronos-example-ktor"),
+              Path("kronos-example-spring-boot"),
+              Path("kronos-example-solon"),
+          ]
+
+          text = solon_controller.read_text()
+          if legacy_call in text:
+              solon_controller.write_text(text.replace(legacy_call, current_call, 1))
+
+          stale_files = []
+          for root in example_roots:
+              for path in sorted(root.glob("**/*.kt")):
+                  if "kronosColumns(" in path.read_text():
+                      stale_files.append(str(path))
+
+          if stale_files:
+              raise SystemExit("legacy Kronos metadata API remains in examples:\n" + "\n".join(stale_files))
+          PY
+
+      - name: Run Ktor example smoke tests
+        working-directory: kronos-example-ktor
+        run: ./gradlew test --no-daemon --console=plain
+
+      - name: Run Spring Boot Gradle example smoke tests
+        working-directory: kronos-example-spring-boot/gradle-project
+        run: ./gradlew test --no-daemon --console=plain
+
+      - name: Run Spring Boot Maven example smoke tests
+        working-directory: kronos-example-spring-boot/maven-project
+        run: mvn -B test
+
+      - name: Run Solon example smoke tests
+        working-directory: kronos-example-solon
+        run: mvn -B test

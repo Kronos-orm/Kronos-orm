@@ -72,15 +72,15 @@ fun box(): String {
 
     val rows = source.select { [it.id, it.name.alias("xx")] }.toList(wrapper)
     val row = rows.singleOrNull()
-    val fieldNames = row?.kronosColumns().orEmpty().map { it.name }.toSet()
+    val fieldNames = row?.__columns.orEmpty().map { it.name }.toSet()
 
     val failures = listOfNotNull(
         expect(rows.size == 1) { "row count was ${rows.size}" },
         expect(row?.id == 7) { "generated projection id was ${row?.id}" },
         expect(row?.xx == "Ada") { "generated projection alias xx was ${row?.xx}" },
         expect(row?.__tableName == "tb_projection_source") { "projection table name was ${row?.__tableName}" },
-        expect(row?.kronosColumns()?.all { it.tableName == "tb_projection_source" } == true) {
-            "projection column table names were ${row?.kronosColumns()?.map { it.tableName }}"
+        expect(row?.__columns?.all { it.tableName == "tb_projection_source" } == true) {
+            "projection column table names were ${row?.__columns?.map { it.tableName }}"
         },
         expect(wrapper.mappedClasses.singleOrNull() != ProjectionSourceRow::class) {
             "toList mapped with source class ${ProjectionSourceRow::class}"

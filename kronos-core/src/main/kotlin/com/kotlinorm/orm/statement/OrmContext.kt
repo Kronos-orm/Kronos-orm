@@ -10,6 +10,7 @@ package com.kotlinorm.orm.statement
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -26,11 +27,16 @@ import kotlin.reflect.KClass
 
 internal class OrmContext<T : KPojo>(
     val pojo: T,
-    val kClass: KClass<KPojo>,
+    val kClass: KClass<out KPojo>,
     val tableName: String,
     val operationType: KOperationType,
     val fields: List<Field>,
     val allFields: List<Field> = fields,
+    val fieldMap: Map<String, Field>,
+    val createTimeStrategy: KronosCommonStrategy? = null,
+    val updateTimeStrategy: KronosCommonStrategy? = null,
+    val logicDeleteStrategy: KronosCommonStrategy? = null,
+    val optimisticLockStrategy: KronosCommonStrategy? = null,
     val sourceValues: Map<String, Any?> = pojo.toDataMap(),
     val parameterBindings: MutableMap<String, ParameterBinding> = linkedMapOf()
 ) {

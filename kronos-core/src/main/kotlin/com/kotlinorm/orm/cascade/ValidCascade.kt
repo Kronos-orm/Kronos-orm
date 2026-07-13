@@ -18,11 +18,11 @@ package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 
 /**
@@ -99,8 +99,9 @@ fun findValidRefs(
         } else {
             val ref =
                 (targetKClass as KClass<out KPojo>).createInstance() // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-            val tableName = ref.__tableName // 获取引用所在的表名
-            kPojoAllFieldsCache[ref.kClass()]!!.asSequence().filter {
+            val refMetadata = ref.resolveRuntimeMetadata()
+            val tableName = refMetadata.tableName // 获取引用所在的表名
+            refMetadata.allFields.asSequence().filter {
                 it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.kClass == kClass
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName, false)

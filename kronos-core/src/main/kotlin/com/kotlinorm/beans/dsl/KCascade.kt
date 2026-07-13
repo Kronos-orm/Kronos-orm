@@ -21,6 +21,7 @@ import com.kotlinorm.enums.CascadeDeleteAction.NO_ACTION
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -54,8 +55,8 @@ class KCascade(
             @Suppress("UNCHECKED_CAST")
             private fun initKProperty() {
                 if (targetOfRelationName == null) {
-                    val relation = (relationClass as KClass<KPojo>).createInstance()
-                    targetOfRelationName = relation.kronosColumns().find { it.kClass == targetClass }?.name
+                    val relation = (relationClass as KClass<out KPojo>).createInstance()
+                    targetOfRelationName = relation.resolveRuntimeMetadata().allFields.find { it.kClass == targetClass }?.name
                 }
             }
 
@@ -71,7 +72,7 @@ class KCascade(
             override fun setValue(thisRef: Any, property: KProperty<*>, value: List<T>) {
                 initKProperty()
                 (thisRef as KPojo)[relationOfThis] = value.map {
-                    (relationClass as KClass<KPojo>).createInstance().apply {
+                    (relationClass as KClass<out KPojo>).createInstance().apply {
                         this@apply[targetOfRelationName!!] = it
                     }
                 }

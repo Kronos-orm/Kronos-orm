@@ -69,7 +69,7 @@ fun box(): String {
 
     val rows = DirectCascadeUser().select { it.profile }.cascade(false).toList(wrapper)
     val row = rows.singleOrNull()
-    val columns = row?.kronosColumns().orEmpty()
+    val columns = row?.__columns.orEmpty()
     val fields = row?.toDataMap().orEmpty()
 
     val failures = listOfNotNull(

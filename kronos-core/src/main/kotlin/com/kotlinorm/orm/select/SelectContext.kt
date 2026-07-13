@@ -7,12 +7,10 @@
 
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.Kronos.tableNamingStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForSelect
-import com.kotlinorm.cache.kPojoAllColumnsCache
-import com.kotlinorm.cache.kPojoAllFieldsCache
-import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.sql.renameNamedParameters
@@ -28,6 +26,7 @@ import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.statement.SqlLock
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.LinkedHashSet
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KType
 
@@ -36,10 +35,21 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     val receiverPojo: Context,
     val projectionType: KType
 ) {
-    val kClass = pojo.kClass()
-    val tableName = pojo.__tableName
-    val allFields = kPojoAllFieldsCache[kClass]!!
-    val allColumns = kPojoAllColumnsCache[kClass]!!
+    private val metadata = pojo.resolveRuntimeMetadata()
+    val kClass = metadata.kClass
+    val tableName = metadata.tableName
+    val allFields = metadata.allFields
+    val allColumns = metadata.allColumns
+    val fieldMap = metadata.fieldMap
+    private val dynamicSourceTableNames = if (metadata.dynamic) {
+        setOfNotNull(
+            pojo::class.simpleName?.let(tableNamingStrategy::k2db),
+            tableNamingStrategy.k2db("<no name provided>")
+        ) - tableName
+    } else {
+        emptySet()
+    }
+    private val sourceColumnNames = allColumns.map { it.columnName }.toSet()
     val sourceValues: MutableMap<String, Any?> = pojo.toDataMap()
     val patchValues: MutableMap<String, Any?> = linkedMapOf()
     val parameterValues: MutableMap<String, Any?> = linkedMapOf()
@@ -48,7 +58,7 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     var databaseName: String? = null
     var sourceQuery: KSelectable<*>? = null
     var sourceTableAlias: String? = null
-    var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    var logicDeleteStrategy = metadata.logicDeleteStrategy
     var cascadeEnabled = true
     var cascadeAllowed: Set<Field>? = null
     var cascadeSelectedProps: Set<Field>? = null
@@ -67,16 +77,19 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     var lock: SqlLock? = null
 
     fun setSelectedFields(fields: Iterable<Field>) {
-        selectedFields = fields.filter { it.isColumn }.toLinkedSet()
-        cascadeFields = fields.filter { !it.isColumn }.toLinkedSet()
+        val normalizedFields = fields.map { it.normalizeDynamicSourceField() }
+        selectedFields = normalizedFields.filter { it.isColumn }.toLinkedSet()
+        cascadeFields = normalizedFields.filter { !it.isColumn }.toLinkedSet()
         projectionItems = selectedFields.map { KTableForSelect.ProjectionItem.FieldItem(it) }
         selectAll = selectedFields.isEmpty()
         distinct = false
     }
 
     fun setProjectionItems(projections: List<KTableForSelect.ProjectionItem>, fields: Iterable<Field>) {
-        val fieldsSet = fields.toList().toLinkedSet()
-        projectionItems = projections.qualifyProjectionItems(sourceTableAlias)
+        val fieldsSet = fields.map { it.normalizeDynamicSourceField() }.toList().toLinkedSet()
+        projectionItems = projections
+            .map { it.normalizeDynamicSourceProjectionItem() }
+            .qualifyProjectionItems(sourceTableAlias)
         selectedFields = fieldsSet.filter { it.isColumn }.toLinkedSet()
         cascadeFields = fieldsSet.filter { !it.isColumn }.toLinkedSet()
         selectAll = selectedFields.isEmpty() && projections.none {
@@ -123,11 +136,11 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     }
 
     fun andWhere(expr: SqlExpr?, parameters: Map<String, Any?> = emptyMap()) {
-        where = and(where, mergeParameters(expr, parameters))
+        where = and(where, mergeParameters(normalizeDynamicSourceExpr(expr), parameters))
     }
 
     fun andHaving(expr: SqlExpr?, parameters: Map<String, Any?> = emptyMap()) {
-        having = and(having, mergeParameters(expr, parameters))
+        having = and(having, mergeParameters(normalizeDynamicSourceExpr(expr), parameters))
     }
 
     fun qualifySource(alias: String) {
@@ -186,6 +199,38 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return match.groupValues[1] to match.groupValues[2].toInt()
     }
 
+    private fun Field.normalizeDynamicSourceField(): Field =
+        if (shouldRewriteDynamicSourceColumn(tableName, columnName)) {
+            copy(tableName = this@SelectContext.tableName)
+        } else {
+            this
+        }
+
+    private fun KTableForSelect.ProjectionItem.normalizeDynamicSourceProjectionItem(): KTableForSelect.ProjectionItem =
+        when (this) {
+            is KTableForSelect.ProjectionItem.FieldItem -> copy(field = field.normalizeDynamicSourceField())
+            is KTableForSelect.ProjectionItem.SelectItemValue -> copy(item = item.normalizeDynamicSourceSelectItem())
+            is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> this
+        }
+
+    private fun SqlSelectItem.normalizeDynamicSourceSelectItem(): SqlSelectItem =
+        when (this) {
+            is SqlSelectItem.Asterisk -> this
+            is SqlSelectItem.Expr -> copy(
+                expr = normalizeDynamicSourceExprOrSelf(expr),
+                metadata = metadata?.let { it.copy(expression = normalizeDynamicSourceExprOrSelf(it.expression)) }
+            )
+        }
+
+    private fun normalizeDynamicSourceExpr(expr: SqlExpr?): SqlExpr? =
+        expr?.let(::normalizeDynamicSourceExprOrSelf)
+
+    private fun normalizeDynamicSourceExprOrSelf(expr: SqlExpr): SqlExpr =
+        expr.rewriteDynamicSourceTable(dynamicSourceTableNames, tableName, sourceColumnNames)
+
+    private fun shouldRewriteDynamicSourceColumn(sourceTableName: String?, columnName: String): Boolean =
+        sourceTableName in dynamicSourceTableNames && columnName in sourceColumnNames
+
     private companion object {
         val parameterSuffixRegex = Regex("""^(.+)@(\d+)$""")
     }
@@ -231,6 +276,90 @@ internal fun SqlSelectItem.qualifySourceSelectItem(alias: String): SqlSelectItem
 
 internal fun SqlExpr.qualifySourceAliasIfPresent(alias: String?): SqlExpr =
     alias?.let { qualifySourceExpr(it) } ?: this
+
+private fun SqlExpr.rewriteDynamicSourceTable(
+    sourceTableNames: Set<String>,
+    tableName: String,
+    columnNames: Set<String>
+): SqlExpr {
+    if (sourceTableNames.isEmpty()) return this
+    fun SqlExpr.Column.rewriteColumn(): SqlExpr.Column =
+        if (this.tableName in sourceTableNames && columnName in columnNames) {
+            copy(tableName = tableName, qualifier = SqlIdentifier.of(tableName))
+        } else {
+            this
+        }
+    return when (this) {
+        is SqlExpr.Column -> rewriteColumn()
+        is SqlExpr.Unary -> copy(expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames))
+        is SqlExpr.Binary -> copy(
+            left = left.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            right = right.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Tuple -> copy(items = items.map { it.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames) })
+        is SqlExpr.Array -> copy(items = items.map { it.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames) })
+        is SqlExpr.In -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            `in` = when (val operand = `in`) {
+                is SqlInRightOperand.Values -> operand.copy(
+                    items = operand.items.map { it.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames) }
+                )
+                is SqlInRightOperand.Subquery -> operand
+            }
+        )
+        is SqlExpr.Between -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            start = start.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            end = end.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Like -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            pattern = pattern.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            escape = escape?.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Function -> copy(
+            args = args.map { it.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames) },
+            orderBy = orderBy.map { it.copy(expr = it.expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)) },
+            withinGroup = withinGroup.map {
+                it.copy(expr = it.expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames))
+            },
+            filter = filter?.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Window -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            window = window.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Case -> copy(
+            branches = branches.map {
+                it.copy(
+                    `when` = it.`when`.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+                    then = it.then.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+                )
+            },
+            default = default?.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.SimpleCase -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            branches = branches.map {
+                it.copy(
+                    `when` = it.`when`.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+                    then = it.then.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+                )
+            },
+            default = default?.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Coalesce -> copy(items = items.map { it.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames) })
+        is SqlExpr.NullIf -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames),
+            test = test.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        is SqlExpr.Cast -> copy(expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames))
+        is SqlExpr.QuantifiedComparisonPredicate -> copy(
+            expr = expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames)
+        )
+        else -> this
+    }
+}
 
 internal fun SqlExpr.qualifySourceExpr(alias: String): SqlExpr =
     when (this) {
@@ -291,6 +420,18 @@ internal fun SqlWindow.qualifySource(alias: String): SqlWindow =
     copy(
         partitionBy = partitionBy.map { it.qualifySourceExpr(alias) },
         orderBy = orderBy.map { it.copy(expr = it.expr.qualifySourceExpr(alias)) }
+    )
+
+private fun SqlWindow.rewriteDynamicSourceTable(
+    sourceTableNames: Set<String>,
+    tableName: String,
+    columnNames: Set<String>
+): SqlWindow =
+    copy(
+        partitionBy = partitionBy.map { it.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames) },
+        orderBy = orderBy.map {
+            it.copy(expr = it.expr.rewriteDynamicSourceTable(sourceTableNames, tableName, columnNames))
+        }
     )
 
 internal fun SqlExpr.numberLiteralInt(): Int? = (this as? SqlExpr.NumberLiteral)?.number?.toIntOrNull()

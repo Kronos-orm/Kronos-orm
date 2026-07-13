@@ -29,12 +29,6 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.cache.fieldsMapCache
-import com.kotlinorm.cache.kPojoAllFieldsCache
-import com.kotlinorm.cache.kPojoCreateTimeCache
-import com.kotlinorm.cache.kPojoLogicDeleteCache
-import com.kotlinorm.cache.kPojoOptimisticLockCache
-import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
@@ -65,6 +59,7 @@ import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.toDatabaseBooleanValue
 import com.kotlinorm.utils.toDatabaseParameterValue
 import com.kotlinorm.utils.toLinkedSet
@@ -86,14 +81,15 @@ class UpsertClause<T : KPojo>(
     private val targetType: KType,
     private var setUpsertFields: ToSelect<T, Any?> = null
 ) {
+    private val metadata = pojo.resolveRuntimeMetadata()
     private var paramMap = pojo.toDataMap()
-    private var tableName = pojo.__tableName
-    private var kClass = pojo.kClass()
-    private var createTimeStrategy = kPojoCreateTimeCache[kClass]
-    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
-    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
-    internal var allFields = kPojoAllFieldsCache[kClass]!!
+    private var tableName = metadata.tableName
+    private var kClass = metadata.kClass
+    private var createTimeStrategy = metadata.createTimeStrategy
+    private var updateTimeStrategy = metadata.updateTimeStrategy
+    private var logicDeleteStrategy = metadata.logicDeleteStrategy
+    private var optimisticStrategy = metadata.optimisticLockStrategy
+    internal var allFields = metadata.allFields
     private var onConflict = false
     private var toInsertFields: LinkedHashSet<Field> = []
     private var toUpdateFields: LinkedHashSet<Field> = []
@@ -214,7 +210,7 @@ class UpsertClause<T : KPojo>(
         }
 
         // 合并参数映射，准备执行SQL所需的参数
-        val fieldMap = fieldsMapCache[kClass]!!
+        val fieldMap = metadata.fieldMap
         paramMapNew.forEach { (key, value) ->
             if (!value.requiresUpsertParameter()) {
                 return@forEach
@@ -393,8 +389,8 @@ class UpsertClause<T : KPojo>(
             return listOf(primaryField)
         }
 
-        val fieldMap = fieldsMapCache[kClass]!!
-        return pojo.kronosTableIndex()
+        val fieldMap = metadata.fieldMap
+        return metadata.tableIndexes
             .asSequence()
             .filter { it.type.equals("UNIQUE", ignoreCase = true) || it.method.equals("UNIQUE", ignoreCase = true) }
             .map { index -> index.columns.mapNotNull { column -> fieldMap[column] }.distinct() }

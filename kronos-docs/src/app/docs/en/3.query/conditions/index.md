@@ -63,12 +63,12 @@ WHERE `user`.`id` = :id
   AND `user`.`name` = :name
 ```
 
-Use `isNull` in a lambda when the target value is SQL `NULL`.
+Use `== null` or `isNull` in a lambda when the target value is SQL `NULL`.
 
 ```kotlin group="Where calls 4" name="null value" icon="kotlin"
 val users = User()
     .select()
-    .where { it.email.isNull }
+    .where { it.email == null }
     .toList()
 ```
 
@@ -76,6 +76,17 @@ val users = User()
 SELECT `id`, `name`, `age`, `email`
 FROM `user`
 WHERE `user`.`email` IS NULL
+```
+
+Dynamic nullable values still use the no-value strategy. When `email` is `null`, the default `SELECT` behavior omits this condition.
+
+```kotlin group="Where calls 4b" name="dynamic null" icon="kotlin"
+val email: String? = null
+
+val users = User()
+    .select()
+    .where { it.email == email }
+    .toList()
 ```
 
 A `where { ... }` call uses the lambda expression for that condition.
@@ -390,12 +401,12 @@ The bound value is `Ada%`.
 
 ## Test null values
 
-Use `isNull` and `notNull` for SQL null checks.
+Use `== null` / `!= null` or `isNull` / `notNull` for SQL null checks.
 
 ```kotlin group="Null" name="kotlin" icon="kotlin"
 val users = User()
     .select()
-    .where { it.deletedAt.isNull || it.email.notNull }
+    .where { it.deletedAt == null || it.email != null }
     .toList()
 ```
 
@@ -420,6 +431,23 @@ val users = User()
 SELECT `id`, `age`, `other_age` AS `otherAge`
 FROM `user`
 WHERE `user`.`age` = `user`.`other_age`
+```
+
+Relationship field chains should use a safe call. Kronos reads the related field metadata and compares columns; it does not read the runtime `director` object.
+
+```kotlin group="Related field" name="kotlin" icon="kotlin"
+val movies = Movie()
+    .select()
+    .where { it.directorId == it.director?.id }
+    .toList()
+
+// it.director!!.id is also supported.
+```
+
+```sql group="Related field" name="Mysql" icon="mysql"
+SELECT `id`, `director_id` AS `directorId`, `title`
+FROM `movie`
+WHERE `movie`.`director_id` = `director`.`id`
 ```
 
 Use `.value` when you need the Kotlin property value from another object.

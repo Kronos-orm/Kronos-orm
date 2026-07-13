@@ -7,10 +7,6 @@
 
 package com.kotlinorm.orm.update
 
-import com.kotlinorm.cache.kPojoCreateTimeCache
-import com.kotlinorm.cache.kPojoLogicDeleteCache
-import com.kotlinorm.cache.kPojoOptimisticLockCache
-import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.toSqlExpr
@@ -30,10 +26,10 @@ import com.kotlinorm.utils.toDatabaseBooleanValue
 internal class UpdatePlanner<T : KPojo>(
     private val context: OrmContext<T>
 ) {
-    private val createTimeStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoCreateTimeCache[context.kClass] }
-    private val updateTimeStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoUpdateTimeCache[context.kClass] }
-    private val logicDeleteStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoLogicDeleteCache[context.kClass] }
-    private val optimisticStrategy by lazy(LazyThreadSafetyMode.NONE) { kPojoOptimisticLockCache[context.kClass] }
+    private val createTimeStrategy = context.createTimeStrategy
+    private val updateTimeStrategy = context.updateTimeStrategy
+    private val logicDeleteStrategy = context.logicDeleteStrategy
+    private val optimisticStrategy = context.optimisticLockStrategy
 
     fun plan(dataSource: KronosDataSourceWrapper): SqlDmlStatement.Update {
         ensureDefaultAssignments()

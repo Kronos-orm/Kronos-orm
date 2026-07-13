@@ -43,7 +43,7 @@ data class RichColumnUser(
 ) : KPojo
 
 fun box(): String {
-    val columns = RichColumnUser().kronosColumns()
+    val columns = RichColumnUser().__columns
     fun column(name: String): com.kotlinorm.beans.dsl.Field {
         return columns.singleOrNull { it.name == name }
             ?: error("missing column $name")

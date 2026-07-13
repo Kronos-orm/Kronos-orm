@@ -41,8 +41,8 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -110,9 +110,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
      * @param on The condition for the join.
      * @throws EmptyFieldsException If the `on` parameter is null.
      */
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> leftJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        joinWith(another, SqlJoinType.Left, T::class as KClass<KPojo>, on)
+        joinWith(another, SqlJoinType.Left, on)
     }
 
     /**
@@ -122,9 +121,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
      * @param on The condition for the join.
      * @throws EmptyFieldsException If the `on` parameter is null.
      */
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> rightJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        joinWith(another, SqlJoinType.Right, T::class as KClass<KPojo>, on)
+        joinWith(another, SqlJoinType.Right, on)
     }
 
     /**
@@ -134,9 +132,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
      * @param on The condition for the join.
      * @throws EmptyFieldsException If the `on` parameter is null.
      */
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> crossJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        joinWith(another, SqlJoinType.Cross, T::class as KClass<KPojo>, on)
+        joinWith(another, SqlJoinType.Cross, on)
     }
 
     /**
@@ -146,9 +143,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
      * @param on The condition for the join.
      * @throws EmptyFieldsException If the `on` parameter is null.
      */
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> innerJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        joinWith(another, SqlJoinType.Inner, T::class as KClass<KPojo>, on)
+        joinWith(another, SqlJoinType.Inner, on)
     }
 
     /**
@@ -158,20 +154,19 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
      * @param on The condition for the join.
      * @throws EmptyFieldsException If the `on` parameter is null.
      */
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> fullJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        joinWith(another, SqlJoinType.Full, T::class as KClass<KPojo>, on)
+        joinWith(another, SqlJoinType.Full, on)
     }
 
     @PublishedApi
     internal fun joinWith(
         another: KPojo,
         joinType: SqlJoinType,
-        kClass: KClass<KPojo>,
         on: ToFilter<T1, Boolean?>
     ) {
         if (null == on) throw EmptyFieldsException()
-        val tableName = another.__tableName
+        val metadata = another.resolveRuntimeMetadata()
+        val tableName = metadata.tableName
         t1.afterFilter {
             sourceValues = context.paramMap
             operationType = KOperationType.SELECT
@@ -181,7 +176,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
                 KJoinable(
                     tableName,
                     joinType,
-                    kClass,
+                    metadata.kClass,
                     another,
                     condition = sqlExpr,
                     tableAliasOverrides = context.derivedJoinAliasOverrides[tableName]?.let { alias ->

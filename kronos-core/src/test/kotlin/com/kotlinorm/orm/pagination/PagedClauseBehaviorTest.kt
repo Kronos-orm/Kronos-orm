@@ -15,6 +15,7 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
@@ -56,7 +57,7 @@ class PagedClauseBehaviorTest {
         val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(RecordingSelectable())
             .toMapList(wrapper)
 
-        assertEquals(2 to listOf(mapOf("id" to 1)), result)
+        assertEquals(Triple(2, listOf(mapOf("id" to 1)), 0), result)
         assertEquals(
             listOf(
                 "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
@@ -77,7 +78,7 @@ class PagedClauseBehaviorTest {
         val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(RecordingSelectable())
             .toList<PagedClauseStubRow>(wrapper)
 
-        assertEquals(2 to rows, result)
+        assertEquals(Triple(2, rows, 0), result)
         assertEquals(
             listOf(
                 "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
@@ -99,7 +100,7 @@ class PagedClauseBehaviorTest {
         val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(selectable)
             .toList(wrapper)
 
-        assertEquals(1 to rows, result)
+        assertEquals(Triple(1, rows, 0), result)
         assertEquals(
             listOf(
                 "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub`) AS `total_count`",
@@ -109,17 +110,97 @@ class PagedClauseBehaviorTest {
         )
     }
 
-    private class RecordingSelectable : KSelectable<PagedClauseStubRow>(
+    @Test
+    fun `paged map result returns total pages as third value`() {
+        val wrapper = RecordingWrapper(
+            listResult = listOf(mapOf("id" to 1), mapOf("id" to 2)),
+            objectResult = 5
+        )
+
+        val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(
+            RecordingSelectable(pageSize = 2)
+        ).toMapList(wrapper)
+
+        assertEquals(5, result.first)
+        assertEquals(2, result.second.size)
+        assertEquals(3, result.third)
+    }
+
+    @Test
+    fun `explicit page size is used for map result total pages`() {
+        val selectable = RecordingSelectable()
+        val wrapper = RecordingWrapper(
+            listResult = listOf(mapOf("id" to 1), mapOf("id" to 2)),
+            objectResult = 5
+        )
+
+        val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(selectable)
+            .page(1, 2)
+            .toMapList(wrapper)
+
+        assertEquals(Triple(5, listOf(mapOf("id" to 1), mapOf("id" to 2)), 3), result)
+        assertEquals(listOf("page", "build", "count"), selectable.calls)
+    }
+
+    @Test
+    fun `explicit page size is used for selected result total pages`() {
+        val rows = listOf(PagedClauseStubRow(1), PagedClauseStubRow(2))
+        val wrapper = RecordingWrapper(
+            typedListResult = rows,
+            objectResult = 4
+        )
+
+        val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(RecordingSelectable())
+            .page(1, 2)
+            .toList(wrapper)
+
+        assertEquals(Triple(4, rows, 2), result)
+    }
+
+    @Test
+    fun `paged typed result returns zero total pages when page size is unavailable`() {
+        val rows = listOf(PagedClauseStubRow(1))
+        val wrapper = RecordingWrapper(
+            typedListResult = rows,
+            objectResult = 5
+        )
+
+        val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(
+            RecordingSelectable()
+        ).toList<PagedClauseStubRow>(wrapper)
+
+        assertEquals(5, result.first)
+        assertEquals(rows, result.second)
+        assertEquals(0, result.third)
+    }
+
+    @Test
+    fun `total pages returns zero for empty totals or invalid page sizes`() {
+        assertEquals(0, PagedClause.totalPages(total = 0, pageSize = 10))
+        assertEquals(0, PagedClause.totalPages(total = 10, pageSize = 0))
+        assertEquals(0, PagedClause.totalPages(total = -1, pageSize = 10))
+        assertEquals(3, PagedClause.totalPages(total = 5, pageSize = 2))
+    }
+
+    private class RecordingSelectable(
+        private val pageSize: Int? = null
+    ) : KSelectable<PagedClauseStubRow>(
         PagedClauseStubRow()
-    ) {
+    ), OffsetPageable {
         override val selectedType = typeOf<PagedClauseStubRow>()
         val calls = mutableListOf<String>()
 
         override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
             calls += "build"
+            val statement = SqlQuery.Select(
+                select = listOf(SqlSelectItem.Expr(SqlExpr.Column(columnName = "id"))),
+                from = listOf(SqlTable.Ident("paged_clause_stub")),
+                limit = pageSize?.let { SqlLimit.limit(it, 0) }
+            )
             return KronosAtomicQueryTask(
                 sql = "SELECT id FROM paged_clause_stub",
                 operationType = KOperationType.SELECT,
+                statement = statement,
                 targetType = typeOf<PagedClauseStubRow>()
             ).toKronosQueryTask()
         }
@@ -143,6 +224,10 @@ class PagedClauseBehaviorTest {
 
         override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan =
             error("PagedClauseBehaviorTest does not materialize selectable queries.")
+
+        override fun applyOffsetPage(pageIndex: Int, pageSize: Int) {
+            calls += "page"
+        }
     }
 
     private class RecordingWrapper(

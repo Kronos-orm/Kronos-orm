@@ -338,18 +338,18 @@ ORDER BY `nameLength` DESC
 
 ## 对派生来源分页
 
-`page(pageIndex, pageSize)` 和 `withTotal()` 可以在 selectable source 进入下一层查询后继续使用。
+`withTotal().page(pageIndex, pageSize)` 可以在 selectable source 进入下一层查询后继续使用。
 
 ```kotlin group="Paged source" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val (total, rows) = nameLengths
+val (total, rows, totalPages) = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
     .orderBy { it.nameLength.desc() }
-    .page(1, 10)
     .withTotal()
+    .page(1, 10)
     .toList()
 ```
 

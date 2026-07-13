@@ -28,30 +28,43 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
-class PagedClause<Source : KPojo, Selected : KPojo, Clause : KSelectable<Selected>>(
-    private val selectClause: Clause
-) {
-    fun toMapList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Map<String, Any?>>> {
+class PagedClause<Source : KPojo, Selected : KPojo, Clause>(
+    @PublishedApi
+    internal val selectClause: Clause
+) where Clause : KSelectable<Selected>, Clause : OffsetPageable {
+    private var pageIndex: Int = 0
+
+    @PublishedApi
+    internal var pageSize: Int = 0
+
+    fun page(pi: Int, ps: Int): PagedClause<Source, Selected, Clause> {
+        pageIndex = pi
+        pageSize = ps
+        selectClause.applyOffsetPage(pi, ps)
+        return this
+    }
+
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): Triple<Int, List<Map<String, Any?>>, Int> {
         val tasks = this.build(wrapper)
         val total = tasks.first.first<Int>(wrapper)
         val records = tasks.second.toMapList(wrapper)
-        return total to records
+        return Triple(total, records, totalPages(total, pageSize.takeIf { it > 0 } ?: tasks.second.pageSize()))
     }
 
-    inline fun <reified E : KPojo> toList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<E>> {
+    inline fun <reified E : KPojo> toList(wrapper: KronosDataSourceWrapper? = null): Triple<Int, List<E>, Int> {
         val tasks = this.build(wrapper)
         val total = tasks.first.first<Int>(wrapper)
         val records = tasks.second.toList<E>(wrapper)
-        return total to records
+        return Triple(total, records, totalPages(total, pageSize.takeIf { it > 0 } ?: tasks.second.pageSize()))
     }
 
     @JvmName("toProjectionList")
     @Suppress("UNCHECKED_CAST")
-    fun toList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Selected>> {
+    fun toList(wrapper: KronosDataSourceWrapper? = null): Triple<Int, List<Selected>, Int> {
         val tasks = this.build(wrapper)
         val total = tasks.first.first<Int>(wrapper)
         val records = tasks.second.toList(wrapper, selectClause.selectedType) as List<Selected>
-        return total to records
+        return Triple(total, records, totalPages(total, pageSize.takeIf { it > 0 } ?: tasks.second.pageSize()))
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
@@ -79,5 +92,21 @@ class PagedClause<Source : KPojo, Selected : KPojo, Clause : KSelectable<Selecte
             )
         )
         return finalCountTask to recordsTask
+    }
+
+    companion object {
+        @PublishedApi
+        internal fun KronosQueryTask.pageSize(): Int =
+            ((atomicTask.statement as? SqlQuery.Select)
+                ?.limit
+                ?.fetch
+                ?.limit as? SqlExpr.NumberLiteral)
+                ?.number
+                ?.toIntOrNull()
+                ?: 0
+
+        @PublishedApi
+        internal fun totalPages(total: Int, pageSize: Int): Int =
+            if (total <= 0 || pageSize <= 0) 0 else (total + pageSize - 1) / pageSize
     }
 }

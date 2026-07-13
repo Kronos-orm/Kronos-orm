@@ -81,12 +81,13 @@ FROM "USER"
 
 ## Pagination
 
-`page(pageIndex, pageSize)` starts from page 1. Kronos renders the matching pagination syntax for the active database.
+`withTotal().page(pageIndex, pageSize)` starts from page 1. Kronos renders the matching pagination syntax for the active database.
 
 ```kotlin group="Pagination" name="kotlin" icon="kotlin"
-val users = User()
+val (_, users, _) = User()
     .select { [it.id, it.name] }
     .orderBy { it.id.asc() }
+    .withTotal()
     .page(2, 20)
     .toList()
 ```

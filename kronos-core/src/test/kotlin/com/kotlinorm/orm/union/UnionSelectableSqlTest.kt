@@ -41,7 +41,7 @@ class UnionSelectableSqlTest : MysqlTestBase() {
             .build()
 
         assertEquals(
-            "SELECT `q`.`id`, `q`.`user_id` AS `userId`, `q`.`status` FROM ((SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status@1) UNION (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status@2)) AS `q` WHERE `q`.`status` = :status",
+            "SELECT `q`.`id`, `q`.`userId`, `q`.`status` FROM ((SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status@1) UNION (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status@2)) AS `q` WHERE `q`.`status` = :status",
             sql
         )
         assertEquals(mapOf("status" to 43, "status@1" to 41, "status@2" to 42), params)

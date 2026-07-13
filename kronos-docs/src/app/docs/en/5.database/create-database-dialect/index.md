@@ -301,9 +301,10 @@ check(sql == """SELECT "id", "name" FROM "user"""")
 Pagination verification covers `limitStyle` and the renderer's `renderLimit(...)`.
 
 ```kotlin group="Verify Pagination" name="kotlin" icon="kotlin"
-val (pageTask, _) = User()
+val (_, pageTask) = User()
     .select()
     .orderBy { it.id.asc() }
+    .withTotal()
     .page(2, 20)
     .build(wrapper)
 

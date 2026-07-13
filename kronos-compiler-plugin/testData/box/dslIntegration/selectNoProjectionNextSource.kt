@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies select() without a projection exposes the original Source as the next-layer Source.
+// Verifies select() without a projection exposes logical output names as the next-layer Source.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Column
@@ -55,7 +55,7 @@ fun box(): String {
     val whereColumn = ((lowered.where as? SqlExpr.Binary)?.left as? SqlExpr.Column)?.columnName
 
     return when {
-        selectedColumns != listOf("id", "user_name") -> "Fail: selected columns were $selectedColumns"
+        selectedColumns != listOf("id", "name") -> "Fail: selected columns were $selectedColumns"
         innerColumns != listOf("id", "user_name", "status") -> "Fail: inner columns were $innerColumns"
         whereColumn != "status" -> "Fail: where column was $whereColumn"
         else -> "OK"

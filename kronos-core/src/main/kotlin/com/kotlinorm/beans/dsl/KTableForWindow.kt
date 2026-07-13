@@ -17,21 +17,45 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.order.SqlOrdering
+import com.kotlinorm.syntax.order.SqlOrderingItem
 
 /**
  * Collects expressions used by a window function `OVER (...)` clause.
  */
-class KTableForWindow<T : KPojo> {
-    @Suppress("UNUSED_PARAMETER")
-    fun partitionBy(vararg fields: Any?): Unit = Unit
+class KTableForWindow<T : KPojo>(
+    val sourceBinding: SourceBinding? = null
+) {
+    val partitionByItems: MutableList<SqlExpr> = mutableListOf()
+    val orderByItems: MutableList<SqlOrderingItem> = mutableListOf()
 
-    @Suppress("UNUSED_PARAMETER")
-    fun orderBy(vararg fields: Any?): Unit = Unit
+    fun partitionBy(vararg fields: Any?) {
+        partitionByItems += fields.mapNotNull { it.toWindowExpr() }
+    }
+
+    fun orderBy(vararg fields: Any?) {
+        orderByItems += fields.mapNotNull { item ->
+            val (value, ordering) = when (item) {
+                is Pair<*, *> -> item.first to (item.second as? SqlOrdering ?: SqlOrdering.Asc)
+                else -> item to SqlOrdering.Asc
+            }
+            value.toWindowExpr()?.let { SqlOrderingItem(it, ordering) }
+        }
+    }
 
     @Suppress("UNUSED")
     fun Any?.asc(): Pair<Any?, SqlOrdering> = this to SqlOrdering.Asc
 
     @Suppress("UNUSED")
     fun Any?.desc(): Pair<Any?, SqlOrdering> = this to SqlOrdering.Desc
+
+    private fun Any?.toWindowExpr(): SqlExpr? =
+        when (this) {
+            is Field -> sourceBinding?.projectionColumn(this) ?: SqlExpr.Column(columnName = columnName)
+            is SqlExpr -> sourceBinding?.bindExpr(this) ?: this
+            is KronosFunctionExpr -> sourceBinding?.bindExpr(expr) ?: expr
+            is String -> toRawSqlExpr()
+            else -> null
+        }
 }

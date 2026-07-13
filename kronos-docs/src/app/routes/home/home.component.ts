@@ -73,11 +73,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     readonly installCode = [
         'plugins {',
-        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.2"',
+        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.3"',
         '}',
         '',
         'dependencies {',
-        '    implementation("com.kotlinorm:kronos-core:0.2.2")',
+        '    implementation("com.kotlinorm:kronos-core:0.2.3")',
         '}'
     ];
 
@@ -152,8 +152,9 @@ export class HomeComponent implements OnInit, OnDestroy {
                 '  .select { [it.id, it.username] }',
                 '  .where { it.id < 10 && it.age >= 18 }',
                 '  .orderBy { it.username.desc() }',
+                '  .withTotal()',
                 '  .page(1, 10)',
-                '  .queryList()',
+                '  .toList()',
                 '',
                 'val id = User(username = "test", age = 18)',
                 '  .insert().withId().execute().lastInsertId',
@@ -199,17 +200,17 @@ export class HomeComponent implements OnInit, OnDestroy {
                 '    .where { it.userId == u.id }',
                 '    .orderBy { it.createTime.desc() }',
                 '    .limit(1).alias("lastAmount")]',
-                '}.queryList()',
+                '}.toList()',
                 '',
                 'User().where { u ->',
                 '  exists(Order().where { it.userId == u.id })',
-                '}.queryList()',
+                '}.toList()',
                 '',
                 'Order().where {',
                 '  [it.userId, it.createTime] in OrderArchive()',
                 '    .select { [it.userId, f.max(it.createTime).alias("maxCreateTime")] }',
                 '    .groupBy { it.userId }',
-                '}.queryList()'
+                '}.toList()'
             ],
             docPath: 'query/subqueries'
         },

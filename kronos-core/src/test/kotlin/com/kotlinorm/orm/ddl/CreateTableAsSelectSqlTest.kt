@@ -159,7 +159,7 @@ class CreateTableAsSelectSqlTest : MysqlTestBase() {
             )
 
         assertEquals(
-            "CREATE TABLE IF NOT EXISTS `tb_subquery_order_archive` AS SELECT `q`.`id`, `q`.`user_id` AS `userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status) AS `q` WHERE `q`.`user_id` = :userId",
+            "CREATE TABLE IF NOT EXISTS `tb_subquery_order_archive` AS SELECT `q`.`id`, `q`.`userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status) AS `q` WHERE `q`.`userId` = :userId",
             sql
         )
         assertEquals(mapOf("status" to 43, "userId" to 44), params)

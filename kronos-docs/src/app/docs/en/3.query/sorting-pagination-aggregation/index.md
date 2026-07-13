@@ -109,15 +109,15 @@ LIMIT 10
 
 ## Page rows with total count
 
-Use `page(pageIndex, pageSize)` for page queries. Page indexes start at `1`. Add `withTotal()` when the caller needs a total row count.
+Use `withTotal().page(pageIndex, pageSize)` for page queries with totals. Page indexes start at `1`.
 
 ```kotlin group="Page 1" name="kotlin" icon="kotlin"
-val (total, rows): Pair<Int, List<User>> = User()
+val (total, rows, totalPages): Triple<Int, List<User>, Int> = User()
     .select()
     .where { it.age >= 18 }
     .orderBy { it.id.asc() }
-    .page(2, 20)
     .withTotal()
+    .page(2, 20)
     .toList()
 ```
 
@@ -138,14 +138,50 @@ FROM (
 ) AS total_count
 ```
 
-The result is returned as a pair.
+The result is returned as a triple.
 
 ```kotlin group="Page 2" name="result shape" icon="kotlin"
-42 to listOf(
-    User(id = 21, name = "Ada", age = 18),
-    User(id = 22, name = "Grace", age = 19)
+Triple(
+    42,
+    listOf(
+        User(id = 21, name = "Ada", age = 18),
+        User(id = 22, name = "Grace", age = 19)
+    ),
+    3
 )
 ```
+
+## Cursor rows
+
+Use `withCursor().cursor(offset = count)` for the first cursor page. Pass the returned cursor into the next call. Cursor paging requires an `orderBy` over selected fields and returns `(hasNext, nextCursor, rows)`.
+
+```kotlin group="Cursor" name="kotlin" icon="kotlin"
+val (hasNext, nextCursor, rows) = User()
+    .select { [it.id, it.name, it.age] }
+    .where { it.age >= 18 }
+    .orderBy { it.id.asc() }
+    .withCursor()
+    .cursor(offset = 20)
+    .toList<User>()
+
+val nextPage = User()
+    .select { [it.id, it.name, it.age] }
+    .where { it.age >= 18 }
+    .orderBy { it.id.asc() }
+    .withCursor()
+    .cursor(nextCursor, offset = 20)
+    .toList<User>()
+```
+
+```sql group="Cursor" name="Mysql next page" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`age` >= :ageMin AND `id` > :cursor_id
+ORDER BY `id` ASC
+LIMIT 21
+```
+
+`withCursor()` is separate from `withTotal().page(...)`; cursor queries do not calculate totals or total pages.
 
 ## Select aggregate values
 

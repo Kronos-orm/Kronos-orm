@@ -109,15 +109,15 @@ LIMIT 10
 
 ## 分页并返回总数
 
-使用 `page(pageIndex, pageSize)` 查询分页。页码从 `1` 开始。调用方需要总行数时，追加 `withTotal()`。
+使用 `withTotal().page(pageIndex, pageSize)` 查询带总数的分页。页码从 `1` 开始。
 
 ```kotlin group="Page 1" name="kotlin" icon="kotlin"
-val (total, rows): Pair<Int, List<User>> = User()
+val (total, rows, totalPages): Triple<Int, List<User>, Int> = User()
     .select()
     .where { it.age >= 18 }
     .orderBy { it.id.asc() }
-    .page(2, 20)
     .withTotal()
+    .page(2, 20)
     .toList()
 ```
 
@@ -138,14 +138,50 @@ FROM (
 ) AS total_count
 ```
 
-返回值是一个 Pair。
+返回值是一个 Triple。
 
 ```kotlin group="Page 2" name="result shape" icon="kotlin"
-42 to listOf(
-    User(id = 21, name = "Ada", age = 18),
-    User(id = 22, name = "Grace", age = 19)
+Triple(
+    42,
+    listOf(
+        User(id = 21, name = "Ada", age = 18),
+        User(id = 22, name = "Grace", age = 19)
+    ),
+    3
 )
 ```
+
+## 游标分页
+
+首次游标分页使用 `withCursor().cursor(offset = count)`。下一次查询把返回的 cursor 传回去。游标分页要求 `orderBy` 使用已选中的字段，返回值是 `(hasNext, nextCursor, rows)`。
+
+```kotlin group="Cursor" name="kotlin" icon="kotlin"
+val (hasNext, nextCursor, rows) = User()
+    .select { [it.id, it.name, it.age] }
+    .where { it.age >= 18 }
+    .orderBy { it.id.asc() }
+    .withCursor()
+    .cursor(offset = 20)
+    .toList<User>()
+
+val nextPage = User()
+    .select { [it.id, it.name, it.age] }
+    .where { it.age >= 18 }
+    .orderBy { it.id.asc() }
+    .withCursor()
+    .cursor(nextCursor, offset = 20)
+    .toList<User>()
+```
+
+```sql group="Cursor" name="Mysql next page" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`age` >= :ageMin AND `id` > :cursor_id
+ORDER BY `id` ASC
+LIMIT 21
+```
+
+`withCursor()` 与 `withTotal().page(...)` 是分开的入口；游标分页不计算总数和总页数。
 
 ## 选择聚合值
 

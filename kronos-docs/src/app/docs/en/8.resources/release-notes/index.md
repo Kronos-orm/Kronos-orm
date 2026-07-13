@@ -7,6 +7,14 @@
 
 ## Update Logs
 
+### 0.2.3
+
+- ✨ Add cursor pagination with `withCursor().cursor(...)`, returning `(hasNext, nextCursor, rows)` while keeping it separate from total-count page pagination.
+- ✨ Return total pages from `withTotal().page(...).toList()` / `toMapList()` as `(total, rows, totalPages)`.
+- 🐛 Fix derived-source and window-alias projection SQL so logical output names such as `rn`, `userName`, and `createTime` remain available in later query layers.
+- 🧩 Improve the IDEA plugin projection experience, including generated projection completion for `it.` and safer handling of IntelliJ cancellation exceptions.
+- 📚 Refresh README, documentation macros, release snippets, and AI skill guidance for `0.2.3`.
+
 ### 0.2.2
 
 - ✨ Add metadata-backed KPojo runtime properties and refresh the public metadata guidance for generated column access ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240)).

@@ -81,12 +81,13 @@ FROM "USER"
 
 ## 分页
 
-`page(pageIndex, pageSize)` 的页码从 1 开始。Kronos 会把相同 DSL 渲染为当前数据库的分页语法。
+`withTotal().page(pageIndex, pageSize)` 的页码从 1 开始。Kronos 会把相同 DSL 渲染为当前数据库的分页语法。
 
 ```kotlin group="Pagination" name="kotlin" icon="kotlin"
-val users = User()
+val (_, users, _) = User()
     .select { [it.id, it.name] }
     .orderBy { it.id.asc() }
+    .withTotal()
     .page(2, 20)
     .toList()
 ```

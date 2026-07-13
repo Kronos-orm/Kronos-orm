@@ -338,18 +338,18 @@ ORDER BY `nameLength` DESC
 
 ## Page a derived source
 
-`page(pageIndex, pageSize)` and `withTotal()` can be used after a selectable source enters the next query layer.
+`withTotal().page(pageIndex, pageSize)` can be used after a selectable source enters the next query layer.
 
 ```kotlin group="Paged source" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val (total, rows) = nameLengths
+val (total, rows, totalPages) = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
     .orderBy { it.nameLength.desc() }
-    .page(1, 10)
     .withTotal()
+    .page(1, 10)
     .toList()
 ```
 

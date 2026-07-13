@@ -17,6 +17,8 @@
 package com.kotlinorm.idea
 
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.ProcessCanceledException
+import java.util.concurrent.CancellationException
 
 internal object KronosIdeaSafe {
     private val LOG = logger<KronosIdeaSafe>()
@@ -24,6 +26,10 @@ internal object KronosIdeaSafe {
     fun <T> guard(operation: String, fallback: T, block: () -> T): T {
         return try {
             block()
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             LOG.warn("Kronos IDEA plugin skipped $operation", e)
             fallback

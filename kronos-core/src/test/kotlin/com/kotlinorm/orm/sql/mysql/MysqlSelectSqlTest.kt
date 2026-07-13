@@ -92,7 +92,7 @@ class MysqlSelectSqlTest : MysqlTestBase() {
     @Test
     fun testPage() {
 
-        val (total, task) = user.select().page(1, 10).withTotal().build()
+        val (total, task) = user.select().withTotal().page(1, 10).build()
         val (sql, paramMap) = task
         val (sql2, paramMap2) = total
 

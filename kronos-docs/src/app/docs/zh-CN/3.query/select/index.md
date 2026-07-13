@@ -741,24 +741,21 @@ SELECT "id", "name", "age"
 FROM "user" LOCK IN SHARE MODE
 ```
 
-## {{ $.title("page") }}, {{ $.title("withTotal") }}设置分页查询
+## {{ $.title("withTotal") }}, {{ $.title("page") }} 设置分页查询
 
-`page`方法用于设置分页查询，请注意，`page`方法的参数从1开始。
+`withTotal().page(pageIndex, pageSize)` 用于设置带总数的分页查询，页码从 1 开始。
 
 在不同的数据库中，分页查询的语法有所不同，Kronos会根据不同的数据库生成相应的分页查询语句。
 
-`withTotal`方法用于查询带有总记录数的分页查询。
-
-> **Warning**
-> 使用 `page` 方法后，查询结果默认**不会**包含总记录数。需要总数时使用 `withTotal()`。
+返回值是 `(total, rows, totalPages)`。
 
 ```kotlin group="Case 8" name="kotlin" icon="kotlin" {1-4}
-val (total, listOfUser) = User().select()
-    .page(1, 10)
+val (total, listOfUser, totalPages) = User().select()
     .withTotal()
+    .page(1, 10)
     .toList()
 
-// total: Int, listOfUser: List<User>
+// total: Int, listOfUser: List<User>, totalPages: Int
 ```
 
 ```sql group="Case 8" name="Mysql" icon="mysql"
@@ -797,11 +794,11 @@ WHERE ROWNUM <= 10
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val (total, rows) = nameLengths
+val (total, rows, totalPages) = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .page(1, 10)
     .withTotal()
+    .page(1, 10)
     .toList()
 ```
 

@@ -13,6 +13,7 @@ import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -30,8 +31,8 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val (total, pageUsers) = IntegrationUser()
             .select { [it.id, it.name] }
             .orderBy { it.id.asc() }
-            .page(pi = 2, ps = 2)
             .withTotal()
+            .page(pi = 2, ps = 2)
             .toList<IntegrationPageProjection>()
 
         assertEquals(4, total)
@@ -47,8 +48,8 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val (total, pageUsers) = IntegrationUser()
             .select { [it.id, it.name, it.score] }
             .orderBy { it.id.asc() }
-            .page(pi = 3, ps = 2)
             .withTotal()
+            .page(pi = 3, ps = 2)
             .toList<IntegrationPageProjection>()
 
         assertEquals(5, total)
@@ -80,8 +81,8 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val (total, rows) = IntegrationUser()
             .select { [it.id, it.name, it.score] }
             .orderBy { it.id.asc() }
-            .page(pi = 1, ps = 10)
             .withTotal()
+            .page(pi = 1, ps = 10)
             .toMapList()
 
         assertEquals(5, total)
@@ -140,6 +141,36 @@ abstract class ResultMethodEdgeIntegrationSuite(
             .toList<Int?>()
 
         assertEquals(listOf(10, 20, 30, 5, null), scores)
+    }
+
+    @Test
+    fun cursorPaginationFetchesNextPageAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        val (hasNext, cursor, firstPage) = IntegrationUser()
+            .select { [it.id, it.name] }
+            .orderBy { it.id.asc() }
+            .withCursor()
+            .cursor(offset = 2)
+            .toList<IntegrationPageProjection>()
+
+        assertTrue(hasNext)
+        assertNotNull(cursor)
+        assertEquals(listOf(1, 2), firstPage.map { it.id })
+        assertEquals(listOf("Ada", "Grace"), firstPage.map { it.name })
+
+        val (nextHasNext, nextCursor, secondPage) = IntegrationUser()
+            .select { [it.id, it.name] }
+            .orderBy { it.id.asc() }
+            .withCursor()
+            .cursor(cursor, offset = 2)
+            .toList<IntegrationPageProjection>()
+
+        assertFalse(nextHasNext)
+        assertNull(nextCursor)
+        assertEquals(listOf(3, 4), secondPage.map { it.id })
+        assertEquals(listOf("Linus", "NoOrder"), secondPage.map { it.name })
     }
 
     @Test

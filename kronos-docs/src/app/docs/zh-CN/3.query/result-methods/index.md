@@ -203,19 +203,19 @@ ON `user`.`id` = `order`.`user_id`
 
 ## 在分页后使用结果方法
 
-分页结果需要包含总行数时，使用 `withTotal()`。
+分页结果需要包含总行数时，使用 `withTotal().page(pageIndex, pageSize)`。返回值是 `(total, rows, totalPages)`。
 
 ```kotlin group="Page query" name="kotlin" icon="kotlin"
-val (total, rows): Pair<Int, List<Map<String, Any?>>> = User()
+val (total, rows, totalPages): Triple<Int, List<Map<String, Any?>>, Int> = User()
     .select { [it.id, it.name] }
-    .page(1, 20)
     .withTotal()
+    .page(1, 20)
     .toMapList()
 
-val (typedTotal, users): Pair<Int, List<User>> = User()
+val (typedTotal, users, typedTotalPages): Triple<Int, List<User>, Int> = User()
     .select()
-    .page(1, 20)
     .withTotal()
+    .page(1, 20)
     .toList()
 ```
 

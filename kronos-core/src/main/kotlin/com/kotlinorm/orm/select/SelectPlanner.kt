@@ -21,6 +21,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.group.SqlGroup
 import com.kotlinorm.syntax.group.SqlGroupingItem
 import com.kotlinorm.syntax.limit.SqlLimit
+import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.order.SqlOrderingItem
 import com.kotlinorm.syntax.quantifier.SqlQuantifier
 import com.kotlinorm.syntax.statement.SqlQuery
@@ -30,6 +31,7 @@ import com.kotlinorm.syntax.statement.SqlSelectItemSource
 import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
+import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.utils.databaseBooleanLiteral
 import com.kotlinorm.utils.execute
 
@@ -54,7 +56,7 @@ internal class SelectPlanner(
             quantifier = if (context.distinct) SqlQuantifier.Distinct else null,
             select = selectItems,
             from = listOf(fromTable),
-            where = where(dataSource),
+            where = where(dataSource, parameters),
             groupBy = context.groupByItems.takeIf { it.isNotEmpty() }?.let {
                 SqlGroup(items = it.map(SqlGroupingItem::Expr))
             },
@@ -85,7 +87,7 @@ internal class SelectPlanner(
             return context.projectionItems.mapNotNull { projection ->
                 when (projection) {
                     is KTableForSelect.ProjectionItem.FieldItem ->
-                        projection.field.takeIf { it in context.selectedFields }?.toPlannerSelectItem()
+                        projection.field.takeIf { it in context.selectedFields }?.toPlannerSelectItem(projection.expr)
                     is KTableForSelect.ProjectionItem.SelectItemValue -> projection.item
                     is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> {
                         val query = projection.query.materializeSqlQuery(parameters, parameterCounter, dataSource)
@@ -110,9 +112,11 @@ internal class SelectPlanner(
         )
     }
 
-    private fun Field.toPlannerSelectItem(): SqlSelectItem.Expr {
-        val expr = toPlannerExpr()
+    private fun Field.toPlannerSelectItem(exprOverride: SqlExpr? = null): SqlSelectItem.Expr {
+        val expr = exprOverride ?: toPlannerExpr()
+        val outputName = name.ifBlank { context.sourceColumnName(this) }
         val alias = when {
+            context.sourceQuery != null -> null
             name != columnName -> name
             else -> null
         }
@@ -120,12 +124,12 @@ internal class SelectPlanner(
             expr = expr,
             alias = alias,
             metadata = SqlSelectItemAliasMetadata(
-                outputName = alias ?: columnName,
+                outputName = alias ?: outputName,
                 expression = expr,
                 scope = if (alias == null) SqlSelectItemSourceScope.Source else SqlSelectItemSourceScope.Selected,
                 source = SqlSelectItemSource(
                     tableName = context.sourceTableAlias,
-                    columnName = columnName
+                    columnName = context.sourceColumnName(this)
                 ),
                 userReferenceable = true
             )
@@ -135,7 +139,7 @@ internal class SelectPlanner(
     private fun Field.toPlannerExpr(): SqlExpr =
         SqlExpr.Column(
             tableName = context.sourceTableAlias,
-            columnName = columnName
+            columnName = context.sourceColumnName(this)
         )
 
     private fun table(
@@ -157,20 +161,62 @@ internal class SelectPlanner(
         )
     }
 
-    private fun where(dataSource: KronosDataSourceWrapper): SqlExpr? {
+    private fun where(dataSource: KronosDataSourceWrapper, parameters: MutableMap<String, Any?>): SqlExpr? {
         var where = context.where
         context.logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
             val logicDeleteExpression = SqlExpr.Binary(
                 SqlExpr.Column(
                     tableName = context.sourceTableAlias,
-                    columnName = field.columnName
+                    columnName = context.sourceColumnName(field)
                 ),
                 SqlBinaryOperator.Equal,
                 databaseBooleanLiteral(dataSource, field, false)
             )
             where = and(where, logicDeleteExpression)
         }
-        return where
+        return and(where, cursorCondition(parameters))
+    }
+
+    private fun cursorCondition(parameters: MutableMap<String, Any?>): SqlExpr? {
+        val spec = context.cursorSpec ?: return null
+        if (spec.cursor == null) return null
+        require(context.orderByItems.isNotEmpty()) { "Cursor pagination requires orderBy()." }
+        val fields = context.orderByItems.map { item ->
+            require(item is SelectOrderItem.FieldItem) { "Cursor pagination requires field-based orderBy items." }
+            item
+        }
+        val parts = fields.mapIndexedNotNull { index, item ->
+            require(spec.values.containsKey(item.field.name)) {
+                "Cursor token is missing orderBy field '${item.field.name}'."
+            }
+            val value = spec.values[item.field.name]
+                ?: error("Cursor token contains null for orderBy field '${item.field.name}', which is not supported.")
+            val parameterName = "cursor_${item.field.name}"
+            parameters[parameterName] = value
+            val comparison = SqlExpr.Binary(
+                item.expr ?: item.field.toPlannerExpr(),
+                if (item.ordering == SqlOrdering.Desc) SqlBinaryOperator.LessThan else SqlBinaryOperator.GreaterThan,
+                SqlExpr.Parameter(SqlParameter.Named(parameterName))
+            )
+            fields.take(index).fold(comparison) { acc, previous ->
+                val previousValue = spec.values[previous.field.name]
+                    ?: error("Cursor token contains null for orderBy field '${previous.field.name}', which is not supported.")
+                val previousParameterName = "cursor_${previous.field.name}"
+                parameters.putIfAbsent(previousParameterName, previousValue)
+                SqlExpr.Binary(
+                    SqlExpr.Binary(
+                        previous.expr ?: previous.field.toPlannerExpr(),
+                        SqlBinaryOperator.Equal,
+                        SqlExpr.Parameter(SqlParameter.Named(previousParameterName))
+                    ),
+                    SqlBinaryOperator.And,
+                    acc
+                )
+            }
+        }
+        return parts.drop(1).fold(parts.firstOrNull()) { left, right ->
+            if (left == null) right else SqlExpr.Binary(left, SqlBinaryOperator.Or, right)
+        }
     }
 
     private fun and(left: SqlExpr?, right: SqlExpr?): SqlExpr? =
@@ -188,7 +234,7 @@ internal class SelectPlanner(
     ): SqlOrderingItem =
         SqlOrderingItem(
             expr = when (this) {
-                is SelectOrderItem.FieldItem -> selectItems.orderAliasExpr(field.name) ?: field.toPlannerExpr()
+                is SelectOrderItem.FieldItem -> selectItems.orderAliasExpr(field.name) ?: expr ?: field.toPlannerExpr()
                 is SelectOrderItem.ExprItem -> expr
                 is SelectOrderItem.SelectableItem ->
                     SqlExpr.Subquery(query.materializeSqlQuery(parameters, parameterCounter, dataSource))

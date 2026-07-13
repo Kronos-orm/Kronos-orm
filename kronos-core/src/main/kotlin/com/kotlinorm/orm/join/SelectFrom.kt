@@ -33,6 +33,7 @@ import com.kotlinorm.functions.KronosFunctionExpressions.withQualifiedFieldArgs
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
+import com.kotlinorm.orm.pagination.OffsetPageable
 import com.kotlinorm.orm.sql.toSqlParameterEq
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.table.SqlJoinType
@@ -58,7 +59,7 @@ import kotlin.reflect.typeOf
 @Suppress("UNCHECKED_CAST")
 open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     val t1: T1
-) : KSelectable<Selected>(t1) {
+) : KSelectable<Selected>(t1), OffsetPageable {
     internal val context = SelectFromContext<T1, Selected, Context>(t1)
     private val planner = SelectFromPlanner(context)
 
@@ -296,6 +297,10 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         context.pageEnabled = true
         context.pageSize = ps
         context.pageIndex = pi
+    }
+
+    override fun applyOffsetPage(pageIndex: Int, pageSize: Int) {
+        page(pageIndex, pageSize)
     }
 
     /**

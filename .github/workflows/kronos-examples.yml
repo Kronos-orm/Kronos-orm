@@ -128,6 +128,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import re
           from pathlib import Path
 
           solon_controller = Path("kronos-example-solon/src/main/kotlin/com/kotlinorm/example/solon/DemoController.kt")
@@ -145,16 +146,21 @@ jobs:
 
           ktor_routing = Path("kronos-example-ktor/src/main/kotlin/kotlinorm/com/example/ktor/plugins/Routing.kt")
           text = ktor_routing.read_text()
-          legacy_page = """val (total, users) = User().select().orderBy { it.id }
-                        .page(pageIndex, pageSize).withTotal().toList()"""
-          current_page = """val (_, users, pageCount) = User().select().orderBy { it.id }
-                        .withTotal().page(pageIndex, pageSize).toList<User>()"""
-          if legacy_page in text:
-              text = text.replace(legacy_page, current_page, 1)
-              text = text.replace(
-                  "val pageCount = (total + pageSize - 1) / pageSize\n                        ul {",
-                  "ul {",
-                  1,
+          legacy_page = (
+              r"val\s*\(\s*total\s*,\s*users\s*\)\s*=\s*User\(\)\.select\(\)\.orderBy\s*\{\s*it\.id\s*\}"
+              r"\s*\n\s*\.page\(pageIndex,\s*pageSize\)\.withTotal\(\)\.toList\(\)"
+          )
+          current_page = (
+              "val (_, users, pageCount) = User().select().orderBy { it.id }\n"
+              "                        .withTotal().page(pageIndex, pageSize).toList<User>()"
+          )
+          text, page_count = re.subn(legacy_page, current_page, text, count=1)
+          if page_count:
+              text = re.sub(
+                  r"\n\s*val pageCount = \(total \+ pageSize - 1\) / pageSize",
+                  "",
+                  text,
+                  count=1,
               )
               ktor_routing.write_text(text)
 

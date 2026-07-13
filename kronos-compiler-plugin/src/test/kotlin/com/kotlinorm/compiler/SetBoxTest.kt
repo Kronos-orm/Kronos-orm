@@ -39,6 +39,12 @@ class SetBoxTest : AbstractKronosJvmBoxSuite("set") {
     fun elvisAssignmentValue() = box("elvisAssignmentValue")
 
     /**
+     * Verifies Elvis assignments are discovered inside nested set lambda blocks.
+     */
+    @Test
+    fun nestedElvisAssignmentValue() = box("nestedElvisAssignmentValue")
+
+    /**
      * Verifies mixed assignment forms, including arithmetic and typed values.
      */
     @Test
@@ -55,6 +61,12 @@ class SetBoxTest : AbstractKronosJvmBoxSuite("set") {
      */
     @Test
     fun scalarSubquerySetAssignmentTypeHint() = box("scalarSubquerySetAssignmentTypeHint")
+
+    /**
+     * Verifies nested selectable assignment type-hint casts preserve RHS values.
+     */
+    @Test
+    fun nestedSelectableAssignmentTypeHint() = box("nestedSelectableAssignmentTypeHint")
 
     /**
      * Verifies selectable assignment type-hint casts preserve nullable and non-null RHS values.

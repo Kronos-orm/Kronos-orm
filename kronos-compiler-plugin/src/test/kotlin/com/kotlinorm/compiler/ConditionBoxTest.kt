@@ -117,6 +117,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun kpojoEquality() = box("kpojoEquality")
 
     /**
+     * Verifies KPojo equality with no column properties is ignored.
+     */
+    @Test
+    fun kpojoEqualityNoColumns() = box("kpojoEqualityNoColumns")
+
+    /**
      * Verifies no-argument comparison properties use current KPojo values.
      */
     @Test
@@ -169,6 +175,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
      */
     @Test
     fun fieldInSelectableSubquery() = box("fieldInSelectableSubquery")
+
+    /**
+     * Verifies query.contains(field) conditions produce syntax subquery operands.
+     */
+    @Test
+    fun selectableContainsFieldSubquery() = box("selectableContainsFieldSubquery")
 
     /**
      * Verifies negated field-in-selectable conditions keep syntax subquery operands.

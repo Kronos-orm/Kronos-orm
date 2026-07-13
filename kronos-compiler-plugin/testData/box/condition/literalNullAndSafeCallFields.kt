@@ -115,6 +115,8 @@ fun box(): String {
     val dynamicNull = nullSafeWhere(movie) { it.title == title }
     val unsafeCascade = nullSafeWhere(movie) { it.directorId == it.director!!.id }
     val safeCascade = nullSafeWhere(movie) { it.directorId == it.director?.id }
+    val notWrappedSafeCascade = nullSafeWhere(movie) { !(it.directorId != it.director?.id) }
+    val methodNotWrappedSafeCascade = nullSafeWhere(movie) { (it.directorId != it.director?.id).not() }
     val ifGuardCascade = nullSafeWhere(movie) {
         it.directorId == if (it.director == null) null else it.director.id
     }
@@ -133,6 +135,24 @@ fun box(): String {
             else -> null
         }
     }
+    val reversedIfGuardCascade = nullSafeWhere(movie) {
+        it.directorId == if (null == it.director) null else it.director.id
+    }
+    val reversedWhenGuardCascade = nullSafeWhere(movie) {
+        it.directorId == when {
+            null == it.director -> null
+            else -> it.director.id
+        }
+    }
+    val reversedIfNotNullGuardCascade = nullSafeWhere(movie) {
+        it.directorId == if (null != it.director) it.director.id else null
+    }
+    val reversedWhenNotNullGuardCascade = nullSafeWhere(movie) {
+        it.directorId == when {
+            null != it.director -> it.director.id
+            else -> null
+        }
+    }
 
     val failures = listOfNotNull(
         expectNullPredicate("literalNull", literalNull, "title", withNot = false),
@@ -142,10 +162,16 @@ fun box(): String {
         expectLiteralNull(dynamicNull.expr == null) { "dynamicNull expr was ${dynamicNull.expr}" },
         expectColumnComparison("unsafeCascade", unsafeCascade, "director_id", "id"),
         expectColumnComparison("safeCascade", safeCascade, "director_id", "id"),
+        expectColumnComparison("notWrappedSafeCascade", notWrappedSafeCascade, "director_id", "id"),
+        expectColumnComparison("methodNotWrappedSafeCascade", methodNotWrappedSafeCascade, "director_id", "id"),
         expectColumnComparison("ifGuardCascade", ifGuardCascade, "director_id", "id"),
         expectColumnComparison("whenGuardCascade", whenGuardCascade, "director_id", "id"),
         expectColumnComparison("ifNotNullGuardCascade", ifNotNullGuardCascade, "director_id", "id"),
         expectColumnComparison("whenNotNullGuardCascade", whenNotNullGuardCascade, "director_id", "id"),
+        expectColumnComparison("reversedIfGuardCascade", reversedIfGuardCascade, "director_id", "id"),
+        expectColumnComparison("reversedWhenGuardCascade", reversedWhenGuardCascade, "director_id", "id"),
+        expectColumnComparison("reversedIfNotNullGuardCascade", reversedIfNotNullGuardCascade, "director_id", "id"),
+        expectColumnComparison("reversedWhenNotNullGuardCascade", reversedWhenNotNullGuardCascade, "director_id", "id"),
     )
 
     return failures.firstOrNull() ?: "OK"

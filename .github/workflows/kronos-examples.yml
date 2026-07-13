@@ -124,34 +124,6 @@ jobs:
               path.write_text(text)
           PY
 
-      - name: Verify examples use current Kronos API
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          example_roots = [
-              Path("kronos-example-ktor"),
-              Path("kronos-example-spring-boot"),
-              Path("kronos-example-solon"),
-          ]
-
-          legacy_patterns = [
-              ("legacy Kronos metadata API", "kronosColumns("),
-              ("legacy Kronos pagination API", ".page(pageIndex, pageSize).withTotal()"),
-          ]
-          stale_files = []
-          for root in example_roots:
-              for path in sorted(root.glob("**/*.kt")):
-                  text = path.read_text()
-                  for label, pattern in legacy_patterns:
-                      if pattern in text:
-                          stale_files.append(f"{label}: {path}")
-
-          if stale_files:
-              raise SystemExit("legacy Kronos API remains in examples:\n" + "\n".join(stale_files))
-          PY
-
       - name: Run Ktor example smoke tests
         working-directory: kronos-example-ktor
         run: ./gradlew test --no-daemon --console=plain

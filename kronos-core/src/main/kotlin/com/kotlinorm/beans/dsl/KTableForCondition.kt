@@ -40,7 +40,9 @@ import kotlin.reflect.typeOf
  *
  * @param T the type of the table
  */
-open class KTableForCondition<T : KPojo> {
+open class KTableForCondition<T : KPojo>(
+    val sourceBinding: SourceBinding? = null
+) {
     var sourceValues: MutableMap<String, Any?> = mutableMapOf()
     var operationType: KOperationType = KOperationType.SELECT
     var sqlExpr: SqlExpr? = null
@@ -54,7 +56,7 @@ open class KTableForCondition<T : KPojo> {
     }
 
     fun column(field: Field, tableName: String? = field.tableName): SqlExpr =
-        SqlExpr.Column(tableName = tableName?.takeIf { it.isNotBlank() }, columnName = field.columnName)
+        field.toSourceColumn(sourceBinding, tableName)
 
     fun bindParameter(field: Field, value: Any?, baseName: String = field.parameterBaseName()): SqlExpr {
         val name = allocateParameterName(baseName)
@@ -856,6 +858,11 @@ open class KTableForCondition<T : KPojo> {
          */
         fun <T : KPojo> T.afterFilter(block: KTableForCondition<T>.(T) -> Unit) =
             KTableForCondition<T>().block(this)
+
+        fun <T : KPojo> T.afterFilter(
+            sourceBinding: SourceBinding?,
+            block: KTableForCondition<T>.(T) -> Unit
+        ) = KTableForCondition<T>(sourceBinding).block(this)
     }
 }
 

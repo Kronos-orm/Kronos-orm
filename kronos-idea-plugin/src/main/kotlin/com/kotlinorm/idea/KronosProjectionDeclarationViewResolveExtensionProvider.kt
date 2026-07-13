@@ -16,7 +16,6 @@
 
 package com.kotlinorm.idea
 
-import com.intellij.psi.PsiElement
 import com.kotlinorm.compiler.fir.KronosIdeProjectionField
 import com.kotlinorm.compiler.fir.KronosIdeProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionIdeBridge
@@ -94,10 +93,8 @@ private class KronosProjectionDeclarationViewFile(
 
     override fun createNavigationTargetsProvider(): KaResolveExtensionNavigationTargetsProvider =
         object : KaResolveExtensionNavigationTargetsProvider() {
-            override fun KaSession.getNavigationTargets(element: KtElement): Collection<PsiElement> =
-                KronosIdeaSafe.guard("projection navigation targets", emptyList()) {
-                    listOf(element)
-                }
+            override fun KaSession.getNavigationTargets(element: KtElement): Collection<com.intellij.psi.PsiElement> =
+                emptyList()
         }
 
     private fun StringBuilder.appendProjectionClass(name: String, fields: List<KronosIdeProjectionField>) {
@@ -109,7 +106,7 @@ private class KronosProjectionDeclarationViewFile(
                 append("    var ")
                 append(field.name.asKotlinIdentifier())
                 append(": ")
-                append(field.type.asRenderableType())
+                append(field.type.asRenderableType().asNullableProjectionType())
                 appendLine(" = null,")
             }
             appendLine(") : com.kotlinorm.interfaces.KPojo")
@@ -117,3 +114,6 @@ private class KronosProjectionDeclarationViewFile(
         }
     }
 }
+
+private fun String.asNullableProjectionType(): String =
+    if (endsWith("?")) this else "$this?"

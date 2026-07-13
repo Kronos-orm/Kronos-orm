@@ -36,7 +36,9 @@ import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
  *
  * @param T the type of the table
  */
-open class KTableForSelect<T : KPojo> {
+open class KTableForSelect<T : KPojo>(
+    val sourceBinding: SourceBinding? = null
+) {
     val fields: MutableList<Field> = mutableListOf()
     val selectItems: MutableList<SqlSelectItem> = mutableListOf()
     internal val projectionItems: MutableList<ProjectionItem> = mutableListOf()
@@ -86,9 +88,13 @@ open class KTableForSelect<T : KPojo> {
      */
     @Suppress("UNUSED")
     fun <R> R.over(block: KTableForWindow<T>.() -> Unit): R {
-        KTableForWindow<T>().block()
+        KTableForWindow<T>(sourceBinding).block()
         return this
     }
+
+    fun column(field: Field, tableName: String? = field.tableName): SqlExpr.Column =
+        sourceBinding?.projectionColumn(field)
+            ?: SqlExpr.Column(tableName = tableName?.takeIf { it.isNotBlank() }, columnName = field.columnName)
 
     /**
      * Adds a field to the collection of fields.
@@ -98,17 +104,18 @@ open class KTableForSelect<T : KPojo> {
     @Suppress("MemberVisibilityCanBePrivate")
     fun addField(property: Field) {
         fields += property
-        projectionItems += ProjectionItem.FieldItem(property)
+        projectionItems += ProjectionItem.FieldItem(property, column(property))
     }
 
     fun addFunction(function: KronosFunctionExpr) {
         val alias = function.alias ?: function.functionName.lowercase()
+        val expr = sourceBinding?.bindExpr(function.expr) ?: function.expr
         val item = SqlSelectItem.Expr(
-            expr = function.expr,
+            expr = expr,
             alias = alias,
             metadata = SqlSelectItemAliasMetadata(
                 outputName = alias,
-                expression = function.expr,
+                expression = expr,
                 scope = SqlSelectItemSourceScope.Aggregate
             )
         )
@@ -151,10 +158,15 @@ open class KTableForSelect<T : KPojo> {
          * @return The resulting KTable instance after applying the block.
          */
         fun <T : KPojo> T.afterSelect(block: KTableForSelect<T>.(T) -> Unit) = KTableForSelect<T>().block(this)
+
+        fun <T : KPojo> T.afterSelect(
+            sourceBinding: SourceBinding?,
+            block: KTableForSelect<T>.(T) -> Unit
+        ) = KTableForSelect<T>(sourceBinding).block(this)
     }
 
     internal sealed class ProjectionItem {
-        data class FieldItem(val field: Field) : ProjectionItem()
+        data class FieldItem(val field: Field, val expr: SqlExpr.Column? = null) : ProjectionItem()
         data class SelectItemValue(val item: SqlSelectItem) : ProjectionItem()
         data class ScalarSubqueryValue(
             val query: KSelectable<*>,

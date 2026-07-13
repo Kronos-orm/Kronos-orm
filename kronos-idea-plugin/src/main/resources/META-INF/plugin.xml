@@ -47,6 +47,9 @@
         order="first" />
     <platform.backend.documentation.linkHandler
         implementation="com.kotlinorm.idea.KronosProjectionDocumentationLinkHandler" />
+    <completion.contributor
+        language="kotlin"
+        implementationClass="com.kotlinorm.idea.KronosProjectionCompletionContributor" />
     <toolWindow
         id="Kronos-ORM"
         anchor="right"

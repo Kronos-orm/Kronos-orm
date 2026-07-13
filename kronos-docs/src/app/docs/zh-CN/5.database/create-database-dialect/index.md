@@ -301,9 +301,10 @@ check(sql == """SELECT "id", "name" FROM "user"""")
 分页验证覆盖 `limitStyle` 和 renderer 的 `renderLimit(...)`。
 
 ```kotlin group="Verify Pagination" name="kotlin" icon="kotlin"
-val (pageTask, _) = User()
+val (_, pageTask) = User()
     .select()
     .orderBy { it.id.asc() }
+    .withTotal()
     .page(2, 20)
     .build(wrapper)
 

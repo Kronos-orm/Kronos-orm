@@ -7,6 +7,14 @@
 
 ## 📝 更新日志
 
+### 0.2.3
+
+- ✨ 新增游标分页 `withCursor().cursor(...)`，返回 `(hasNext, nextCursor, rows)`，并与带总数的页码分页保持互斥。
+- ✨ `withTotal().page(...).toList()` / `toMapList()` 返回 `(total, rows, totalPages)`，直接携带总页数。
+- 🐛 修复派生 source 与 window alias 投影 SQL，确保 `rn`、`userName`、`createTime` 等逻辑输出名可继续用于后续查询层。
+- 🧩 改进 IDEA 插件投影体验，包括 `it.` 上的生成投影字段补全，以及 IntelliJ 取消异常的安全处理。
+- 📚 将 README、文档宏、发布片段和 AI skill 指南同步到 `0.2.3`。
+
 ### 0.2.2
 
 - ✨ 新增基于 metadata 的 KPojo 运行时属性，并刷新生成列访问相关的公开 metadata 使用说明 ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240))。

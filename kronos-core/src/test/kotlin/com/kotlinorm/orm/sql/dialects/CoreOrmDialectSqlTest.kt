@@ -1,10 +1,17 @@
 package com.kotlinorm.orm.sql.dialects
 
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
+import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
+import com.kotlinorm.orm.pagination.toCursor
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.union
 import com.kotlinorm.orm.update.update
@@ -90,13 +97,55 @@ class CoreOrmDialectSqlTest {
                 .select { it.id }
                 .where { it.id == 1 }
                 .orderBy { it.id.desc() }
-                .page(1, 10)
                 .withTotal()
+                .page(1, 10)
                 .build(dialect.wrapper)
                 .first
                 .atomicTask
 
             assertTaskEquals(expected.getValue(dialect.dbType), countTask, dialect.label)
+        }
+    }
+
+    @Test
+    fun `cursor pagination renders complete sql for every supported dialect`() {
+        initializeCoreSqlTestDefaults()
+
+        val expected = mapOf(
+            DBType.Mysql to ExpectedTask(
+                "SELECT `id`, `username` FROM `tb_user` WHERE `tb_user`.`username` = :username AND `deleted` = 0 AND `id` < :cursor_id ORDER BY `id` DESC LIMIT 3",
+                mapOf("username" to "neo", "cursor_id" to 10)
+            ),
+            DBType.Postgres to ExpectedTask(
+                """SELECT "id", "username" FROM "tb_user" WHERE "tb_user"."username" = :username AND "deleted" = FALSE AND "id" < :cursor_id ORDER BY "id" DESC LIMIT 3""",
+                mapOf("username" to "neo", "cursor_id" to 10)
+            ),
+            DBType.SQLite to ExpectedTask(
+                """SELECT "id", "username" FROM "tb_user" WHERE "tb_user"."username" = :username AND "deleted" = 0 AND "id" < :cursor_id ORDER BY "id" DESC LIMIT 3""",
+                mapOf("username" to "neo", "cursor_id" to 10)
+            ),
+            DBType.Mssql to ExpectedTask(
+                "SELECT TOP (3) [id], [username] FROM [tb_user] WHERE [tb_user].[username] = :username AND [deleted] = 0 AND [id] < :cursor_id ORDER BY [id] DESC",
+                mapOf("username" to "neo", "cursor_id" to 10)
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "ID", "USERNAME" FROM "TB_USER" WHERE "TB_USER"."USERNAME" = :username AND "DELETED" = 0 AND "ID" < :cursor_id ORDER BY "ID" DESC FETCH NEXT 3 ROWS ONLY""",
+                mapOf("username" to "neo", "cursor_id" to 10)
+            )
+        )
+
+        coreSqlDialects.forEach { dialect ->
+            val wrapper = CapturingDialectWrapper(dialect.dbType)
+
+            DialectUser()
+                .select { [it.id, it.username] }
+                .where { it.username == "neo" }
+                .orderBy { it.id.desc() }
+                .withCursor()
+                .cursor(mapOf<String, Any?>("id" to 10).toCursor(), offset = 2)
+                .toMapList(wrapper)
+
+            assertTaskEquals(expected.getValue(dialect.dbType), wrapper.queryTasks.single(), dialect.label)
         }
     }
 
@@ -345,4 +394,30 @@ class CoreOrmDialectSqlTest {
             assertTaskEquals(expected.getValue(dialect.dbType), task, dialect.label)
         }
     }
+}
+
+private class CapturingDialectWrapper(
+    override val dbType: DBType
+) : KronosDataSourceWrapper {
+    val queryTasks = mutableListOf<KAtomicQueryTask>()
+    override val url: String = "jdbc:test://localhost/kronos"
+    override val userName: String = "kronos"
+
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        queryTasks += task
+        return emptyList()
+    }
+
+    override fun first(task: KAtomicQueryTask): Any? {
+        queryTasks += task
+        return null
+    }
+
+    override fun update(task: KAtomicActionTask): Int = 1
+    override fun batchUpdate(task: KronosAtomicBatchTask): IntArray = intArrayOf(1)
+    override fun transact(
+        isolation: TransactionIsolation?,
+        timeout: Int?,
+        block: TransactionScope.() -> Any?
+    ): Any? = TransactionScope().block()
 }

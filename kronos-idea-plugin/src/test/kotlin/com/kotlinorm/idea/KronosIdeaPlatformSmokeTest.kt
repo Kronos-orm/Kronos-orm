@@ -58,6 +58,7 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosBundledFirCompilerPluginProvider\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosFirCompilerPluginConfigurationForIdeProvider\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosProjectionDeclarationViewResolveExtensionProvider\""))
+        assertTrue(pluginXml.contains("implementationClass=\"com.kotlinorm.idea.KronosProjectionCompletionContributor\""))
         assertTrue(pluginXml.contains("factoryClass=\"com.kotlinorm.plugin.idea.MainWinFactory\""))
         assertTrue(pluginXml.contains("displayName=\"Kronos ORM Setting\""))
     }
@@ -89,6 +90,8 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         assertTrue(pluginXml.contains("KronosProjectionPsiDocumentationTargetProvider"))
         assertTrue(pluginXml.contains("platform.backend.documentation.linkHandler"))
         assertTrue(pluginXml.contains("KronosProjectionDocumentationLinkHandler"))
+        assertTrue(pluginXml.contains("completion.contributor"))
+        assertTrue(pluginXml.contains("KronosProjectionCompletionContributor"))
         assertFalse(pluginXml.contains("KronosProjectionResolveExtensionProvider"))
         assertFalse(pluginXml.contains("KronosGeneratedProjections.kt"))
 
@@ -100,6 +103,9 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         assertTrue(provider.contains("model.contextName"))
         assertTrue(provider.contains("fields"))
         assertTrue(provider.contains("contextFields"))
+        assertTrue(provider.contains("asNullableProjectionType"))
+        assertTrue(provider.contains("createNavigationTargetsProvider"))
+        assertTrue(provider.contains("emptyList()"))
 
         val documentationProvider = Files.readString(
             Paths.get("src/main/kotlin/com/kotlinorm/idea/KronosProjectionDocumentationTargetProvider.kt")

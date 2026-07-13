@@ -16,10 +16,14 @@
 
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.annotations.Table
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.beans.subquery.SubqueryOrder
 import com.kotlinorm.beans.subquery.SubqueryUser
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -324,4 +328,86 @@ class SelectSubquerySqlTest : MysqlTestBase() {
         )
         assertEquals(emptyMap(), params)
     }
+
+    @Test
+    fun `derived source keeps logical output names for where and order by`() {
+        val source = SourceBindingUser()
+            .select { [it.id, it.userName, it.createTime] }
+
+        val (sql, params) = source
+            .select { [it.userName, it.createTime] }
+            .where { it.userName == "Ada" }
+            .orderBy { it.createTime.desc() }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`userName`, `q`.`createTime` FROM (SELECT `id`, `user_name` AS `userName`, `create_time` AS `createTime` FROM `tb_source_binding_user`) AS `q` WHERE `q`.`userName` = :userName ORDER BY `q`.`createTime` DESC",
+            sql
+        )
+        assertEquals(mapOf("userName" to "Ada"), params)
+    }
+
+    @Test
+    fun `derived source from kpojo expansion and window alias keeps logical output names`() {
+        val ranked = SourceBindingUser()
+            .select {
+                [
+                    it,
+                    f.rowNumber()
+                        .over {
+                            partitionBy(it.age)
+                            orderBy(it.createTime.desc())
+                        }
+                        .alias("rn"),
+                ]
+            }
+
+        val (sql, params) = ranked
+            .select { [it.userName, it.createTime, it.rn] }
+            .where { it.rn == 1 }
+            .orderBy { it.userName.asc() }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`userName`, `q`.`createTime`, `q`.`rn` FROM (SELECT `id`, `user_name` AS `userName`, `age`, `create_time` AS `createTime`, `update_time` AS `updateTime`, ROW_NUMBER() OVER (PARTITION BY `age` ORDER BY `create_time` DESC) AS rn FROM `tb_source_binding_user`) AS `q` WHERE `q`.`rn` = :rn ORDER BY `q`.`userName` ASC",
+            sql
+        )
+        assertEquals(mapOf("rn" to 1), params)
+    }
+
+    @Test
+    fun `derived source from kpojo exclusion supports where group by having and order by`() {
+        val source = SourceBindingUser()
+            .select { it - listOf(it.updateTime) }
+
+        val (sql, params) = source
+            .select {
+                [
+                    it.userName,
+                    it.age,
+                    f.count(it.id).alias("total"),
+                ]
+            }
+            .where { it.createTime > 0 }
+            .groupBy { [it.userName, it.age] }
+            .having { f.count(it.id) > 1 }
+            .orderBy { [it.userName.asc(), it.age.asc()] }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`userName`, `q`.`age`, COUNT(`q`.`id`) AS total FROM (SELECT `id`, `user_name` AS `userName`, `age`, `create_time` AS `createTime` FROM `tb_source_binding_user`) AS `q` WHERE `q`.`createTime` > :createTimeMin GROUP BY `q`.`userName`, `q`.`age` HAVING COUNT(`q`.`id`) > :countMin ORDER BY `q`.`userName` ASC, `q`.`age` ASC",
+            sql
+        )
+        assertEquals(mapOf("createTimeMin" to 0, "countMin" to 1), params)
+    }
 }
+
+@Table(name = "tb_source_binding_user")
+internal data class SourceBindingUser(
+    @PrimaryKey
+    var id: Int? = null,
+    var userName: String? = null,
+    var age: Int? = null,
+    var createTime: Int? = null,
+    var updateTime: Int? = null,
+) : KPojo

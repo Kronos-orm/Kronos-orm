@@ -75,12 +75,35 @@ data class IntegrationAggregateProjection(
 data class IntegrationDslEdgeProjection(
     var id: Int? = null,
     var userId: Int? = null,
+    var userName: String? = null,
     var name: String? = null,
+    var age: Int? = null,
+    var createTime: Int? = null,
+    var updateTime: Int? = null,
     var amount: Int? = null,
     var totalAmount: Int? = null,
     var orderCount: Int? = null,
     var rn: Int? = null,
     var status: Int? = null,
+) : KPojo
+
+@Table("kt_integration_alias_matrix_user")
+data class IntegrationAliasMatrixUser(
+    @PrimaryKey
+    @ColumnType(INT)
+    var id: Int? = null,
+
+    @ColumnType(VARCHAR, 80)
+    var userName: String? = null,
+
+    @ColumnType(INT)
+    var age: Int? = null,
+
+    @ColumnType(INT)
+    var createTime: Int? = null,
+
+    @ColumnType(INT)
+    var updateTime: Int? = null,
 ) : KPojo
 
 data class IntegrationPageProjection(

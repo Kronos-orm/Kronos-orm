@@ -32,6 +32,8 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
 import com.kotlinorm.orm.pagination.PagedClause
+import com.kotlinorm.orm.pagination.CursorClause
+import com.kotlinorm.orm.pagination.OffsetPageable
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.statement.SqlLock
@@ -53,7 +55,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     contextPojo: Context = pojo as Context,
     sourceQuery: KSelectable<*>? = null,
     sourceAlias: String? = null
-) : KSelectable<Selected>(pojo) {
+) : KSelectable<Selected>(pojo), OffsetPageable {
     override val selectedType: KType = projectionType
     override val nullableSelectedType: KType = nullableProjectionType
     internal val context = SelectContext<Source, Selected, Context>(pojo, contextPojo, projectionType)
@@ -69,7 +71,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             }
         }
         if (setSelectFields != null) {
-            pojo.afterSelect {
+            pojo.afterSelect(context.sourceBinding) {
                 setSelectFields(it)
                 if (fields.isEmpty() && selectItems.isEmpty()) {
                     throw EmptyFieldsException()
@@ -116,14 +118,18 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun orderBy(someFields: ToSort<Context, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
-        context.receiverPojo.afterSort {
+        context.receiverPojo.afterSort(context.sourceBinding) {
             someFields(it)
             context.orderByItems = if (sortedItems.isNotEmpty()) {
                 sortedItems.map { item ->
                     when (item) {
-                        is KTableForSort.SortItem.FieldItem -> SelectOrderItem.FieldItem(item.field, item.ordering)
+                        is KTableForSort.SortItem.FieldItem -> SelectOrderItem.FieldItem(
+                            context.sourceBinding.bindField(item.field),
+                            item.ordering,
+                            item.expr
+                        )
                         is KTableForSort.SortItem.ExpressionItem -> SelectOrderItem.ExprItem(
-                            item.expression.qualifySourceAliasIfPresent(context.sourceTableAlias),
+                            context.bindExpr(item.expression.qualifySourceAliasIfPresent(context.sourceTableAlias)),
                             item.ordering
                         )
                         is KTableForSort.SortItem.SelectableItem -> SelectOrderItem.SelectableItem(item.query, item.ordering)
@@ -138,13 +144,15 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun groupBy(someFields: ToSelect<Source, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
-        pojo.afterSelect {
+        pojo.afterSelect(context.sourceBinding) {
             someFields(it)
             val items = projectionItems.mapNotNull { projection ->
                 when (projection) {
                     is KTableForSelect.ProjectionItem.FieldItem -> context.selectExpr(projection.field)
                     is KTableForSelect.ProjectionItem.SelectItemValue -> when (val item = projection.item) {
-                        is SqlSelectItem.Expr -> item.expr.qualifySourceAliasIfPresent(context.sourceTableAlias)
+                        is SqlSelectItem.Expr -> context.bindExpr(
+                            item.expr.qualifySourceAliasIfPresent(context.sourceTableAlias)
+                        )
                         is SqlSelectItem.Asterisk -> null
                     }
                     is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> null
@@ -163,9 +171,16 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return this
     }
 
-    fun page(pi: Int, ps: Int): SelectClause<Source, Selected, Context> {
-        context.limit = SqlLimit.limit(ps, if (pi > 0) (pi - 1) * ps else 0)
-        return this
+    override fun applyOffsetPage(pageIndex: Int, pageSize: Int) {
+        context.limit = SqlLimit.limit(pageSize, if (pageIndex > 0) (pageIndex - 1) * pageSize else 0)
+    }
+
+    private fun applyCursorLimit(offset: Int) {
+        context.limit = SqlLimit.limit(offset + 1)
+    }
+
+    fun applyCursorPage(offset: Int) {
+        applyCursorLimit(offset.coerceAtLeast(0))
     }
 
     fun cascade(enabled: Boolean): SelectClause<Source, Selected, Context> {
@@ -188,7 +203,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun by(someFields: ToSelect<Source, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
-        pojo.afterSelect {
+        pojo.afterSelect(context.sourceBinding) {
             someFields(it)
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
@@ -203,7 +218,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             context.addSourceValueConditions()
             return this
         }
-        pojo.afterFilter filter@ { filterTable ->
+        pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
             with(context) {
                 this@filter.sourceValues = sourceValues
                 this@filter.operationType = operationType
@@ -219,7 +234,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun having(selectCondition: ToFilter<Source, Boolean?> = null): SelectClause<Source, Selected, Context> {
         selectCondition ?: throw EmptyFieldsException()
-        pojo.afterFilter filter@ { filterTable ->
+        pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
             with(context) {
                 this@filter.sourceValues = sourceValues
                 this@filter.operationType = operationType
@@ -235,6 +250,10 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun withTotal(): PagedClause<Source, Selected, SelectClause<Source, Selected, Context>> {
         return PagedClause(this)
+    }
+
+    fun withCursor(): CursorClause<Source, Selected, Context> {
+        return CursorClause(this)
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): SelectClause<Source, Selected, Context> {

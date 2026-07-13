@@ -116,7 +116,7 @@
                 '',
                 'val list = User().select { [it.id, it.username.alias("name")] }',
                 '  .where { it.age >= 18 }',
-                '  .queryList() // Type: List<{ id: Long?, name: String? }>'
+                '  .toList() // Type: List<{ id: Long?, name: String? }>'
             ]; track $index) {<span class="code-line">@for (token of highlight(line); track $index) {<span [class]="'code-' + token.kind">{{ token.text }}</span>}</span>}</code></pre>
 
             <div class="console-status">

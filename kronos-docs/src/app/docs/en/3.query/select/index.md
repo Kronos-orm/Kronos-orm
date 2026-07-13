@@ -741,24 +741,21 @@ SELECT "id", "name", "age"
 FROM "user" LOCK IN SHARE MODE
 ```
 
-## {{ $.title("page") }}, {{ $.title("withTotal") }}Query paging
+## {{ $.title("withTotal") }}, {{ $.title("page") }} Query paging
 
-The `page` method is used to specify paging queries, please note that the `page` method parameter starts from 1.
+The `withTotal().page(pageIndex, pageSize)` chain is used to specify paging queries with total counts. Page indexes start from 1.
 
 In different databases, paging queries have different syntaxes, Kronos generates paging queries based on different databases.
 
-The `withTotal` method is used to query paging queries with total record counts.
-
-> **Warning**
-> After using the `page` method, the result of the query by default **will not** contain the total number of records. Use `withTotal()` when the total number is required.
+The result is `(total, rows, totalPages)`.
 
 ```kotlin group="Case 8" name="kotlin" icon="kotlin" {1-4}
-val (total, listOfUser) = User().select()
-    .page(1, 10)
+val (total, listOfUser, totalPages) = User().select()
     .withTotal()
+    .page(1, 10)
     .toList()
 
-// total: Int, listOfUser: List<User>
+// total: Int, listOfUser: List<User>, totalPages: Int
 ```
 
 ```sql group="Case 8" name="Mysql" icon="mysql"
@@ -797,11 +794,11 @@ Generated projections can be paged after they enter the next query layer.
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val (total, rows) = nameLengths
+val (total, rows, totalPages) = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .page(1, 10)
     .withTotal()
+    .page(1, 10)
     .toList()
 ```
 

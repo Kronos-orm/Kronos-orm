@@ -203,19 +203,19 @@ ON `user`.`id` = `order`.`user_id`
 
 ## Use result methods after pagination
 
-Use `withTotal()` when the page result should include a total row count.
+Use `withTotal().page(pageIndex, pageSize)` when the page result should include a total row count. The result is `(total, rows, totalPages)`.
 
 ```kotlin group="Page query" name="kotlin" icon="kotlin"
-val (total, rows): Pair<Int, List<Map<String, Any?>>> = User()
+val (total, rows, totalPages): Triple<Int, List<Map<String, Any?>>, Int> = User()
     .select { [it.id, it.name] }
-    .page(1, 20)
     .withTotal()
+    .page(1, 20)
     .toMapList()
 
-val (typedTotal, users): Pair<Int, List<User>> = User()
+val (typedTotal, users, typedTotalPages): Triple<Int, List<User>, Int> = User()
     .select()
-    .page(1, 20)
     .withTotal()
+    .page(1, 20)
     .toList()
 ```
 

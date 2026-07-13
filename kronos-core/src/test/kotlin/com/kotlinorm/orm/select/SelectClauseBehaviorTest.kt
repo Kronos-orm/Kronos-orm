@@ -195,7 +195,7 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
             .groupBy { [it.gender] }
             .having { it.gender == 1 }
             .orderBy { [it.id.desc(), it.username.asc()] }
-            .page(2, 10)
+        clause.withTotal().page(2, 10)
 
         assertEquals(setOf("id", "username"), clause.context.selectedFields.map { it.name }.toSet())
         assertEquals(listOf("gender"), clause.context.groupByItems.map { it.toString().substringAfter("columnName=").substringBefore(",") })

@@ -26,7 +26,9 @@ import com.kotlinorm.syntax.order.SqlOrdering
  * DSL Class of Kronos, which the compiler plugin use to generate the `order by` code.
  * @param T the type of the table
  */
-class KTableForSort<T : KPojo>: KTableForSelect<T>() {
+class KTableForSort<T : KPojo>(
+    sourceBinding: SourceBinding? = null
+) : KTableForSelect<T>(sourceBinding) {
     val sortedItems = mutableListOf<SortItem>()
 
     @Suppress("UNCHECKED_CAST", "UNUSED")
@@ -82,7 +84,7 @@ class KTableForSort<T : KPojo>: KTableForSelect<T>() {
     }
 
     private fun addFieldSort(field: Field, ordering: SqlOrdering) {
-        sortedItems.add(SortItem.FieldItem(field, ordering))
+        sortedItems.add(SortItem.FieldItem(field, ordering, column(field)))
     }
 
     private fun addExpressionSort(expression: SqlExpr, ordering: SqlOrdering) {
@@ -103,12 +105,21 @@ class KTableForSort<T : KPojo>: KTableForSelect<T>() {
          */
         fun <T : KPojo> T.afterSort(block: KTableForSort<T>.(T) -> Unit) =
             KTableForSort<T>().block(this)
+
+        fun <T : KPojo> T.afterSort(
+            sourceBinding: SourceBinding?,
+            block: KTableForSort<T>.(T) -> Unit
+        ) = KTableForSort<T>(sourceBinding).block(this)
     }
 
     sealed class SortItem {
         abstract val ordering: SqlOrdering
 
-        data class FieldItem(val field: Field, override val ordering: SqlOrdering) : SortItem()
+        data class FieldItem(
+            val field: Field,
+            override val ordering: SqlOrdering,
+            val expr: SqlExpr.Column? = null
+        ) : SortItem()
         data class ExpressionItem(val expression: SqlExpr, override val ordering: SqlOrdering) : SortItem()
         data class SelectableItem(val query: KSelectable<*>, override val ordering: SqlOrdering) : SortItem()
     }

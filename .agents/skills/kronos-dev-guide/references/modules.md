@@ -219,7 +219,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact() = SubpluginArtifact(
         groupId = "com.kotlinorm",
         artifactId = "kronos-compiler-plugin",
-        version = "0.2.2"
+        version = "0.2.3"
     )
     override fun getPluginArtifactForNative() = getPluginArtifact()
     override fun applyToCompilation(compilation) = provider {

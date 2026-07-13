@@ -154,7 +154,7 @@ class InsertSelectSqlTest : MysqlTestBase() {
             .build()
 
         assertEquals(
-            "INSERT INTO `tb_subquery_order_archive` (`id`, `user_id`, `status`) SELECT `q`.`id`, `q`.`user_id` AS `userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status) AS `q` WHERE `q`.`user_id` = :userId",
+            "INSERT INTO `tb_subquery_order_archive` (`id`, `user_id`, `status`) SELECT `q`.`id`, `q`.`userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status) AS `q` WHERE `q`.`userId` = :userId",
             sql
         )
         assertEquals(mapOf("status" to 41, "userId" to 42), params)

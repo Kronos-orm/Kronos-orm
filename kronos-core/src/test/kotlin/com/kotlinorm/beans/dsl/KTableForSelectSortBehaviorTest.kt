@@ -54,6 +54,7 @@ class KTableForSelectSortBehaviorTest {
     fun `select additions create exact projection and select item shapes`() {
         val table = KTableForSelect<KPojo>()
         val field = Field("id", "id", tableName = "tb_user")
+        val fieldExpr = SqlExpr.Column("tb_user", "id")
         val functionExpr = SqlExpr.Function(SqlIdentifier.of("COUNT"), args = listOf(SqlExpr.NumberLiteral("1")))
         val selectable = SelectSortSelectable()
 
@@ -98,7 +99,7 @@ class KTableForSelectSortBehaviorTest {
         )
         assertEquals(
             listOf<KTableForSelect.ProjectionItem>(
-                KTableForSelect.ProjectionItem.FieldItem(field),
+                KTableForSelect.ProjectionItem.FieldItem(field, fieldExpr),
                 KTableForSelect.ProjectionItem.SelectItemValue(table.selectItems[0]),
                 KTableForSelect.ProjectionItem.SelectItemValue(table.selectItems[1]),
                 KTableForSelect.ProjectionItem.ScalarSubqueryValue(selectable, "orderCount", table.selectItems[2])
@@ -126,6 +127,7 @@ class KTableForSelectSortBehaviorTest {
     fun `sort additions create exact field expression and selectable items`() {
         val table = KTableForSort<KPojo>()
         val field = Field("id", "id", tableName = "tb_user")
+        val fieldExpr = SqlExpr.Column("tb_user", "id")
         val expression = SqlExpr.Column("tb_user", "created_at")
         val selectable = SelectSortSelectable()
 
@@ -138,7 +140,7 @@ class KTableForSelectSortBehaviorTest {
 
         assertEquals(
             listOf<KTableForSort.SortItem>(
-                KTableForSort.SortItem.FieldItem(field, SqlOrdering.Desc),
+                KTableForSort.SortItem.FieldItem(field, SqlOrdering.Desc, fieldExpr),
                 KTableForSort.SortItem.ExpressionItem(SqlExpr.UnsafeRaw("id + 1"), SqlOrdering.Asc),
                 KTableForSort.SortItem.ExpressionItem(expression, SqlOrdering.Asc),
                 KTableForSort.SortItem.SelectableItem(selectable, SqlOrdering.Asc),

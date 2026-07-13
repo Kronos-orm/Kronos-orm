@@ -25,9 +25,12 @@ import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlIndexDefinition
 import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
 import com.kotlinorm.syntax.table.SqlTable
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 class ManualDdlKPojo(
     columns: MutableList<Field>,
@@ -51,6 +54,47 @@ class ManualDdlKPojo(
     override var __logicDelete = Kronos.logicDeleteStrategy
     @Ignore([IgnoreAction.ALL])
     override var __optimisticLock = Kronos.optimisticLockStrategy
+}
+
+class StaticDdlCacheKPojo : KPojo {
+    @Ignore([IgnoreAction.ALL])
+    override var __kClass: KClass<out KPojo> = StaticDdlCacheKPojo::class
+    @Ignore([IgnoreAction.ALL])
+    override var __tableName: String = "kt_integration_user"
+    @Ignore([IgnoreAction.ALL])
+    override var __tableComment: String = "static ddl cache table"
+    @Ignore([IgnoreAction.ALL])
+    override var __columns: MutableList<Field> = staticColumns
+    @Ignore([IgnoreAction.ALL])
+    override var __tableIndexes: MutableList<KTableIndex> = mutableListOf()
+    @Ignore([IgnoreAction.ALL])
+    override var __createTime = Kronos.createTimeStrategy
+    @Ignore([IgnoreAction.ALL])
+    override var __updateTime = Kronos.updateTimeStrategy
+    @Ignore([IgnoreAction.ALL])
+    override var __logicDelete = Kronos.logicDeleteStrategy
+    @Ignore([IgnoreAction.ALL])
+    override var __optimisticLock = Kronos.optimisticLockStrategy
+
+    companion object {
+        val staticColumns = mutableListOf(
+            Field(
+                columnName = "id",
+                name = "id",
+                type = KColumnType.INT,
+                tableName = "kt_integration_user",
+                primaryKey = PrimaryKeyType.DEFAULT,
+                nullable = false
+            ),
+            Field(
+                columnName = "username",
+                name = "username",
+                type = KColumnType.VARCHAR,
+                length = 255,
+                tableName = "kt_integration_user"
+            )
+        )
+    }
 }
 
 class TableOperationUtilTest {
@@ -159,6 +203,68 @@ class TableOperationUtilTest {
             TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
             columnDiffer(DBType.Oracle, expected, current)
         )
+    }
+
+    @Test
+    fun `column differ matches sql server metadata columns case insensitively`() {
+        val expected = listOf(
+            field("id", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("name", KColumnType.VARCHAR, length = 80),
+            field("created_at", KColumnType.DATETIME)
+        )
+        val current = listOf(
+            field("ID", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("NAME", KColumnType.VARCHAR, length = 80),
+            field("CREATED_AT", KColumnType.DATETIME)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.Mssql, expected, current)
+        )
+        assertEquals(emptyList(), moveColumn(expected, current, DBType.Mssql))
+    }
+
+    @Test
+    fun `column differ marks sql server moved columns case insensitively`() {
+        val expected = listOf(
+            field("id", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("name", KColumnType.VARCHAR, length = 80),
+            field("created_at", KColumnType.DATETIME)
+        )
+        val current = listOf(
+            field("ID", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("CREATED_AT", KColumnType.DATETIME),
+            field("NAME", KColumnType.VARCHAR, length = 80)
+        )
+
+        assertEquals(listOf("NAME"), moveColumn(expected, current, DBType.Mssql))
+        assertEquals(
+            TableColumnDiff(
+                toAdd = emptyList(),
+                toModified = listOf(Triple(expected[1], expected[0], current[2])),
+                toDelete = emptyList()
+            ),
+            columnDiffer(DBType.Mssql, expected, current)
+        )
+    }
+
+    @Test
+    fun `ddl sync normalizes oracle columns on copies without mutating source fields`() {
+        val table = TableOperation(RecordingWrapper(DBType.Oracle))
+        val fields = listOf(
+            field("id", KColumnType.INT, nullable = false),
+            field("username", KColumnType.VARCHAR, length = 64)
+        )
+
+        val oracleFields = with(table) { fields.forDdlSync(DBType.Oracle) }
+        val postgresFields = with(table) { fields.forDdlSync(DBType.Postgres) }
+
+        assertEquals(listOf("ID", "USERNAME"), oracleFields.map { it.columnName })
+        assertEquals(listOf("id", "username"), fields.map { it.columnName })
+        assertNotSame(fields[0], oracleFields[0])
+        assertNotSame(fields[1], oracleFields[1])
+        assertSame(fields, postgresFields)
     }
 
     @Test
@@ -313,6 +419,26 @@ class TableOperationUtilTest {
                 )
             ),
             truncateTask.atomicTasks.map { it.toActionShape() }
+        )
+    }
+
+    @Test
+    fun `oracle drop table task skips missing table`() {
+        val wrapper = RecordingWrapper(DBType.Oracle, objectResults = mutableListOf(0))
+        val table = TableOperation(wrapper)
+
+        table.buildDropTableTask("account").execute(wrapper)
+
+        assertEquals(emptyList(), wrapper.actions)
+        assertEquals(
+            listOf(
+                QueryShape(
+                    sql = """SELECT COUNT(*) FROM "ALL_TABLES" WHERE owner = :dbName AND table_name = UPPER(:tableName)""",
+                    params = mapOf("dbName" to "KRONOS", "tableName" to "account"),
+                    statementType = "Select"
+                )
+            ),
+            wrapper.queries.map { it.toQueryShape() }
         )
     }
 
@@ -490,6 +616,42 @@ class TableOperationUtilTest {
     }
 
     @Test
+    fun `table operation public statement and task builders expose instance metadata`() {
+        val wrapper = RecordingWrapper(DBType.Postgres)
+        val table = TableOperation(wrapper)
+        val pojo = ManualDdlKPojo(
+            mutableListOf(
+                ddlField("id", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+                ddlField("name", KColumnType.VARCHAR, length = 32)
+            ),
+            mutableListOf(KTableIndex("idx_manual_name", arrayOf("name"), "UNIQUE", "BTREE"))
+        )
+
+        val create = table.buildCreateTableStatement(pojo)
+        val drop = table.buildDropTableStatement(pojo, ifExists = true)
+        val truncate = table.buildTruncateTableStatement(pojo, restartIdentity = false)
+        val truncateTask = table.buildTruncateTableTask("manual_ddl", restartIdentity = false).atomicTasks.single()
+        table.truncateTable("manual_ddl", "manual_archive", restartIdentity = false)
+
+        assertEquals(SqlIdentifier.of("manual_ddl"), create.tableName)
+        assertEquals(listOf("id", "name"), create.columns.map { it.name.canonical })
+        assertEquals(listOf("idx_manual_name"), create.indexes.map { it.name.canonical })
+        assertEquals(true, create.indexes.single().unique)
+        assertEquals(SqlIdentifier.of("manual_ddl"), drop.tableName)
+        assertEquals(true, drop.ifExists)
+        assertEquals("manual_ddl", truncate.table.name)
+        assertEquals(false, truncate.restartIdentity)
+        assertEquals("""TRUNCATE TABLE "public"."manual_ddl"""", truncateTask.sql)
+        assertEquals(
+            listOf(
+                ActionMetadataShape(KOperationType.TRUNCATE, "Truncate"),
+                ActionMetadataShape(KOperationType.TRUNCATE, "Truncate")
+            ),
+            wrapper.actions.map { it.toActionMetadataShape() }
+        )
+    }
+
+    @Test
     fun `sync table creates missing table and returns false`() {
         val wrapper = RecordingWrapper(DBType.Mysql, objectResults = mutableListOf(0))
         val table = TableOperation(wrapper)
@@ -534,6 +696,33 @@ class TableOperationUtilTest {
             wrapper.actions.map { it.toActionMetadataShape() }
         )
         assertEquals(1, wrapper.transactionCount)
+    }
+
+    @Test
+    fun `oracle sync table does not uppercase static kpojo column metadata`() {
+        val wrapper = RecordingWrapper(
+            dbType = DBType.Oracle,
+            objectResults = mutableListOf(1, "static ddl cache table"),
+            listResults = mutableListOf(
+                listOf(
+                    oracleColumnRow("ID", "NUMBER", length = 22, precision = 10, nullable = "N", primaryKey = "1"),
+                    oracleColumnRow("USERNAME", "VARCHAR2", length = 255)
+                ),
+                emptyList()
+            )
+        )
+        val table = TableOperation(wrapper)
+        val pojo = StaticDdlCacheKPojo()
+        val originalColumnNames = listOf("id", "username")
+
+        assertEquals(originalColumnNames, pojo.resolveRuntimeMetadata().allColumns.map { it.columnName })
+
+        val existing = table.syncTable(pojo)
+
+        assertEquals(true, existing)
+        assertEquals(originalColumnNames, StaticDdlCacheKPojo.staticColumns.map { it.columnName })
+        assertEquals(originalColumnNames, StaticDdlCacheKPojo().resolveRuntimeMetadata().allColumns.map { it.columnName })
+        assertEquals(emptyList(), wrapper.actions)
     }
 
     @Test
@@ -613,6 +802,29 @@ class TableOperationUtilTest {
         nullable = nullable,
         defaultValue = defaultValue
     )
+
+    private fun oracleColumnRow(
+        name: String,
+        dataType: String,
+        length: Int,
+        precision: Int = 0,
+        scale: Int = 0,
+        nullable: String = "Y",
+        primaryKey: String = "0",
+        defaultValue: String? = null,
+        comment: String? = null
+    ): Map<String, Any> = mutableMapOf<String, Any>(
+        "COLUMN_NAME" to name,
+        "DATA_TYPE" to dataType,
+        "LENGTH" to length,
+        "PRECISION" to precision,
+        "SCALE" to scale,
+        "IS_NULLABLE" to nullable,
+        "PRIMARY_KEY" to primaryKey
+    ).apply {
+        defaultValue?.let { put("COLUMN_DEFAULT", it) }
+        comment?.let { put("COLUMN_COMMENT", it) }
+    }
 
     private fun ddlColumn(
         name: String,

@@ -206,12 +206,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val dbType = dataSource.dbType
 
         // 实体类列信息
-        val kronosColumns = metadata.allColumns.asSequence().map { col ->
-            if (dbType == DBType.Oracle) {
-                col.columnName = col.columnName.uppercase()
-            }
-            col
-        }.toList()
+        val kronosColumns = metadata.allColumns.forDdlSync(dbType)
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = metadata.tableIndexes
         val originalTableComment = queryTableComment(tableName, dataSource)
@@ -251,6 +246,14 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         }
         concurrent.forEach { dataSource.update(it.toActionTask(operationType)) }
     }
+
+    @PublishedApi
+    internal fun List<Field>.forDdlSync(dbType: DBType): List<Field> =
+        if (dbType == DBType.Oracle) {
+            map { it.copy(columnName = it.columnName.uppercase()) }
+        } else {
+            this
+        }
 
     private fun SqlStatement.isConcurrentIndexStatement(): Boolean =
         this is SqlDdlStatement.CreateIndex && concurrently

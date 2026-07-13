@@ -1,5 +1,6 @@
 package com.kotlinorm.beans.logging
 
+import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.enums.PrintColor
 import com.kotlinorm.enums.PrintStyle
 import java.lang.reflect.InvocationTargetException
@@ -41,6 +42,23 @@ class KLogMessageBuilderTest {
                 invokeAddElement(KLogMessageBuilder(), 1)
             }.message
         )
+    }
+
+    @Test
+    fun `log task compares message arrays by content`() {
+        val firstMessage = KLogMessage("first")
+        val secondMessage = KLogMessage("second")
+        val first = LogTask(KLogLevel.INFO, arrayOf(firstMessage, secondMessage))
+        val same = LogTask(KLogLevel.INFO, arrayOf(firstMessage, secondMessage))
+        val differentLevel = LogTask(KLogLevel.ERROR, arrayOf(firstMessage, secondMessage))
+        val differentMessages = LogTask(KLogLevel.INFO, arrayOf(firstMessage))
+
+        assertEquals(first, first)
+        assertEquals(first, same)
+        assertEquals(first.hashCode(), same.hashCode())
+        assertEquals(false, first == differentLevel)
+        assertEquals(false, first == differentMessages)
+        assertEquals(false, first.equals("not a log task"))
     }
 
     private fun invokeAddElement(builder: KLogMessageBuilder, element: Any) {

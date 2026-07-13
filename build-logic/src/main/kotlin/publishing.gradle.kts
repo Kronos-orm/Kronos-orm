@@ -5,6 +5,7 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import java.net.URI
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.plugins.signing.Sign
 
 /*
  * This plugin configures publishing for a project.
@@ -26,7 +27,7 @@ plugins {
 value class PublishConfiguration(val project: Project) {
     init {
         project.group = "com.kotlinorm"
-        project.version = "0.2.2-SNAPSHOT"
+        project.version = "0.2.2"
         project.description = when (project.name) {
             "kronos-core" -> "Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of Kronos, which provides basic ORM functions."
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
@@ -69,6 +70,13 @@ class SnapshotMvn(
 val aliyun = AliyunMvn()
 
 val snapshot = SnapshotMvn()
+
+fun publishingToMavenLocalTaskGraph(): Boolean =
+    gradle.taskGraph.allTasks.any { task -> task.name.contains("MavenLocal", ignoreCase = true) }
+
+val publishingToMavenLocal = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("MavenLocal", ignoreCase = true)
+}
 
 configure<MavenPublishBaseExtension> {
     configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
@@ -113,13 +121,17 @@ configure<MavenPublishBaseExtension> {
         }
     }
 
-    if (!snapshot.publishRequired) {
+    if (!snapshot.publishRequired && !publishingToMavenLocal) {
         signAllPublications()
     }
 
     publishToMavenCentral(true)
 }
 
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { !publishingToMavenLocalTaskGraph() }
+}
 configure<PublishingExtension> {
     repositories {
         if (aliyun.publishRequired) {
@@ -201,7 +213,7 @@ if (project.name == "kronos-gradle-plugin") {
                 group = "kronos publishing"
             }
         }
-        if (!snapshot.publishRequired) {
+        if (!snapshot.publishRequired && !publishingToMavenLocal) {
             tasks.forEach {
                 if (it.name.startsWith("publish")) {
                     it.dependsOn(tasks.getByName("signMavenPublication"))

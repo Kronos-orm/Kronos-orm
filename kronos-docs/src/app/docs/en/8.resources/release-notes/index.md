@@ -7,6 +7,16 @@
 
 ## Update Logs
 
+### 0.2.2
+
+- ✨ Add metadata-backed KPojo runtime properties and refresh the public metadata guidance for generated column access ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240)).
+- 🐛 Fix compiler/core DSL handling for null-safe conditions, Elvis/selectable set values, generated keys, cascade and strategy edge cases, and DDL metadata casing ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240)).
+- 🐛 Publish `kronos-syntax` as an API dependency of `kronos-core` so downstream projects can compile DSL calls that expose syntax types without declaring `kronos-syntax` directly ([#241](https://github.com/Kronos-orm/Kronos-orm/pull/241)).
+- 🎨 Refresh documentation UI details, including the dark-theme language switcher, logo assets, and responsive docs layout ([#238](https://github.com/Kronos-orm/Kronos-orm/pull/238), [#239](https://github.com/Kronos-orm/Kronos-orm/pull/239), [#240](https://github.com/Kronos-orm/Kronos-orm/pull/240)).
+- 🔧 Add example-project smoke tests for Ktor, Spring Boot, and Solon, publish current artifacts to Maven local in CI, skip signing for local release-version publishing, and update examples for the current metadata API ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240), [#241](https://github.com/Kronos-orm/Kronos-orm/pull/241)).
+- 💪 Expand compiler, core, integration, and example coverage for projection, condition, set, utility, SQL Server, and strategy edge cases ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240)).
+- 📦 Prepare the stable `0.2.2` release and update install snippets, documentation macros, plugin README files, and AI skill guidance.
+
 ### 0.2.1
 
 - ✨ Support `it - [it.id, it.age]` inside projection `[]`, including mixed projection lists such as `[it - [it.id, it.age], it.id.alias("sourceId")]`.

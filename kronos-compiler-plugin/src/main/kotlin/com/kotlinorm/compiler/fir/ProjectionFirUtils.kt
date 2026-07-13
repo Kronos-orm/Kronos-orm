@@ -99,8 +99,10 @@ internal fun FirPropertyAccessExpression.isProjectionSourceValueAccess(
     val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol
     if (symbol != null && symbol !is FirValueParameterSymbol) return false
     if (resolvedType == null) return true
-    val resolvedClassId = (resolvedType as? ConeClassLikeType)?.lookupTag?.classId ?: return false
-    val sourceClassId = (sourceType as? ConeClassLikeType)?.lookupTag?.classId ?: return false
+    val resolvedClass = resolvedType as? ConeClassLikeType ?: return false
+    val sourceClass = sourceType as? ConeClassLikeType ?: return false
+    val resolvedClassId = resolvedClass.lookupTag.classId
+    val sourceClassId = sourceClass.lookupTag.classId
     return resolvedClassId == sourceClassId
 }
 
@@ -144,9 +146,9 @@ internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
 }
 
 private fun FirFunctionCall.sourceMinusReceiver(): FirStatement? =
-    (explicitReceiver as? FirStatement)
-        ?: (extensionReceiver as? FirStatement)
-        ?: (dispatchReceiver as? FirStatement)
+    listOfNotNull(explicitReceiver, extensionReceiver, dispatchReceiver)
+        .filterIsInstance<FirStatement>()
+        .firstOrNull()
 
 internal fun FirProperty.isKronosColumn(session: FirSession): Boolean {
     if (hasAnnotation(IgnoreAnnotationClassId, session)) return false
@@ -164,7 +166,7 @@ internal fun ConeKotlinType.isKPojoLikeType(session: FirSession): Boolean {
     val classLike = this as? ConeClassLikeType ?: return false
     if (classLike.lookupTag.classId == KPojoClassId) return true
     val symbol = classLike.toClassSymbol(session) ?: return false
-    return symbol.fir.superTypeRefs.any { ref ->
-        ((ref as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType)?.lookupTag?.classId == KPojoClassId
-    }
+    return symbol.fir.superTypeRefs
+        .mapNotNull { ref -> (ref as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType }
+        .any { superType -> superType.lookupTag.classId == KPojoClassId }
 }

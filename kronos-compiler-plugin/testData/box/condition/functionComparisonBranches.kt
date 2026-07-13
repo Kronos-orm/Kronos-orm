@@ -77,6 +77,26 @@ fun expectFunctionBinary(
     }
 }
 
+fun expectFunctionNullBinary(
+    label: String,
+    actual: CapturedFunctionComparison,
+    operator: SqlBinaryOperator,
+): String? {
+    val binary = actual.expr as? SqlExpr.Binary
+    val function = binary?.left as? SqlExpr.Function
+    val field = function?.args?.singleOrNull() as? SqlExpr.Column
+    return when {
+        binary == null -> "Fail: $label condition was ${actual.expr}"
+        function == null -> "Fail: $label left was ${binary.left}"
+        function.name.last != "LENGTH" -> "Fail: $label function was ${function.name.last}"
+        field?.columnName != "name" -> "Fail: $label field was ${field?.columnName}"
+        binary.operator != operator -> "Fail: $label operator was ${binary.operator}"
+        binary.right != SqlExpr.NullLiteral -> "Fail: $label right was ${binary.right}"
+        actual.parameters.isNotEmpty() -> "Fail: $label parameters were ${actual.parameters}"
+        else -> null
+    }
+}
+
 fun expectOperatorBinary(
     label: String,
     actual: CapturedFunctionComparison,
@@ -108,6 +128,8 @@ fun box(): String {
     val failures = listOfNotNull(
         expectFunctionBinary("functionEqLeft", functionComparisonWhere(user) { f.length(it.name) == 3 }, SqlBinaryOperator.Equal, 3),
         expectFunctionBinary("functionEqRight", functionComparisonWhere(user) { 3 == f.length(it.name) }, SqlBinaryOperator.Equal, 3),
+        expectFunctionNullBinary("functionEqNullLeft", functionComparisonWhere(user) { f.length(it.name) == null }, SqlBinaryOperator.Is(withNot = false)),
+        expectFunctionNullBinary("functionNeNullRight", functionComparisonWhere(user) { null != f.length(it.name) }, SqlBinaryOperator.Is(withNot = true)),
         expectOperatorBinary("operatorLeLeft", functionComparisonWhere(user) { it.score + 1 <= 10 }, SqlBinaryOperator.LessThanEqual, 10),
         expectOperatorBinary("operatorGeRight", functionComparisonWhere(user) { 10 <= it.score + 1 }, SqlBinaryOperator.GreaterThanEqual, 10),
     )

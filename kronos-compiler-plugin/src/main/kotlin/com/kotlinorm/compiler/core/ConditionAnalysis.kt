@@ -654,14 +654,14 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
             }
             expression.isKronosFunction() -> {
                 // For function calls, try to extract table name from the first field argument
-                expression.valueArguments.filterNotNull().firstNotNullOfOrNull { arg ->
-                    extractTableNameExpr(arg)
-                }
+                expression.valueArguments.filterNotNull()
+                    .mapNotNull { arg -> extractTableNameExpr(arg) }
+                    .firstOrNull()
             }
             expression.operatorFunctionName() != null -> {
-                expression.operatorOperands().firstNotNullOfOrNull { arg ->
-                    extractTableNameExpr(arg)
-                }
+                expression.operatorOperands()
+                    .mapNotNull { arg -> extractTableNameExpr(arg) }
+                    .firstOrNull()
             }
             else -> null
         }
@@ -701,17 +701,19 @@ private fun IrWhen.nullGuardedFieldExpression(): IrExpression? {
 
     val nullGuard = nullBranch.condition.nullGuard()
     val fieldGuard = fieldBranch.condition.nullGuard()
+    val hasNullGuard = nullGuard?.isNullWhenTrue == true
+    val hasFieldGuard = fieldGuard?.isNullWhenTrue == false
     return when {
-        nullGuard?.isNullWhenTrue == true &&
+        hasNullGuard &&
             fieldBranch.condition.isTrueConst() &&
             fieldReceiver.matchesGuardSubject(nullGuard.subject) -> fieldExpression
 
-        fieldGuard?.isNullWhenTrue == false &&
+        hasFieldGuard &&
             nullBranch.condition.isTrueConst() &&
             fieldReceiver.matchesGuardSubject(fieldGuard.subject) -> fieldExpression
 
-        nullGuard?.isNullWhenTrue == true &&
-            fieldGuard?.isNullWhenTrue == false &&
+        hasNullGuard &&
+            hasFieldGuard &&
             nullGuard.subject.structurallyMatches(fieldGuard.subject) &&
             fieldReceiver.matchesGuardSubject(nullGuard.subject) -> fieldExpression
 
@@ -745,9 +747,8 @@ private fun IrExpression.nullGuard(): NullGuard? {
                     nullGuardFromExclEqWrapper()
                 }
             }
-            IrStatementOrigin.EXCL -> arguments.filterNotNull().singleOrNull()?.nullGuard()?.inverted()
-            else -> if (funcName() == "not") {
-                arguments.filterNotNull().singleOrNull()?.nullGuard()?.inverted()
+            else -> if (origin == IrStatementOrigin.EXCL || funcName() == "not") {
+                singleNullGuardArgument()?.nullGuard()?.inverted()
             } else {
                 null
             }
@@ -756,6 +757,9 @@ private fun IrExpression.nullGuard(): NullGuard? {
         else -> null
     }
 }
+
+private fun IrCall.singleNullGuardArgument(): IrExpression? =
+    arguments.filterNotNull().singleOrNull()
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrCall.nullGuardFromExclEqWrapper(): NullGuard? {

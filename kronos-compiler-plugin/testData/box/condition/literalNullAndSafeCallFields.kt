@@ -153,6 +153,21 @@ fun box(): String {
             else -> null
         }
     }
+    val notGuardedIfCascade = nullSafeWhere(movie) {
+        it.directorId == if (!(it.director == null)) it.director.id else null
+    }
+    val methodNotGuardedIfCascade = nullSafeWhere(movie) {
+        it.directorId == if ((it.director == null).not()) it.director.id else null
+    }
+    val negatedNotNullGuardCascade = nullSafeWhere(movie) {
+        it.directorId == if (!(it.director != null)) null else it.director.id
+    }
+    val methodNegatedNotNullGuardCascade = nullSafeWhere(movie) {
+        it.directorId == if ((it.director != null).not()) null else it.director.id
+    }
+    val castGuardedIfCascade = nullSafeWhere(movie) {
+        it.directorId == if ((it.director as NullSafeDirector?) != null) (it.director as NullSafeDirector).id else null
+    }
 
     val failures = listOfNotNull(
         expectNullPredicate("literalNull", literalNull, "title", withNot = false),
@@ -172,6 +187,11 @@ fun box(): String {
         expectColumnComparison("reversedWhenGuardCascade", reversedWhenGuardCascade, "director_id", "id"),
         expectColumnComparison("reversedIfNotNullGuardCascade", reversedIfNotNullGuardCascade, "director_id", "id"),
         expectColumnComparison("reversedWhenNotNullGuardCascade", reversedWhenNotNullGuardCascade, "director_id", "id"),
+        expectColumnComparison("notGuardedIfCascade", notGuardedIfCascade, "director_id", "id"),
+        expectColumnComparison("methodNotGuardedIfCascade", methodNotGuardedIfCascade, "director_id", "id"),
+        expectColumnComparison("negatedNotNullGuardCascade", negatedNotNullGuardCascade, "director_id", "id"),
+        expectColumnComparison("methodNegatedNotNullGuardCascade", methodNegatedNotNullGuardCascade, "director_id", "id"),
+        expectColumnComparison("castGuardedIfCascade", castGuardedIfCascade, "director_id", "id"),
     )
 
     return failures.firstOrNull() ?: "OK"

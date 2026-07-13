@@ -262,9 +262,10 @@ class KronosProjectionCallRefinementExtension(
     private fun FirFunctionCall.toAliasProjectionField(sourceType: ConeKotlinType): KronosProjectionField? {
         if (calleeReference.name.asString() != SelectAliasFunctionName) return null
         val alias = argumentList.arguments.first().stringLiteralValue() ?: return null
-        val sourceField = (extensionReceiver as? FirPropertyAccessExpression)?.toPropertyProjectionField(sourceType)
-            ?: (dispatchReceiver as? FirPropertyAccessExpression)?.toPropertyProjectionField(sourceType)
-            ?: return null
+        val sourceAccess = listOfNotNull(extensionReceiver, dispatchReceiver)
+            .filterIsInstance<FirPropertyAccessExpression>()
+            .firstOrNull() ?: return null
+        val sourceField = sourceAccess.toPropertyProjectionField(sourceType) ?: return null
         return sourceField.copy(
             name = Name.identifier(alias),
             source = source ?: sourceField.source,
@@ -526,8 +527,7 @@ class KronosProjectionCallRefinementExtension(
      * Generates a stable synthetic class suffix from the source row type and selected field signatures.
      */
     private fun mangleProjectionName(sourceType: ConeKotlinType, fields: List<KronosProjectionField>): String {
-        val sourceClass = (sourceType as? ConeClassLikeType)?.lookupTag?.classId?.asFqNameString()
-            ?: sourceType.renderForMangle()
+        val sourceClass = sourceType.renderForMangle()
         val raw = buildString {
             append(sourceClass)
             fields.forEach { field ->
@@ -587,8 +587,8 @@ class KronosProjectionCallRefinementExtension(
      * Renders a type only for deterministic generated-name hashing.
      */
     private fun ConeKotlinType.renderForMangle(): String {
-        val classLike = this as? ConeClassLikeType
-        return classLike?.lookupTag?.classId?.asFqNameString() ?: toString()
+        if (this !is ConeClassLikeType) return toString()
+        return lookupTag.classId.asFqNameString()
     }
 
     private fun ClassId.isSelectFromClassId(): Boolean {

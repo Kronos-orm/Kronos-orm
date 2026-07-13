@@ -65,6 +65,9 @@ fun box(): String {
     val chainedMinusLiteralClause = ProjectionCollectionFormsUser()
         .select { [it - it.id - it.username, it.username.alias("uname")] }
         .orderBy { it.uname.desc() }
+    val parenthesizedMinusClause = ProjectionCollectionFormsUser()
+        .select { [((it) - it.status), it.status.alias("statusAlias")] }
+        .orderBy { it.statusAlias.asc() }
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {
@@ -118,6 +121,7 @@ fun box(): String {
     val listStatement = listClause.toSqlQuery() as SqlQuery.Select
     val nestedMinusLiteralStatement = nestedMinusLiteralClause.toSqlQuery() as SqlQuery.Select
     val chainedMinusLiteralStatement = chainedMinusLiteralClause.toSqlQuery() as SqlQuery.Select
+    val parenthesizedMinusStatement = parenthesizedMinusClause.toSqlQuery() as SqlQuery.Select
 
     val failures = listOfNotNull(
         expect(arrayStatement.selectAliases() == listOf("id", "username", "status", "arrayId")) {
@@ -167,6 +171,12 @@ fun box(): String {
         },
         expect(chainedMinusLiteralStatement.hasOrderByColumn("uname", SqlOrdering.Desc)) {
             "chained minus literal order by was ${chainedMinusLiteralStatement.allOrderBy()}"
+        },
+        expect(parenthesizedMinusStatement.selectAliases() == listOf("id", "username", "statusAlias")) {
+            "parenthesized minus aliases were ${parenthesizedMinusStatement.selectAliases()}"
+        },
+        expect(parenthesizedMinusStatement.hasOrderByColumn("statusAlias", SqlOrdering.Asc)) {
+            "parenthesized minus order by was ${parenthesizedMinusStatement.allOrderBy()}"
         },
     )
 

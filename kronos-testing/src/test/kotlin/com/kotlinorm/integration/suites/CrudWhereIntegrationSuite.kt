@@ -11,6 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 private fun integrationFallbackName(): String? = null
+private const val FALLBACK_NAME = "Anonymous"
 
 abstract class CrudWhereIntegrationSuite(
     environment: IntegrationDatabaseEnvironment,
@@ -92,14 +93,14 @@ abstract class CrudWhereIntegrationSuite(
 
         val affectedRows = IntegrationUser()
             .update()
-            .set { it.name = integrationFallbackName() ?: "匿名" }
+            .set { it.name = integrationFallbackName() ?: FALLBACK_NAME }
             .where { it.id == 52 }
             .execute()
             .affectedRows
 
         assertEquals(1, affectedRows)
         assertEquals(
-            IntegrationUserRecord(id = 52, name = "匿名", score = 3, status = 1),
+            IntegrationUserRecord(id = 52, name = FALLBACK_NAME, score = 3, status = 1),
             profile.selectUserById(52),
         )
     }

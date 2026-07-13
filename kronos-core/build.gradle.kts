@@ -16,7 +16,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":kronos-syntax"))
+    api(project(":kronos-syntax"))
     testImplementation(libs.kotlin.test)
     testImplementation(libs.gson)
     testImplementation(libs.mockk)

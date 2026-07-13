@@ -205,7 +205,7 @@ if (project.name == "kronos-gradle-plugin") {
                 group = "kronos publishing"
             }
         }
-        if (!snapshot.publishRequired) {
+        if (!snapshot.publishRequired && !publishingToMavenLocal) {
             tasks.forEach {
                 if (it.name.startsWith("publish")) {
                     it.dependsOn(tasks.getByName("signMavenPublication"))

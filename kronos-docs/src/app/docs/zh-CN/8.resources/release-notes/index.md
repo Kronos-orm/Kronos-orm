@@ -9,8 +9,13 @@
 
 ### 0.2.2
 
-- 🐛 将 `kronos-syntax` 作为 `kronos-core` 的 API 依赖发布，使下游项目在未直接声明 `kronos-syntax` 时也能编译暴露 syntax 类型的 DSL 调用。
-- 📦 准备稳定版 `0.2.2` 发布，并同步安装片段、文档宏、示例和 AI skill 指南。
+- ✨ 新增基于 metadata 的 KPojo 运行时属性，并刷新生成列访问相关的公开 metadata 使用说明 ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240))。
+- 🐛 修复 compiler/core DSL 对 null-safe 条件、Elvis/selectable set 值、生成键、级联与策略边界场景，以及 DDL metadata 大小写的处理 ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240))。
+- 🐛 将 `kronos-syntax` 作为 `kronos-core` 的 API 依赖发布，使下游项目在未直接声明 `kronos-syntax` 时也能编译暴露 syntax 类型的 DSL 调用 ([#241](https://github.com/Kronos-orm/Kronos-orm/pull/241))。
+- 🎨 刷新文档 UI 细节，包括暗色主题语言切换器、Logo 资源和响应式文档布局 ([#238](https://github.com/Kronos-orm/Kronos-orm/pull/238), [#239](https://github.com/Kronos-orm/Kronos-orm/pull/239), [#240](https://github.com/Kronos-orm/Kronos-orm/pull/240))。
+- 🔧 为 Ktor、Spring Boot 和 Solon 示例项目加入 smoke test，在 CI 中发布当前构件到 Maven local，并将示例同步到当前 metadata API ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240))。
+- 💪 扩充 projection、condition、set、工具函数、SQL Server 和策略边界场景的 compiler、core、integration 与 example 覆盖 ([#240](https://github.com/Kronos-orm/Kronos-orm/pull/240))。
+- 📦 准备稳定版 `0.2.2` 发布，并同步安装片段、文档宏、插件 README 和 AI skill 指南。
 
 ### 0.2.1
 

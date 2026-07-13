@@ -127,6 +127,37 @@ class PagedClauseBehaviorTest {
     }
 
     @Test
+    fun `explicit page size is used for map result total pages`() {
+        val selectable = RecordingSelectable()
+        val wrapper = RecordingWrapper(
+            listResult = listOf(mapOf("id" to 1), mapOf("id" to 2)),
+            objectResult = 5
+        )
+
+        val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(selectable)
+            .page(1, 2)
+            .toMapList(wrapper)
+
+        assertEquals(Triple(5, listOf(mapOf("id" to 1), mapOf("id" to 2)), 3), result)
+        assertEquals(listOf("page", "build", "count"), selectable.calls)
+    }
+
+    @Test
+    fun `explicit page size is used for selected result total pages`() {
+        val rows = listOf(PagedClauseStubRow(1), PagedClauseStubRow(2))
+        val wrapper = RecordingWrapper(
+            typedListResult = rows,
+            objectResult = 4
+        )
+
+        val result = PagedClause<PagedClauseStubRow, PagedClauseStubRow, RecordingSelectable>(RecordingSelectable())
+            .page(1, 2)
+            .toList(wrapper)
+
+        assertEquals(Triple(4, rows, 2), result)
+    }
+
+    @Test
     fun `paged typed result returns zero total pages when page size is unavailable`() {
         val rows = listOf(PagedClauseStubRow(1))
         val wrapper = RecordingWrapper(
@@ -141,6 +172,14 @@ class PagedClauseBehaviorTest {
         assertEquals(5, result.first)
         assertEquals(rows, result.second)
         assertEquals(0, result.third)
+    }
+
+    @Test
+    fun `total pages returns zero for empty totals or invalid page sizes`() {
+        assertEquals(0, PagedClause.totalPages(total = 0, pageSize = 10))
+        assertEquals(0, PagedClause.totalPages(total = 10, pageSize = 0))
+        assertEquals(0, PagedClause.totalPages(total = -1, pageSize = 10))
+        assertEquals(3, PagedClause.totalPages(total = 5, pageSize = 2))
     }
 
     private class RecordingSelectable(

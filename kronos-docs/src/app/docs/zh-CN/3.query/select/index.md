@@ -84,7 +84,7 @@ FROM "user"
 在显式投影中返回 `it` 会展开当前 KPojo 的全部数据库列；`it` 可以直接返回，也可以放进 `[]`。使用 `-` 可以从完整投影中排除列。
 
 > **Note**
-> `select()` 返回源 KPojo 类型；`select { it }` 和 `select { [it] }` 返回包含全部列的生成投影类型。`-` 必须用在 KPojo 之后。
+> `select { it }`、`select { [it] }` 和 `select { listOf(it) }` 都和 `select()` 一样返回源 KPojo 类型。只要排除字段或再追加一个投影项，就会返回投影结果。
 
 ```kotlin name="kotlin" icon="kotlin"
 val allDirect = User().select { it }.toList()

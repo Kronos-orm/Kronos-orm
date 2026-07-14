@@ -57,7 +57,7 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 - 数据库和方言：`database/connect-to-db`、`database/dialect-support`、`database/create-database-dialect`。
 - 配置：`configuration/global-config`、`configuration/common-strategy`、`configuration/logging`、`configuration/compiler-plugins`。
 - 修改操作：`mutation/insert`、`mutation/update`、`mutation/delete`、`mutation/upsert`、`mutation/logic-delete`、`mutation/optimistic-lock`、`mutation/last-insert-id`。
-- 工具入口：`resources/database-first`、`resources/codegen`、`resources/troubleshooting`。
+- 工具入口：`resources/database-first`、`resources/codegen`、`resources/idea-plugin`、`resources/troubleshooting`。
 
 ---
 
@@ -980,7 +980,7 @@ val ids: List<Int> = User()
 
 `select { ... }` 返回自定义字段列表时，Kronos 会把字段和 alias 暴露为生成投影。直接字段保留字段名，函数、聚合、标量子查询和窗口函数等非直接字段要显式 `.alias("name")`。
 
-显式投影中的 `it` 会展开当前 KPojo 的全部数据库列，并生成投影结果类型。它可以直接返回、放进 `[]`、通过 `-` 排除字段，或与 alias 一起组合：
+显式投影中的 `it` 会展开当前 KPojo 的全部数据库列。`select { it }`、`select { [it] }` 和 `select { listOf(it) }` 都和 `select()` 一样返回源 KPojo 类型；通过 `-` 排除字段，或与 alias/函数/原生 SQL 等其他投影项组合时，才生成投影结果类型：
 
 ```kotlin
 val allDirect = User().select { it }.toList()

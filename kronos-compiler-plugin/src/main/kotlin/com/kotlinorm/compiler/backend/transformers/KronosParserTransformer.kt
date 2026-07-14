@@ -42,6 +42,7 @@ import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.getClass
@@ -80,30 +81,31 @@ class KronosParserTransformer(
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitClassNew(declaration: IrClass): IrStatement {
-        if (declaration.superTypes.any { it.classFqName == KPojoFqName }) {
-            processKPojoClass(declaration)
+    override fun visitClassNew(declaration: IrClass): IrStatement =
+        if (declaration.isGeneratedProjectionClass()) declaration else {
+            if (declaration.superTypes.any { it.classFqName == KPojoFqName }) {
+                processKPojoClass(declaration)
+            }
+            super.visitClassNew(declaration)
         }
-        return super.visitClassNew(declaration)
-    }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         for (i in 0 until expression.typeArguments.size) {
-            collectKPojoFactoryCandidate(expression.typeArguments[i]?.getClass())
+            collectKPojoFactoryCandidate(expression.typeArguments[i])
         }
         return super.visitCall(expression) as IrCall
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitClassReference(expression: IrClassReference): IrExpression {
-        collectKPojoFactoryCandidate(expression.classType.classOrNull?.owner)
+        collectKPojoFactoryCandidate(expression.classType)
         return super.visitClassReference(expression)
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
-        collectKPojoFactoryCandidate(expression.type.classOrNull?.owner)
+        collectKPojoFactoryCandidate(expression.type)
         return super.visitConstructorCall(expression)
     }
 
@@ -131,23 +133,18 @@ class KronosParserTransformer(
         irClass.properties.forEach { property ->
             val propertyType = property.getter?.returnType ?: property.backingField?.type ?: return@forEach
             val targets = sequenceOf(
-                propertyType.classOrNull?.owner,
-                propertyType.firstTypeArgument()?.classOrNull?.owner
+                propertyType.toKPojoFactoryCandidate(),
+                propertyType.firstTypeArgument()?.toKPojoFactoryCandidate()
             )
             targets
                 .filterNotNull()
-                .filter { target -> target.superTypes.any { it.classFqName == KPojoFqName } }
-                .filterNot { target -> target.isGeneratedProjectionClass() }
                 .forEach { target -> kPojoClasses.add(target) }
         }
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun collectKPojoFactoryCandidate(irClass: IrClass?) {
-        if (irClass == null || irClass.isGeneratedProjectionClass()) return
-        if (irClass.superTypes.any { it.classFqName == KPojoFqName }) {
-            kPojoClasses.add(irClass)
-        }
+    private fun collectKPojoFactoryCandidate(type: IrType?) {
+        type?.toKPojoFactoryCandidate()?.let { kPojoClasses.add(it) }
     }
 
     /**
@@ -157,6 +154,17 @@ class KronosParserTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun IrClass.isGeneratedProjectionClass(): Boolean =
         kotlinFqName.parent() == GeneratedProjectionPackageFqName
+
+    private fun IrType.isGeneratedProjectionClassType(): Boolean =
+        classFqName?.parent() == GeneratedProjectionPackageFqName
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrType.toKPojoFactoryCandidate(): IrClass? {
+        if (isGeneratedProjectionClassType()) return null
+        val irClass = getClass() ?: classOrNull?.owner ?: return null
+        if (irClass.isGeneratedProjectionClass()) return null
+        return irClass.takeIf { target -> target.superTypes.any { it.classFqName == KPojoFqName } }
+    }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {

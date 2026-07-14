@@ -130,19 +130,25 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
-    fun `whole source and minus projections keep generated type aligned with selected columns`() {
+    fun `identity source projections keep source type while minus projections use generated type`() {
         val allDirect = TestUser().select { it }
         val allLiteral = TestUser().select { [it] }
+        val allList = TestUser().select { listOf<Any?>(it) }
+        val allArray = TestUser().select { arrayOf<Any?>(it) }
+        val allMutableList = TestUser().select { mutableListOf<Any?>(it) }
+        val allSet = TestUser().select { setOf<Any?>(it) }
         val excludedDirect = TestUser().select { it - it.id }
         val excludedLiteral = TestUser().select { [it - it.id] }
         val sourceColumns = listOf("id", "username", "score", "gender", "createTime", "updateTime", "deleted")
         val excludedColumns = sourceColumns - "id"
 
-        assertEquals(sourceColumns, (allDirect.toSqlQuery() as SqlQuery.Select).projectionOutputNames())
-        assertEquals(sourceColumns, (allLiteral.toSqlQuery() as SqlQuery.Select).projectionOutputNames())
+        listOf(allDirect, allLiteral, allList, allArray, allMutableList, allSet).forEach { clause ->
+            assertEquals(sourceColumns, (clause.toSqlQuery() as SqlQuery.Select).projectionOutputNames())
+            assertEquals(typeOf<TestUser>(), clause.selectedType)
+        }
         assertEquals(excludedColumns, (excludedDirect.toSqlQuery() as SqlQuery.Select).projectionOutputNames())
         assertEquals(excludedColumns, (excludedLiteral.toSqlQuery() as SqlQuery.Select).projectionOutputNames())
-        listOf(allDirect, allLiteral, excludedDirect, excludedLiteral).forEach { clause ->
+        listOf(excludedDirect, excludedLiteral).forEach { clause ->
             assertNotEquals(typeOf<TestUser>(), clause.selectedType)
         }
     }

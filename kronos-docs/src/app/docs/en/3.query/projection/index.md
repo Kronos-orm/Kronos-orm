@@ -166,7 +166,7 @@ The selected output names must match the DTO property names you want to fill.
 
 ## Full projections, exclusions, and []
 
-`select()` without a lambda returns the source KPojo type. Inside an explicit `select { ... }`, `it` represents all database columns of the current KPojo and produces a generated projection result type. Returning it directly or placing it inside `[]` has the same effect. Use `-` to remove one or more fields.
+`select { it }`, `select { [it] }`, and `select { listOf(it) }` keep the same result type as `select()`. Use `-` to remove fields. Exclusions and mixed lists create generated projection result types.
 
 ```kotlin name="kotlin" icon="kotlin"
 val allDirect = User().select { it }.toList()

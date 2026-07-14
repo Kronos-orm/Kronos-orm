@@ -39,13 +39,13 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
         version = "0.2.3"
+        target.logger.lifecycle("Loaded Gradle plugin ${javaClass.name} version $version")
+        target.logger.lifecycle("Loaded Compiler plugin $group.$artifactId version $version")
         configureKotlinIncrementalCompilation(target)
         configureKPojoFactoryProviderService(target)
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
-        println("Loaded Gradle plugin ${javaClass.name} version $version")
-        println("Loaded Compiler plugin $group.$artifactId version $version")
         return kotlinCompilation.target.project.provider {
             emptyList()
         }

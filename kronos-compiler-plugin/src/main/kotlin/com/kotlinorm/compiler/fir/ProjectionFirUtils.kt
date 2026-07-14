@@ -23,6 +23,7 @@ import com.kotlinorm.compiler.utils.KPojoClassId
 import com.kotlinorm.compiler.utils.SerializeAnnotationClassId
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirProperty
+import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.declarations.hasAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
@@ -31,12 +32,14 @@ import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
 import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
+import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
 import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
 import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.toClassSymbol
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
@@ -90,20 +93,50 @@ internal fun FirStatement.stringLiteralValue(): String? {
 private fun List<FirStatement>.singleVarargArgumentsOrNull(): List<FirStatement>? =
     (singleOrNull() as? FirVarargArgumentsExpression)?.arguments
 
+private val ImplicitItName = Name.identifier("it")
+
+internal data class ProjectionSourceValueAccessors(
+    val names: Set<Name>,
+    val symbols: Set<FirValueParameterSymbol>
+)
+
+internal fun List<FirValueParameter>.projectionSourceValueAccessors(): ProjectionSourceValueAccessors {
+    val names = mapTo(linkedSetOf()) { it.name }.apply {
+        if (isEmpty()) add(ImplicitItName)
+    }
+    val symbols = mapTo(linkedSetOf()) { it.symbol }
+    return ProjectionSourceValueAccessors(names, symbols)
+}
+
+internal fun ConeKotlinType?.hasSameClassIdAs(other: ConeKotlinType): Boolean {
+    val thisClass = this as? ConeClassLikeType ?: return false
+    val otherClass = other as? ConeClassLikeType ?: return false
+    return thisClass.lookupTag.classId == otherClass.lookupTag.classId
+}
+
+@OptIn(UnresolvedExpressionTypeAccess::class, SymbolInternals::class)
+internal fun FirPropertyAccessExpression.resolvedProjectionAccessType(): ConeKotlinType? {
+    coneTypeOrNull?.let { return it }
+    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirVariableSymbol<*>
+    return (symbol?.fir?.returnTypeRef as? FirResolvedTypeRef)?.coneType
+}
+
+internal fun FirPropertyAccessExpression.isProjectionSourceValueParameter(
+    sourceValues: ProjectionSourceValueAccessors
+): Boolean {
+    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol
+    if (symbol == null) return calleeReference.name in sourceValues.names
+    return symbol is FirValueParameterSymbol &&
+        (sourceValues.symbols.isEmpty() || symbol in sourceValues.symbols)
+}
+
 internal fun FirPropertyAccessExpression.isProjectionSourceValueAccess(
     sourceType: ConeKotlinType,
-    sourceValueNames: Set<Name>,
+    sourceValues: ProjectionSourceValueAccessors,
     resolvedType: ConeKotlinType?
 ): Boolean {
-    if (calleeReference.name !in sourceValueNames) return false
-    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol
-    if (symbol != null && symbol !is FirValueParameterSymbol) return false
-    if (resolvedType == null) return true
-    val resolvedClass = resolvedType as? ConeClassLikeType ?: return false
-    val sourceClass = sourceType as? ConeClassLikeType ?: return false
-    val resolvedClassId = resolvedClass.lookupTag.classId
-    val sourceClassId = sourceClass.lookupTag.classId
-    return resolvedClassId == sourceClassId
+    if (!isProjectionSourceValueParameter(sourceValues)) return false
+    return (resolvedType ?: resolvedProjectionAccessType())?.hasSameClassIdAs(sourceType) != false
 }
 
 internal fun FirStatement.excludedProjectionSourceFieldNames(sourceFieldNames: Set<String>): Set<String> {
@@ -119,14 +152,14 @@ internal fun FirStatement.excludedProjectionSourceFieldNames(sourceFieldNames: S
 internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
     sourceType: ConeKotlinType,
     sourceFieldNames: Set<String>,
-    sourceValueNames: Set<Name>,
+    sourceValues: ProjectionSourceValueAccessors,
     resolvedType: (FirStatement) -> ConeKotlinType?
 ): Set<String>? {
     if (calleeReference.name.asString() != "minus") return null
     val receiver = sourceMinusReceiver()?.projectionStatementOrNull() ?: return null
     val excludedNames = when (receiver) {
         is FirPropertyAccessExpression -> {
-            if (!receiver.isProjectionSourceValueAccess(sourceType, sourceValueNames, resolvedType(receiver))) {
+            if (!receiver.isProjectionSourceValueAccess(sourceType, sourceValues, resolvedType(receiver))) {
                 return null
             }
             linkedSetOf<String>()
@@ -134,7 +167,7 @@ internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
         is FirFunctionCall -> receiver.sourceMinusExcludedProjectionFieldNames(
             sourceType,
             sourceFieldNames,
-            sourceValueNames,
+            sourceValues,
             resolvedType
         )?.toCollection(linkedSetOf()) ?: return null
         else -> return null

@@ -11,7 +11,7 @@ The Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ I
 | Code Generator | Reads IDEA Database data sources and previews or writes `KPojo` files |
 | Templates | Lets you copy the built-in KPojo template into `.kronos/templates` and customize generated code |
 
-## UI preview
+## UI tour
 
 Projection completion uses the generated result or context shape, so aliases such as `nameLength`, `rn`, and aggregate fields are available in the editor.
 

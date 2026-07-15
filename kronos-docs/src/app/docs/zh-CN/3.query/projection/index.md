@@ -166,7 +166,7 @@ select 输出名需要和要填充的 DTO 属性名对应。
 
 ## 完整投影、排除列与 []
 
-无 lambda 的 `select()` 返回源 KPojo 类型。在显式 `select { ... }` 中，`it` 表示当前 KPojo 的完整数据库列集合，并生成对应的投影结果类型。直接返回和放入 `[]` 的行为相同；`-` 可以排除一个或多个字段。
+`select { it }`、`select { [it] }` 和 `select { listOf(it) }` 都和 `select()` 一样返回源 KPojo 类型。`-` 可以排除字段；排除列或和其他投影项混合时，会生成投影结果类型。
 
 ```kotlin name="kotlin" icon="kotlin"
 val allDirect = User().select { it }.toList()

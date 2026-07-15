@@ -130,14 +130,12 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         if (items.isEmpty()) return
         val sourceType = expression.selectSourceType()
         val sourceFieldNames = sourceType?.sourceFieldNames().orEmpty()
-        val sourceValueNames = lambda.anonymousFunction.valueParameters.mapTo(linkedSetOf()) { it.name }.apply {
-            add(Name.identifier("it"))
-        }
+        val sourceValues = lambda.anonymousFunction.valueParameters.projectionSourceValueAccessors()
 
         val seenNames = linkedSetOf<String>()
         items.forEach { item ->
             if (item.hasResolutionError()) return@forEach
-            item.projectionNamesOrDiagnostic(sourceType, sourceFieldNames, sourceValueNames).forEach { result ->
+            item.projectionNamesOrDiagnostic(sourceType, sourceFieldNames, sourceValues).forEach { result ->
                 when (result) {
                     ProjectionItemResult.RequiresAlias -> reporter.reportOn(
                         item.source,
@@ -439,7 +437,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     private fun FirStatement.projectionNamesOrDiagnostic(
         sourceType: ConeKotlinType?,
         sourceFieldNames: Set<String>,
-        sourceValueNames: Set<Name>
+        sourceValues: ProjectionSourceValueAccessors
     ): List<ProjectionItemResult> {
         val statement = projectionStatementOrNull() ?: return listOf(ProjectionItemResult.RequiresAlias)
 
@@ -448,7 +446,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
             if (
                 sourceType != null && propertyAccess.isProjectionSourceValueAccess(
                     sourceType,
-                    sourceValueNames,
+                    sourceValues,
                     propertyAccess.safeResolvedType()
                 )
             ) {
@@ -466,7 +464,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
             call.sourceMinusExcludedProjectionFieldNames(
                 sourceType,
                 sourceFieldNames,
-                sourceValueNames
+                sourceValues
             ) { sourceMinusStatement -> sourceMinusStatement.safeResolvedType() }?.let { excludedNames ->
                 return sourceFieldNames
                     .filterNot { it in excludedNames }

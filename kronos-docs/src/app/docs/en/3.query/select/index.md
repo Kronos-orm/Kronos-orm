@@ -84,7 +84,7 @@ FROM "user"
 Returning `it` from an explicit projection expands every database column of the current KPojo. It can be returned directly or placed inside `[]`. Use `-` to exclude columns from that full projection.
 
 > **Note**
-> `select()` returns the source KPojo type. `select { it }` and `select { [it] }` return a generated projection containing all columns. The `-` operator must follow a KPojo value.
+> `select { it }`, `select { [it] }`, and `select { listOf(it) }` keep the same result type as `select()`. Once you exclude fields or add another item, Kronos returns a projection result.
 
 ```kotlin name="kotlin" icon="kotlin"
 val allDirect = User().select { it }.toList()

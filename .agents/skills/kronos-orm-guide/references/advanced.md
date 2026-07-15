@@ -371,6 +371,8 @@ CTAS 也可以通过 `buildCreateTableAsSelectTask(Target(), query)` 先生成 S
 
 函数、聚合、标量子查询和窗口函数等非直接 select 字段要使用 `.alias("name")`。alias 会成为生成投影的属性名。
 
+`select { it }`、`select { [it] }` 和 `select { listOf(it) }` 都和 `select()` 一样返回源 KPojo 类型。排除字段、追加 alias、函数、原生 SQL 或其他投影项时才生成投影类型。
+
 ```kotlin
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }

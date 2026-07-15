@@ -200,9 +200,12 @@ fun box(): String {
             "$selectedIt/$previousId/$shorterLength/$excludedNonColumnId/$excludedNonColumnName"
     }
 
-    val clauses = listOf(
+    val identityClauses = listOf(
         "allDirect" to allDirect,
         "allLiteral" to allLiteral,
+        "namedAll" to namedAll,
+    )
+    val projectionClauses = listOf(
         "allWithAlias" to allWithAlias,
         "excludedDirect" to excludedDirect,
         "excludedLiteral" to excludedLiteral,
@@ -217,18 +220,18 @@ fun box(): String {
         "excludedLinkedHashSetOfWithAlias" to excludedLinkedHashSetOfWithAlias,
         "excludedStackOfWithAlias" to excludedStackOfWithAlias,
         "chainedMinusWithAlias" to chainedMinusWithAlias,
-        "namedAll" to namedAll,
         "namedExcluded" to namedExcluded,
         "propertyNamedIt" to propertyNamedIt,
         "arithmeticMinus" to arithmeticMinus,
         "functionMinus" to functionMinus,
         "excludedNonColumn" to excludedNonColumn
     )
+    val clauses = identityClauses + projectionClauses
     val outputNames = clauses.associate { (name, clause) ->
         name to (clause.toSqlQuery() as SqlQuery.Select).selectedOutputNames()
     }
     val wrapper = KPojoExpansionProjectionWrapper()
-    clauses.forEach { (_, clause) -> clause.toList(wrapper) }
+    projectionClauses.forEach { (_, clause) -> clause.toList(wrapper) }
 
     val failures = listOfNotNull(
         expansionExpectOutput(outputNames, "allDirect", listOf("id", "name", "status", "it", "tags")),
@@ -253,7 +256,7 @@ fun box(): String {
         expansionExpectOutput(outputNames, "arithmeticMinus", listOf("previousId")),
         expansionExpectOutput(outputNames, "functionMinus", listOf("shorterLength")),
         expansionExpectOutput(outputNames, "excludedNonColumn", listOf("id", "name", "status", "it", "tags")),
-        expansionExpect(wrapper.mappedClasses.size == clauses.size) {
+        expansionExpect(wrapper.mappedClasses.size == projectionClauses.size) {
             "mapped classes were ${wrapper.mappedClasses}"
         },
         expansionExpect(wrapper.mappedClasses.all { it.simpleName?.startsWith("KronosSelectResult_") == true }) {

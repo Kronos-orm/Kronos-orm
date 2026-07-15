@@ -61,6 +61,7 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
 | `kronos-jdbc-wrapper` | Default JDBC DataSource wrapper | `KronosBasicWrapper.kt` |
 | `kronos-codegen` | DB schema → KPojo Kotlin files | `ConfigReader.kt`, `TemplateConfig.kt` |
 | `kronos-testing` | Integration tests (real DBs) | MySQL/Postgres/SQLite/Oracle/MSSQL tests |
+| `kronos-idea-plugin` | IntelliJ plugin UI, Code Generator, Templates, and projection completion | `plugin.xml`, `KronosProjectionCompletionContributor`, `MainPanel` |
 | `kronos-docs` | Documentation website (Angular/ng-doc) | `pnpm install && ng build` |
 | `build-logic` | Convention plugins (publishing, dokka) | `publishing.gradle.kts`, `dokka-convention.gradle.kts` |
 

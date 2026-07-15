@@ -100,7 +100,7 @@ fun box(): String {
     }
 
     val source = MetadataOverrideProjectionSource()
-    val clause = source.select { it }
+    val clause = source.select { [it, it.id.alias("sourceId")] }
     val sqlOutputNames = (clause.toSqlQuery() as SqlQuery.Select).selectedOutputNames()
     val wrapper = MetadataOverrideProjectionWrapper()
     val row = clause.toList(wrapper).singleOrNull()
@@ -121,10 +121,10 @@ fun box(): String {
     val staticSource = StaticProjectionMetadataSource()
 
     val failures = listOfNotNull(
-        metadataProjectionExpect(sqlOutputNames == listOf("id", "name")) {
+        metadataProjectionExpect(sqlOutputNames == listOf("id", "name", "sourceId")) {
             "SQL output names were $sqlOutputNames"
         },
-        metadataProjectionExpect(generatedFieldNames == listOf("id", "name")) {
+        metadataProjectionExpect(generatedFieldNames == listOf("id", "name", "sourceId")) {
             "generated projection fields were $generatedFieldNames"
         },
         metadataProjectionExpect(leakedSqlNames.isEmpty()) {

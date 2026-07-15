@@ -47,6 +47,12 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun kpojoExpansionGeneratedProjection() = box("kpojoExpansionGeneratedProjection")
 
     /**
+     * Verifies single-source select forms keep Source as Selected and Context.
+     */
+    @Test
+    fun identitySourceProjectionKeepsSourceType() = box("identitySourceProjectionKeepsSourceType")
+
+    /**
      * Verifies explicit KPojo metadata overrides are excluded from whole-source projection fields.
      */
     @Test

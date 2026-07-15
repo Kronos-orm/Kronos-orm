@@ -41,6 +41,7 @@ import org.jetbrains.kotlin.fir.extensions.FirExtensionApiInternals
 import org.jetbrains.kotlin.fir.extensions.FirFunctionCallRefinementExtension
 import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
 import org.jetbrains.kotlin.fir.expressions.FirAnonymousFunctionExpression
+import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
 import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
@@ -188,11 +189,11 @@ class KronosProjectionCallRefinementExtension(
     private fun readProjectionFields(
         expression: FirStatement,
         sourceType: ConeKotlinType,
-        sourceValueNames: Set<Name>
+        sourceValues: ProjectionSourceValueAccessors
     ): List<KronosProjectionField> {
         val statement = expression.projectionStatementOrNull() ?: return emptyList()
         return statement.projectionItems().flatMap {
-            it.toProjectionFields(sourceType, sourceValueNames)
+            it.toProjectionFields(sourceType, sourceValues)
         }
     }
 
@@ -201,7 +202,7 @@ class KronosProjectionCallRefinementExtension(
      */
     private fun FirStatement.toProjectionFields(
         sourceType: ConeKotlinType,
-        sourceValueNames: Set<Name>
+        sourceValues: ProjectionSourceValueAccessors
     ): List<KronosProjectionField> {
         val statement = projectionStatementOrNull() ?: return emptyList()
 
@@ -210,7 +211,7 @@ class KronosProjectionCallRefinementExtension(
             if (
                 propertyAccess.isProjectionSourceValueAccess(
                     sourceType,
-                    sourceValueNames,
+                    sourceValues,
                     propertyAccess.coneTypeOrNull
                 )
             ) {
@@ -221,7 +222,7 @@ class KronosProjectionCallRefinementExtension(
 
         val call = statement as? FirFunctionCall
         if (call != null) {
-            call.toSourceMinusProjectionFields(sourceType, sourceValueNames)?.let { return it }
+            call.toSourceMinusProjectionFields(sourceType, sourceValues)?.let { return it }
             return listOfNotNull(call.toAliasProjectionField(sourceType) ?: call.toAliasCallProjectionField())
         }
 
@@ -230,14 +231,14 @@ class KronosProjectionCallRefinementExtension(
 
     private fun FirFunctionCall.toSourceMinusProjectionFields(
         sourceType: ConeKotlinType,
-        sourceValueNames: Set<Name>
+        sourceValues: ProjectionSourceValueAccessors
     ): List<KronosProjectionField>? {
         val sourceFields = readSourceFields(sourceType)
         val sourceFieldNames = sourceFields.mapTo(linkedSetOf()) { it.name.asString() }
         val excludedNames = sourceMinusExcludedProjectionFieldNames(
             sourceType,
             sourceFieldNames,
-            sourceValueNames
+            sourceValues
         ) { statement -> statement.resolvedConeType() } ?: return null
         return sourceFields.filterNot { it.name.asString() in excludedNames }
     }
@@ -407,10 +408,9 @@ class KronosProjectionCallRefinementExtension(
         val sourceDeclaration = sourceType.toClassSymbol(session)?.fir?.source
         val lambda = callInfo.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return null
         val returned = lambda.anonymousFunction.body?.lastExpression() ?: return null
-        val sourceValueNames = lambda.anonymousFunction.valueParameters.mapTo(linkedSetOf()) { it.name }.apply {
-            add(Name.identifier("it"))
-        }
-        val fields = readProjectionFields(returned, sourceType, sourceValueNames)
+        val sourceValues = lambda.anonymousFunction.valueParameters.projectionSourceValueAccessors()
+        if (returned.isIdentitySourceProjection(sourceType, sourceValues)) return null
+        val fields = readProjectionFields(returned, sourceType, sourceValues)
         if (fields.isEmpty()) return null
 
         val name = Name.identifier("$GeneratedProjectionClassPrefix${mangleProjectionName(sourceType, fields)}")
@@ -436,6 +436,28 @@ class KronosProjectionCallRefinementExtension(
         )
         return model
     }
+
+    /**
+     * Keeps receiverless values with the Source type as `SelectClause<Source, Source, Source>`.
+     */
+    private fun FirStatement.isIdentitySourceProjection(
+        sourceType: ConeKotlinType,
+        sourceValues: ProjectionSourceValueAccessors
+    ): Boolean {
+        val item = projectionItems().singleOrNull() ?: return false
+        val propertyAccess = item.projectionStatementOrNull() as? FirPropertyAccessExpression ?: return false
+        if (propertyAccess.receiverCandidates().isNotEmpty()) return false
+        val accessType = propertyAccess.resolvedProjectionAccessType()
+        if (propertyAccess.isProjectionSourceValueParameter(sourceValues)) {
+            return accessType?.hasSameClassIdAs(sourceType) != false
+        }
+
+        // Also allow `select { row -> it }` when `it` is an outer receiverless value with the Source type.
+        return accessType.hasSameClassIdAs(sourceType)
+    }
+
+    private fun FirPropertyAccessExpression.receiverCandidates(): List<FirExpression> =
+        listOfNotNull(explicitReceiver, dispatchReceiver, extensionReceiver).distinct()
 
     /**
      * Uses the KPojo receiver as Source for normal selects, and the receiver's Selected

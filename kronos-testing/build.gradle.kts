@@ -21,6 +21,7 @@ dependencies {
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jdbc-wrapper"))
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.bundles.ktx.serialization)
     testImplementation(libs.dbcp2)
     testImplementation(libs.driver.jdbc.mysql)
     testImplementation(libs.driver.jdbc.sqlite)

@@ -75,9 +75,10 @@ fun initialDataSource(config: Map<String, Any?>): DataSource {
                 // 生成可能的setter方法名（兼容不同命名风格）
                 val methodNames = [
                     "set${key.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}",
+                    "set${key.lowercase(Locale.ROOT).replaceFirstChar { it.titlecase(Locale.ROOT) }}",
                     "set${key.uppercase(Locale.ROOT)}",
                     "set${key.lowercase(Locale.ROOT)}"
-                ]
+                ].distinct()
 
                 val targetMethod = methodNames.firstNotNullOfOrNull { name ->
                     findCompatibleMethod(this.javaClass, name, value)

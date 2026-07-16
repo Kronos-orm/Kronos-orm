@@ -52,6 +52,15 @@ fun validSingleAndWrappedProjectionItems() {
         .select {
             arrayOf<Any?>(it.id, it.name.alias("userName"))
         }
+
+    ProjectionCheckerPositiveUser()
+        .select { [it - listOf(it.id, it.name), it.id.alias("sourceId")] }
+
+    ProjectionCheckerPositiveUser()
+        .select { [it - listOf(it.id, it.name, it.status), it.name.alias("restoredName")] }
+
+    ProjectionCheckerPositiveUser()
+        .select { [it - [it.id, it.name], it.status.alias("sourceStatus")] }
 }
 
 fun validInsertSelectCollectionFormsAndNullValues() {

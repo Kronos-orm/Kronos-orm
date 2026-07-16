@@ -62,7 +62,7 @@ abstract class ValueTypeIntegrationSuite(
     }
 
     protected fun recreateTypedValueTable() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(IntegrationTypedValue())

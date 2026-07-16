@@ -93,7 +93,6 @@ class ErrorMessagesTest {
                 "Missing receiver for 'endsWith()' call",
                 "Missing receiver for 'contains()' call",
                 "Missing receiver for 'asSql()' call",
-                "Missing receiver for 'ifNoValue()' call",
                 "Missing receiver for 'takeIf()' call"
             ),
             listOf(
@@ -106,7 +105,6 @@ class ErrorMessagesTest {
                 ErrorMessages.MISSING_RECEIVER_ENDSWITH,
                 ErrorMessages.MISSING_RECEIVER_CONTAINS,
                 ErrorMessages.MISSING_RECEIVER_ASSQL,
-                ErrorMessages.MISSING_RECEIVER_IFNOVALUE,
                 ErrorMessages.MISSING_RECEIVER_TAKEIF
             )
         )

@@ -20,7 +20,7 @@ abstract class SchemaSyncRegressionSuite(
 ) : IntegrationSuiteSupport(environment, profile) {
     @Test
     fun syncTableAddsColumnAfterCustomStringPrimaryKeyAndTimestampColumns() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
 
         wrapper.table.dropTable(SchemaSyncUserV1())

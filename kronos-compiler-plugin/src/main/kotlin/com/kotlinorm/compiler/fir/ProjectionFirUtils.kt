@@ -26,12 +26,14 @@ import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.declarations.hasAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirBlock
+import org.jetbrains.kotlin.fir.expressions.FirCallableReferenceAccess
 import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
 import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
 import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
+import org.jetbrains.kotlin.fir.expressions.FirThisReceiverExpression
 import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
 import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
 import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
@@ -39,6 +41,7 @@ import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.toClassSymbol
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
@@ -139,14 +142,63 @@ internal fun FirPropertyAccessExpression.isProjectionSourceValueAccess(
     return (resolvedType ?: resolvedProjectionAccessType())?.hasSameClassIdAs(sourceType) != false
 }
 
-internal fun FirStatement.excludedProjectionSourceFieldNames(sourceFieldNames: Set<String>): Set<String> {
-    val statement = projectionStatementOrNull() ?: return emptySet()
+internal fun FirStatement.excludedProjectionSourceFieldNames(
+    sourceType: ConeKotlinType,
+    sourceFieldNames: Set<String>,
+    sourceValues: ProjectionSourceValueAccessors,
+    resolvedType: (FirStatement) -> ConeKotlinType?
+): Set<String>? {
+    val statement = projectionStatementOrNull() ?: return null
     statement.collectionLiteralItemsOrNull()?.let { items ->
-        return items.flatMapTo(linkedSetOf()) { it.excludedProjectionSourceFieldNames(sourceFieldNames) }
+        val excludedNames = linkedSetOf<String>()
+        items.forEach { item ->
+            excludedNames += item.excludedProjectionSourceFieldNames(
+                sourceType,
+                sourceFieldNames,
+                sourceValues,
+                resolvedType
+            ) ?: return null
+        }
+        return excludedNames
     }
-    val propertyAccess = statement as? FirPropertyAccessExpression ?: return emptySet()
-    val name = propertyAccess.calleeReference.name.asString()
-    return if (name in sourceFieldNames) setOf(name) else emptySet()
+    val propertyName = when (statement) {
+        is FirPropertyAccessExpression -> statement.sourcePropertyName(sourceType, sourceValues, resolvedType)
+        is FirCallableReferenceAccess -> statement.sourcePropertyName(sourceType)
+        else -> null
+    } ?: return null
+    return if (propertyName in sourceFieldNames) setOf(propertyName) else emptySet()
+}
+
+private fun FirPropertyAccessExpression.sourcePropertyName(
+    sourceType: ConeKotlinType,
+    sourceValues: ProjectionSourceValueAccessors,
+    resolvedType: (FirStatement) -> ConeKotlinType?
+): String? =
+    resolvedSourcePropertyName(sourceType, calleeReference.name)
+        ?: calleeReference.name.asString().takeIf {
+            listOfNotNull(explicitReceiver, extensionReceiver, dispatchReceiver)
+                .filterIsInstance<FirStatement>()
+                .any { receiver ->
+                    val sourceAccess = receiver.projectionStatementOrNull() as? FirPropertyAccessExpression
+                    sourceAccess?.isProjectionSourceValueAccess(
+                        sourceType,
+                        sourceValues,
+                        resolvedType(sourceAccess)
+                    ) == true
+                }
+        }
+
+private fun FirCallableReferenceAccess.sourcePropertyName(sourceType: ConeKotlinType): String? =
+    resolvedSourcePropertyName(sourceType, calleeReference.name)
+
+private fun org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression.resolvedSourcePropertyName(
+    sourceType: ConeKotlinType,
+    name: Name
+): String? {
+    val sourceClassId = (sourceType as? ConeClassLikeType)?.lookupTag?.classId ?: return null
+    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirPropertySymbol
+        ?: return null
+    return name.asString().takeIf { symbol.callableId?.classId == sourceClassId }
 }
 
 internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
@@ -156,32 +208,85 @@ internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
     resolvedType: (FirStatement) -> ConeKotlinType?
 ): Set<String>? {
     if (calleeReference.name.asString() != "minus") return null
-    val receiver = sourceMinusReceiver()?.projectionStatementOrNull() ?: return null
-    val excludedNames = when (receiver) {
-        is FirPropertyAccessExpression -> {
-            if (!receiver.isProjectionSourceValueAccess(sourceType, sourceValues, resolvedType(receiver))) {
-                return null
-            }
-            linkedSetOf<String>()
-        }
-        is FirFunctionCall -> receiver.sourceMinusExcludedProjectionFieldNames(
+    val match = sourceMinusReceiverMatch(sourceType, sourceFieldNames, sourceValues, resolvedType)
+        ?: return null
+    val excludedNames = match.excludedNames
+    sourceMinusExcludedOperands(match.receiver, sourceType, sourceValues, resolvedType).forEach { argument ->
+        val names = argument.excludedProjectionSourceFieldNames(
             sourceType,
             sourceFieldNames,
             sourceValues,
             resolvedType
-        )?.toCollection(linkedSetOf()) ?: return null
-        else -> return null
-    }
-    argumentList.arguments.flatMapTo(excludedNames) { argument ->
-        argument.excludedProjectionSourceFieldNames(sourceFieldNames)
+        )
+        excludedNames += names ?: return null
     }
     return excludedNames
 }
 
-private fun FirFunctionCall.sourceMinusReceiver(): FirStatement? =
+private fun FirFunctionCall.sourceMinusReceiverMatch(
+    sourceType: ConeKotlinType,
+    sourceFieldNames: Set<String>,
+    sourceValues: ProjectionSourceValueAccessors,
+    resolvedType: (FirStatement) -> ConeKotlinType?
+): SourceMinusReceiverMatch? {
+    return sourceMinusReceiverCandidates().firstNotNullOfOrNull { candidate ->
+        when (val receiver = candidate.projectionStatementOrNull()) {
+            is FirPropertyAccessExpression -> {
+                if (!receiver.isProjectionSourceValueAccess(sourceType, sourceValues, resolvedType(receiver))) {
+                    null
+                } else {
+                    SourceMinusReceiverMatch(candidate, linkedSetOf())
+                }
+            }
+
+            is FirFunctionCall -> receiver.sourceMinusExcludedProjectionFieldNames(
+                sourceType,
+                sourceFieldNames,
+                sourceValues,
+                resolvedType
+            )?.toCollection(linkedSetOf())?.let { excludedNames ->
+                SourceMinusReceiverMatch(candidate, excludedNames)
+            }
+
+            else -> null
+        }
+    }
+}
+
+private fun FirFunctionCall.sourceMinusReceiverCandidates(): List<FirStatement> =
     listOfNotNull(explicitReceiver, extensionReceiver, dispatchReceiver)
         .filterIsInstance<FirStatement>()
-        .firstOrNull()
+
+private fun FirFunctionCall.sourceMinusExcludedOperands(
+    sourceReceiver: FirStatement,
+    sourceType: ConeKotlinType,
+    sourceValues: ProjectionSourceValueAccessors,
+    resolvedType: (FirStatement) -> ConeKotlinType?
+): List<FirStatement> {
+    val receiverStatement = sourceReceiver.projectionStatementOrNull()
+    return (argumentList.arguments + sourceMinusReceiverCandidates()).filter { candidate ->
+        if (candidate === sourceReceiver || candidate.projectionStatementOrNull() === receiverStatement) {
+            return@filter false
+        }
+        if (candidate.projectionStatementOrNull() is FirThisReceiverExpression) return@filter false
+        val propertyAccess = candidate.projectionStatementOrNull() as? FirPropertyAccessExpression
+        val resolvedAccessType = propertyAccess?.let(resolvedType)
+        val isSourceValue = propertyAccess?.isProjectionSourceValueAccess(
+            sourceType,
+            sourceValues,
+            resolvedAccessType
+        ) == true || propertyAccess?.let { access ->
+            access.calleeReference.name in sourceValues.names &&
+                (resolvedAccessType ?: access.resolvedProjectionAccessType())?.hasSameClassIdAs(sourceType) != false
+        } == true
+        !isSourceValue
+    }
+}
+
+private data class SourceMinusReceiverMatch(
+    val receiver: FirStatement,
+    val excludedNames: LinkedHashSet<String>
+)
 
 internal fun FirProperty.isKronosColumn(session: FirSession): Boolean {
     if (hasAnnotation(IgnoreAnnotationClassId, session)) return false

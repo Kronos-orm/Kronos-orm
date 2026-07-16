@@ -16,6 +16,7 @@
 
 package com.kotlinorm.wrappers
 
+import com.kotlinorm.beans.task.JdbcParameterTypeHints
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.sql.PreparedStatement
@@ -60,8 +61,8 @@ class KronosArgumentRegistry private constructor(
     companion object {
         fun defaults(): KronosArgumentRegistry = KronosArgumentRegistry().apply {
             register(KronosArgumentFactory { value, _ ->
-                if (value == null) KronosArgument { position, statement, _ ->
-                    statement.setNull(position, Types.NULL)
+                if (value == null) KronosArgument { position, statement, context ->
+                    statement.setNull(position, context.contextJdbcNullType(position) ?: Types.NULL)
                 } else null
             }, prepend = false)
             register(KronosArgumentFactory { value, _ ->
@@ -100,4 +101,13 @@ class KronosArgumentRegistry private constructor(
             }, prepend = false)
         }
     }
+}
+
+private fun KronosStatementContext.contextJdbcNullType(position: Int): Int? {
+    val parameterName = parameterNames.getOrNull(position - 1) ?: return null
+    val hints = JdbcParameterTypeHints.from(stash)
+    return hints[parameterName] ?: parameterName
+        .substringBefore('@')
+        .takeIf { it != parameterName }
+        ?.let { hints[it] }
 }

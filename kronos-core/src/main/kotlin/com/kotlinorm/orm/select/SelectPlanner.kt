@@ -11,6 +11,8 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForSelect
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.orm.sql.materializeSqlQuery
@@ -52,18 +54,23 @@ internal class SelectPlanner(
         val parameterCounter = mutableMapOf<String, Int>()
         val selectItems = selectItems(dataSource, parameters, parameterCounter, totalCount)
         val fromTable = table(dataSource, parameters, parameterCounter)
+        val orderByItems = if (totalCount) {
+            emptyList()
+        } else {
+            sqlServerPageOrderItems(dataSource) ?: context.orderByItems.map {
+                it.toOrderingItem(selectItems, dataSource, parameters, parameterCounter)
+            }
+        }
         val query = SqlQuery.Select(
             quantifier = if (context.distinct) SqlQuantifier.Distinct else null,
             select = selectItems,
             from = listOf(fromTable),
             where = where(dataSource, parameters),
             groupBy = context.groupByItems.takeIf { it.isNotEmpty() }?.let {
-                SqlGroup(items = it.map(SqlGroupingItem::Expr))
+                SqlGroup(items = it.map { expr -> SqlGroupingItem.Expr(context.bindExpr(expr)) })
             },
-            having = context.having,
-            orderBy = if (totalCount) emptyList() else context.orderByItems.map {
-                it.toOrderingItem(selectItems, dataSource, parameters, parameterCounter)
-            },
+            having = context.having?.let(context::bindExpr),
+            orderBy = orderByItems,
             limit = context.limit.takeUnless { totalCount },
             lock = context.lock.takeUnless { totalCount }
         )
@@ -80,23 +87,27 @@ internal class SelectPlanner(
         if (totalCount && (context.selectAll || context.projectionItems.all { it is KTableForSelect.ProjectionItem.FieldItem })) {
             return listOf(totalCountSelectItem())
         }
-        if (context.selectAll) {
-            return context.allColumns.map { it.toPlannerSelectItem() }
-        }
-        if (context.projectionItems.isNotEmpty()) {
-            return context.projectionItems.mapNotNull { projection ->
+        val visibleItems = if (context.selectAll) {
+            context.allColumns.map { it.toPlannerSelectItem() }
+        } else if (context.projectionItems.isNotEmpty()) {
+            context.projectionItems.mapNotNull { projection ->
                 when (projection) {
                     is KTableForSelect.ProjectionItem.FieldItem ->
-                        projection.field.takeIf { it in context.selectedFields }?.toPlannerSelectItem(projection.expr)
-                    is KTableForSelect.ProjectionItem.SelectItemValue -> projection.item
+                        projection.field.takeIf { it in context.selectedFields }?.toPlannerSelectItem(projection.expr?.let(context::bindExpr))
+                    is KTableForSelect.ProjectionItem.SelectItemValue -> context.bindSelectItem(projection.item)
                     is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> {
                         val query = projection.query.materializeSqlQuery(parameters, parameterCounter, dataSource)
                         scalarSubqueryItem(query, projection.alias)
                     }
                 }
             }
+        } else {
+            context.selectedFields.map { it.toPlannerSelectItem() }
         }
-        return context.selectedFields.map { it.toPlannerSelectItem() }
+        if (totalCount) return visibleItems
+        return visibleItems + context.cursorOnlySelectFields.map { (field, alias) ->
+            field.toCursorOnlySelectItem(alias)
+        }
     }
 
     private fun scalarSubqueryItem(query: SqlQuery, alias: String): SqlSelectItem.Expr {
@@ -128,7 +139,7 @@ internal class SelectPlanner(
                 expression = expr,
                 scope = if (alias == null) SqlSelectItemSourceScope.Source else SqlSelectItemSourceScope.Selected,
                 source = SqlSelectItemSource(
-                    tableName = context.sourceTableAlias,
+                    tableName = context.effectiveSourceAlias(),
                     columnName = context.sourceColumnName(this)
                 ),
                 userReferenceable = true
@@ -136,9 +147,27 @@ internal class SelectPlanner(
         )
     }
 
+    private fun Field.toCursorOnlySelectItem(alias: String): SqlSelectItem.Expr {
+        val expr = toPlannerExpr()
+        return SqlSelectItem.Expr(
+            expr = expr,
+            alias = alias,
+            metadata = SqlSelectItemAliasMetadata(
+                outputName = alias,
+                expression = expr,
+                scope = SqlSelectItemSourceScope.Selected,
+                source = SqlSelectItemSource(
+                    tableName = context.effectiveSourceAlias(),
+                    columnName = context.sourceColumnName(this)
+                ),
+                userReferenceable = false
+            )
+        )
+    }
+
     private fun Field.toPlannerExpr(): SqlExpr =
         SqlExpr.Column(
-            tableName = context.sourceTableAlias,
+            tableName = context.effectiveSourceAlias(),
             columnName = context.sourceColumnName(this)
         )
 
@@ -156,17 +185,17 @@ internal class SelectPlanner(
         val parts = listOfNotNull(context.databaseName, context.tableName)
         return SqlTable.Ident(
             name = parts.joinToString("."),
-            alias = context.sourceTableAlias?.let { SqlTableAlias(it) },
+            alias = context.effectiveSourceAlias()?.let { SqlTableAlias(it) },
             identifier = SqlIdentifier.of(parts)
         )
     }
 
     private fun where(dataSource: KronosDataSourceWrapper, parameters: MutableMap<String, Any?>): SqlExpr? {
-        var where = context.where
+        var where = context.where?.let(context::bindExpr)
         context.logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
             val logicDeleteExpression = SqlExpr.Binary(
                 SqlExpr.Column(
-                    tableName = context.sourceTableAlias,
+                    tableName = context.effectiveSourceAlias(),
                     columnName = context.sourceColumnName(field)
                 ),
                 SqlBinaryOperator.Equal,
@@ -226,6 +255,24 @@ internal class SelectPlanner(
             else -> SqlExpr.Binary(left, SqlBinaryOperator.And, right)
         }
 
+    private fun sqlServerPageOrderItems(dataSource: KronosDataSourceWrapper): List<SqlOrderingItem>? {
+        if (dataSource === NoneDataSourceWrapper) return null
+        if (dataSource.dbType != DBType.Mssql) return null
+        val limit = context.limit ?: return null
+        if (limit.offset == null || context.orderByItems.isNotEmpty()) return null
+        val primaryKey = context.primaryKey
+            ?: error("SQL Server page() requires orderBy() when no primary key is available for deterministic ordering.")
+        return listOf(
+            SqlOrderingItem(
+                expr = SqlExpr.Column(
+                    tableName = context.effectiveSourceAlias(),
+                    columnName = context.sourceColumnName(primaryKey)
+                ),
+                ordering = SqlOrdering.Asc
+            )
+        )
+    }
+
     private fun SelectOrderItem.toOrderingItem(
         selectItems: List<SqlSelectItem>,
         dataSource: KronosDataSourceWrapper,
@@ -234,8 +281,8 @@ internal class SelectPlanner(
     ): SqlOrderingItem =
         SqlOrderingItem(
             expr = when (this) {
-                is SelectOrderItem.FieldItem -> selectItems.orderAliasExpr(field.name) ?: expr ?: field.toPlannerExpr()
-                is SelectOrderItem.ExprItem -> expr
+                is SelectOrderItem.FieldItem -> selectItems.orderAliasExpr(field.name) ?: expr?.let(context::bindExpr) ?: field.toPlannerExpr()
+                is SelectOrderItem.ExprItem -> context.bindExpr(expr)
                 is SelectOrderItem.SelectableItem ->
                     SqlExpr.Subquery(query.materializeSqlQuery(parameters, parameterCounter, dataSource))
             },

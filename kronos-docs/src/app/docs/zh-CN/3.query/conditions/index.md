@@ -551,16 +551,16 @@ WHERE `name` = :name AND `age` > :age
 
 `patch` 用于补充当前 KPojo 对象中没有提供的命名参数。
 
-## 设置无值策略
+## 跳过动态无值条件
 
-使用 `.ifNoValue(...)` 处理条件值为 `null` 或空集合时的行为。
+动态条件值为 `null` 且需要跳过该条件时，使用 `.takeIf(...)`。
 
 ```kotlin group="No value" name="kotlin" icon="kotlin"
 val minAge: Int? = null
 
 val users = User()
     .select()
-    .where { (it.age >= minAge).ifNoValue(NoValueStrategyType.Ignore) }
+    .where { (it.age >= minAge).takeIf(minAge != null) }
     .toList()
 ```
 
@@ -569,7 +569,7 @@ SELECT `id`, `name`, `age`
 FROM `user`
 ```
 
-`Ignore` 会跳过当前条件。其他策略见 {{ $.keyword("configuration/no-value-strategy", ["无值策略"]) }}。
+`null` 和空集合的默认处理规则见 {{ $.keyword("configuration/no-value-strategy", ["无值策略"]) }}。
 
 ## 在 {{ $.title("having") }} 中使用条件
 

@@ -12,7 +12,6 @@ import com.kotlinorm.orm.upsert.upsert
 
 import com.kotlinorm.testfixtures.entities.Product
 import com.kotlinorm.testfixtures.entities.TestUser
-import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.functions.bundled.exts.MathFunctions.add
 import com.kotlinorm.functions.bundled.exts.MathFunctions.sub
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
@@ -171,7 +170,7 @@ class MysqlSelectSqlTest : MysqlTestBase() {
 
     @Test
     fun testSelectIn() {
-        val (sql, paramMap) = user.select { [it.id, it.username] }
+        val (sql, paramMap, task) = user.select { [it.id, it.username] }
             .where { it.id in [0, 2, 3] }
             .build()
 
@@ -180,6 +179,11 @@ class MysqlSelectSqlTest : MysqlTestBase() {
             sql
         )
         assertEquals(mapOf("idList" to [0, 2, 3]), paramMap)
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE `tb_user`.`id` IN (?, ?, ?) AND `deleted` = 0",
+            task.atomicTask.parsed().jdbcSql
+        )
+        assertEquals([0, 2, 3], task.atomicTask.parsed().jdbcParamList.toList())
 
         val (sql2, paramMap2) = user.select { [it.id, it.username] }
             .where { it.id in emptyList<Int>() }
@@ -210,11 +214,7 @@ class MysqlSelectSqlTest : MysqlTestBase() {
             "SELECT `id`, `username` FROM `tb_user` WHERE `tb_user`.`username` IN (:usernameList) AND `deleted` = 0",
             sql4
         )
-        assertEquals(
-            mapOf(
-                "usernameList" to ids
-            ), paramMap4
-        )
+        assertEquals(mapOf("usernameList" to ids), paramMap4)
     }
 
     @Test
@@ -266,8 +266,8 @@ class MysqlSelectSqlTest : MysqlTestBase() {
     }
 
     @Test
-    fun testIfNoValue() {
-        val (sql, paramMap) = user.select { "count(1)".alias("count") }.where { it.gender.gt.ifNoValue(NoValueStrategyType.Ignore) }
+    fun testTakeIfOmittedCondition() {
+        val (sql, paramMap) = user.select { "count(1)".alias("count") }.where { it.gender.gt.takeIf(false) }
             .build()
 
         assertEquals(
@@ -350,7 +350,7 @@ class MysqlSelectSqlTest : MysqlTestBase() {
             }
             .build()
         assertEquals(
-            "SELECT `id` FROM `tb_user` WHERE `tb_user`.`username` LIKE :username AND " +
+            "SELECT `id` FROM `tb_user` WHERE `tb_user`.`username` LIKE :username ESCAPE '\\\\' AND " +
                     "((`tb_user`.`gender` = :gender AND `tb_user`.`username` = :username@1) OR (`tb_user`.`gender` = :gender@1 AND `tb_user`.`username` = :username@2)) AND " +
                     "`deleted` = 0",
             sql2

@@ -34,6 +34,7 @@ import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
 import com.kotlinorm.syntax.table.SqlJoinCondition
 import com.kotlinorm.syntax.table.SqlJoinType
 import com.kotlinorm.syntax.table.SqlTable
+import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,11 +73,11 @@ class SelectFromSyntaxTest : MysqlTestBase() {
             leftJoin(
                 left = leftJoin(
                     left = table("tb_user"),
-                    right = table("user_relation"),
-                    condition = eq(tcol("tb_user", "id"), tcol("user_relation", "id2"))
+                    right = table("user_relation", "user_relation__k2"),
+                    condition = eq(tcol("tb_user", "id"), tcol("user_relation__k2", "id2"))
                 ),
-                right = table("user_relation"),
-                condition = eq(tcol("tb_user", "id"), tcol("user_relation", "id2"))
+                right = table("user_relation", "user_relation__k3"),
+                condition = eq(tcol("tb_user", "id"), tcol("user_relation__k3", "id2"))
             ),
             statement.from.single()
         )
@@ -90,6 +91,24 @@ class SelectFromSyntaxTest : MysqlTestBase() {
         }.toSqlQuery() as SqlQuery.Select
 
         assertEquals(rootIdAndNotDeleted(), statement.where)
+    }
+
+    @Test
+    fun `repeated join where clauses keep colliding parameter values distinct`() {
+        val task = TestUser().join(UserRelation()) { user, relation ->
+            innerJoin(relation) { user.id == relation.id2 }
+            select { user.id }
+            where { user.id == 10 }
+            where { relation.id == 20 }
+        }.build().atomicTask
+
+        assertEquals(
+            "SELECT `tb_user`.`id` AS `id` FROM `tb_user` INNER JOIN `user_relation` " +
+                "ON `tb_user`.`id` = `user_relation`.`id2` WHERE `tb_user`.`id` = :id AND " +
+                "`user_relation`.`id` = :id@1 AND `tb_user`.`deleted` = 0",
+            task.sql
+        )
+        assertEquals(mapOf("id" to 10, "id@1" to 20), task.paramMap)
     }
 
     @Test
@@ -227,8 +246,8 @@ class SelectFromSyntaxTest : MysqlTestBase() {
             condition = SqlJoinCondition.On(condition)
         )
 
-    private fun table(name: String): SqlTable.Ident =
-        SqlTable.Ident(name)
+    private fun table(name: String, alias: String? = null): SqlTable.Ident =
+        SqlTable.Ident(name = name, alias = alias?.let(::SqlTableAlias))
 
     private fun rootIdAndNotDeleted(): SqlExpr =
         and(

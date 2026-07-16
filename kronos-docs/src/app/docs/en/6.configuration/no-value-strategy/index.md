@@ -15,26 +15,33 @@ For dynamic condition values that enter the no-value strategy, the default logic
   - In other cases, the conditional statement is ignored.
 - Ignore this conditional statement when the operation type is `SELECT`.
 
-## Dynamically set the no-value strategy
+## Control dynamic no-value predicates
 
-Simply call the `ifNoValue` method in the conditional statement as shown below:
+Use Kotlin conditions to decide which predicate participates. Use an ordinary `if`/`else` when a missing value needs an explicit fallback; `.takeIf(...)` remains available when a predicate only needs to be omitted.
 
 ```kotlin
 val age: Int? = null
 val namePattern: String? = null
 
-where { (it.age == age).ifNoValue(NoValueStrategyType.Ignore) }
-where { (it.name like namePattern).ifNoValue(NoValueStrategyType.False) }
+where { (it.age == age).takeIf(age != null) }
+where {
+    if (namePattern != null) {
+        it.name like namePattern
+    } else {
+        false.asSql()
+    }
+}
+where { it.age.isNull.takeIf(age == null) }
 ```
 
-## Types of value-free strategies
+## No-value outcomes
 
-The currently supported value-free strategies are：
+Kronos uses these outcomes internally when it handles no-value conditions:
 
 {{ $.params([
-['Ignore', 'Ignore this conditional statement', "NoValueStrategyType", "ignore"],
-['False', 'The conditional statement is false', "NoValueStrategyType", "false"],
-['True', 'The conditional statement is true', "NoValueStrategyType", "true"],
-['JudgeNull', 'Convert to `is null` or `is not null`', "NoValueStrategyType", "judgeNull"],
-['Auto', 'Use Kronos default behavior, usually no need to set manually', "NoValueStrategyType", "auto"]
+['Ignore', 'Ignore this conditional statement', "Outcome", "ignore"],
+['False', 'The conditional statement is false', "Outcome", "false"],
+['True', 'The conditional statement is true', "Outcome", "true"],
+['JudgeNull', 'Convert to `is null` or `is not null`', "Outcome", "judgeNull"],
+['Auto', 'Use Kronos default behavior', "Outcome", "auto"]
 ]) }}

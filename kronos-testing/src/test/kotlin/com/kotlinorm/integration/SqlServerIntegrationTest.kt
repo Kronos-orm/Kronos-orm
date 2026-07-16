@@ -2,22 +2,27 @@ package com.kotlinorm.integration
 
 import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.suites.CascadeIntegrationSuite
+import com.kotlinorm.integration.suites.ComplexQueryProjectionIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DmlUpsertCornerCaseIntegrationSuite
 import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
+import com.kotlinorm.integration.suites.SafetyCornerCaseIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.StrategyIntegrationSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
+import com.kotlinorm.integration.suites.TypeDialectDdlCornerIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
 import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.sqlServer
+import kotlin.test.Test
 
 class SqlServerSchemaIntegrationTest : SchemaIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerSchemaSyncRegressionTest : SchemaSyncRegressionSuite(sqlServer, StandardIntegrationScenarioProfile)
@@ -25,13 +30,28 @@ class SqlServerCrudWhereIntegrationTest : CrudWhereIntegrationSuite(sqlServer, S
 class SqlServerQueryIntegrationTest : QueryIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerComplexQueryProjectionIntegrationTest : ComplexQueryProjectionIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerDmlUpsertCornerCaseIntegrationTest : DmlUpsertCornerCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerUpsertIntegrationTest : UpsertIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerErrorIntegrationTest : ErrorIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerWrapperSqlIntegrationTest : WrapperSqlIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerCascadeIntegrationTest : CascadeIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerValueTypeIntegrationTest : ValueTypeIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerTypeDialectDdlCornerIntegrationTest :
+    TypeDialectDdlCornerIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile) {
+    @Test
+    fun sqlServerNullTemporalColumnsShouldBindAsTypedNullsAgainstRealDatabase() {
+        verifySqlServerNullTemporalColumnsBindAsTypedNullsAgainstRealDatabase()
+    }
+
+    @Test
+    fun sqlServerTimeColumnShouldMapToLocalTimeAgainstRealDatabase() {
+        verifySqlServerTimeColumnMapsToLocalTimeAgainstRealDatabase()
+    }
+}
 class SqlServerFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerTransactionIntegrationTest : TransactionIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerSafetyCornerCaseIntegrationTest : SafetyCornerCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerStrategyIntegrationTest : StrategyIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)

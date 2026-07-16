@@ -95,7 +95,10 @@ class KronosActionTask {
                         first.sql,
                         it.map { task -> task.paramMap }.toTypedArray(),
                         first.operationType,
-                        first.statement
+                        first.statement,
+                        stash = first.stash.toMutableMap(),
+                        generatedKeyRequest = first.generatedKeyRequest,
+                        listParameterOccurrences = first.listParameterOccurrences
                     )
                 } else { //如果只有一个任务
                     first

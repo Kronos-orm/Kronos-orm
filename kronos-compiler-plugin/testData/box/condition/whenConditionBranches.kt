@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies if/when-shaped condition lambdas lower through IrWhen analysis.
+// Verifies ordinary Kotlin if/when selects one SQL-expression branch at runtime.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -104,22 +104,12 @@ fun box(): String {
 
     val failures = listOfNotNull(
         expectWhenCondition(
-            runtimeLeaves == listOf(
-                WhenConditionLeaf("status", SqlBinaryOperator.Equal, 2),
-                WhenConditionLeaf("age", SqlBinaryOperator.GreaterThan, 18),
-                WhenConditionLeaf("id", SqlBinaryOperator.Equal, 1),
-            )
+            runtimeLeaves == listOf(WhenConditionLeaf("age", SqlBinaryOperator.GreaterThan, 18))
         ) {
             "runtime if leaves were $runtimeLeaves"
         },
         expectWhenCondition(
-            nestedLeaves == listOf(
-                WhenConditionLeaf("status", SqlBinaryOperator.Equal, 1),
-                WhenConditionLeaf("id", SqlBinaryOperator.Equal, 1),
-                WhenConditionLeaf("status", SqlBinaryOperator.Equal, 2),
-                WhenConditionLeaf("age", SqlBinaryOperator.GreaterThan, 18),
-                WhenConditionLeaf("status", SqlBinaryOperator.Equal, 0),
-            )
+            nestedLeaves == listOf(WhenConditionLeaf("age", SqlBinaryOperator.GreaterThan, 18))
         ) {
             "nested when leaves were $nestedLeaves"
         },
@@ -130,18 +120,12 @@ fun box(): String {
             "literal-only parameters were ${literalOnly.parameters}"
         },
         expectWhenCondition(
-            singleWhenLeaves == listOf(
-                WhenConditionLeaf("id", SqlBinaryOperator.Equal, 1),
-            )
+            singleWhenLeaves.isEmpty()
         ) {
             "single when leaves were $singleWhenLeaves"
         },
         expectWhenCondition(
-            negatedRuntimeLeaves == listOf(
-                WhenConditionLeaf("status", SqlBinaryOperator.NotEqual, 2),
-                WhenConditionLeaf("age", SqlBinaryOperator.LessThanEqual, 18),
-                WhenConditionLeaf("id", SqlBinaryOperator.NotEqual, 1),
-            )
+            negatedRuntimeLeaves == listOf(WhenConditionLeaf("age", SqlBinaryOperator.LessThanEqual, 18))
         ) {
             "negated runtime if leaves were $negatedRuntimeLeaves"
         },

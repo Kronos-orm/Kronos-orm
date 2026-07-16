@@ -2,12 +2,13 @@ package com.kotlinorm.codegen
 
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 import org.apache.commons.dbcp2.BasicDataSource
+import java.lang.reflect.InvocationTargetException
 import javax.sql.DataSource
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DataSourceHelperTest {
@@ -122,7 +123,6 @@ class DataSourceHelperTest {
         assertEquals(5, dataSource.initialSize)
     }
 
-    @Ignore("Temporarily disabled - needs investigation")
     @Test
     fun testInitialDataSourceWithUppercaseProperty() {
         val config = mapOf(
@@ -135,19 +135,16 @@ class DataSourceHelperTest {
 
     @Test
     fun createWrapperWithNullClassNameUsesDefault() {
-        // When className is null, it falls back to "com.kotlinorm.wrappers.KronosJdbcWrapper"
-        // KronosJdbcWrapper needs a real DataSource that can provide a connection,
-        // so we verify the fallback path triggers by checking the exception message
-        // since BasicDataSource without driver config cannot connect.
         val ds = BasicDataSource()
-        try {
+        val error = assertFailsWith<IllegalStateException> {
             createWrapper(null, ds)
-        } catch (e: Exception) {
-            // Expected: either connection failure from KronosJdbcWrapper init
-            // or class not found if kronos-jdbc-wrapper not on classpath
-            // The key point is that it attempted to use the default class name
-            assertTrue(true)
         }
+
+        assertEquals(
+            "Failed to create wrapper for ${KronosJdbcWrapper::class.java.name}",
+            error.message
+        )
+        assertTrue(error.cause is InvocationTargetException)
     }
 
     @Test
@@ -276,4 +273,154 @@ class DataSourceHelperTest {
         val ds = initialDataSource(config)
         assertNotNull(ds)
     }
+
+    @Test
+    fun initialDataSourceSupportsEmptyAndAlternateSetterNames() {
+        val config = linkedMapOf<String, Any?>(
+            "dataSourceClassName" to SetterProbeDataSource::class.java.name,
+            "" to "empty-key",
+            "mixedKey" to "second-candidate",
+            "upperOnly" to "third-candidate",
+            "lowerOnly" to "fourth-candidate",
+            "stringValue" to 42,
+            "badCount" to "ignored",
+            "wrongType" to "ignored",
+            "explodes" to "attempted"
+        )
+
+        val ds = initialDataSource(config) as SetterProbeDataSource
+
+        assertEquals("empty-key", ds.emptyKeyValue)
+        assertEquals("second-candidate", ds.mixedKeyValue)
+        assertEquals("third-candidate", ds.upperOnlyValue)
+        assertEquals("fourth-candidate", ds.lowerOnlyValue)
+        assertEquals("42", ds.observedStringValue)
+        assertEquals(0, ds.wrongTypeCalls)
+        assertEquals(1, ds.explodeAttempts)
+    }
+
+    @Test
+    fun createWrapperReportsWrongTypesAndConstructorFailures() {
+        val ds = BasicDataSource()
+        val wrongType = assertFailsWith<IllegalStateException> {
+            createWrapper(NonWrapper::class.java.name, ds)
+        }
+        assertEquals("Failed to create wrapper for ${NonWrapper::class.java.name}", wrongType.message)
+        assertTrue(wrongType.cause is ClassCastException)
+
+        val constructorFailure = assertFailsWith<IllegalStateException> {
+            createWrapper(ThrowingWrapper::class.java.name, ds)
+        }
+        assertEquals(
+            "Failed to create wrapper for ${ThrowingWrapper::class.java.name}",
+            constructorFailure.message
+        )
+        assertTrue(constructorFailure.cause is InvocationTargetException)
+        assertEquals("constructor failure", constructorFailure.cause?.cause?.message)
+    }
+
+    @Test
+    fun `conversion helper covers scalar enum and failure results`() {
+        val marker = SetterPayload("same-instance")
+
+        assertSame(marker, invokeConversion(marker, SetterPayload::class.java))
+        assertEquals(null, invokeConversion(null, String::class.java))
+        assertEquals(7, invokeConversion(7.9, Int::class.javaPrimitiveType!!))
+        assertEquals(7L, invokeConversion(7.9, Long::class.javaPrimitiveType!!))
+        assertEquals(true, invokeConversion("TRUE", Boolean::class.javaPrimitiveType!!))
+        assertEquals("42", invokeConversion(42, String::class.java))
+        assertEquals(SetterMode.SLOW, invokeConversion("slow", SetterMode::class.java))
+
+        val invalidEnum = conversionFailure("missing", SetterMode::class.java)
+        assertEquals(IllegalArgumentException::class, invalidEnum::class)
+        assertEquals("Invalid enum value 'missing' for SetterMode", invalidEnum.message)
+
+        val unsupported = conversionFailure("payload", SetterPayload::class.java)
+        assertEquals(IllegalArgumentException::class, unsupported::class)
+        assertEquals(
+            "Unsupported type conversion: class java.lang.String to class com.kotlinorm.codegen.SetterPayload",
+            unsupported.message
+        )
+
+        val invalidNumber = conversionFailure("not-a-number", Int::class.javaPrimitiveType!!)
+        assertEquals(TypeCastException::class, invalidNumber::class)
+        assertEquals(
+            "Cannot convert not-a-number (class java.lang.String) to int",
+            invalidNumber.message
+        )
+    }
+
+    private fun invokeConversion(value: Any?, targetType: Class<*>): Any? {
+        val method = Class.forName("com.kotlinorm.codegen.DataSourceHelperKt")
+            .getDeclaredMethod("convertValue", Any::class.java, Class::class.java)
+            .apply { isAccessible = true }
+        return method.invoke(null, value, targetType)
+    }
+
+    private fun conversionFailure(value: Any?, targetType: Class<*>): Throwable =
+        assertFailsWith<InvocationTargetException> {
+            invokeConversion(value, targetType)
+        }.targetException
 }
+
+@Suppress("FunctionName", "FunctionNaming")
+class SetterProbeDataSource : BasicDataSource() {
+    var emptyKeyValue: String? = null
+    var mixedKeyValue: String? = null
+    var upperOnlyValue: String? = null
+    var lowerOnlyValue: String? = null
+    var observedStringValue: String? = null
+    var wrongTypeCalls: Int = 0
+    var explodeAttempts: Int = 0
+
+    fun set(value: String) {
+        emptyKeyValue = value
+    }
+
+    fun setMixedkey(value: String) {
+        mixedKeyValue = value
+    }
+
+    fun setUPPERONLY(value: String) {
+        upperOnlyValue = value
+    }
+
+    fun setloweronly(value: String) {
+        lowerOnlyValue = value
+    }
+
+    fun setStringValue(value: String) {
+        observedStringValue = value
+    }
+
+    fun setBadCount() = Unit
+
+    fun setBadCount(
+        @Suppress("UNUSED_PARAMETER") first: String,
+        @Suppress("UNUSED_PARAMETER") second: String
+    ) = Unit
+
+    fun setWrongType(@Suppress("UNUSED_PARAMETER") value: Int) {
+        wrongTypeCalls++
+    }
+
+    fun setExplodes(@Suppress("UNUSED_PARAMETER") value: String) {
+        explodeAttempts++
+        error("setter failure")
+    }
+}
+
+class NonWrapper(@Suppress("UNUSED_PARAMETER") dataSource: BasicDataSource)
+
+class ThrowingWrapper(@Suppress("UNUSED_PARAMETER") dataSource: BasicDataSource) {
+    init {
+        error("constructor failure")
+    }
+}
+
+enum class SetterMode {
+    FAST,
+    SLOW
+}
+
+data class SetterPayload(val value: String)

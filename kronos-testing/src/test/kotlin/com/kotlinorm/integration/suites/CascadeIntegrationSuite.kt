@@ -183,7 +183,7 @@ abstract class CascadeIntegrationSuite(
     }
 
     private fun recreateCascadeTables() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(Kronos.dataSource().table) {
             dropTable(CascadeTask())

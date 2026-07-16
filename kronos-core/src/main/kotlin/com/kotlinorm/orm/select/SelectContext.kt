@@ -11,6 +11,7 @@ import com.kotlinorm.Kronos.tableNamingStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.SourceBinding
+import com.kotlinorm.beans.dsl.SourceIdentityScope
 import com.kotlinorm.beans.dsl.KTableForSelect
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
@@ -43,6 +44,8 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     val allFields = metadata.allFields
     val allColumns = metadata.allColumns
     val fieldMap = metadata.fieldMap
+    val primaryKey = metadata.primaryKey
+    private val tableIndexes = metadata.tableIndexes
     private val dynamicSourceTableNames = if (metadata.dynamic) {
         setOfNotNull(
             pojo::class.simpleName?.let(tableNamingStrategy::k2db),
@@ -55,10 +58,11 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     private val derivedSourceOutputNamesByColumn = allColumns.associate { field ->
         field.columnName to field.name.ifBlank { field.columnName }
     }
+    private val sourceIdentityFrame = SourceIdentityScope.frame(listOf(pojo))
     val sourceBinding: SourceBinding
         get() = SourceBinding(
             tableName = tableName,
-            alias = sourceTableAlias,
+            alias = sourceTableAlias ?: sourceIdentityAlias(),
             dynamicTableNames = dynamicSourceTableNames,
             sourceColumnNames = sourceColumnNames,
             derived = sourceQuery != null,
@@ -91,6 +95,18 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     var lock: SqlLock? = null
     var cursorSpec: CursorSpec? = null
 
+    fun <T> withSourceScope(block: () -> T): T =
+        SourceIdentityScope.withFrame(sourceIdentityFrame, block)
+
+    fun sourceIdentityAlias(): String? =
+        sourceIdentityFrame.existingAliasFor(pojo)
+
+    fun effectiveSourceAlias(): String? =
+        sourceTableAlias ?: sourceIdentityAlias()
+
+    var cursorOnlySelectFields: List<Pair<Field, String>> = emptyList()
+        private set
+
     fun setSelectedFields(fields: Iterable<Field>) {
         val normalizedFields = fields.map { sourceBinding.bindField(it) }
         selectedFields = normalizedFields.filter { it.isColumn }.toLinkedSet()
@@ -114,10 +130,10 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     }
 
     fun selectExpr(field: Field): SqlExpr =
-        if (sourceTableAlias == null) {
+        if (effectiveSourceAlias() == null) {
             field.toSqlExpr(false)
         } else {
-            SqlExpr.Column(tableName = sourceTableAlias, columnName = sourceColumnName(field))
+            SqlExpr.Column(tableName = effectiveSourceAlias(), columnName = sourceColumnName(field))
         }
 
     fun sourceColumnName(field: Field): String =
@@ -128,6 +144,44 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun bindSelectItem(item: SqlSelectItem): SqlSelectItem =
         sourceBinding.bindSelectItem(item)
+
+    fun prepareCursorOrder() {
+        require(orderByItems.isNotEmpty()) { "Cursor pagination requires orderBy()." }
+
+        val orderedFieldItems = orderByItems.map { item ->
+            require(item is SelectOrderItem.FieldItem) { "Cursor pagination requires field-based orderBy items." }
+            item
+        }
+        val keyCandidates = stableCursorKeyCandidates()
+        val orderedKeys = orderedFieldItems.map { it.field.cursorColumnKey() }.toSet()
+        val stableKey = keyCandidates.firstOrNull { key ->
+            key.all { it.cursorColumnKey() in orderedKeys }
+        }
+
+        if (stableKey == null) {
+            val tieBreaker = requireNotNull(keyCandidates.firstOrNull()) {
+                "Cursor pagination requires a primary key or unique key tie-breaker."
+            }
+            val missingTieBreakers = tieBreaker.filterNot { it.cursorColumnKey() in orderedKeys }
+            if (missingTieBreakers.isNotEmpty()) {
+                orderByItems = orderByItems + missingTieBreakers.map { field ->
+                    SelectOrderItem.FieldItem(field, SqlOrdering.Asc)
+                }
+            }
+        }
+
+        cursorOnlySelectFields = orderByItems
+            .filterIsInstance<SelectOrderItem.FieldItem>()
+            .map { it.field }
+            .distinctBy { it.cursorColumnKey() }
+            .filterNot(::isCursorFieldReadableFromRows)
+            .map { field -> field to cursorOnlyAlias(field) }
+    }
+
+    fun cursorValueLabel(field: Field): String =
+        cursorOnlySelectFields.firstOrNull { (cursorField, _) ->
+            cursorField.cursorColumnKey() == field.cursorColumnKey()
+        }?.second ?: field.name
 
     fun addFieldConditions(fields: Iterable<Field>, values: Map<String, Any?>) {
         val expressions = fields.map { field ->
@@ -226,6 +280,38 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     private fun bindNullableExpr(expr: SqlExpr?): SqlExpr? =
         expr?.let(::bindExpr)
+
+    private fun stableCursorKeyCandidates(): List<List<Field>> {
+        val candidates = buildList {
+            primaryKey?.let { add(listOf(sourceBinding.bindField(it))) }
+            tableIndexes
+                .filter { it.type.equals("UNIQUE", ignoreCase = true) || it.method.equals("UNIQUE", ignoreCase = true) }
+                .mapNotNull { index ->
+                    index.columns
+                        .map { column -> allColumns.fieldByNameOrColumn(column) }
+                        .takeIf { fields -> fields.all { it != null } }
+                        ?.filterNotNull()
+                        ?.map(sourceBinding::bindField)
+                        ?.takeIf { it.isNotEmpty() }
+                }
+                .forEach(::add)
+        }
+        return candidates.distinctBy { key -> key.joinToString("|") { it.cursorColumnKey() } }
+    }
+
+    private fun List<Field>.fieldByNameOrColumn(name: String): Field? =
+        firstOrNull { it.name == name || it.columnName == name }
+
+    private fun isCursorFieldReadableFromRows(field: Field): Boolean =
+        selectAll || selectedFields.any { selected ->
+            selected.cursorColumnKey() == field.cursorColumnKey() && selected.name == field.name
+        }
+
+    private fun cursorOnlyAlias(field: Field): String =
+        "__kronos_cursor_${field.name.ifBlank { field.columnName }}"
+
+    private fun Field.cursorColumnKey(): String =
+        "${tableName.ifBlank { this@SelectContext.tableName }}.$columnName"
 
     private companion object {
         val parameterSuffixRegex = Regex("""^(.+)@(\d+)$""")

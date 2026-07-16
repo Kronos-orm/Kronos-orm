@@ -101,6 +101,13 @@ open class StandardSqlRenderer(
         is SqlExpr.UnsafeRaw -> expr.sql
     }
 
+    override fun renderPredicate(expr: SqlExpr): String = when (expr) {
+        is SqlExpr.BooleanLiteral -> renderPredicateBooleanLiteral(expr.boolean)
+        is SqlExpr.Unary -> renderPredicateUnary(expr)
+        is SqlExpr.Binary -> renderPredicateBinary(expr)
+        else -> renderExpr(expr)
+    }
+
     override fun renderTable(table: SqlTable): String = when (table) {
         is SqlTable.Ident -> renderIdentTable(table)
         is SqlTable.Func -> renderFuncTable(table)
@@ -116,13 +123,13 @@ open class StandardSqlRenderer(
         append(" ")
         append(if (query.select.isEmpty()) "*" else query.select.joinToString(", ") { renderSelectItem(it) })
         if (query.from.isNotEmpty()) append(query.from.joinToString(", ", " FROM ") { renderTable(it) })
-        query.where?.let { append(" WHERE ${renderExpr(it)}") }
+        query.where?.let { append(" WHERE ${renderPredicate(it)}") }
         query.groupBy?.let { append(" ${renderGroup(it)}") }
-        query.having?.let { append(" HAVING ${renderExpr(it)}") }
+        query.having?.let { append(" HAVING ${renderPredicate(it)}") }
         if (query.window.isNotEmpty()) {
             append(query.window.joinToString(", ", " WINDOW ") { renderWindowItem(it) })
         }
-        query.qualify?.let { append(" QUALIFY ${renderExpr(it)}") }
+        query.qualify?.let { append(" QUALIFY ${renderPredicate(it)}") }
         if (query.orderBy.isNotEmpty()) {
             append(query.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
         }
@@ -152,7 +159,7 @@ open class StandardSqlRenderer(
     protected open fun renderDml(statement: SqlDmlStatement): String = when (statement) {
         is SqlDmlStatement.Delete -> buildString {
             append("DELETE FROM ${renderTable(statement.table)}")
-            statement.where?.let { append(" WHERE ${renderExpr(it)}") }
+            statement.where?.let { append(" WHERE ${renderPredicate(it)}") }
             statement.returning?.let { append(" ${renderReturning(it)}") }
         }
         is SqlDmlStatement.Insert -> buildString {
@@ -166,7 +173,7 @@ open class StandardSqlRenderer(
         is SqlDmlStatement.Update -> buildString {
             append("UPDATE ${renderTable(statement.table)} SET ")
             append(statement.setPairs.joinToString(", ") { "${renderAssignmentTarget(it.target)} = ${renderExpr(it.value)}" })
-            statement.where?.let { append(" WHERE ${renderExpr(it)}") }
+            statement.where?.let { append(" WHERE ${renderPredicate(it)}") }
             statement.returning?.let { append(" ${renderReturning(it)}") }
         }
         is SqlDmlStatement.Truncate -> buildString {
@@ -288,7 +295,7 @@ open class StandardSqlRenderer(
                 append(action.setPairs.joinToString(", ") {
                     "${renderAssignmentTarget(qualifyAssignmentTarget(it.target, SqlIdentifier.of("t1")))} = ${renderMergeSourceExpr(it.value, statement.table.identifier)}"
                 })
-                action.where?.let { append(" WHERE ${renderExpr(it)}") }
+                action.where?.let { append(" WHERE ${renderPredicate(it)}") }
             }
         }
         append(" WHEN NOT MATCHED THEN INSERT (")
@@ -308,6 +315,41 @@ open class StandardSqlRenderer(
         SqlUnaryOperator.Not -> "NOT(${renderExpr(expr.expr)})"
         SqlUnaryOperator.BitwiseNot -> "~${renderExpr(expr.expr)}"
         is SqlUnaryOperator.UnsafeCustom -> "${renderUnaryOperator(expr.operator)}(${renderExpr(expr.expr)})"
+    }
+
+    protected open fun renderPredicateBooleanLiteral(value: Boolean): String =
+        renderExpr(SqlExpr.BooleanLiteral(value))
+
+    private fun renderPredicateUnary(expr: SqlExpr.Unary): String =
+        when (expr.operator) {
+            SqlUnaryOperator.Not -> "NOT(${renderPredicate(expr.expr)})"
+            else -> renderExpr(expr)
+        }
+
+    private fun renderPredicateBinary(expr: SqlExpr.Binary): String =
+        when (expr.operator) {
+            SqlBinaryOperator.And,
+            SqlBinaryOperator.Or -> {
+                val left = renderPredicateBinaryOperand(expr.left, expr.operator)
+                val right = renderPredicateBinaryOperand(expr.right, expr.operator)
+                "$left ${renderBinaryOperator(expr.operator)} $right"
+            }
+            else -> renderExpr(expr)
+        }
+
+    private fun renderPredicateBinaryOperand(child: SqlExpr, parent: SqlBinaryOperator): String {
+        val rendered = renderPredicate(child)
+        val childPrecedence = exprPrecedence(child) ?: return rendered
+        val needsParens = when {
+            childPrecedence < parent.precedence -> true
+            childPrecedence > parent.precedence -> parent === SqlBinaryOperator.Or &&
+                child is SqlExpr.Binary &&
+                child.operator === SqlBinaryOperator.And
+            child !is SqlExpr.Binary -> false
+            parent.isAssociativeWith(child.operator) -> false
+            else -> true
+        }
+        return if (needsParens) "($rendered)" else rendered
     }
 
     protected open fun renderBinary(expr: SqlExpr.Binary): String {
@@ -415,7 +457,7 @@ open class StandardSqlRenderer(
 
     private fun renderCase(expr: SqlExpr.Case): String = buildString {
         append("CASE ")
-        append(expr.branches.joinToString(" ") { "WHEN ${renderExpr(it.`when`)} THEN ${renderExpr(it.then)}" })
+        append(expr.branches.joinToString(" ") { "WHEN ${renderPredicate(it.`when`)} THEN ${renderExpr(it.then)}" })
         expr.default?.let { append(" ELSE ${renderExpr(it)}") }
         append(" END")
     }
@@ -687,7 +729,7 @@ open class StandardSqlRenderer(
         table.matchMode?.let { append(" ${renderGraphMatchMode(it)}") }
         append(" ")
         append(table.patterns.joinToString(", ") { renderGraphPattern(it) })
-        table.where?.let { append(" WHERE ${renderExpr(it)}") }
+        table.where?.let { append(" WHERE ${renderPredicate(it)}") }
         table.rowsMode?.let { append(" ${renderGraphRowsMode(it)}") }
         append(table.columns.joinToString(", ", " COLUMNS (", ")") { renderSelectItem(it) })
         table.exportMode?.let { append(" ${renderGraphExportMode(it)}") }
@@ -833,7 +875,7 @@ open class StandardSqlRenderer(
     }
 
     protected open fun renderJoinCondition(condition: SqlJoinCondition): String = when (condition) {
-        is SqlJoinCondition.On -> "ON ${renderExpr(condition.condition)}"
+        is SqlJoinCondition.On -> "ON ${renderPredicate(condition.condition)}"
         is SqlJoinCondition.Using -> condition.columnNames.joinToString(", ", "USING (", ")") { quoteIdent(it) }
     }
 
@@ -890,7 +932,7 @@ open class StandardSqlRenderer(
                 append(constraint.columns.joinToString(", ", "UNIQUE (", ")") { renderIdentifier(it) })
             }
             is SqlTableConstraint.Check -> {
-                append("CHECK (${renderExpr(constraint.condition)})")
+                append("CHECK (${renderPredicate(constraint.condition)})")
             }
             is SqlTableConstraint.ForeignKey -> {
                 append(constraint.columns.joinToString(", ", "FOREIGN KEY (", ")") { renderIdentifier(it) })
@@ -1128,7 +1170,7 @@ open class StandardSqlRenderer(
             val parts = buildList {
                 term.name?.let { add(quoteIdent(it)) }
                 term.label?.let { add("IS ${renderGraphLabel(it)}") }
-                term.where?.let { add("WHERE ${renderExpr(it)}") }
+                term.where?.let { add("WHERE ${renderPredicate(it)}") }
             }
             append(parts.joinToString(" "))
             append(")")
@@ -1139,7 +1181,7 @@ open class StandardSqlRenderer(
             val parts = buildList {
                 term.name?.let { add(quoteIdent(it)) }
                 term.label?.let { add("IS ${renderGraphLabel(it)}") }
-                term.where?.let { add("WHERE ${renderExpr(it)}") }
+                term.where?.let { add("WHERE ${renderPredicate(it)}") }
             }
             append(parts.joinToString(" "))
             append("]")
@@ -1332,7 +1374,7 @@ open class StandardSqlRenderer(
         item.patternNames.joinToString(", ", "${quoteIdent(item.name)} = (", ")") { quoteIdent(it) }
 
     private fun renderRowPatternDefineItem(item: SqlRowPatternDefineItem): String =
-        "${quoteIdent(item.name)} AS ${renderExpr(item.expr)}"
+        "${quoteIdent(item.name)} AS ${renderPredicate(item.expr)}"
 
     protected fun renderQuantifier(quantifier: SqlQuantifier): String = when (quantifier) {
         SqlQuantifier.All -> "ALL"
@@ -1433,7 +1475,7 @@ open class StandardSqlRenderer(
         SqlWindowNullsMode.Ignore -> "IGNORE NULLS"
     }
 
-    protected fun renderFilter(expr: SqlExpr): String = "FILTER (WHERE ${renderExpr(expr)})"
+    protected fun renderFilter(expr: SqlExpr): String = "FILTER (WHERE ${renderPredicate(expr)})"
 
     protected fun renderUnsafeToken(token: SqlUnsafeToken): String = when (token) {
         is SqlUnsafeToken.Text -> token.value

@@ -33,7 +33,8 @@ class ParsedSql(
     var namedParameterCount: Int = 0,
     var unnamedParameterCount: Int = 0,
     var totalParameterCount: Int = 0,
-    var jdbcSql: String = ""
+    var jdbcSql: String = "",
+    var listParameterOccurrences: Set<Int> = emptySet()
 ) {
     val jdbcParamList by lazy {
         buildValueArray(this, paramMap)

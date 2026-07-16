@@ -51,22 +51,10 @@ abstract class WrapperSqlIntegrationSuite(
     }
 
     @Test
-    fun sqlExecutorListArrayPrimitiveArrayRepeatedAndNullParametersExecuteAgainstRealDatabase() {
+    fun sqlExecutorRepeatedAndNullParametersExecuteAgainstRealDatabase() {
         recreateTypedValueTable()
         seedTypedValues()
 
-        assertEquals(
-            listOf(1, 3),
-            selectIdsWhere("${quote("id")} IN (:ids)", mapOf("ids" to listOf(1, 3))),
-        )
-        assertEquals(
-            listOf(2, 3),
-            selectIdsWhere("${quote("id")} IN (:ids)", mapOf("ids" to arrayOf(2, 3))),
-        )
-        assertEquals(
-            listOf(1, 2, 3),
-            selectIdsWhere("${quote("id")} IN (:ids)", mapOf("ids" to intArrayOf(1, 2, 3))),
-        )
         assertEquals(
             listOf(2, 3),
             selectIdsWhere("${quote("id")} = :value OR ${quote("optional_score")} = :value", mapOf("value" to 2)),
@@ -126,7 +114,7 @@ abstract class WrapperSqlIntegrationSuite(
         )
 
     private fun recreateTypedValueTable() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(IntegrationTypedValue())

@@ -65,6 +65,13 @@ class CommonUtilTest {
         assertEquals(linkedSet, linkedSetOf(1, 2, 3, 4, 5))
     }
 
+    @Test
+    fun testEscapeLikeLiteral() {
+        assertEquals("plain", escapeLikeLiteral("plain"))
+        assertEquals("\\%\\_", escapeLikeLiteral("%_"))
+        assertEquals("a\\\\b\\%c\\_", escapeLikeLiteral("a\\b%c_"))
+    }
+
     @OptIn(ExperimentalTime::class)
     @Test
     fun testGetTypeSafeValue() {

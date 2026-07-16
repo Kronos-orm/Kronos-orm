@@ -19,6 +19,7 @@
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.union
@@ -60,7 +61,7 @@ fun box(): String {
         [it.id, it.uid, null]
     }
 
-    val statement = insert.toSqlStatement()
+    val statement = insert.toSqlStatement(wrapper = CompilerTestDataSourceWrapper)
     val unionStatement = (statement.mode as? SqlInsertMode.Subquery)?.query as? SqlQuery.Set
         ?: return "Fail: source was ${statement.mode}"
     val rewritten = unionStatement.selectBranches().map { it.select }

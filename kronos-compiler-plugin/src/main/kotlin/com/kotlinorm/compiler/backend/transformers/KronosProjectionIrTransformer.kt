@@ -31,6 +31,7 @@ import com.kotlinorm.compiler.utils.KPojoTableNamePropertyName
 import com.kotlinorm.compiler.utils.SelectFromFqName
 import com.kotlinorm.compiler.utils.SelectFunctionFqName
 import com.kotlinorm.compiler.utils.SelectGeneratedProjectionCallableId
+import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -74,6 +75,7 @@ import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.util.addFakeOverrides
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
+import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 import org.jetbrains.kotlin.ir.declarations.moduleDescriptor
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
@@ -238,7 +240,7 @@ class KronosProjectionIrTransformer(
             val propertyType = sourceProperty?.getter?.returnType
                 ?: sourceProperty?.backingField?.type
                 ?: pluginContext.irBuiltIns.anyNType
-            irClass.addProjectionProperty(field.name, propertyType)
+            irClass.addProjectionProperty(field.name, propertyType, sourceProperty)
         }
         irClass.addNoArgConstructor()
         irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))
@@ -356,7 +358,12 @@ class KronosProjectionIrTransformer(
         ).also { module.files += it }
     }
 
-    private fun IrClass.addProjectionProperty(name: Name, type: IrType): IrProperty {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.addProjectionProperty(
+        name: Name,
+        type: IrType,
+        sourceProperty: IrProperty?
+    ): IrProperty {
         return addProperty {
             origin = IrDeclarationOrigin.DEFINED
             this.name = name
@@ -364,6 +371,11 @@ class KronosProjectionIrTransformer(
             modality = Modality.FINAL
             isVar = true
         }.also { property ->
+            property.annotations += sourceProperty
+                ?.annotations
+                ?.filter { it.symbol.owner.returnType.classFqName == SerializeAnnotationFqName }
+                ?.map { it.deepCopyWithSymbols() }
+                .orEmpty()
             val backingField = property.addBackingField {
                 this.type = type
             }

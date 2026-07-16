@@ -11,6 +11,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
 import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.task.jdbcNullType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -136,6 +137,15 @@ internal class OrmContext<T : KPojo>(
         }
         return processed
     }
+
+    fun jdbcNullParameterTypeHints(parameterNames: Set<String>): Map<String, Int> =
+        parameterBindings.values.mapNotNull { binding ->
+            if (binding.name !in parameterNames || binding.value != null) {
+                return@mapNotNull null
+            }
+            val field = binding.field ?: fieldMap.fieldForParameter(binding.name)
+            field?.jdbcNullType()?.let { binding.name to it }
+        }.toMap()
 }
 
 internal data class ParameterBinding(

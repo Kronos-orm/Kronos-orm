@@ -21,6 +21,7 @@ import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.task.JdbcParameterTypeHints
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
@@ -209,7 +210,8 @@ class UpdateClause<T : KPojo>(
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
         val sqlStatement = planner.plan(dataSource)
-        val (sql, paramMap) = OrmDmlRenderer.render(context, wrapper, sqlStatement)
+        val rendered = OrmDmlRenderer.render(context, wrapper, sqlStatement)
+        val (sql, paramMap, jdbcTypeHints) = rendered
         val toUpdateFields = context.setPairs.mapNotNull { pair ->
             val column = (pair.target as? SqlAssignmentTarget.Column)?.identifier?.last ?: return@mapNotNull null
             context.fields.find { it.columnName == column }
@@ -218,7 +220,9 @@ class UpdateClause<T : KPojo>(
             sql,
             paramMap,
             operationType = KOperationType.UPDATE,
-            statement = sqlStatement
+            statement = sqlStatement,
+            stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
+            listParameterOccurrences = rendered.listParameterOccurrences
         )
 
         return CascadeUpdateClause.build(

@@ -75,7 +75,8 @@ object NamedParameterUtils {
      * 并记录参数的位置和名称信息。支持缓存以提高重复解析的性能。
      * 
      * @param sql 原始 SQL 语句
-     * @param paramMap 参数映射表，用于展开集合参数
+     * @param paramMap 参数映射表
+     * @param listParameterOccurrences 需要按列表展开的命名参数出现位置
      * @return 解析后的 SQL 对象，包含 JDBC SQL 和参数信息
      * 
      * @throws InvalidParameterException 当参数声明格式错误时
@@ -88,7 +89,11 @@ object NamedParameterUtils {
      * // parsed.jdbcParamList = [1, "John"]
      * ```
      */
-    fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = emptyMap()): ParsedSql {
+    fun parseSqlStatement(
+        sql: String,
+        paramMap: Map<String, Any?> = emptyMap(),
+        listParameterOccurrences: Set<Int> = emptySet()
+    ): ParsedSql {
         namedSqlCache[sql]?.let { cached ->
             return ParsedSql(
                 sql, paramMap,
@@ -97,7 +102,8 @@ object NamedParameterUtils {
                 cached.namedParameterCount,
                 cached.unnamedParameterCount,
                 cached.totalParameterCount,
-                ""
+                "",
+                listParameterOccurrences
             ).apply {
                 jdbcSql = substituteNamedParameters(this, paramMap)
             }
@@ -106,7 +112,7 @@ object NamedParameterUtils {
         val context = ParseContext(sql)
         parseStatementIterative(context)
 
-        return ParsedSql(context.sqlToUse.toString(), paramMap).apply {
+        return ParsedSql(context.sqlToUse.toString(), paramMap, listParameterOccurrences = listParameterOccurrences).apply {
             context.parameterList.forEach { addNamedParameter(it.name, it.startIndex, it.endIndex) }
             namedParameterCount = context.namedParameters.size
             unnamedParameterCount = context.unnamedParameterCount
@@ -404,7 +410,7 @@ object NamedParameterUtils {
      * 替换命名参数为 JDBC 占位符
      * 
      * 将命名参数（如 `:name`）替换为 JDBC 占位符（`?`）。
-     * 对于集合类型的参数，会展开为多个占位符。
+     * 只有被 AST/任务标记为列表展开的参数出现位置会展开为多个占位符。
      * 
      * @param parsedSql 已解析的 SQL 对象
      * @param paramSource 参数值映射表，用于确定集合参数的展开数量
@@ -412,8 +418,12 @@ object NamedParameterUtils {
      * 
      * Example:
      * ```kotlin
-     * val parsed = parseSqlStatement("SELECT * FROM users WHERE id IN (:ids)")
-     * val sql = substituteNamedParameters(parsed, mapOf("ids" to listOf(1, 2, 3)))
+     * val parsed = parseSqlStatement(
+     *     "SELECT * FROM users WHERE id IN (:ids)",
+     *     mapOf("ids" to listOf(1, 2, 3)),
+     *     listParameterOccurrences = setOf(0)
+     * )
+     * val sql = parsed.jdbcSql
      * // sql = "SELECT * FROM users WHERE id IN (?, ?, ?)"
      * ```
      */
@@ -428,7 +438,7 @@ object NamedParameterUtils {
                 val (startIndex, endIndex) = parsedSql.parameterIndexes[i]
                 append(parsedSql.originalSql, lastIndex, startIndex)
                 
-                val placeholders = generatePlaceholders(paramSource, paramName)
+                val placeholders = generatePlaceholders(paramSource, paramName, i in parsedSql.listParameterOccurrences)
                 append(placeholders)
                 
                 lastIndex = endIndex
@@ -443,33 +453,29 @@ object NamedParameterUtils {
      * 
      * 根据参数值类型生成相应数量的占位符：
      * - 单值：`?`
-     * - 集合：`?, ?, ?`
-     * - 数组元组：`(?, ?), (?, ?)`
+     * - 标记的列表出现位置：`?, ?, ?`
      * 
      * @param paramSource 参数值映射表
      * @param paramName 参数名
      * @return 占位符字符串
      */
-    private inline fun generatePlaceholders(paramSource: Map<String, Any?>?, paramName: String): String {
-        if (paramSource == null) return "?"
-
+    private inline fun generatePlaceholders(
+        paramSource: Map<String, Any?>?,
+        paramName: String,
+        expandAsList: Boolean
+    ): String {
+        if (!expandAsList || paramSource == null) return "?"
         val value = getValueFromMap(paramSource, paramName)
-        val list = value?.asListValue() ?: return "?"
-        
-        if (list.isEmpty()) return "?"
+        val list = value.asListValue()
+        validateListParameterNotEmpty(paramName, list)
 
-        return list.joinToString(", ") { item ->
-            when (item) {
-                is Array<*> -> item.joinToString(", ", "(", ")") { "?" }
-                else -> "?"
-            }
-        }
+        return list.joinToString(", ") { "?" }
     }
 
     /**
      * 构建参数值数组
      * 
-     * 将命名参数映射表转换为 JDBC 参数数组，展开集合和数组。
+     * 将命名参数映射表转换为 JDBC 参数数组，只展开被 AST/任务标记的参数出现位置。
      * 
      * @param parsedSql 已解析的 SQL 对象
      * @param paramSource 参数值映射表
@@ -487,18 +493,26 @@ object NamedParameterUtils {
         validatePlaceholders(parsedSql)
 
         return buildList {
-            parsedSql.parameterNames.forEach { paramName ->
+            parsedSql.parameterNames.forEachIndexed { index, paramName ->
                 val value = getValueFromMap(paramSource, paramName)
-                val list = value.asListValue()
-                
-                list.forEach { item ->
-                    when (item) {
-                        is Array<*> -> addAll(item)
-                        else -> add(item)
-                    }
+                if (index in parsedSql.listParameterOccurrences) {
+                    val list = value.asListValue()
+                    validateListParameterNotEmpty(paramName, list)
+                    addAll(list)
+                } else {
+                    add(value)
                 }
             }
         }.toTypedArray()
+    }
+
+    private fun validateListParameterNotEmpty(paramName: String, values: List<Any?>) {
+        if (values.isEmpty()) {
+            throw InvalidDataAccessApiUsageException(
+                "SQL list parameter occurrence '$paramName' must contain at least one value. " +
+                "Handle empty lists before binding list parameters."
+            )
+        }
     }
 
     /**
@@ -557,7 +571,7 @@ object NamedParameterUtils {
         null -> null
         is Map<*, *> -> current[key]
         is KPojo -> current.toDataMap()[key]
-        is Iterable<*>, is Array<*>, 
+        is Iterable<*>, is Array<*>,
         is IntArray, is LongArray, is ShortArray, is ByteArray,
         is DoubleArray, is FloatArray, is BooleanArray -> 
             key.toIntOrNull()?.let { current.asListValue().getOrNull(it) }
@@ -596,6 +610,7 @@ object NamedParameterUtils {
         is LongArray -> this.toList()
         is ShortArray -> this.toList()
         is ByteArray -> this.toList()
+        is CharArray -> this.toList()
         is DoubleArray -> this.toList()
         is FloatArray -> this.toList()
         is BooleanArray -> this.toList()

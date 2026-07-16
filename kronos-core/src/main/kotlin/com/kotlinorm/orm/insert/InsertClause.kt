@@ -21,13 +21,13 @@ import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForInsertSelect.Companion.afterInsertSelect
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
-import com.kotlinorm.beans.generator.SnowflakeIdGenerator
-import com.kotlinorm.beans.generator.UUIDGenerator
-import com.kotlinorm.beans.generator.customIdGenerator
+import com.kotlinorm.beans.generator.resolveGeneratedPrimaryKeyValue
 import com.kotlinorm.beans.task.GeneratedKeyRequest
+import com.kotlinorm.beans.task.JdbcParameterTypeHints
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.beans.task.jdbcNullParameterTypeHints
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
@@ -106,6 +106,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return this
     }
 
+    internal fun withPreparedPrimaryKey(fieldName: String, value: Any?): InsertClause<T> = apply {
+        paramMap[fieldName] = value
+    }
+
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
         if (sourceQuery != null || sourceUnion != null) {
@@ -116,6 +120,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         val renderedSql = renderStatement(dataSource, finalStatement, paramMap, metadata.fieldMap)
         val sql = renderedSql.sql
         val paramMapNew = renderedSql.parameters
+        val jdbcTypeHints = toInsertFields.jdbcNullParameterTypeHints(paramMapNew)
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -126,7 +131,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 paramMapNew,
                 operationType = KOperationType.INSERT,
                 statement = finalStatement,
-                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId }
+                stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
+                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId },
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
 
@@ -141,6 +148,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         val parameterValues = linkedMapOf<String, Any?>()
         val statement = buildSourceInsertStatement(dataSource, toInsertFields, parameterValues)
         val renderedSql = renderStatement(dataSource, statement, parameterValues, metadata.fieldMap)
+        val jdbcTypeHints = toInsertFields.jdbcNullParameterTypeHints(renderedSql.parameters)
         return CascadeInsertClause.build(
             cascadeEnabled,
             cascadeAllowed,
@@ -150,7 +158,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 renderedSql.parameters,
                 operationType = KOperationType.INSERT,
                 statement = statement,
-                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId }
+                stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
+                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId },
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
     }
@@ -261,12 +271,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = primaryKey
 
-        when (primaryKeyField.primaryKey) {
-            PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
-            PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
-            PrimaryKeyType.CUSTOM -> paramMap[primaryKeyField.name] = customIdGenerator?.nextId()
-            PrimaryKeyType.IDENTITY -> databaseGeneratesIdentity = true
-            else -> {}
+        val primaryKeyValue = primaryKeyField.resolveGeneratedPrimaryKeyValue(paramMap[primaryKeyField.name])
+        if (primaryKeyValue != null) {
+            paramMap[primaryKeyField.name] = primaryKeyValue
+        }
+        if (primaryKeyField.primaryKey == PrimaryKeyType.IDENTITY) {
+            databaseGeneratesIdentity = true
         }
         if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
             databaseGeneratesIdentity = false

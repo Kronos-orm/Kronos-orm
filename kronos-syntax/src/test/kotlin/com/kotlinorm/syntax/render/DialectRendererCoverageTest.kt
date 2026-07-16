@@ -30,6 +30,9 @@ import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
 import com.kotlinorm.syntax.statement.SqlUpsertAction
 import com.kotlinorm.syntax.statement.SqlUpdateSetPair
+import com.kotlinorm.syntax.table.SqlJoinCondition
+import com.kotlinorm.syntax.table.SqlJoinType
+import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.token.SqlUnsafeToken
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -237,6 +240,104 @@ class DialectRendererCoverageTest {
                 END
             """.trimIndent(),
             SqlDdlStatement.SqlServerDropDefaultConstraint(id("dbo", "user"), id("name")).toSql(SqlDialect.SqlServer)
+        )
+    }
+
+    @Test
+    fun rendersBooleanLiteralsSafelyInPredicatePositions() {
+        val selectFalse = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(col("id"))),
+            from = listOf(table("user")),
+            where = bool(false)
+        )
+        assertEquals("FALSE", bool(false).toSql(SqlDialect.SqlServer))
+        assertEquals("FALSE", bool(false).toSql(SqlDialect.Oracle))
+        assertEquals("SELECT [id] FROM [user] WHERE 1 = 0", selectFalse.toSql(SqlDialect.SqlServer))
+        assertEquals("""SELECT "ID" FROM "USER" WHERE 1 = 0""", selectFalse.toSql(SqlDialect.Oracle))
+        assertEquals("""SELECT "id" FROM "user" WHERE FALSE""", selectFalse.toSql(SqlDialect.PostgreSql))
+
+        val havingTrue = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.Function(id("COUNT"), args = listOf(num("1"))))),
+            from = listOf(table("user")),
+            having = bool(true)
+        )
+        assertEquals("SELECT COUNT(1) FROM [user] HAVING 1 = 1", havingTrue.toSql(SqlDialect.SqlServer))
+
+        val logicalPredicate = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(col("id"))),
+            from = listOf(table("user")),
+            where = SqlExpr.Binary(
+                bool(false),
+                SqlBinaryOperator.Or,
+                SqlExpr.Unary(com.kotlinorm.syntax.expr.SqlUnaryOperator.Not, bool(true))
+            )
+        )
+        assertEquals(
+            "SELECT [id] FROM [user] WHERE 1 = 0 OR NOT(1 = 1)",
+            logicalPredicate.toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
+            """SELECT "ID" FROM "USER" WHERE 1 = 0 OR NOT(1 = 1)""",
+            logicalPredicate.toSql(SqlDialect.Oracle)
+        )
+
+        val joined = SqlQuery.Select(
+            from = listOf(
+                SqlTable.Join(
+                    left = table("user", "u"),
+                    joinType = SqlJoinType.Inner,
+                    right = table("role", "r"),
+                    condition = SqlJoinCondition.On(bool(true))
+                )
+            )
+        )
+        assertEquals(
+            "SELECT * FROM [user] AS [u] INNER JOIN [role] AS [r] ON 1 = 1",
+            joined.toSql(SqlDialect.SqlServer)
+        )
+
+        assertEquals(
+            "DELETE FROM [user] WHERE 1 = 0",
+            SqlDmlStatement.Delete(table("user"), where = bool(false)).toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
+            "UPDATE [user] SET [active] = 1 WHERE 1 = 1",
+            SqlDmlStatement.Update(table("user"), listOf(set("active", num("1"))), where = bool(true)).toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
+            "COUNT(*) FILTER (WHERE 1 = 0)",
+            SqlExpr.CountAsteriskFunc(filter = bool(false)).toSql(SqlDialect.SqlServer)
+        )
+
+        val filteredMerge = SqlDmlStatement.Upsert(
+            table = table("user"),
+            columns = cols("id", "name"),
+            values = listOf(num("1"), str("Ada")),
+            primaryKeys = cols("id"),
+            action = SqlUpsertAction.Update(
+                setPairs = listOf(SqlUpdateSetPair(SqlAssignmentTarget.Column(id("name")), SqlExpr.ExcludedColumn(id("name")))),
+                where = bool(false)
+            )
+        )
+        assertEquals(
+            "MERGE INTO [user] AS [t1] USING (SELECT 1 AS [id], N'Ada' AS [name]) AS [t2] ON ([t1].[id] = [t2].[id]) WHEN MATCHED THEN UPDATE SET [t1].[name] = [t2].[name] WHERE 1 = 0 WHEN NOT MATCHED THEN INSERT ([id], [name]) VALUES (1, N'Ada');",
+            filteredMerge.toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
+            """MERGE INTO "USER" "T1" USING (SELECT 1 AS "ID", 'Ada' AS "NAME") "T2" ON ("T1"."ID" = "T2"."ID") WHEN MATCHED THEN UPDATE SET "T1"."NAME" = "T2"."NAME" WHERE 1 = 0 WHEN NOT MATCHED THEN INSERT ("ID", "NAME") VALUES (1, 'Ada')""",
+            filteredMerge.toSql(SqlDialect.Oracle)
+        )
+
+        val filteredOnConflictUpsert = filteredMerge.copy(
+            conflictTarget = SqlConflictTarget(columns = cols("id"), where = bool(true))
+        )
+        assertEquals(
+            """INSERT INTO "user" ("id", "name") VALUES (1, 'Ada') ON CONFLICT ("id") WHERE TRUE DO UPDATE SET "name" = EXCLUDED."name" WHERE FALSE""",
+            filteredOnConflictUpsert.toSql(SqlDialect.PostgreSql)
+        )
+        assertEquals(
+            """INSERT INTO "user" ("id", "name") VALUES (1, 'Ada') ON CONFLICT ("id") WHERE TRUE DO UPDATE SET "name" = EXCLUDED."name" WHERE FALSE""",
+            filteredOnConflictUpsert.toSql(SqlDialect.SQLite)
         )
     }
 

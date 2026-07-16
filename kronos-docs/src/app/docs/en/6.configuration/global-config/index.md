@@ -256,14 +256,14 @@ with(Kronos) {
 
 ## No-value strategy
 
-Use `.ifNoValue(...)` on one condition when that expression needs a local empty-value rule.
+Use `.takeIf(...)` on one condition when a dynamic empty value should omit that predicate.
 
 ```kotlin group="No value 1" name="ignore" icon="kotlin"
 val name: String? = null
 
 val users = User()
     .select()
-    .where { (it.name == name).ifNoValue(NoValueStrategyType.Ignore) }
+    .where { (it.name == name).takeIf(name != null) }
     .toList()
 ```
 

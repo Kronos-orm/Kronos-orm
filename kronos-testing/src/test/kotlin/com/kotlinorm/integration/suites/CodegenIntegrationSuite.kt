@@ -22,7 +22,7 @@ abstract class CodegenIntegrationSuite(
 ) : IntegrationSuiteSupport(codegenEnvironment, StandardIntegrationScenarioProfile) {
     @Test
     fun codegenReadsMysqlMetadataAndWritesGeneratedFilesAgainstRealDatabase() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         recreateCodegenTables()
 

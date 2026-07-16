@@ -20,7 +20,6 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
-import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -81,14 +80,15 @@ fun box(): String {
         return "Fail: regexp value was ${advancedParameterValue(regexp, regexpExpr?.right)}"
     }
 
-    val ignored = advancedWhere(user.copy(name = null)) { it.name.eq.ifNoValue(NoValueStrategyType.Ignore) }
-    if (ignored.expr != null) return "Fail: ignored no-value condition was ${ignored.expr}"
+    val omitted = advancedWhere(user.copy(name = null)) { it.name.eq.takeIf(false) }
+    if (omitted.expr != null) return "Fail: omitted condition was ${omitted.expr}"
 
-    val customColumn = advancedWhere(user) { it.name.startsWith("A") }
+    val customColumn = advancedWhere(user) { it.name.startsWith("A%_\\") }
     val startsWith = customColumn.expr as? SqlExpr.Like
     val startsWithColumn = startsWith?.expr as? SqlExpr.Column
     if (startsWithColumn?.columnName != "user_name") return "Fail: columnName was ${startsWithColumn?.columnName}"
-    if (advancedParameterValue(customColumn, startsWith?.pattern) != TransformerSafeValue("A%", typeOf<String>())) {
+    if (startsWith?.escape != SqlExpr.StringLiteral("\\")) return "Fail: startsWith escape was ${startsWith?.escape}"
+    if (advancedParameterValue(customColumn, startsWith?.pattern) != TransformerSafeValue("A\\%\\_\\\\%", typeOf<String>())) {
         return "Fail: startsWith value was ${advancedParameterValue(customColumn, startsWith?.pattern)}"
     }
 

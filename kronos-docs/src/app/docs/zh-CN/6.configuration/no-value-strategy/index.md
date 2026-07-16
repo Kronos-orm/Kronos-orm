@@ -15,26 +15,33 @@
     - 其他情况忽略该条件语句
 - 当操作类型为`SELECT`时，忽略该条件语句
 
-## 动态设置无值策略
+## 控制动态无值条件
 
-只需在条件语句中调用`ifNoValue`方法即可，如下所示：
+使用 Kotlin 条件决定动态谓词是否参与查询。缺失值需要显式 fallback 时使用普通 `if`/`else`；只需跳过条件时仍可使用 `.takeIf(...)`。
 
 ```kotlin
 val age: Int? = null
 val namePattern: String? = null
 
-where { (it.age == age).ifNoValue(NoValueStrategyType.Ignore) }
-where { (it.name like namePattern).ifNoValue(NoValueStrategyType.False) }
+where { (it.age == age).takeIf(age != null) }
+where {
+    if (namePattern != null) {
+        it.name like namePattern
+    } else {
+        false.asSql()
+    }
+}
+where { it.age.isNull.takeIf(age == null) }
 ```
 
-## 无值策略的类型
+## 无值处理结果
 
-目前支持的无值策略有：
+Kronos 内部处理无值条件时会使用以下结果：
 
 {{ $.params([
-['Ignore', '忽略该条件语句', "NoValueStrategyType", "ignore"],
-['False', '条件语句为false', "NoValueStrategyType", "false"],
-['True', '条件语句为true', "NoValueStrategyType", "true"],
-['JudgeNull', '转换为`is null`或`is not null`', "NoValueStrategyType", "judgeNull"],
-['Auto', '使用 Kronos 默认策略，通常不需要手动设置', "NoValueStrategyType", "auto"]
+['Ignore', '忽略该条件语句', "处理结果", "ignore"],
+['False', '条件语句为 false', "处理结果", "false"],
+['True', '条件语句为 true', "处理结果", "true"],
+['JudgeNull', '转换为 `is null` 或 `is not null`', "处理结果", "judgeNull"],
+['Auto', '使用 Kronos 默认策略', "处理结果", "auto"]
 ]) }}

@@ -27,6 +27,7 @@ import com.kotlinorm.annotations.Version
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
+import com.kotlinorm.beans.generator.customIdGenerator
 import com.kotlinorm.testfixtures.cascade.onetoone.CarDetails
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.KOperationType
@@ -36,6 +37,7 @@ import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.KIdGenerator
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
@@ -195,6 +197,55 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
+    fun `on conflict generates custom primary key before target inference`() {
+        val previousGenerator = customIdGenerator
+        var calls = 0
+        customIdGenerator = object : KIdGenerator<String> {
+            override fun nextId(): String = "generated-${++calls}"
+        }
+
+        try {
+            val task = UpsertCustomIdUser(name = "Ada")
+                .upsert { it.name }
+                .onConflict()
+                .build()
+
+            val atomicTask = task.atomicTasks.single()
+            val statement = atomicTask.statement as SqlDmlStatement.Upsert
+            assertEquals(listOf(SqlIdentifier.of("id")), statement.primaryKeys)
+            assertEquals("generated-1", atomicTask.paramMap["id"])
+            assertEquals(1, calls)
+        } finally {
+            customIdGenerator = previousGenerator
+        }
+    }
+
+    @Test
+    fun `match field upsert reuses one generated custom primary key for probe and insert`() {
+        val previousGenerator = customIdGenerator
+        var calls = 0
+        customIdGenerator = object : KIdGenerator<String> {
+            override fun nextId(): String = "generated-${++calls}"
+        }
+
+        try {
+            val wrapper = UpsertMatchWrapper(rowExists = false)
+            val result = UpsertCustomIdUser(name = "Grace")
+                .upsert { it.name }
+                .on { it.id }
+                .cascade(enabled = false)
+                .execute(wrapper)
+
+            assertEquals(1, result.affectedRows)
+            assertEquals(1, calls)
+            assertEquals("generated-1", wrapper.queries.single().params["id"])
+            assertEquals("generated-1", wrapper.actions.single().params["id"])
+        } finally {
+            customIdGenerator = previousGenerator
+        }
+    }
+
+    @Test
     fun `on conflict strategy fields initialize insert values and update conflict row`() {
         val task = UpsertStrategyUser(id = 10, name = "strategy")
             .upsert { it.name }
@@ -225,7 +276,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
 
     @Test
     fun `match field upsert executes insert when conflict row is absent`() {
-        val wrapper = UpsertMatchWrapper(countResult = 0)
+        val wrapper = UpsertMatchWrapper(rowExists = false)
 
         val result = UpsertBehaviorUser(id = 1, name = "inserted", count = 3)
             .upsert { it.name }
@@ -236,7 +287,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
         assertEquals(1, result.affectedRows)
         assertEquals(
             listOf(
-                QueryShape("SELECT COUNT(1) FROM `upsert_behavior_user` WHERE `id` = :id LIMIT 1 FOR UPDATE", mapOf("id" to 1)),
+                QueryShape("SELECT 1 FROM `upsert_behavior_user` WHERE `id` = :id LIMIT 1 FOR UPDATE", mapOf("id" to 1)),
                 ActionShape(
                     "INSERT INTO `upsert_behavior_user` (`id`, `name`, `count`) VALUES (:id, :name, :count)",
                     mapOf("id" to 1, "name" to "inserted", "count" to 3),
@@ -250,7 +301,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
 
     @Test
     fun `match field upsert executes update when conflict row exists`() {
-        val wrapper = UpsertMatchWrapper(countResult = 1)
+        val wrapper = UpsertMatchWrapper(rowExists = true)
 
         val result = UpsertBehaviorUser(id = 2, name = "updated", count = 4)
             .upsert { it.name }
@@ -261,7 +312,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
         assertEquals(1, result.affectedRows)
         assertEquals(
             listOf(
-                QueryShape("SELECT COUNT(1) FROM `upsert_behavior_user` WHERE `id` = :id LIMIT 1 FOR UPDATE", mapOf("id" to 2)),
+                QueryShape("SELECT 1 FROM `upsert_behavior_user` WHERE `id` = :id LIMIT 1 FOR UPDATE", mapOf("id" to 2)),
                 ActionShape(
                     "UPDATE `upsert_behavior_user` SET `name` = :nameNew WHERE `id` = :id",
                     mapOf("id" to 2, "nameNew" to "updated"),
@@ -275,7 +326,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
 
     @Test
     fun `match field upsert restores logic deleted row instead of inserting duplicate key`() {
-        val wrapper = UpsertMatchWrapper(countResult = 1)
+        val wrapper = UpsertMatchWrapper(rowExists = true)
 
         val result = UpsertStrategyUser(id = 11, name = "restored")
             .upsert { it.name }
@@ -287,7 +338,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
         val action = wrapper.actions.single()
         assertEquals(
             listOf(
-                QueryShape("SELECT COUNT(1) FROM `upsert_strategy_user` WHERE `id` = :id LIMIT 1", mapOf("id" to 11)),
+                QueryShape("SELECT 1 FROM `upsert_strategy_user` WHERE `id` = :id LIMIT 1", mapOf("id" to 11)),
                 ActionShape(
                     "UPDATE `upsert_strategy_user` SET `name` = :nameNew, `updated_at` = :updatedAtNew, `deleted` = :deletedNew, `version` = `version` + :version2PlusNew WHERE `id` = :id",
                     mapOf(
@@ -307,7 +358,7 @@ class UpsertClauseBehaviorTest : MysqlTestBase() {
 
     @Test
     fun `match field upsert build exposes selected action as upsert metadata after execute`() {
-        val wrapper = UpsertMatchWrapper(countResult = 1)
+        val wrapper = UpsertMatchWrapper(rowExists = true)
         val task = UpsertBehaviorUser(id = 3, name = "metadata", count = 5)
             .upsert { it.name }
             .on { it.id }
@@ -387,6 +438,13 @@ data class UpsertTenantUser(
     var name: String? = null,
 ) : KPojo
 
+@Table("upsert_custom_id_user")
+data class UpsertCustomIdUser(
+    @PrimaryKey(custom = true)
+    var id: String? = null,
+    var name: String? = null,
+) : KPojo
+
 @Table("upsert_strategy_user")
 data class UpsertStrategyUser(
     @PrimaryKey
@@ -415,14 +473,14 @@ private data class ActionShape(
 )
 
 private class UpsertMatchWrapper(
-    private val countResult: Int
+    private val rowExists: Boolean
 ) : SampleMysqlJdbcWrapper() {
     val queries = mutableListOf<QueryShape>()
     val actions = mutableListOf<ActionShape>()
 
     override fun first(task: KAtomicQueryTask): Any? {
         queries += QueryShape(task.sql, task.paramMap)
-        return countResult
+        return 1.takeIf { rowExists }
     }
 
     override fun update(task: KAtomicActionTask): Int {

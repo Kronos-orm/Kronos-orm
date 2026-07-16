@@ -551,16 +551,16 @@ WHERE `name` = :name AND `age` > :age
 
 `patch` supplies named parameters that are not read from the current KPojo object.
 
-## Choose the no-value strategy
+## Skip dynamic no-value predicates
 
-Use `.ifNoValue(...)` to choose the behavior when a condition value is `null` or an empty collection.
+Use `.takeIf(...)` when a dynamic predicate should be omitted for a `null` value.
 
 ```kotlin group="No value" name="kotlin" icon="kotlin"
 val minAge: Int? = null
 
 val users = User()
     .select()
-    .where { (it.age >= minAge).ifNoValue(NoValueStrategyType.Ignore) }
+    .where { (it.age >= minAge).takeIf(minAge != null) }
     .toList()
 ```
 
@@ -569,7 +569,7 @@ SELECT `id`, `name`, `age`
 FROM `user`
 ```
 
-`Ignore` omits the condition. Other strategies are described in {{ $.keyword("configuration/no-value-strategy", ["No Value Strategy"]) }}.
+Default no-value handling for `null` values and empty collections is described in {{ $.keyword("configuration/no-value-strategy", ["No Value Strategy"]) }}.
 
 ## Use conditions in {{ $.title("having") }}
 

@@ -2,9 +2,7 @@
 
 {% import "../../../macros/common.njk" as common %}
 
-{% macro keyword(url, page) -%}
-    {{ common.keyword(url, page, 'en') }}
-{%- endmacro %}
+{% macro keyword(url, page) -%}{{- common.keyword(url, page, 'en') -}}{%- endmacro %}
 
 {% macro kronosVersion() -%}{{ common.kronosVersion() }}{%- endmacro %}
 

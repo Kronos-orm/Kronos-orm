@@ -1,11 +1,14 @@
 package com.kotlinorm.orm.pagination
 
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.TableIndex
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.testfixtures.entities.TestUser
@@ -93,6 +96,159 @@ class CursorClauseBehaviorTest : MysqlTestBase() {
             wrapper.queryTasks.single().sql
         )
         assertEquals(mapOf("cursor_id" to 2, "cursor_username" to "neo"), wrapper.queryTasks.single().paramMap.toMap())
+    }
+
+    @Test
+    fun `cursor page appends primary key tie breaker to non unique order`() {
+        val wrapper = CapturingCursorWrapper(
+            mapRows = listOf(
+                mapOf("id" to 1, "score" to 55),
+                mapOf("id" to 2, "score" to 55),
+                mapOf("id" to 3, "score" to 60)
+            )
+        )
+
+        val result = TestUser()
+            .select { [it.id, it.score] }
+            .orderBy { it.score.asc() }
+            .withCursor()
+            .cursor(offset = 2)
+            .toMapList(wrapper)
+
+        assertEquals(true, result.first)
+        assertEquals(mapOf<String, Any?>("score" to 55, "id" to 2).toCursor(), result.second)
+        assertEquals(
+            "SELECT `id`, `score` FROM `tb_user` WHERE `deleted` = 0 ORDER BY `score` ASC, `id` ASC LIMIT 3",
+            wrapper.queryTasks.single().sql
+        )
+    }
+
+    @Test
+    fun `next cursor page uses appended primary key in lexicographic predicate`() {
+        val cursor = mapOf<String, Any?>("score" to 55, "id" to 2).toCursor()
+        val wrapper = CapturingCursorWrapper()
+
+        TestUser()
+            .select { [it.id, it.score] }
+            .orderBy { it.score.asc() }
+            .withCursor()
+            .cursor(cursor, offset = 2)
+            .toMapList(wrapper)
+
+        assertEquals(
+            "SELECT `id`, `score` FROM `tb_user` WHERE `deleted` = 0 AND " +
+                "(`score` > :cursor_score OR (`score` = :cursor_score AND `id` > :cursor_id)) " +
+                "ORDER BY `score` ASC, `id` ASC LIMIT 3",
+            wrapper.queryTasks.single().sql
+        )
+        assertEquals(mapOf("cursor_score" to 55, "cursor_id" to 2), wrapper.queryTasks.single().paramMap.toMap())
+    }
+
+    @Test
+    fun `next cursor page supports descending order with appended primary key tie breaker`() {
+        val cursor = mapOf<String, Any?>("score" to 55, "id" to 2).toCursor()
+        val wrapper = CapturingCursorWrapper()
+
+        TestUser()
+            .select { [it.id, it.score] }
+            .orderBy { it.score.desc() }
+            .withCursor()
+            .cursor(cursor, offset = 2)
+            .toMapList(wrapper)
+
+        assertEquals(
+            "SELECT `id`, `score` FROM `tb_user` WHERE `deleted` = 0 AND " +
+                "(`score` < :cursor_score OR (`score` = :cursor_score AND `id` > :cursor_id)) " +
+                "ORDER BY `score` DESC, `id` ASC LIMIT 3",
+            wrapper.queryTasks.single().sql
+        )
+        assertEquals(mapOf("cursor_score" to 55, "cursor_id" to 2), wrapper.queryTasks.single().paramMap.toMap())
+    }
+
+    @Test
+    fun `cursor map page strips hidden tie breaker from projection`() {
+        val wrapper = CapturingCursorWrapper(
+            mapRows = listOf(
+                mapOf("score" to 55, "__kronos_cursor_id" to 2),
+                mapOf("score" to 60, "__kronos_cursor_id" to 3)
+            )
+        )
+
+        val result = TestUser()
+            .select { it.score }
+            .orderBy { it.score.asc() }
+            .withCursor()
+            .cursor(offset = 1)
+            .toMapList(wrapper)
+
+        assertEquals(true, result.first)
+        assertEquals(mapOf<String, Any?>("score" to 55, "id" to 2).toCursor(), result.second)
+        assertEquals(listOf(mapOf("score" to 55)), result.third)
+        assertEquals(
+            "SELECT `score`, `id` AS `__kronos_cursor_id` FROM `tb_user` WHERE `deleted` = 0 " +
+                "ORDER BY `score` ASC, `id` ASC LIMIT 2",
+            wrapper.queryTasks.single().sql
+        )
+    }
+
+    @Test
+    fun `cursor page uses unique index tie breaker when primary key is absent`() {
+        val wrapper = CapturingCursorWrapper(
+            mapRows = listOf(
+                mapOf("score" to 55, "__kronos_cursor_code" to "A"),
+                mapOf("score" to 55, "__kronos_cursor_code" to "B")
+            )
+        )
+
+        val result = CursorUniqueUser()
+            .select { it.score }
+            .orderBy { it.score.asc() }
+            .withCursor()
+            .cursor(offset = 1)
+            .toMapList(wrapper)
+
+        assertEquals(true, result.first)
+        assertEquals(mapOf<String, Any?>("score" to 55, "code" to "A").toCursor(), result.second)
+        assertEquals(listOf(mapOf("score" to 55)), result.third)
+        assertEquals(
+            "SELECT `score`, `code` AS `__kronos_cursor_code` FROM `cursor_unique_user` " +
+                "ORDER BY `score` ASC, `code` ASC LIMIT 2",
+            wrapper.queryTasks.single().sql
+        )
+    }
+
+    @Test
+    fun `cursor page fails early when no primary or unique tie breaker exists`() {
+        val wrapper = CapturingCursorWrapper()
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            CursorUnstableUser()
+                .select { [it.score, it.name] }
+                .orderBy { it.score.asc() }
+                .withCursor()
+                .cursor(offset = 1)
+                .toMapList(wrapper)
+        }
+
+        assertEquals("Cursor pagination requires a primary key or unique key tie-breaker.", error.message)
+        assertEquals(emptyList(), wrapper.queryTasks)
+    }
+
+    @Test
+    fun `typed cursor page requires hidden tie breaker to be visible in projection`() {
+        val wrapper = CapturingCursorWrapper()
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            TestUser()
+                .select { it.score }
+                .orderBy { it.score.asc() }
+                .withCursor()
+                .cursor(offset = 1)
+                .toList<Int>(wrapper)
+        }
+
+        assertEquals("Cursor pagination requires selected orderBy field 'id' in result rows.", error.message)
+        assertEquals(emptyList(), wrapper.queryTasks)
     }
 
     @Test
@@ -215,7 +371,8 @@ class CursorClauseBehaviorTest : MysqlTestBase() {
                 .toMapList(wrapper)
         }
 
-        assertEquals("Cursor pagination requires field-based orderBy items.", error.message)
+        assertEquals("Cursor pagination requires orderBy().", error.message)
+        assertEquals(emptyList(), wrapper.queryTasks)
     }
 
     @Test
@@ -236,6 +393,19 @@ class CursorClauseBehaviorTest : MysqlTestBase() {
         assertEquals("Cursor pagination requires selected orderBy field 'id' in result rows.", error.message)
     }
 }
+
+@Table("cursor_unique_user")
+@TableIndex("uk_cursor_unique_user_code", ["code"], type = "UNIQUE")
+data class CursorUniqueUser(
+    var score: Int? = null,
+    var code: String? = null
+) : KPojo
+
+@Table("cursor_unstable_user")
+data class CursorUnstableUser(
+    var score: Int? = null,
+    var name: String? = null
+) : KPojo
 
 private class CapturingCursorWrapper(
     private val mapRows: List<Map<String, Any?>> = emptyList(),

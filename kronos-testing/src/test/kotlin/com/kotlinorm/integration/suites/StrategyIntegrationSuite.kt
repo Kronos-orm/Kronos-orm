@@ -173,7 +173,7 @@ abstract class StrategyIntegrationSuite(
     }
 
     private fun recreateStrategyAccountTable() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(IntegrationStrategyAccount())

@@ -157,7 +157,8 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
             else -> null
         }
         val logic = sqlStatement is SqlDmlStatement.Update
-        val (sql, paramMap) = OrmDmlRenderer.render(context, wrapper, sqlStatement)
+        val rendered = OrmDmlRenderer.render(context, wrapper, sqlStatement)
+        val (sql, paramMap) = rendered
         
         return CascadeDeleteClause.build(
             context.cascadeEnabled,
@@ -172,7 +173,8 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
                 sql,
                 paramMap,
                 operationType = KOperationType.DELETE,
-                statement = sqlStatement
+                statement = sqlStatement,
+                listParameterOccurrences = rendered.listParameterOccurrences
             )
         )
     }

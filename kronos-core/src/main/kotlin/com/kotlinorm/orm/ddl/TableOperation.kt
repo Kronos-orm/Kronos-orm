@@ -141,7 +141,8 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             rendered.sql,
             rendered.parameters,
             KOperationType.CREATE,
-            statement = statement
+            statement = statement,
+            listParameterOccurrences = rendered.listParameterOccurrences
         ).toKronosActionTask()
     }
 
@@ -264,7 +265,8 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             rendered.sql,
             rendered.parameters,
             operationType,
-            statement = this
+            statement = this,
+            listParameterOccurrences = rendered.listParameterOccurrences
         )
     }
 

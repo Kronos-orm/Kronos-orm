@@ -37,7 +37,8 @@ data class KronosAtomicBatchTask(
     override val stash: MutableMap<String, Any?> = mutableMapOf(),
     override var generatedKeyRequest: GeneratedKeyRequest? = null,
     override val generatedKeys: MutableList<Any?> = mutableListOf(),
-    override var lastInsertId: Long? = null
+    override var lastInsertId: Long? = null,
+    val listParameterOccurrences: Set<Int> = emptySet()
 ) : KAtomicActionTask, KBatchTask {
 
     @Deprecated("Please use 'paramMapArr' instead.")
@@ -52,9 +53,12 @@ data class KronosAtomicBatchTask(
      *
      * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
      */
-    fun parsedArr() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }.let {
+    fun parsedArr() = parsedSqlArr().let {
         Pair(it.firstOrNull()?.jdbcSql, it.map { parsedSql -> parsedSql.jdbcParamList })
     }
+
+    fun parsedSqlArr(): List<ParsedSql> =
+        (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it, listParameterOccurrences) }
 
     /**
      * Checks if this object is equal to another object.

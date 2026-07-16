@@ -32,7 +32,7 @@ abstract class EdgeCaseIntegrationSuite(
 ) : IntegrationSuiteSupport(environment, profile) {
     @Test
     fun syncTableDropsRemovedColumnAndAppliesTypeAndDefaultChangesAgainstRealDatabase() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
 
         wrapper.table.dropTable(SchemaSyncShapeV1())
@@ -117,7 +117,7 @@ abstract class EdgeCaseIntegrationSuite(
 
     @Test
     fun jdbcWrapperKPojoMappingAcceptsColumnLabelsWithoutTestSideConversion() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(IntegrationTypedValue())
@@ -207,7 +207,7 @@ abstract class EdgeCaseIntegrationSuite(
     }
 
     private fun recreateEdgeAccountTable() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(EdgeAccount())
@@ -217,7 +217,7 @@ abstract class EdgeCaseIntegrationSuite(
     }
 
     private fun recreateInsertSelectEdgeTables() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(EdgeTailNullInsertSelect())

@@ -37,7 +37,8 @@ data class KronosAtomicQueryTask(
     override val statement: SqlQuery? = null,
     override val targetType: KType,
     val stash: MutableMap<String, Any?> = mutableMapOf(),
-    override val resultColumnTypes: Map<String, KType> = emptyMap()
+    override val resultColumnTypes: Map<String, KType> = emptyMap(),
+    val listParameterOccurrences: Set<Int> = emptySet()
 ) : KAtomicQueryTask {
 
     /**
@@ -45,5 +46,5 @@ data class KronosAtomicQueryTask(
      *
      * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
      */
-    override fun parsed() = parseSqlStatement(sql, paramMap)
+    override fun parsed() = parseSqlStatement(sql, paramMap, listParameterOccurrences)
 }

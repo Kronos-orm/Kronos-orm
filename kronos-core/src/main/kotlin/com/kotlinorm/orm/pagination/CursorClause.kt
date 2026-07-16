@@ -22,18 +22,19 @@ class CursorClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun toMapList(wrapper: KronosDataSourceWrapper? = null): Triple<Boolean, Cursor?, List<Map<String, Any?>>> {
         val rows = selectClause.build(wrapper).toMapList(wrapper)
-        return pageResult(rows) { row, fieldName ->
-            row[fieldName]
-                ?: row.entries.firstOrNull { it.key.equals(fieldName, ignoreCase = true) }?.value
+        val result = pageResult(rows) { row, fieldName ->
+            row.valueCaseInsensitive(fieldName)
         }
+        return Triple(result.first, result.second, result.third.map(::stripCursorOnlyValues))
     }
 
     inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): Triple<Boolean, Cursor?, List<T>> {
+        requireCursorFieldsVisibleForTypedRows()
         val rows = selectClause.build(wrapper).toList<T>(wrapper)
         return pageResult(rows) { row, fieldName ->
             when (row) {
                 is KPojo -> row[fieldName]
-                is Map<*, *> -> row[fieldName]
+                is Map<*, *> -> row.valueCaseInsensitive(fieldName)
                 else -> null
             }
         }
@@ -42,6 +43,7 @@ class CursorClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     @JvmName("toProjectionList")
     @Suppress("UNCHECKED_CAST")
     fun toList(wrapper: KronosDataSourceWrapper? = null): Triple<Boolean, Cursor?, List<Selected>> {
+        requireCursorFieldsVisibleForTypedRows()
         val rows = selectClause.build(wrapper).toList(wrapper, selectClause.selectedType) as List<Selected>
         return pageResult(rows) { row, fieldName -> row[fieldName] }
     }
@@ -67,9 +69,27 @@ class CursorClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             "Cursor pagination requires field-based orderBy items."
         }
         return fields.associate { field ->
-            val value = valueOf(row, field.name)
+            val value = valueOf(row, selectClause.context.cursorValueLabel(field))
             require(value != null) { "Cursor pagination requires selected orderBy field '${field.name}' in result rows." }
             field.name to value
         }
+    }
+
+    @PublishedApi
+    internal fun requireCursorFieldsVisibleForTypedRows() {
+        val hiddenField = selectClause.context.cursorOnlySelectFields.firstOrNull()?.first ?: return
+        require(false) { "Cursor pagination requires selected orderBy field '${hiddenField.name}' in result rows." }
+    }
+
+    @PublishedApi
+    internal fun Map<*, *>.valueCaseInsensitive(fieldName: String): Any? =
+        this[fieldName] ?: entries.firstOrNull { (key, _) ->
+            key is String && key.equals(fieldName, ignoreCase = true)
+        }?.value
+
+    private fun stripCursorOnlyValues(row: Map<String, Any?>): Map<String, Any?> {
+        val hiddenLabels = selectClause.context.cursorOnlySelectFields.map { it.second }
+        if (hiddenLabels.isEmpty()) return row
+        return row.filterKeys { key -> hiddenLabels.none { it.equals(key, ignoreCase = true) } }
     }
 }

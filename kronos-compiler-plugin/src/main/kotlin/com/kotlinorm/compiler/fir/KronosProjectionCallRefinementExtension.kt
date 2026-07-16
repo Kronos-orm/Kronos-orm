@@ -263,9 +263,13 @@ class KronosProjectionCallRefinementExtension(
     private fun FirFunctionCall.toAliasProjectionField(sourceType: ConeKotlinType): KronosProjectionField? {
         if (calleeReference.name.asString() != SelectAliasFunctionName) return null
         val alias = argumentList.arguments.first().stringLiteralValue() ?: return null
-        val sourceAccess = listOfNotNull(extensionReceiver, dispatchReceiver)
-            .filterIsInstance<FirPropertyAccessExpression>()
-            .firstOrNull() ?: return null
+        val sourceAccess = (
+            listOfNotNull(explicitReceiver, extensionReceiver, dispatchReceiver) + argumentList.arguments
+        ).mapNotNull { receiver ->
+            (receiver as? FirStatement)?.projectionStatementOrNull() as? FirPropertyAccessExpression
+        }.firstOrNull { access ->
+            resolveSourceProperty(sourceType, access.calleeReference.name) != null
+        } ?: return null
         val sourceField = sourceAccess.toPropertyProjectionField(sourceType) ?: return null
         return sourceField.copy(
             name = Name.identifier(alias),

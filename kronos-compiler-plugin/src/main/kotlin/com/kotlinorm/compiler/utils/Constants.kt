@@ -30,6 +30,7 @@ val KPojoFqName = FqName("com.kotlinorm.interfaces.KPojo")
 
 // DSL classes
 val FieldFqName = FqName("com.kotlinorm.beans.dsl.Field")
+val SourceIdentityScopeFqName = FqName("com.kotlinorm.beans.dsl.SourceIdentityScope")
 val KronosFunctionExprFqName = FqName("com.kotlinorm.beans.dsl.KronosFunctionExpr")
 val KronosFunctionExpressionsFqName = FqName("com.kotlinorm.functions.KronosFunctionExpressions")
 val KCascadeFqName = FqName("com.kotlinorm.beans.dsl.KCascade")
@@ -149,6 +150,7 @@ val KPojoClassId = ClassId.topLevel(KPojoFqName)
 
 // DSL classes
 val FieldClassId = ClassId.topLevel(FieldFqName)
+val SourceIdentityScopeClassId = ClassId.topLevel(SourceIdentityScopeFqName)
 val KronosFunctionExprClassId = ClassId.topLevel(KronosFunctionExprFqName)
 val KronosFunctionExpressionsClassId = ClassId.topLevel(KronosFunctionExpressionsFqName)
 val KCascadeClassId = ClassId.topLevel(KCascadeFqName)

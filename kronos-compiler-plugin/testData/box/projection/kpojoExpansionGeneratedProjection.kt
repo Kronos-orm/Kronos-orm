@@ -204,6 +204,7 @@ fun box(): String {
         "allDirect" to allDirect,
         "allLiteral" to allLiteral,
         "namedAll" to namedAll,
+        "excludedNonColumn" to excludedNonColumn,
     )
     val projectionClauses = listOf(
         "allWithAlias" to allWithAlias,
@@ -224,7 +225,6 @@ fun box(): String {
         "propertyNamedIt" to propertyNamedIt,
         "arithmeticMinus" to arithmeticMinus,
         "functionMinus" to functionMinus,
-        "excludedNonColumn" to excludedNonColumn
     )
     val clauses = identityClauses + projectionClauses
     val outputNames = clauses.associate { (name, clause) ->

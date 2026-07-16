@@ -312,12 +312,127 @@ class NamedParameterUtilsTest {
     }
 
     @Test
-    fun parseSqlStatementWithBrackets() {
+    fun parseSqlStatementWithExpandableListOccurrence() {
         val sql = "select * from `tb&user` where id in (:id)"
-        val parsedSql = parseSqlStatement(sql, mapOf("id" to [1, 2, 3]))
+        val parsedSql = parseSqlStatement(
+            sql,
+            mapOf("id" to listOf(1, 2, 3)),
+            listParameterOccurrences = setOf(0)
+        )
         assertContentEquals(["id"], parsedSql.parameterNames)
         assertEquals("select * from `tb&user` where id in (?, ?, ?)", parsedSql.jdbcSql)
         assertContentEquals([1, 2, 3], parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun plainCollectionArrayPrimitiveArrayAndByteArrayBindAsSingleParameter() {
+        val payload = byteArrayOf(0, 1, 2, 3, 127, -128)
+        val plainValues = listOf(
+            "ids" to listOf(1, 2, 3),
+            "arrayIds" to arrayOf(1, 2),
+            "intIds" to intArrayOf(1, 2),
+            "longIds" to longArrayOf(1L, 2L),
+            "payload" to payload,
+        )
+
+        plainValues.forEach { (name, value) ->
+            val parsedSql = parseSqlStatement("select * from t where value in (:$name)", mapOf(name to value))
+            assertEquals("select * from t where value in (?)", parsedSql.jdbcSql)
+            assertEquals(1, parsedSql.jdbcParamList.size)
+        }
+
+        assertEquals(listOf(1, 2, 3), parseSqlStatement("select :ids", mapOf("ids" to listOf(1, 2, 3))).jdbcParamList.single())
+        assertEquals(
+            listOf(1, 2),
+            (parseSqlStatement("select :arrayIds", mapOf("arrayIds" to arrayOf(1, 2))).jdbcParamList.single() as Array<*>).toList()
+        )
+        assertContentEquals(
+            intArrayOf(1, 2),
+            parseSqlStatement("select :intIds", mapOf("intIds" to intArrayOf(1, 2))).jdbcParamList.single() as IntArray
+        )
+        assertContentEquals(
+            longArrayOf(1L, 2L),
+            parseSqlStatement("select :longIds", mapOf("longIds" to longArrayOf(1L, 2L))).jdbcParamList.single() as LongArray
+        )
+        assertContentEquals(
+            payload,
+            parseSqlStatement("select :payload", mapOf("payload" to payload)).jdbcParamList.single() as ByteArray
+        )
+    }
+
+    @Test
+    fun repeatedExpandableListOccurrenceExpandsEachReference() {
+        val parsedSql = parseSqlStatement(
+            "select * from t where id in (:ids) or parent_id in (:ids)",
+            mapOf("ids" to listOf(1, 2)),
+            listParameterOccurrences = setOf(0, 1)
+        )
+
+        assertEquals("select * from t where id in (?, ?) or parent_id in (?, ?)", parsedSql.jdbcSql)
+        assertContentEquals([1, 2, 1, 2], parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun emptyExpandableListOccurrenceFailsBeforeExecution() {
+        val error = assertFailsWith<InvalidDataAccessApiUsageException> {
+            parseSqlStatement(
+                "select * from t where id in (:ids)",
+                mapOf("ids" to emptyList<Int>()),
+                listParameterOccurrences = setOf(0)
+            )
+        }
+
+        assertEquals(
+            "SQL list parameter occurrence 'ids' must contain at least one value. Handle empty lists before binding list parameters.",
+            error.message
+        )
+    }
+
+    @Test
+    fun expandableListOccurrenceSupportsObjectAndPrimitiveArrays() {
+        val arrayIds = arrayOf(1, 2)
+        val intIds = intArrayOf(3, 4)
+        val longIds = longArrayOf(5L, 6L)
+        val parsedSql = parseSqlStatement(
+            "select * from t where a in (:arrayIds) or b in (:intIds) or c in (:longIds)",
+            mapOf("arrayIds" to arrayIds, "intIds" to intIds, "longIds" to longIds),
+            listParameterOccurrences = setOf(0, 1, 2)
+        )
+
+        assertEquals("select * from t where a in (?, ?) or b in (?, ?) or c in (?, ?)", parsedSql.jdbcSql)
+        assertContentEquals(listOf<Any?>(1, 2, 3, 4, 5L, 6L), parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun indexedPathAccessStillBindsOneScalarFromListAndArrays() {
+        val sql = "select :headers[0], :arrayHeaders[1], :intHeaders[0], :longHeaders[1]"
+        val parsedSql = parseSqlStatement(
+            sql,
+            mapOf(
+                "headers" to listOf(10, 11),
+                "arrayHeaders" to arrayOf(20, 21),
+                "intHeaders" to intArrayOf(30, 31),
+                "longHeaders" to longArrayOf(40L, 41L),
+            )
+        )
+
+        assertEquals("select ?, ?, ?, ?", parsedSql.jdbcSql)
+        assertContentEquals(listOf<Any?>(10, 21, 30, 41L), parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun nestedArrayInsideExpandableListOccurrenceBindsAsScalarElement() {
+        val nested = arrayOf(1, 2)
+        val parsedSql = parseSqlStatement(
+            "select * from t where value in (:values)",
+            mapOf("values" to listOf(nested, 3)),
+            listParameterOccurrences = setOf(0)
+        )
+
+        assertEquals("select * from t where value in (?, ?)", parsedSql.jdbcSql)
+        assertEquals(2, parsedSql.jdbcParamList.size)
+        assertEquals(listOf(1, 2), (parsedSql.jdbcParamList[0] as Array<*>).toList())
+        assertEquals(3, parsedSql.jdbcParamList[1])
     }
 
     @Test

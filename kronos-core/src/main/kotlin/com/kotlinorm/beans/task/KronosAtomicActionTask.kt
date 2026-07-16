@@ -36,7 +36,8 @@ data class KronosAtomicActionTask(
     override val stash: MutableMap<String, Any?> = mutableMapOf(),
     override var generatedKeyRequest: GeneratedKeyRequest? = null,
     override val generatedKeys: MutableList<Any?> = mutableListOf(),
-    override var lastInsertId: Long? = null
+    override var lastInsertId: Long? = null,
+    val listParameterOccurrences: Set<Int> = emptySet()
 ) : KAtomicActionTask {
 
     /**
@@ -44,5 +45,5 @@ data class KronosAtomicActionTask(
      *
      * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
      */
-    override fun parsed() = parseSqlStatement(sql, paramMap)
+    override fun parsed() = parseSqlStatement(sql, paramMap, listParameterOccurrences)
 }

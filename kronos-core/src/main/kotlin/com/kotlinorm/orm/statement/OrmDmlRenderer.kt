@@ -19,19 +19,32 @@ internal object OrmDmlRenderer {
         context: OrmContext<T>,
         wrapper: KronosDataSourceWrapper?,
         sqlStatement: SqlStatement
-    ): Pair<String, Map<String, Any?>> {
+    ): RenderedOrmDml {
         val dataSource = wrapper.orDefault()
-        val renderedSqlText = renderStatement(
+        val renderedSql = renderStatement(
             dataSource = dataSource,
             statement = sqlStatement,
             parameterValues = context.parameterValues(),
             fieldsMap = context.fieldMap
-        ).sql
-        return renderedSqlText to context.renderedDatabaseParameters(
+        )
+        val parameters = context.renderedDatabaseParameters(
             dataSource,
-            renderedSqlText,
+            renderedSql.sql,
             context.fieldMap,
             ::toDatabaseValue
         )
+        return RenderedOrmDml(
+            sql = renderedSql.sql,
+            paramMap = parameters,
+            jdbcTypeHints = context.jdbcNullParameterTypeHints(parameters.keys),
+            listParameterOccurrences = renderedSql.listParameterOccurrences
+        )
     }
 }
+
+internal data class RenderedOrmDml(
+    val sql: String,
+    val paramMap: Map<String, Any?>,
+    val jdbcTypeHints: Map<String, Int>,
+    val listParameterOccurrences: Set<Int> = emptySet()
+)

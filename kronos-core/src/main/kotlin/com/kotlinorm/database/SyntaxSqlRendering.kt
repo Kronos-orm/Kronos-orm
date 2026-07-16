@@ -27,7 +27,10 @@ internal fun SqlStatement.renderForCore(
             parameterValues = parameterValues
         )
     )
-    val parameterNames = NamedParameterUtils.parseSqlStatement(rendered.sql).parameterNames
+    val parameterNames = NamedParameterUtils.parseSqlStatement(
+        rendered.sql,
+        listParameterOccurrences = rendered.listParameterOccurrences
+    ).parameterNames
     val usedParameterNames = parameterNames.toSet()
     val parameters = rendered.parameters
         .filterKeys { it in usedParameterNames }

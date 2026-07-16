@@ -51,6 +51,8 @@ import com.kotlinorm.compiler.utils.PairFqName
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import com.kotlinorm.compiler.utils.SqlOrderingClassId
 import com.kotlinorm.compiler.utils.SqlOrderingItemClassId
+import com.kotlinorm.compiler.utils.SourceIdentityScopeClassId
+import com.kotlinorm.compiler.utils.SourceIdentityScopeFqName
 import com.kotlinorm.compiler.utils.SqlWindowClassId
 import com.kotlinorm.compiler.utils.SyntaxSqlExprColumnClassId
 import com.kotlinorm.compiler.utils.SyntaxSqlExprColumnFqName
@@ -140,6 +142,21 @@ val fieldClassSymbol: IrClassSymbol
 context(context: IrPluginContext)
 val fieldConstructorSymbol: IrConstructorSymbol
     get() = fieldClassSymbol.requiredConstructor("Field constructor not found")
+
+context(context: IrPluginContext)
+val sourceIdentityScopeSymbol: IrClassSymbol
+    get() = requiredClass(
+        SourceIdentityScopeClassId,
+        "SourceIdentityScope object not found: ${SourceIdentityScopeFqName.asString()}"
+    )
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val sourceIdentityResolveTableNameSymbol: IrSimpleFunctionSymbol
+    get() = sourceIdentityScopeSymbol.requiredFunction(
+        "resolveTableName",
+        "SourceIdentityScope.resolveTableName method not found"
+    )
 
 /**
  * KCascade class symbol
@@ -465,6 +482,21 @@ val lessThanOrEqualConditionExprMethodSymbol: IrSimpleFunctionSymbol
 context(context: IrPluginContext)
 val likeConditionExprMethodSymbol: IrSimpleFunctionSymbol
     get() = kTableForConditionSymbol.requiredFunction("likeConditionExpr", "likeConditionExpr method not found in KTableForCondition")
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val startsWithConditionExprMethodSymbol: IrSimpleFunctionSymbol
+    get() = kTableForConditionSymbol.requiredFunction("startsWithConditionExpr", "startsWithConditionExpr method not found in KTableForCondition")
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val endsWithConditionExprMethodSymbol: IrSimpleFunctionSymbol
+    get() = kTableForConditionSymbol.requiredFunction("endsWithConditionExpr", "endsWithConditionExpr method not found in KTableForCondition")
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val containsConditionExprMethodSymbol: IrSimpleFunctionSymbol
+    get() = kTableForConditionSymbol.requiredFunction("containsConditionExpr", "containsConditionExpr method not found in KTableForCondition")
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)

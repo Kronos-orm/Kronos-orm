@@ -13,6 +13,7 @@ import com.kotlinorm.database.DatabaseStatements
 import com.kotlinorm.database.DatabaseSyncTable
 import com.kotlinorm.database.asInt
 import com.kotlinorm.database.cell
+import com.kotlinorm.database.sameColumnAttributesAs
 import com.kotlinorm.database.toColumnDefinition
 import com.kotlinorm.database.toCreateIndexStatement
 import com.kotlinorm.enums.KColumnType
@@ -30,6 +31,13 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 
 object MssqlStatements : DatabaseStatements() {
+    override fun canonicalColumnName(name: String): String = name.uppercase()
+
+    override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
+        getColumnType(expected.type, expected.length, expected.scale) ==
+            getColumnType(current.type, current.length, current.scale) &&
+            expected.sameColumnAttributesAs(current)
+
     override fun databaseName(wrapper: KronosDataSourceWrapper): String =
         wrapper.url.substringAfter("//").substringBefore(";")
 

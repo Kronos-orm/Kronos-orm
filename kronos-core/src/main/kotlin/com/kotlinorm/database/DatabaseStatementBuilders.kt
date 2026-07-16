@@ -9,7 +9,6 @@ package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.syntax.SqlIdentifier
@@ -55,34 +54,11 @@ internal fun KTableIndex.toCreateIndexStatement(tableName: SqlIdentifier, ifNotE
     )
 }
 
-internal fun Field.sameDefinitionAs(other: Field): Boolean =
-    type == other.type &&
-        length == other.length &&
-        scale == other.scale &&
-        nullable == other.nullable &&
+internal fun Field.sameColumnAttributesAs(other: Field, compareComment: Boolean = true): Boolean =
+    nullable == other.nullable &&
         primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &&
         defaultValue.orEmpty() == other.defaultValue.orEmpty() &&
-        kDoc.orEmpty() == other.kDoc.orEmpty()
-
-internal fun Field.sameDefinitionAs(other: Field, dbType: DBType): Boolean =
-    when (dbType) {
-        DBType.SQLite -> {
-            sqliteStorageClass(type) == sqliteStorageClass(other.type) &&
-                nullable == other.nullable &&
-                primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &&
-                defaultValue.orEmpty() == other.defaultValue.orEmpty()
-        }
-
-        DBType.Oracle -> {
-            oracleEquivalentType(type, length, scale, other.type, other.length, other.scale) &&
-                nullable == other.nullable &&
-                primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &&
-                defaultValue.orEmpty() == other.defaultValue.orEmpty() &&
-                kDoc.orEmpty() == other.kDoc.orEmpty()
-        }
-
-        else -> sameDefinitionAs(other)
-    }
+        (!compareComment || kDoc.orEmpty() == other.kDoc.orEmpty())
 
 private fun PrimaryKeyType.sameDatabasePrimaryKeyModeAs(other: PrimaryKeyType): Boolean =
     databasePrimaryKeyMode() == other.databasePrimaryKeyMode()
@@ -96,58 +72,6 @@ private fun PrimaryKeyType.databasePrimaryKeyMode(): String =
         PrimaryKeyType.SNOWFLAKE,
         PrimaryKeyType.CUSTOM -> "primary"
     }
-
-private fun sqliteStorageClass(type: KColumnType): String = when (type) {
-    KColumnType.BIT,
-    KColumnType.TINYINT,
-    KColumnType.SMALLINT,
-    KColumnType.INT,
-    KColumnType.MEDIUMINT,
-    KColumnType.BIGINT,
-    KColumnType.SERIAL,
-    KColumnType.YEAR,
-    KColumnType.SET -> "INTEGER"
-
-    KColumnType.REAL,
-    KColumnType.FLOAT,
-    KColumnType.DOUBLE -> "REAL"
-
-    KColumnType.DECIMAL,
-    KColumnType.NUMERIC -> "NUMERIC"
-
-    KColumnType.BINARY,
-    KColumnType.VARBINARY,
-    KColumnType.LONGVARBINARY,
-    KColumnType.BLOB,
-    KColumnType.MEDIUMBLOB,
-    KColumnType.LONGBLOB -> "BLOB"
-
-    else -> "TEXT"
-}
-
-private fun oracleEquivalentType(
-    expectedType: KColumnType,
-    expectedLength: Int,
-    expectedScale: Int,
-    currentType: KColumnType,
-    currentLength: Int,
-    currentScale: Int
-): Boolean {
-    if (expectedType != currentType || expectedScale != currentScale) return false
-    val defaultLength = when (expectedType) {
-        KColumnType.BIT -> 1
-        KColumnType.TINYINT -> 3
-        KColumnType.SMALLINT -> 5
-        KColumnType.MEDIUMINT -> 7
-        KColumnType.INT -> 10
-        KColumnType.BIGINT -> 19
-        KColumnType.DECIMAL,
-        KColumnType.NUMERIC -> 10
-        else -> null
-    }
-    return expectedLength == currentLength ||
-        (expectedLength == 0 && defaultLength == currentLength)
-}
 
 internal fun Map<String, Any>.cell(name: String): Any? =
     entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value

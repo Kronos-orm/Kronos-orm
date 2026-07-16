@@ -35,6 +35,8 @@ data class SchemaSyncUserV2(
     var id: String? = null,
     @ColumnType(VARCHAR, 80)
     var name: String? = null,
+    @ColumnType(VARCHAR)
+    var description: String? = null,
     @ColumnType(BIGINT)
     var age: Long? = null,
     @CreateTime

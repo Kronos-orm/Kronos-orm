@@ -16,9 +16,9 @@
 
 package com.kotlinorm.utils
 
-import com.kotlinorm.Kronos.defaultDateFormat
 import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.Kronos.strictSetValue
+import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.NamedParameterUtils
@@ -27,7 +27,8 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.expr.SqlExpr
-import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+import java.time.Clock
+import java.time.LocalDateTime
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -40,6 +41,10 @@ import kotlin.reflect.typeOf
  *@create: 2024/5/7 16:01
  **/
 
+internal data class CurrentTemporalValue(
+    val value: LocalDateTime
+)
+
 fun KronosCommonStrategy.execute(
     timeStrategy: Boolean = false,
     defaultValue: Any = 0,
@@ -48,7 +53,7 @@ fun KronosCommonStrategy.execute(
     afterExecute(
         field,
         if (timeStrategy) {
-            currentDateTime(field.dateFormat ?: defaultDateFormat)
+            CurrentTemporalValue(LocalDateTime.now(Clock.system(timeZone)))
         } else {
             defaultValue
         }
@@ -203,6 +208,7 @@ fun toDatabaseValue(
 ): Any? {
     if (value == null) return null
     if (value is TransformerSafeValue) return value.toTypeSafeValue()
+    if (value is CurrentTemporalValue) return value.toDatabaseValue(wrapper, field)
     if (field.serializable) {
         val kType = field.kType
             ?: error("Serializable field '${field.name}' requires KType metadata for serialization")
@@ -222,6 +228,27 @@ fun toDatabaseValue(
         ?: field.kType?.let { getTypeSafeValue(it, value, field.dateFormat) }
         ?: value
 }
+
+private fun CurrentTemporalValue.toDatabaseValue(
+    wrapper: KronosDataSourceWrapper,
+    field: Field
+): Any = getTypeSafeValue(
+    field.currentTemporalTargetKType(wrapper),
+    value,
+    field.dateFormat
+)
+
+private fun Field.currentTemporalTargetKType(wrapper: KronosDataSourceWrapper): KType =
+    databaseTargetKType(wrapper)
+        ?: kType
+        ?: when (type) {
+            KColumnType.BIGINT -> typeOf<Long>()
+            KColumnType.DATE -> typeOf<java.sql.Date>()
+            KColumnType.TIME -> typeOf<java.sql.Time>()
+            KColumnType.DATETIME,
+            KColumnType.TIMESTAMP -> typeOf<LocalDateTime>()
+            else -> typeOf<String>()
+        }
 
 private fun Field.databaseTargetKType(wrapper: KronosDataSourceWrapper): KType? {
     val dialect = wrapper.sqlDialect

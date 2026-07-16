@@ -1,6 +1,5 @@
 package com.kotlinorm.utils
 
-import com.kotlinorm.Kronos.defaultDateFormat
 import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
@@ -17,7 +16,6 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,24 +35,15 @@ class CommonUtilTest {
         }
 
         strategy.execute(true) { _, value ->
-            assertTrue(value is String)
-            assertTrue(
-
-                LocalDateTime.now(Clock.system(timeZone)).isAfter(
-                    LocalDateTime.parse(value, DateTimeFormatter.ofPattern(defaultDateFormat))
-                )
-            )
+            assertTrue(value is CurrentTemporalValue)
+            assertTrue(LocalDateTime.now(Clock.system(timeZone)).isAfter(value.value))
         }
 
         val pattern = "MMM dd, yyyy HH:mm:ss"
         val dateTimeStrategy = KronosCommonStrategy(false, Field("field", dateFormat = pattern))
         dateTimeStrategy.execute(true) { _, value ->
-            assertTrue(value is String)
-            assertTrue(
-                LocalDateTime.now(Clock.system(timeZone)).isAfter(
-                    LocalDateTime.parse(value, DateTimeFormatter.ofPattern(pattern))
-                )
-            )
+            assertTrue(value is CurrentTemporalValue)
+            assertTrue(LocalDateTime.now(Clock.system(timeZone)).isAfter(value.value))
         }
     }
 
@@ -240,6 +229,71 @@ class CommonUtilTest {
             java.sql.Timestamp.valueOf("2023-10-17 10:00:00"),
             toDatabaseValue(wrapper, field, "2023-10-17T10:00:00")
         )
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun currentTemporalValueUsesPropertyTypeForVarcharStorage() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val current = LocalDateTime.of(2026, 7, 17, 12, 34, 56)
+        val value = CurrentTemporalValue(current)
+        val pattern = "yyyy/MM/dd HH:mm:ss"
+
+        assertEquals(
+            "2026/07/17 12:34:56",
+            toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<String>()), value)
+        )
+        assertEquals(
+            current,
+            toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<LocalDateTime>()), value)
+        )
+        assertEquals(
+            current.atZone(timeZone).toInstant().toEpochMilli(),
+            toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<Long>()), value)
+        )
+        assertEquals(
+            Date.from(current.atZone(timeZone).toInstant()),
+            toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<Date>()), value)
+        )
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun currentTemporalValueConvertsLongBigintWithoutReadingDateFormat() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val current = LocalDateTime.of(2026, 7, 17, 12, 34, 56)
+        val field = Field(
+            "created_at",
+            type = KColumnType.BIGINT,
+            dateFormat = "[invalid",
+            kType = typeOf<Long>()
+        )
+
+        assertEquals(
+            current.atZone(timeZone).toInstant().toEpochMilli(),
+            toDatabaseValue(wrapper, field, CurrentTemporalValue(current))
+        )
+    }
+
+    @Test
+    fun currentTemporalValueFallsBackToColumnTypeWithoutKType() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val current = LocalDateTime.of(2026, 7, 17, 12, 34, 56)
+        val value = CurrentTemporalValue(current)
+        val cases = listOf(
+            Field("as_bigint", type = KColumnType.BIGINT) to
+                current.atZone(timeZone).toInstant().toEpochMilli(),
+            Field("as_date", type = KColumnType.DATE) to java.sql.Date.valueOf(current.toLocalDate()),
+            Field("as_time", type = KColumnType.TIME) to java.sql.Time.valueOf(current.toLocalTime()),
+            Field("as_datetime", type = KColumnType.DATETIME) to current,
+            Field("as_timestamp", type = KColumnType.TIMESTAMP) to java.sql.Timestamp.valueOf(current),
+            Field("as_text", type = KColumnType.VARCHAR, dateFormat = "yyyy/MM/dd HH:mm:ss") to
+                "2026/07/17 12:34:56"
+        )
+
+        cases.forEach { (field, expected) ->
+            assertEquals(expected, toDatabaseValue(wrapper, field, value), field.type.name)
+        }
     }
 
     @OptIn(ExperimentalStdlibApi::class)

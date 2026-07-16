@@ -145,6 +145,62 @@ class TableOperationUtilTest {
     }
 
     @Test
+    fun `column differ treats postgres physical type equivalents as stable`() {
+        val expected = listOf(
+            field("occurred_at", KColumnType.DATETIME),
+            field("description", KColumnType.VARCHAR)
+        )
+        val current = listOf(
+            field("occurred_at", KColumnType.TIMESTAMP),
+            field("description", KColumnType.TEXT)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.Postgres, expected, current)
+        )
+    }
+
+    @Test
+    fun `column differ preserves postgres physical type differences`() {
+        val expected = listOf(
+            field("occurred_at", KColumnType.DATETIME, scale = 3),
+            field("description", KColumnType.VARCHAR, length = 64)
+        )
+        val current = listOf(
+            field("occurred_at", KColumnType.TIMESTAMP, scale = 6),
+            field("description", KColumnType.TEXT)
+        )
+
+        assertEquals(
+            listOf(
+                Triple(expected[0], null, current[0]),
+                Triple(expected[1], expected[0], current[1])
+            ),
+            columnDiffer(DBType.Postgres, expected, current).toModified
+        )
+    }
+
+    @Test
+    fun `column differ ignores postgres column order`() {
+        val expected = listOf(
+            field("id", KColumnType.INT, nullable = false),
+            field("age", KColumnType.BIGINT),
+            field("created_at", KColumnType.DATETIME)
+        )
+        val current = listOf(
+            field("id", KColumnType.INT, nullable = false),
+            field("created_at", KColumnType.TIMESTAMP),
+            field("age", KColumnType.BIGINT)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.Postgres, expected, current)
+        )
+    }
+
+    @Test
     fun `column differ treats sqlite storage-class equivalent definitions as stable`() {
         val expected = listOf(
             field("id", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
@@ -226,7 +282,7 @@ class TableOperationUtilTest {
     }
 
     @Test
-    fun `column differ marks sql server moved columns case insensitively`() {
+    fun `column differ ignores sql server column order while move detection stays case insensitive`() {
         val expected = listOf(
             field("id", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
             field("name", KColumnType.VARCHAR, length = 80),
@@ -240,11 +296,7 @@ class TableOperationUtilTest {
 
         assertEquals(listOf("NAME"), moveColumn(expected, current, DBType.Mssql))
         assertEquals(
-            TableColumnDiff(
-                toAdd = emptyList(),
-                toModified = listOf(Triple(expected[1], expected[0], current[2])),
-                toDelete = emptyList()
-            ),
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
             columnDiffer(DBType.Mssql, expected, current)
         )
     }
@@ -283,6 +335,34 @@ class TableOperationUtilTest {
         assertEquals(
             TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
             columnDiffer(DBType.Oracle, expected, current)
+        )
+    }
+
+    @Test
+    fun `column differ treats dialect rendered default types as stable`() {
+        listOf(DBType.Mysql, DBType.Mssql).forEach { dbType ->
+            val expected = listOf(field("description", KColumnType.VARCHAR))
+            val current = listOf(field("description", KColumnType.VARCHAR, length = 255))
+
+            assertEquals(
+                TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+                columnDiffer(dbType, expected, current),
+                "default VARCHAR length for $dbType"
+            )
+        }
+
+        val oracleExpected = listOf(
+            field("description", KColumnType.VARCHAR),
+            field("created_at", KColumnType.DATETIME)
+        )
+        val oracleCurrent = listOf(
+            field("DESCRIPTION", KColumnType.VARCHAR, length = 255),
+            field("CREATED_AT", KColumnType.TIMESTAMP, length = 11, scale = 6)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.Oracle, oracleExpected, oracleCurrent)
         )
     }
 

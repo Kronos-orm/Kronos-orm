@@ -138,8 +138,16 @@ internal fun resolvePrimaryKeyOrNull(columns: List<Field>): Field? =
 internal fun KronosCommonStrategy?.runtimeBind(
     tableName: String,
     columns: List<Field>
-): KronosCommonStrategy? =
-    this
-        ?.takeIf { it.enabled }
-        ?.bind(tableName)
-        ?.takeIf { strategy -> columns.any { it.name == strategy.field.name || it.columnName == strategy.field.columnName } }
+): KronosCommonStrategy? {
+    val strategy = this?.takeIf { it.enabled } ?: return null
+    val column = columns.firstOrNull {
+        it.name == strategy.field.name || it.columnName == strategy.field.columnName
+    } ?: return null
+    return KronosCommonStrategy(
+        enabled = true,
+        field = column.copy(
+            dateFormat = strategy.field.dateFormat ?: column.dateFormat,
+            tableName = tableName
+        )
+    )
+}

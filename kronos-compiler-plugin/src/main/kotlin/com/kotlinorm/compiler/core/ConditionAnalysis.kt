@@ -34,11 +34,14 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irBranch
 import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irElseBranch
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irIfThenElse
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.irWhen
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -83,18 +86,21 @@ private enum class ConditionLogicalKind : ConditionBuildKind {
     Root
 }
 
-private enum class ConditionExpressionKind(val noValueAware: Boolean) : ConditionBuildKind {
-    RawSql(noValueAware = false),
-    IsNull(noValueAware = false),
-    Equal(noValueAware = true),
-    GreaterThan(noValueAware = true),
-    GreaterThanOrEqual(noValueAware = true),
-    LessThan(noValueAware = true),
-    LessThanOrEqual(noValueAware = true),
-    Like(noValueAware = true),
-    Regexp(noValueAware = true),
-    In(noValueAware = true),
-    Between(noValueAware = true)
+private enum class ConditionExpressionKind : ConditionBuildKind {
+    RawSql,
+    IsNull,
+    Equal,
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    Like,
+    StartsWith,
+    EndsWith,
+    Contains,
+    Regexp,
+    In,
+    Between
 }
 
 private enum class ConditionComparisonKind(
@@ -346,15 +352,6 @@ private fun analyzeMethodSqlExpr(
                 value = receiver
             )
         }
-        "ifNoValue" -> {
-            val receiver = call.conditionReceiver()
-            val strategy = call.getValueArgumentSafe(0) ?: return analyzeAndBuildSqlExpr(irFunction, receiver, errorReporter, setNot)
-            val expr = analyzeAndBuildSqlExpr(irFunction, receiver, errorReporter, setNot) ?: return null
-            if (expr is IrCall && expr.symbol in noValueAwareConditionExprSymbols()) {
-                expr.arguments[6] = strategy
-            }
-            expr
-        }
         "takeIf" -> {
             val receiver = call.conditionReceiver()
             val predicate = call.getValueArgumentSafe(0) ?: return null
@@ -421,8 +418,8 @@ private fun analyzeStringMatchSqlExpr(
             val receiver = call.conditionReceiver()
             val prefix = call.getValueArgumentSafe(0)
             if (prefix != null) {
-                buildFieldConditionWithValue(irFunction, receiver, ConditionExpressionKind.Like, setNot, errorReporter) {
-                    concatIrString(prefix, builder.irString("%"))
+                buildFieldConditionWithValue(irFunction, receiver, ConditionExpressionKind.StartsWith, setNot, errorReporter) {
+                    prefix
                 }
             } else {
                 buildNoArgStartsWithSqlExpr(irFunction, call, setNot, errorReporter)
@@ -432,8 +429,8 @@ private fun analyzeStringMatchSqlExpr(
             val receiver = call.conditionReceiver()
             val suffix = call.getValueArgumentSafe(0)
             if (suffix != null) {
-                buildFieldConditionWithValue(irFunction, receiver, ConditionExpressionKind.Like, setNot, errorReporter) {
-                    concatIrString(builder.irString("%"), suffix)
+                buildFieldConditionWithValue(irFunction, receiver, ConditionExpressionKind.EndsWith, setNot, errorReporter) {
+                    suffix
                 }
             } else {
                 buildNoArgEndsWithSqlExpr(irFunction, call, setNot, errorReporter)
@@ -447,13 +444,12 @@ private fun analyzeStringMatchSqlExpr(
                     buildInSubquerySqlExpr(irFunction, query = receiver, value = arg, not = setNot, errorReporter = errorReporter)
                 } else if (receiver.type.classFqName?.asString() == "kotlin.String") {
                     val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
-                    val pattern = concatIrString(concatIrString(builder.irString("%"), arg), builder.irString("%"))
                     buildConditionSqlExpr(
                         irFunction,
                         field = fieldExpr,
-                        kind = ConditionExpressionKind.Like,
+                        kind = ConditionExpressionKind.Contains,
                         not = setNot,
-                        value = pattern,
+                        value = arg,
                         tableName = extractTableNameExpr(receiver)
                     )
                 } else {
@@ -550,11 +546,15 @@ private fun analyzeWhenSqlExpr(
     errorReporter: ErrorReporter,
     setNot: Boolean
 ): IrExpression? {
-    // Determine logical operator from origin, applying De Morgan's when negated
+    if (expression.origin != IrStatementOrigin.ANDAND && expression.origin != IrStatementOrigin.OROR) {
+        return analyzeRuntimeWhenSqlExpr(irFunction, expression, errorReporter, setNot)
+    }
+
+    // Determine logical operator from origin, applying De Morgan's when negated.
     val logicalOp = when (expression.origin) {
         IrStatementOrigin.OROR -> if (setNot) ConditionLogicalKind.And else ConditionLogicalKind.Or
         IrStatementOrigin.ANDAND -> if (setNot) ConditionLogicalKind.Or else ConditionLogicalKind.And
-        else -> ConditionLogicalKind.And
+        else -> error("Runtime if/when must be handled before logical condition lowering.")
     }
 
     val children = mutableListOf<IrExpression>()
@@ -573,6 +573,41 @@ private fun analyzeWhenSqlExpr(
     if (children.isEmpty()) return null
     if (children.size == 1) return children.first()
     return buildConditionSqlExpr(irFunction, kind = logicalOp, not = false, children = children)
+}
+
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun analyzeRuntimeWhenSqlExpr(
+    irFunction: IrFunction,
+    expression: IrWhen,
+    errorReporter: ErrorReporter,
+    setNot: Boolean
+): IrExpression? {
+    val analyzedBranches = expression.branches.map { branch ->
+        val branchResult = branch.result
+        val result = if (branchResult is IrConst && branchResult.value is Boolean) {
+            null
+        } else {
+            analyzeAndBuildSqlExpr(irFunction, branchResult, errorReporter, setNot)
+        }
+        branch to result
+    }
+    if (analyzedBranches.all { it.second == null }) return null
+
+    val sqlExprType = expressionClassSymbol.defaultType.makeNullable()
+    return builder.irWhen(
+        sqlExprType,
+        analyzedBranches.map { (branch, result) ->
+            val sqlResult = result ?: builder.irNull(sqlExprType)
+            val branchCondition = branch.condition
+            if (branchCondition is IrConst && branchCondition.value == true) {
+                builder.irElseBranch(sqlResult)
+            } else {
+                builder.irBranch(branchCondition, sqlResult)
+            }
+        }
+    ).apply {
+        origin = expression.origin
+    }
 }
 
 // ============================================================================
@@ -649,7 +684,7 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
                     return builder.irString("")
                 }
                 if (irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
-                    builder.getTableNameExpr(irClass)
+                    buildSourceScopedTableNameExpr(expression.dispatchReceiver!!, irClass)
                 } else null
             }
             expression.isKronosFunction() -> {
@@ -1245,24 +1280,17 @@ private fun buildFieldConditionWithValue(
 
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgStartsWithSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
-    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Like, not, errorReporter) { rawValue ->
-        concatIrString(concatIrString(builder.irString(""), rawValue), builder.irString("%"))
-    }
+    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.StartsWith, not, errorReporter)
 }
 
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgEndsWithSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
-    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Like, not, errorReporter) { rawValue ->
-        concatIrString(builder.irString("%"), concatIrString(builder.irString(""), rawValue))
-    }
+    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.EndsWith, not, errorReporter)
 }
 
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgContainsSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
-    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Like, not, errorReporter) { rawValue ->
-        val valueStr = concatIrString(builder.irString(""), rawValue)
-        concatIrString(concatIrString(builder.irString("%"), valueStr), builder.irString("%"))
-    }
+    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Contains, not, errorReporter)
 }
 
 context(context: IrPluginContext, builder: IrBlockBuilder)
@@ -1321,12 +1349,6 @@ private fun buildConditionSqlExpr(
 }
 
 context(context: IrPluginContext)
-private fun noValueAwareConditionExprSymbols(): Set<IrSimpleFunctionSymbol> =
-    ConditionExpressionKind.entries
-        .filter { it.noValueAware }
-        .mapTo(mutableSetOf()) { conditionExprMethodSymbol(it) }
-
-context(context: IrPluginContext)
 private fun conditionExprMethodSymbol(kind: ConditionExpressionKind): IrSimpleFunctionSymbol =
     when (kind) {
         ConditionExpressionKind.RawSql -> rawConditionExprMethodSymbol
@@ -1337,6 +1359,9 @@ private fun conditionExprMethodSymbol(kind: ConditionExpressionKind): IrSimpleFu
         ConditionExpressionKind.LessThan -> lessThanConditionExprMethodSymbol
         ConditionExpressionKind.LessThanOrEqual -> lessThanOrEqualConditionExprMethodSymbol
         ConditionExpressionKind.Like -> likeConditionExprMethodSymbol
+        ConditionExpressionKind.StartsWith -> startsWithConditionExprMethodSymbol
+        ConditionExpressionKind.EndsWith -> endsWithConditionExprMethodSymbol
+        ConditionExpressionKind.Contains -> containsConditionExprMethodSymbol
         ConditionExpressionKind.Regexp -> regexpConditionExprMethodSymbol
         ConditionExpressionKind.In -> inConditionExprMethodSymbol
         ConditionExpressionKind.Between -> betweenConditionExprMethodSymbol

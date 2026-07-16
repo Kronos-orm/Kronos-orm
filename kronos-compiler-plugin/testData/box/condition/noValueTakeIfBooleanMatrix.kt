@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-// Verifies no-value strategies, takeIf, run-wrapped conditions, and negated OR lowering.
+// Verifies default no-value behavior, takeIf, explicit boolean fallbacks, run-wrapped conditions, and negated OR lowering.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
-import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -67,6 +66,8 @@ fun box(): String {
 
     val user = NoValueMatrixUser(id = 1, name = "Ada", age = 36)
     val nullName = user.copy(name = null)
+    val missingName: String? = null
+    val presentName: String? = "Ada"
 
     val runWrapped = noValueMatrixWhere(user) { run { it.age > 18 } }
     val runExpr = runWrapped.expr as? SqlExpr.Binary
@@ -79,13 +80,24 @@ fun box(): String {
     val takeIfTrue = noValueMatrixWhere(user) { (it.id == 1).takeIf(true) }
     val takeIfExpr = takeIfTrue.expr as? SqlExpr.Binary
 
-    val noValueTrue = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.True) }
-    val noValueFalse = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.False) }
-    val noValueJudgeNull = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.JudgeNull) }
-    val noValueAuto = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.Auto) }
+    val takeIfFalse = noValueMatrixWhere(user) { (it.name == "Ada").takeIf(false) }
+    val explicitFalse = noValueMatrixWhere(nullName) {
+        if (missingName != null) { it.name == missingName } else { false.asSql() }
+    }
+    val explicitTrue = noValueMatrixWhere(nullName) {
+        if (missingName != null) { it.name == missingName } else { true.asSql() }
+    }
+    val explicitJudgeNull = noValueMatrixWhere(nullName) {
+        if (missingName != null) { it.name == missingName } else { it.name.isNull }
+    }
+    val explicitPresent = noValueMatrixWhere(nullName) {
+        if (presentName != null) { it.name == presentName } else { false.asSql() }
+    }
+    val defaultNoValue = noValueMatrixWhere(nullName) { it.name.eq }
 
-    val judgeNullExpr = noValueJudgeNull.expr as? SqlExpr.Binary
+    val judgeNullExpr = explicitJudgeNull.expr as? SqlExpr.Binary
     val judgeNullColumn = judgeNullExpr?.left as? SqlExpr.Column
+    val presentExpr = explicitPresent.expr as? SqlExpr.Binary
     val failures = listOfNotNull(
         expectNoValueMatrix((runExpr?.left as? SqlExpr.Column)?.columnName == "age") {
             "run field was ${runExpr?.left}"
@@ -111,11 +123,20 @@ fun box(): String {
         expectNoValueMatrix(takeIfExpr?.operator == SqlBinaryOperator.Equal) {
             "takeIf operator was ${takeIfExpr?.operator}"
         },
-        expectNoValueMatrix((noValueTrue.expr as? SqlExpr.BooleanLiteral)?.boolean == true) {
-            "noValue true was ${noValueTrue.expr}"
+        expectNoValueMatrix(takeIfFalse.expr == null) {
+            "takeIf false condition was ${takeIfFalse.expr}"
         },
-        expectNoValueMatrix((noValueFalse.expr as? SqlExpr.BooleanLiteral)?.boolean == false) {
-            "noValue false was ${noValueFalse.expr}"
+        expectNoValueMatrix((explicitTrue.expr as? SqlExpr.BooleanLiteral)?.boolean == true) {
+            "explicit true fallback was ${explicitTrue.expr}"
+        },
+        expectNoValueMatrix((explicitFalse.expr as? SqlExpr.BooleanLiteral)?.boolean == false) {
+            "explicit false fallback was ${explicitFalse.expr}"
+        },
+        expectNoValueMatrix((presentExpr?.left as? SqlExpr.Column)?.columnName == "name") {
+            "explicit present field was ${presentExpr?.left}"
+        },
+        expectNoValueMatrix(noValueMatrixParameter(explicitPresent, presentExpr?.right) == "Ada") {
+            "explicit present value was ${noValueMatrixParameter(explicitPresent, presentExpr?.right)}"
         },
         expectNoValueMatrix(judgeNullColumn?.columnName == "name") {
             "judgeNull field was ${judgeNullExpr?.left}"
@@ -126,8 +147,8 @@ fun box(): String {
         expectNoValueMatrix(judgeNullExpr?.right == SqlExpr.NullLiteral) {
             "judgeNull right was ${judgeNullExpr?.right}"
         },
-        expectNoValueMatrix(noValueAuto.expr == null) {
-            "auto condition was ${noValueAuto.expr}"
+        expectNoValueMatrix(defaultNoValue.expr == null) {
+            "default no-value condition was ${defaultNoValue.expr}"
         },
     )
 

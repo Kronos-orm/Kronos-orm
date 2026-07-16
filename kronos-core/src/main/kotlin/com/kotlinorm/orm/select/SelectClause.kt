@@ -71,12 +71,14 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             }
         }
         if (setSelectFields != null) {
-            pojo.afterSelect(context.sourceBinding) {
-                setSelectFields(it)
-                if (fields.isEmpty() && selectItems.isEmpty()) {
-                    throw EmptyFieldsException()
+            context.withSourceScope {
+                pojo.afterSelect(context.sourceBinding) {
+                    setSelectFields(it)
+                    if (fields.isEmpty() && selectItems.isEmpty()) {
+                        throw EmptyFieldsException()
+                    }
+                    context.setProjectionItems(projectionItems.toList(), fields)
                 }
-                context.setProjectionItems(projectionItems.toList(), fields)
             }
         }
     }
@@ -94,7 +96,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
-                targetType = typeOf<Int>()
+                targetType = typeOf<Int>(),
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
     }
@@ -105,7 +108,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     }
 
     fun limit(capacity: Int): SelectClause<Source, Selected, Context> {
-        context.limit = if (capacity > 0) SqlLimit.limit(capacity, context.limit?.offset?.numberLiteralInt()) else null
+        context.limit = if (capacity >= 0) SqlLimit.limit(capacity, context.limit?.offset?.numberLiteralInt()) else null
         return this
     }
 
@@ -118,25 +121,27 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun orderBy(someFields: ToSort<Context, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
-        context.receiverPojo.afterSort(context.sourceBinding) {
-            someFields(it)
-            context.orderByItems = if (sortedItems.isNotEmpty()) {
-                sortedItems.map { item ->
-                    when (item) {
-                        is KTableForSort.SortItem.FieldItem -> SelectOrderItem.FieldItem(
-                            context.sourceBinding.bindField(item.field),
-                            item.ordering,
-                            item.expr
-                        )
-                        is KTableForSort.SortItem.ExpressionItem -> SelectOrderItem.ExprItem(
-                            context.bindExpr(item.expression.qualifySourceAliasIfPresent(context.sourceTableAlias)),
-                            item.ordering
-                        )
-                        is KTableForSort.SortItem.SelectableItem -> SelectOrderItem.SelectableItem(item.query, item.ordering)
+        context.withSourceScope {
+            context.receiverPojo.afterSort(context.sourceBinding) {
+                someFields(it)
+                context.orderByItems = if (sortedItems.isNotEmpty()) {
+                    sortedItems.map { item ->
+                        when (item) {
+                            is KTableForSort.SortItem.FieldItem -> SelectOrderItem.FieldItem(
+                                context.sourceBinding.bindField(item.field),
+                                item.ordering,
+                                item.expr
+                            )
+                            is KTableForSort.SortItem.ExpressionItem -> SelectOrderItem.ExprItem(
+                                context.bindExpr(item.expression.qualifySourceAliasIfPresent(context.sourceTableAlias)),
+                                item.ordering
+                            )
+                            is KTableForSort.SortItem.SelectableItem -> SelectOrderItem.SelectableItem(item.query, item.ordering)
+                        }
                     }
+                } else {
+                    emptyList()
                 }
-            } else {
-                emptyList()
             }
         }
         return this
@@ -144,24 +149,26 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun groupBy(someFields: ToSelect<Source, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
-        pojo.afterSelect(context.sourceBinding) {
-            someFields(it)
-            val items = projectionItems.mapNotNull { projection ->
-                when (projection) {
-                    is KTableForSelect.ProjectionItem.FieldItem -> context.selectExpr(projection.field)
-                    is KTableForSelect.ProjectionItem.SelectItemValue -> when (val item = projection.item) {
-                        is SqlSelectItem.Expr -> context.bindExpr(
-                            item.expr.qualifySourceAliasIfPresent(context.sourceTableAlias)
-                        )
-                        is SqlSelectItem.Asterisk -> null
+        context.withSourceScope {
+            pojo.afterSelect(context.sourceBinding) {
+                someFields(it)
+                val items = projectionItems.mapNotNull { projection ->
+                    when (projection) {
+                        is KTableForSelect.ProjectionItem.FieldItem -> context.selectExpr(projection.field)
+                        is KTableForSelect.ProjectionItem.SelectItemValue -> when (val item = projection.item) {
+                            is SqlSelectItem.Expr -> context.bindExpr(
+                                item.expr.qualifySourceAliasIfPresent(context.sourceTableAlias)
+                            )
+                            is SqlSelectItem.Asterisk -> null
+                        }
+                        is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> null
                     }
-                    is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> null
                 }
+                if (items.isEmpty()) {
+                    throw EmptyFieldsException()
+                }
+                context.groupByItems = items
             }
-            if (items.isEmpty()) {
-                throw EmptyFieldsException()
-            }
-            context.groupByItems = items
         }
         return this
     }
@@ -180,6 +187,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     }
 
     fun applyCursorPage(offset: Int) {
+        context.prepareCursorOrder()
         applyCursorLimit(offset.coerceAtLeast(0))
     }
 
@@ -191,24 +199,28 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     fun cascade(someFields: ToReference<Source, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
         context.cascadeEnabled = true
-        pojo.afterReference {
-            someFields(it)
-            if (fields.isEmpty()) {
-                throw EmptyFieldsException()
+        context.withSourceScope {
+            pojo.afterReference {
+                someFields(it)
+                if (fields.isEmpty()) {
+                    throw EmptyFieldsException()
+                }
+                context.cascadeAllowed = fields.toSet()
             }
-            context.cascadeAllowed = fields.toSet()
         }
         return this
     }
 
     fun by(someFields: ToSelect<Source, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
-        pojo.afterSelect(context.sourceBinding) {
-            someFields(it)
-            if (fields.isEmpty()) {
-                throw EmptyFieldsException()
+        context.withSourceScope {
+            pojo.afterSelect(context.sourceBinding) {
+                someFields(it)
+                if (fields.isEmpty()) {
+                    throw EmptyFieldsException()
+                }
+                context.addFieldConditions(fields, context.sourceValues)
             }
-            context.addFieldConditions(fields, context.sourceValues)
         }
         return this
     }
@@ -218,15 +230,17 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             context.addSourceValueConditions()
             return this
         }
-        pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
-            with(context) {
-                this@filter.sourceValues = sourceValues
-                this@filter.operationType = operationType
-                selectCondition(filterTable)
-                andWhere(
-                    this@filter.sqlExpr?.qualifySourceAliasIfPresent(sourceTableAlias),
-                    this@filter.parameterValues
-                )
+        context.withSourceScope {
+            pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
+                with(context) {
+                    this@filter.sourceValues = sourceValues
+                    this@filter.operationType = operationType
+                    selectCondition(filterTable)
+                    andWhere(
+                        this@filter.sqlExpr?.qualifySourceAliasIfPresent(sourceTableAlias),
+                        this@filter.parameterValues
+                    )
+                }
             }
         }
         return this
@@ -234,15 +248,17 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun having(selectCondition: ToFilter<Source, Boolean?> = null): SelectClause<Source, Selected, Context> {
         selectCondition ?: throw EmptyFieldsException()
-        pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
-            with(context) {
-                this@filter.sourceValues = sourceValues
-                this@filter.operationType = operationType
-                selectCondition(filterTable)
-                andHaving(
-                    this@filter.sqlExpr?.qualifySourceAliasIfPresent(sourceTableAlias),
-                    this@filter.parameterValues
-                )
+        context.withSourceScope {
+            pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
+                with(context) {
+                    this@filter.sourceValues = sourceValues
+                    this@filter.operationType = operationType
+                    selectCondition(filterTable)
+                    andHaving(
+                        this@filter.sqlExpr?.qualifySourceAliasIfPresent(sourceTableAlias),
+                        this@filter.parameterValues
+                    )
+                }
             }
         }
         return this
@@ -289,7 +305,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
                 targetType = context.projectionType,
-                resultColumnTypes = resultColumnTypes(resultFieldsByLabel)
+                resultColumnTypes = resultColumnTypes(resultFieldsByLabel),
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             ),
             finalSelectFields,
             context.operationType,

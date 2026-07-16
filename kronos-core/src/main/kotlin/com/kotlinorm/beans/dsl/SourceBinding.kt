@@ -129,6 +129,9 @@ data class SourceBinding(
         )
 
     private fun bindColumn(column: SqlExpr.Column): SqlExpr.Column {
+        if (alias != null && tableName != null && column.tableName == tableName) {
+            return column.copy(tableName = alias, qualifier = SqlIdentifier.of(alias))
+        }
         if (column.tableName in dynamicTableNames && column.columnName in sourceColumnNames) {
             val boundTableName = tableName ?: return column
             return column.copy(tableName = boundTableName, qualifier = SqlIdentifier.of(boundTableName))

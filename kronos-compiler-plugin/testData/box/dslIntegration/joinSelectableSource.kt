@@ -18,6 +18,7 @@
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.select.select
@@ -52,7 +53,7 @@ fun box(): String {
             select { [user.id, order.rankStatus] }
             if (rankStatus == -1) error("unreachable")
         }
-        .toSqlQuery() as SqlQuery.Select
+        .toSqlQuery(CompilerTestDataSourceWrapper) as SqlQuery.Select
     val join = statement.from.singleOrNull() as? SqlTable.Join
     val right = join?.right as? SqlTable.Subquery
     val selectedColumns = statement.select.mapNotNull {

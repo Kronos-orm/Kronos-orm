@@ -88,7 +88,8 @@ class PagedClause<Source : KPojo, Selected : KPojo, Clause>(
             countTask.atomicTask.copy(
                 sql = rendered.sql,
                 paramMap = rendered.parameters,
-                statement = countQuery
+                statement = countQuery,
+                listParameterOccurrences = rendered.listParameterOccurrences
             )
         )
         return finalCountTask to recordsTask

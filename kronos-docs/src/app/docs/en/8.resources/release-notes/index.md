@@ -7,6 +7,21 @@
 
 ## Update Logs
 
+### 0.2.4
+
+- 🐛 Fix generated projection typing for identity-source selections and preserve source metadata, including `@Serialize`, across aliased, generated, window-derived, and nested projections ([#246](https://github.com/Kronos-orm/Kronos-orm/issues/246)).
+- 🐛 Fix ordinary Kotlin `if` / `when` condition lowering so only the selected SQL branch and its parameters are emitted; make `contains`, `startsWith`, and `endsWith` escape literal LIKE wildcards ([#249](https://github.com/Kronos-orm/Kronos-orm/issues/249)).
+- 🐛 Fix self-joins, repeated-table joins, correlated subqueries, and nested query layers by binding fields to runtime source identities and renaming colliding parameters ([#252](https://github.com/Kronos-orm/Kronos-orm/issues/252)).
+- 🐛 Fix named-parameter binding so collections expand only at explicit list occurrences, while `ByteArray` and other array values remain single JDBC parameters; add JDBC type hints for null temporal and binary values ([#251](https://github.com/Kronos-orm/Kronos-orm/issues/251)).
+- 🐛 Make cursor pagination deterministic by appending a primary or unique-key tie-breaker, carrying hidden cursor fields for map results, and preserving rows tied on a non-unique order value. Also fix `limit(0)` ([#248](https://github.com/Kronos-orm/Kronos-orm/issues/248)).
+- 🐛 Fix upsert conflict-target inference for generated custom primary keys and replace aggregate existence probes with `SELECT 1`, allowing PostgreSQL row locking ([#247](https://github.com/Kronos-orm/Kronos-orm/issues/247)).
+- 🐛 Improve temporal conversion, DDL/default rendering, boolean predicates, CREATE TABLE AS SELECT, schema synchronization, codegen data-source setters, and mutation SQL across MySQL, PostgreSQL, SQLite, SQL Server, and Oracle ([#250](https://github.com/Kronos-orm/Kronos-orm/issues/250)).
+
+#### Upgrade notes
+
+- Replace condition-level `ifNoValue(...)` calls with ordinary Kotlin control flow. Use `.takeIf(...)` to omit a predicate, or `if` / `else` with `true.asSql()` / `false.asSql()` for an explicit fallback.
+- Cursor pagination now requires a primary key or unique index when the requested ordering is not already unique. Map results hide automatically added tie-breaker columns; typed projections must select every cursor field needed to construct the next token.
+
 ### 0.2.3
 
 - ✨ Add cursor pagination with `withCursor().cursor(...)`, returning `(hasNext, nextCursor, rows)` while keeping it separate from total-count page pagination.

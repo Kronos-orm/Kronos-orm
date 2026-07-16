@@ -78,7 +78,13 @@ private fun metadataTask(
             "dbName" to statements.databaseName(dataSource)
         )
     )
-    return KronosAtomicQueryTask(rendered.sql, rendered.parameters, statement = statement, targetType = targetType)
+    return KronosAtomicQueryTask(
+        rendered.sql,
+        rendered.parameters,
+        statement = statement,
+        targetType = targetType,
+        listParameterOccurrences = rendered.listParameterOccurrences
+    )
 }
 
 

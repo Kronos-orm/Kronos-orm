@@ -60,6 +60,7 @@ object SqlNodeWalker {
                 node.fetch?.let { walk(it.limit, visitor) }
             }
             is SqlOrderingItem -> walk(node.expr, visitor)
+            is SqlSelectItem -> walkSelectItem(node, visitor)
             is SqlColumnDefinition -> node.defaultValue?.let { walk(it, visitor) }
             is SqlTableConstraint -> walkConstraint(node, visitor)
             is SqlWindow -> walkWindow(node, visitor)
@@ -505,6 +506,17 @@ object SqlParameterCollector {
 
     fun collectNamedParameters(node: SqlNode): List<String> =
         collectParameters(node).mapNotNull { (it as? SqlParameter.Named)?.name }
+
+    fun collectListExpansionOccurrences(node: SqlNode): Set<Int> = buildSet {
+        var occurrence = 0
+        SqlNodeWalker.walk(node) { visited ->
+            val parameter = visited as? SqlExpr.Parameter ?: return@walk
+            if (parameter.parameter is SqlParameter.Named) {
+                if (parameter.expandAsList) add(occurrence)
+                occurrence++
+            }
+        }
+    }
 }
 
 data class SqlQueryOutput(

@@ -5,7 +5,6 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.integration.fixtures.IntegrationTableState
 import com.kotlinorm.integration.fixtures.IntegrationUserRecord
 import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
-import org.junit.Assume.assumeTrue
 import kotlin.test.assertEquals
 
 abstract class IntegrationSuiteSupport(
@@ -15,7 +14,7 @@ abstract class IntegrationSuiteSupport(
     protected val wrapper by lazy { environment.createWrapper() }
 
     protected fun recreateTables() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         profile.dropTables()
         profile.syncTables()
@@ -26,12 +25,17 @@ abstract class IntegrationSuiteSupport(
         assertEquals(0, profile.countArchives())
     }
 
-    protected fun assumeDatabaseAvailable() {
-        assumeTrue("${environment.displayName} integration environment is disabled", environment.enabled)
+    protected fun requireDatabaseAvailable() {
+        check(environment.enabled) {
+            "${environment.displayName} integration environment is disabled"
+        }
         try {
             wrapper.verifyConnection(environment.probeSql)
         } catch (error: Throwable) {
-            assumeTrue("${environment.displayName} is not reachable: ${error.message}", false)
+            throw AssertionError(
+                "${environment.displayName} integration database is not reachable: ${error.message}",
+                error,
+            )
         }
     }
 

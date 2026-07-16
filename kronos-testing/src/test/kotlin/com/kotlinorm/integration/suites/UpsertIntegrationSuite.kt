@@ -93,7 +93,7 @@ abstract class UpsertIntegrationSuite(
     }
 
     private fun recreateUniqueUpsertUserTable() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(IntegrationUniqueUpsertUser())
@@ -103,7 +103,7 @@ abstract class UpsertIntegrationSuite(
     }
 
     private fun recreateCompositeUpsertUserTable() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         with(wrapper.table) {
             dropTable(IntegrationCompositeUpsertUser())

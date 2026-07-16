@@ -45,7 +45,10 @@ sealed interface SqlExpr : SqlNode {
 
     data class Array(val items: List<SqlExpr>) : SqlExpr
 
-    data class Parameter(val parameter: SqlParameter) : SqlExpr
+    data class Parameter(
+        val parameter: SqlParameter,
+        val expandAsList: Boolean = false
+    ) : SqlExpr
 
     data class Unary(val operator: SqlUnaryOperator, val expr: SqlExpr) : SqlExpr
 

@@ -61,7 +61,7 @@ fun box(): String {
     val inColumn = inCondition?.expr as? SqlExpr.Column
     val inValues = (inCondition?.`in` as? SqlInRightOperand.Values)?.items
     if (inColumn?.columnName != "id") return "Fail: in field was ${inColumn?.columnName}"
-    if (inValues != listOf(SqlExpr.Parameter(SqlParameter.Named("idList")))) {
+    if (inValues != listOf(SqlExpr.Parameter(SqlParameter.Named("idList"), expandAsList = true))) {
         return "Fail: in values were $inValues"
     }
     if (capturedInCondition.parameters != mapOf("idList" to listOf(1, 2, 3))) {

@@ -4,11 +4,11 @@
     {{ str | lower | replace("@", "") | replace("（", "") | replace("）", "") | replace(".", "") | replace(" ", "-") | replace("(", "") | replace(")", "") | replace("/", "") }}
 {%- endmacro %}
 
-{% macro kronosVersion() -%}0.2.3{%- endmacro %}
+{% macro kronosVersion() -%}0.2.4{%- endmacro %}
 
-{% macro kronosSnapshotVersion() -%}0.2.4-SNAPSHOT{%- endmacro %}
+{% macro kronosSnapshotVersion() -%}0.2.5-SNAPSHOT{%- endmacro %}
 
-{% macro kronosSnapshotBadgeVersion() -%}0.2.4--SNAPSHOT{%- endmacro %}
+{% macro kronosSnapshotBadgeVersion() -%}0.2.5--SNAPSHOT{%- endmacro %}
 
 {% macro parseString(input) -%}
     {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 and input.indexOf('>') == input.length - 1 -%}
@@ -20,15 +20,7 @@
     {%- endif -%}
 {%- endmacro %}
 
-{% macro keyword(url, page, language) -%}
-    {%- set label = page[0] if page.length == 1 else page[0] + " - " + page[1] -%}
-    {%- set anchor = extract(label) if page.length == 1 else extract(page[1]) -%}
-    <code class="ngde ng-doc-code-with-link">
-        <a class="ngde" href="/documentation/{{ language }}/{{ url }}#{{ anchor }}">
-            {{- '📚' + label -}}
-        </a>
-    </code>
-{%- endmacro %}
+{% macro keyword(url, page, language) -%}{%- set label = page[0] if page.length == 1 else page[0] + " - " + page[1] -%}{%- set anchor = extract(label) if page.length == 1 else extract(page[1]) -%}<code class="ngde ng-doc-code-with-link"><a class="ngde" href="/documentation/{{ language }}/{{ url }}#{{ anchor }}">{{- '📚' + label -}}</a></code>{%- endmacro %}
 
 {%- macro title(name) -%}
     <code class="ngde title">{{ name | escape }}</code>

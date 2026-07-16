@@ -217,14 +217,14 @@ with(Kronos) {
 
 ---
 
-## 空值策略
+## 动态空值条件
 
-控制条件中值为 null 时的行为：
+动态变量可能为 null 时，用 `takeIf` 决定是否生成该条件；需要显式 fallback 时使用普通 Kotlin `if`/`else` 和布尔 SQL：
 
 ```kotlin
-where { (it.age == nullableAge).ifNoValue(NoValueStrategyType.Ignore) }
-where { (it.age == nullableAge).ifNoValue(NoValueStrategyType.True) }
-where { (it.age == nullableAge).ifNoValue(NoValueStrategyType.False) }
+where { (it.age == nullableAge).takeIf(nullableAge != null) }
+where { if (nullableAge != null) { it.age == nullableAge } else { true.asSql() } }
+where { if (nullableAge != null) { it.age == nullableAge } else { false.asSql() } }
 ```
 
 字面量 `where { it.age == null }` / `where { it.age != null }` 表示 SQL `IS NULL` / `IS NOT NULL`；动态变量为 `null` 时才进入无值策略。
@@ -636,7 +636,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.3")
+    implementation("com.kotlinorm:kronos-logging:0.2.4")
 }
 ```
 
@@ -720,15 +720,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.3`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.4`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.3")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.3")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.3")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.4")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.4")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```

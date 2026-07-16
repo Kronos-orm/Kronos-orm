@@ -157,6 +157,18 @@ fun Map<String, Field>.fieldForParameter(parameterName: String): Field? =
         .takeIf { it != parameterName }
         ?.let { this[it] }
 
+const val DEFAULT_LIKE_ESCAPE: Char = '\\'
+
+fun escapeLikeLiteral(value: String, escape: Char = DEFAULT_LIKE_ESCAPE): String =
+    buildString(value.length) {
+        value.forEach { char ->
+            if (char == escape || char == '%' || char == '_') {
+                append(escape)
+            }
+            append(char)
+        }
+    }
+
 data class TransformerSafeValue(
     val value: Any?,
     val kotlinType: KType,

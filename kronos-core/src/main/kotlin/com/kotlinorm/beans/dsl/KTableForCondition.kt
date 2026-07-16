@@ -30,6 +30,8 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.expr.SqlQuantifiedComparisonOperator
 import com.kotlinorm.syntax.expr.SqlSubqueryQuantifier
 import com.kotlinorm.utils.TransformerSafeValue
+import com.kotlinorm.utils.DEFAULT_LIKE_ESCAPE
+import com.kotlinorm.utils.escapeLikeLiteral
 import kotlin.jvm.JvmName
 import kotlin.reflect.typeOf
 
@@ -58,10 +60,15 @@ open class KTableForCondition<T : KPojo>(
     fun column(field: Field, tableName: String? = field.tableName): SqlExpr =
         field.toSourceColumn(sourceBinding, tableName)
 
-    fun bindParameter(field: Field, value: Any?, baseName: String = field.parameterBaseName()): SqlExpr {
+    fun bindParameter(
+        field: Field,
+        value: Any?,
+        baseName: String = field.parameterBaseName(),
+        expandAsList: Boolean = false
+    ): SqlExpr {
         val name = allocateParameterName(baseName)
         parameterValues[name] = value
-        return SqlExpr.Parameter(SqlParameter.Named(name))
+        return SqlExpr.Parameter(SqlParameter.Named(name), expandAsList = expandAsList)
     }
 
     fun andExpr(children: List<SqlExpr?>): SqlExpr? =
@@ -234,6 +241,72 @@ open class KTableForCondition<T : KPojo>(
         return SqlExpr.Like(leftExpr, rightExpr, withNot = not)
     }
 
+    fun startsWithConditionExpr(
+        field: Field?,
+        left: SqlExpr?,
+        not: Boolean,
+        value: Any?,
+        tableName: String? = field?.tableName,
+        noValueStrategyType: NoValueStrategyType? = null
+    ): SqlExpr? =
+        literalLikeConditionExpr(field, left, not, value, tableName, noValueStrategyType, prefixWildcard = false, suffixWildcard = true)
+
+    fun endsWithConditionExpr(
+        field: Field?,
+        left: SqlExpr?,
+        not: Boolean,
+        value: Any?,
+        tableName: String? = field?.tableName,
+        noValueStrategyType: NoValueStrategyType? = null
+    ): SqlExpr? =
+        literalLikeConditionExpr(field, left, not, value, tableName, noValueStrategyType, prefixWildcard = true, suffixWildcard = false)
+
+    fun containsConditionExpr(
+        field: Field?,
+        left: SqlExpr?,
+        not: Boolean,
+        value: Any?,
+        tableName: String? = field?.tableName,
+        noValueStrategyType: NoValueStrategyType? = null
+    ): SqlExpr? =
+        literalLikeConditionExpr(field, left, not, value, tableName, noValueStrategyType, prefixWildcard = true, suffixWildcard = true)
+
+    private fun literalLikeConditionExpr(
+        field: Field?,
+        left: SqlExpr?,
+        not: Boolean,
+        value: Any?,
+        tableName: String?,
+        noValueStrategyType: NoValueStrategyType?,
+        prefixWildcard: Boolean,
+        suffixWildcard: Boolean
+    ): SqlExpr? {
+        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+        val noValueStrategy = noValueStrategy(
+            value,
+            emptyCollectionIsNoValue = false,
+            explicit = noValueStrategyType,
+            updateDeleteStrategy = { trueWhenNegatedFalseWhenPositive(not) }
+        )
+        if (noValueStrategy != null) {
+            return when (noValueStrategy) {
+                NoValueStrategyType.Ignore -> null
+                NoValueStrategyType.False -> SqlExpr.BooleanLiteral(false)
+                NoValueStrategyType.True -> SqlExpr.BooleanLiteral(true)
+                NoValueStrategyType.JudgeNull -> SqlExpr.Binary(leftExpr, SqlBinaryOperator.Is(withNot = not), SqlExpr.NullLiteral)
+                NoValueStrategyType.Auto -> null
+            }
+        }
+        val baseField = field ?: Field("value", "value")
+        val rightExpr = value.toLiteralLikeConditionValueExpr(baseField, prefixWildcard, suffixWildcard)
+        return SqlExpr.Like(
+            leftExpr,
+            rightExpr,
+            escape = SqlExpr.StringLiteral(DEFAULT_LIKE_ESCAPE.toString()),
+            withNot = not
+        )
+    }
+
     fun regexpConditionExpr(
         field: Field?,
         left: SqlExpr?,
@@ -402,13 +475,50 @@ open class KTableForCondition<T : KPojo>(
             else -> bindParameter(field, TransformerSafeValue(this, typeOf<String>()), field.parameterBaseName())
         }
 
+    private fun Any?.toLiteralLikeConditionValueExpr(
+        field: Field,
+        prefixWildcard: Boolean,
+        suffixWildcard: Boolean
+    ): SqlExpr =
+        when (this) {
+            is SqlExpr -> this
+            is KronosFunctionExpr -> expr
+            is Field -> column(this)
+            is KSelectable<*> -> SqlExpr.Subquery(materializeSqlQuery(parameterValues))
+            is QuantifiedSubqueryValue -> SqlExpr.Subquery(query.materializeSqlQuery(parameterValues))
+            null -> SqlExpr.NullLiteral
+            else -> bindParameter(
+                field,
+                TransformerSafeValue(toLiteralLikePattern(prefixWildcard, suffixWildcard), typeOf<String>()),
+                field.parameterBaseName()
+            )
+        }
+
+    private fun Any.toLiteralLikePattern(prefixWildcard: Boolean, suffixWildcard: Boolean): String =
+        buildString {
+            if (prefixWildcard) append('%')
+            append(escapeLikeLiteral(this@toLiteralLikePattern.toString()))
+            if (suffixWildcard) append('%')
+        }
+
     private fun Any?.toInRightOperand(field: Field): SqlInRightOperand =
         when (this) {
             is KSelectable<*> -> SqlInRightOperand.Subquery(materializeSqlQuery(parameterValues))
-            is Iterable<*> -> SqlInRightOperand.Values(listOf(bindParameter(field, toList(), field.parameterBaseName("List"))))
-            is Array<*> -> SqlInRightOperand.Values(listOf(bindParameter(field, toList(), field.parameterBaseName("List"))))
+            is Iterable<*> -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is Array<*> -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is BooleanArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is ByteArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is CharArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is DoubleArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is FloatArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is IntArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is LongArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+            is ShortArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
             else -> SqlInRightOperand.Values(listOf(toConditionValueExpr(field)))
         }
+
+    private fun bindListParameter(field: Field, values: Any?): SqlExpr =
+        bindParameter(field, values, field.parameterBaseName("List"), expandAsList = true)
 
     private fun Any?.toBetweenExpr(leftExpr: SqlExpr, not: Boolean): SqlExpr? {
         val range = this as? ClosedRange<*> ?: return null
@@ -582,18 +692,6 @@ open class KTableForCondition<T : KPojo>(
      * @return `1`
      */
     operator fun Any?.compareTo(other: Any?) = 1
-
-    /**
-     * Set the no value strategy
-     *
-     * Only for compiler plugin condition rewriting
-     *
-     * Return 1 whether which strategy is used
-     *
-     * @param strategy The no value strategy
-     * @return `1`
-     */
-    fun Boolean?.ifNoValue(strategy: NoValueStrategyType) = true
 
     /**
      * Take the value if the condition is true

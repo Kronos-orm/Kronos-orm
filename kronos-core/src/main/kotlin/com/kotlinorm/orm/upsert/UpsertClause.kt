@@ -25,10 +25,13 @@ import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
 import com.kotlinorm.beans.dsl.rawSqlSelectItem
+import com.kotlinorm.beans.generator.resolveGeneratedPrimaryKeyValue
+import com.kotlinorm.beans.task.JdbcParameterTypeHints
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.beans.task.jdbcNullParameterTypeHints
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
@@ -99,6 +102,7 @@ class UpsertClause<T : KPojo>(
     private var lock: SqlLock? = null
     private var paramMapNew = mutableMapOf<Field, Any?>()
     private var conflictAssignmentValues = mutableMapOf<Field, Any?>()
+    private var generatedPrimaryKey: Pair<Field, Any?>? = null
 
     init {
         if (setUpsertFields != null) {
@@ -197,6 +201,7 @@ class UpsertClause<T : KPojo>(
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
+        prepareGeneratedPrimaryKey()
 
         if (toInsertFields.isEmpty()) {
             toInsertFields = allFields.filter { field ->
@@ -259,11 +264,14 @@ class UpsertClause<T : KPojo>(
             val conflictFields = inferConflictFields(paramMap)
             val statement = toSqlUpsertStatement(paramMap, dataSource, conflictFields, requireConflictTarget = true)
             val rendered = renderStatement(dataSource, statement, paramMap, fieldMap)
+            val jdbcTypeHints = (toInsertFields + toUpdateFields + onFields).jdbcNullParameterTypeHints(rendered.parameters)
             return KronosAtomicActionTask(
                 rendered.sql,
                 rendered.parameters,
                 operationType = KOperationType.UPSERT,
-                statement = statement
+                statement = statement,
+                stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
+                listParameterOccurrences = rendered.listParameterOccurrences
             ).toKronosActionTask()
         } else {
             val tasks: List<KronosAtomicActionTask> = []
@@ -278,7 +286,7 @@ class UpsertClause<T : KPojo>(
                     .apply {
                         with(context) {
                             setProjectionItems(
-                                listOf(KTableForSelect.ProjectionItem.SelectItemValue(rawSqlSelectItem("COUNT(1)"))),
+                                listOf(KTableForSelect.ProjectionItem.SelectItemValue(rawSqlSelectItem("1"))),
                                 emptyList()
                             )
                             addFieldConditions(
@@ -293,7 +301,7 @@ class UpsertClause<T : KPojo>(
                     logicDeleteStrategy = null
                 }
 
-                val fallbackTask = if ((selectClause.firstOrNull<Int>(dataSource) ?: 0) > 0) {
+                val fallbackTask = if (selectClause.firstOrNull<Int>(dataSource) != null) {
                     val updateClause = pojo.updateWithType(targetType).cascade(cascadeEnabled)
                         .apply {
                             with(context) {
@@ -325,6 +333,9 @@ class UpsertClause<T : KPojo>(
                     pojo.insert().cascade(cascadeEnabled)
                         .apply {
                             this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
+                            generatedPrimaryKey?.let { (field, value) ->
+                                withPreparedPrimaryKey(field.name, value)
+                            }
                         }
                         .build(dataSource)
                 }
@@ -340,6 +351,18 @@ class UpsertClause<T : KPojo>(
 
     private fun Any?.requiresUpsertParameter(): Boolean =
         this !is SqlExpr && this !is Field && this !is KronosFunctionExpr && this !is KSelectable<*>
+
+    private fun prepareGeneratedPrimaryKey() {
+        val primaryKey = metadata.primaryKey ?: return
+        val currentValue = paramMap[primaryKey.name]
+        val resolvedValue = primaryKey.resolveGeneratedPrimaryKeyValue(currentValue)
+        if (resolvedValue != null) {
+            paramMap[primaryKey.name] = resolvedValue
+        }
+        if (currentValue == null && resolvedValue != null) {
+            generatedPrimaryKey = primaryKey to resolvedValue
+        }
+    }
 
     private fun toSqlUpsertStatement(
         parameterValues: MutableMap<String, Any?>,

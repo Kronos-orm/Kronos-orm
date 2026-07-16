@@ -37,7 +37,7 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.2.4--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.2.5--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -159,7 +159,8 @@ val users = union(currentUsers, archivedUsers)
 
 | Kronos version | Supported Kotlin version | Notes |
 |----------------|--------------------------|-------|
-| `0.2.3` | `2.4.0+` | Recommended version; latest stable patch on the Kotlin 2.4.0 line |
+| `0.2.4` | `2.4.0+` | Recommended version; latest stable patch on the Kotlin 2.4.0 line |
+| `0.2.3` | `2.4.0+` | Adds cursor pagination and derived projection fixes |
 | `0.2.0` | `2.4.0+` | Includes breaking query, wrapper, and type-metadata API changes |
 | `0.1.2` | `2.4.0+` | Fixes schema synchronization edge cases and expands cross-database integration coverage |
 | `0.1.1` | `2.4.0+` | Adds projection docs, IDEA plugin docs, and release automation improvements |
@@ -178,12 +179,12 @@ val users = union(currentUsers, archivedUsers)
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.3"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.4"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.2.3")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.3")
+    implementation("com.kotlinorm:kronos-core:0.2.4")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -195,12 +196,12 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.2.3'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.2.4'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.2.3'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.2.3'
+    implementation 'com.kotlinorm:kronos-core:0.2.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.2.4'
     implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
@@ -216,12 +217,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.2.3</version>
+            <version>0.2.4</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.2.3</version>
+            <version>0.2.4</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -245,7 +246,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.2.3</version>
+                        <version>0.2.4</version>
                     </dependency>
                 </dependencies>
             </plugin>

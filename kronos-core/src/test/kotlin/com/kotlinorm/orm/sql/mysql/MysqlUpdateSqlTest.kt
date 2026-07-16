@@ -16,7 +16,6 @@ import com.kotlinorm.beans.parser.NoneDataSourceWrapper.transact
 import com.kotlinorm.testfixtures.entities.Movie
 import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
-import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.Extensions.mapperTo
@@ -364,7 +363,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
         }.build()
 
         assertEquals(
-            "UPDATE `movie` SET `id` = :idNew, `name` = :nameNew, `year` = :yearNew, `director` = :directorNew, `actor` = :actorNew, `type` = :typeNew, `country` = :countryNew, `language` = :languageNew, `description` = :descriptionNew, `poster` = :posterNew, `video` = :videoNew, `summary` = :summaryNew, `tags` = :tagsNew, `score` = :scoreNew, `vote` = :voteNew, `favorite` = :favoriteNew, `update_time` = :updateTimeNew WHERE xxxxxxx AND `movie`.`id` = :id AND `movie`.`name` LIKE :name AND `movie`.`score` BETWEEN 1 AND 2 AND `movie`.`tags` = :tags AND `movie`.`description` LIKE :description AND (`movie`.`year` IN (:yearList) OR `movie`.`vote` < :voteMax OR `movie`.`favorite` = :favorite) AND `movie`.`director` = :director AND `movie`.`actor` = :actor AND (`movie`.`country` NOT IN (:countryList) OR `movie`.`language` = :language OR (`movie`.`poster` IS NOT NULL AND `movie`.`video` IS NOT NULL AND `movie`.`summary` NOT LIKE :summary)) AND `deleted` = 0",
+            "UPDATE `movie` SET `id` = :idNew, `name` = :nameNew, `year` = :yearNew, `director` = :directorNew, `actor` = :actorNew, `type` = :typeNew, `country` = :countryNew, `language` = :languageNew, `description` = :descriptionNew, `poster` = :posterNew, `video` = :videoNew, `summary` = :summaryNew, `tags` = :tagsNew, `score` = :scoreNew, `vote` = :voteNew, `favorite` = :favoriteNew, `update_time` = :updateTimeNew WHERE xxxxxxx AND `movie`.`id` = :id AND `movie`.`name` LIKE :name ESCAPE '\\\\' AND `movie`.`score` BETWEEN 1 AND 2 AND `movie`.`tags` = :tags AND `movie`.`description` LIKE :description ESCAPE '\\\\' AND (`movie`.`year` IN (:yearList) OR `movie`.`vote` < :voteMax OR `movie`.`favorite` = :favorite) AND `movie`.`director` = :director AND `movie`.`actor` = :actor AND (`movie`.`country` NOT IN (:countryList) OR `movie`.`language` = :language OR (`movie`.`poster` IS NOT NULL AND `movie`.`video` IS NOT NULL AND `movie`.`summary` NOT LIKE :summary)) AND `deleted` = 0",
             sql
         )
         val expectedMap = mapOf(
@@ -430,7 +429,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
     //Any类型的notIn方法
     @Test
     fun testUpdateWhereIn() {
-        val (sql, paramMap) = testUser.update { [it.id, it.username] }
+        val (sql, paramMap, tasks) = testUser.update { [it.id, it.username] }
             .where { it.id in [1, 2, 3] }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` IN (:idList) AND `deleted` = 0",
@@ -444,6 +443,11 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
+        assertEquals(
+            "UPDATE `tb_user` SET `id` = ?, `username` = ?, `update_time` = ? WHERE `tb_user`.`id` IN (?, ?, ?) AND `deleted` = 0",
+            tasks.single().parsed().jdbcSql
+        )
+        assertEquals([1, "test", paramMap["updateTimeNew"], 1, 2, 3], tasks.single().parsed().jdbcParamList.toList())
     }
 
     @Test
@@ -508,7 +512,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
             .where { it.id startsWith "1" }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` LIKE :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` LIKE :id ESCAPE '\\\\' AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -527,7 +531,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
             .where { it.id endsWith "1" }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` LIKE :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` LIKE :id ESCAPE '\\\\' AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -546,7 +550,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
             .where { it.username.contains("test") }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username ESCAPE '\\\\' AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -604,7 +608,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
         val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.startsWith }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username ESCAPE '\\\\' AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -622,7 +626,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
         val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.endsWith }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username ESCAPE '\\\\' AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -738,7 +742,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
     fun testUpdateWhereNull() {
         val (sql, paramMap) = testUser.update()
             .set { it.id = 1 }
-            .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
+            .where { it.gender.eq.takeIf(testUser.gender != null) }
             .build()
         assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0", sql)
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
@@ -762,7 +766,7 @@ class MysqlUpdateSqlTest : MysqlTestBase() {
     fun testUpdateWhereNoNull() {
         val (sql, paramMap) = testUser1.update()
             .set { it.id = 1 }
-            .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
+            .where { it.gender.eq.takeIf(false) }
             .build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0",

@@ -31,3 +31,13 @@ fun invalidFunctionProjection() {
     ProjectionDiagUser()
         .select { [it.id, <!KRONOS_SELECT_ITEM_REQUIRES_ALIAS!>f.length(it.username)<!>] }
 }
+
+fun invalidFunctionProjectionWithSourceMinusList() {
+    ProjectionDiagUser()
+        .select { [it - listOf(it.id), <!KRONOS_SELECT_ITEM_REQUIRES_ALIAS!>f.length(it.username)<!>] }
+}
+
+fun invalidFunctionInsideSourceMinusList() {
+    ProjectionDiagUser()
+        .select { <!KRONOS_SELECT_ITEM_REQUIRES_ALIAS!>it - listOf(f.length(it.username))<!> }
+}

@@ -13,7 +13,8 @@ import com.kotlinorm.syntax.validate.SqlValidationSeverity
 data class RenderedSql(
     val sql: String,
     val parameters: Map<String, Any?> = emptyMap(),
-    val parameterNames: List<String> = parameters.keys.toList()
+    val parameterNames: List<String> = parameters.keys.toList(),
+    val listParameterOccurrences: Set<Int> = emptySet()
 ) {
     val orderedParameters: List<Any?>
         get() = parameterNames.map { parameters[it] }
@@ -40,7 +41,12 @@ class UnboundSqlParameterException(
     val parameterNames: List<String>
 ) : IllegalArgumentException("Unbound SQL parameter(s): ${parameterNames.joinToString(", ")}")
 
-internal fun renderedSql(sql: String, context: SqlRenderContext, astParameterNames: List<String>? = null): RenderedSql {
+internal fun renderedSql(
+    sql: String,
+    context: SqlRenderContext,
+    astParameterNames: List<String>? = null,
+    listParameterOccurrences: Set<Int> = emptySet()
+): RenderedSql {
     val names = mergeParameterNames(
         astParameterNames = astParameterNames,
         renderedParameterNames = SqlRenderedParameterScanner.collectNamedParameters(sql)
@@ -50,7 +56,12 @@ internal fun renderedSql(sql: String, context: SqlRenderContext, astParameterNam
         throw UnboundSqlParameterException(missing)
     }
     val parameters = names.distinct().associateWith { context.parameterValues[it] }
-    return RenderedSql(sql = sql, parameters = parameters, parameterNames = names)
+    return RenderedSql(
+        sql = sql,
+        parameters = parameters,
+        parameterNames = names,
+        listParameterOccurrences = listParameterOccurrences
+    )
 }
 
 private fun mergeParameterNames(astParameterNames: List<String>?, renderedParameterNames: List<String>): List<String> {

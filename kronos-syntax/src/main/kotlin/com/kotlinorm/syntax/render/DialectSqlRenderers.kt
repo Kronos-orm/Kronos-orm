@@ -13,6 +13,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlTimeType
 import com.kotlinorm.syntax.expr.SqlTimeZoneMode
 import com.kotlinorm.syntax.expr.SqlType
+import com.kotlinorm.syntax.inspect.SqlParameterCollector
 import com.kotlinorm.syntax.limit.SqlFetchMode
 import com.kotlinorm.syntax.limit.SqlFetchUnit
 import com.kotlinorm.syntax.limit.SqlLimit
@@ -228,14 +229,14 @@ open class PostgresqlSqlRenderer : StandardSqlRenderer(SqlDialect.PostgreSql) {
         } else {
             val columns = if (target.columns.isNotEmpty()) target.columns else statement.primaryKeys
             append(columns.joinToString(", ", "(", ")") { renderIdentifier(it) })
-            target.where?.let { append(" WHERE ${renderExpr(it)}") }
+            target.where?.let { append(" WHERE ${renderPredicate(it)}") }
         }
         when (val action = statement.action) {
             SqlUpsertAction.DoNothing -> append(" DO NOTHING")
             is SqlUpsertAction.Update -> {
                 append(" DO UPDATE SET ")
                 append(action.setPairs.joinToString(", ") { "${renderAssignmentTarget(it.target)} = ${renderExpr(it.value)}" })
-                action.where?.let { append(" WHERE ${renderExpr(it)}") }
+                action.where?.let { append(" WHERE ${renderPredicate(it)}") }
             }
         }
         statement.returning?.let { append(" ${renderReturning(it)}") }
@@ -359,10 +360,10 @@ open class SqliteSqlRenderer : StandardSqlRenderer(SqlDialect.SQLite) {
                 val target = statement.conflictTarget
                 val columns = if (target.columns.isNotEmpty()) target.columns else statement.primaryKeys
                 append(columns.joinToString(", ", " ON CONFLICT (", ")") { renderIdentifier(it) })
-                target.where?.let { append(" WHERE ${renderExpr(it)}") }
+                target.where?.let { append(" WHERE ${renderPredicate(it)}") }
                 append(" DO UPDATE SET ")
                 append(action.setPairs.joinToString(", ") { "${renderAssignmentTarget(it.target)} = ${renderExpr(it.value)}" })
-                action.where?.let { append(" WHERE ${renderExpr(it)}") }
+                action.where?.let { append(" WHERE ${renderPredicate(it)}") }
             }
         }
         statement.returning?.let { append(" ${renderReturning(it)}") }
@@ -401,6 +402,7 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
     }
 
     override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+        is SqlDdlStatement.CreateTableAsSelect -> renderOracleCreateTableAsSelect(statement)
         is SqlDdlStatement.AlterTable.AddColumn -> {
             "ALTER TABLE ${renderIdentifier(statement.tableName)} ADD ${renderColumnDefinition(statement.column)}"
         }
@@ -411,6 +413,27 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
             super.renderDdl(SqlDdlStatement.CommentOnTable(statement.tableName, statement.comment))
         }
         else -> super.renderDdl(statement)
+    }
+
+    private fun renderOracleCreateTableAsSelect(statement: SqlDdlStatement.CreateTableAsSelect): String {
+        val createSql = "CREATE TABLE ${renderIdentifier(statement.tableName)} AS ${renderQuery(statement.query)}"
+        val parameterNames = SqlParameterCollector.collectNamedParameters(statement.query)
+        if (!statement.ifNotExists && parameterNames.isEmpty()) return createSql
+
+        val executeImmediate = buildString {
+            append("EXECUTE IMMEDIATE '")
+            append(createSql.replace("'", "''"))
+            append("'")
+            if (parameterNames.isNotEmpty()) {
+                append(parameterNames.joinToString(", ", " USING ") { name -> ":$name" })
+            }
+            append(";")
+        }
+        return if (statement.ifNotExists) {
+            "BEGIN $executeImmediate EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF; END;"
+        } else {
+            "BEGIN $executeImmediate END;"
+        }
     }
 
     override fun renderExpr(expr: SqlExpr): String = when (expr) {
@@ -449,6 +472,9 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
         }
         else -> super.renderExpr(expr)
     }
+
+    override fun renderPredicateBooleanLiteral(value: Boolean): String =
+        if (value) "1 = 1" else "1 = 0"
 
     override fun renderBinary(expr: SqlExpr.Binary): String = when (expr.operator) {
         SqlBinaryOperator.Mod -> "MOD(${renderExpr(expr.left)}, ${renderExpr(expr.right)})"
@@ -532,13 +558,13 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
         append(" TOP (${renderExpr(limit)}) ")
         append(if (query.select.isEmpty()) "*" else query.select.joinToString(", ") { renderSelectItem(it) })
         if (query.from.isNotEmpty()) append(query.from.joinToString(", ", " FROM ") { renderTable(it) })
-        query.where?.let { append(" WHERE ${renderExpr(it)}") }
+        query.where?.let { append(" WHERE ${renderPredicate(it)}") }
         query.groupBy?.let { append(" ${renderGroup(it)}") }
-        query.having?.let { append(" HAVING ${renderExpr(it)}") }
+        query.having?.let { append(" HAVING ${renderPredicate(it)}") }
         if (query.window.isNotEmpty()) {
             append(query.window.joinToString(", ", " WINDOW ") { renderWindowItem(it) })
         }
-        query.qualify?.let { append(" QUALIFY ${renderExpr(it)}") }
+        query.qualify?.let { append(" QUALIFY ${renderPredicate(it)}") }
         if (query.orderBy.isNotEmpty()) {
             append(query.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
         }
@@ -546,6 +572,7 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
 
     override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
         is SqlDdlStatement.CreateTable -> renderSqlServerCreateTable(statement)
+        is SqlDdlStatement.CreateTableAsSelect -> renderSqlServerCreateTableAsSelect(statement)
         is SqlDdlStatement.AlterTable.AddColumn -> {
             "ALTER TABLE ${renderIdentifier(statement.tableName)} ADD ${renderColumnDefinition(statement.column)}"
         }
@@ -598,6 +625,40 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
         return "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'${quoteIdent(schemaName)}.${quoteIdent(tableName)}') AND type in (N'U')) BEGIN $createSql; END"
     }
 
+    private fun renderSqlServerCreateTableAsSelect(statement: SqlDdlStatement.CreateTableAsSelect): String {
+        val selectInto = when (val query = statement.query) {
+            is SqlQuery.Select -> renderSqlServerSelectInto(query, statement.tableName)
+            else -> "SELECT * INTO ${renderIdentifier(statement.tableName)} FROM (${renderQuery(query)}) AS ${quoteIdent("__kronos_ctas_source")}"
+        }
+        if (!statement.ifNotExists) return selectInto
+        val schemaName = statement.tableName.parts.dropLast(1).lastOrNull() ?: "dbo"
+        val tableName = statement.tableName.last
+        return "IF OBJECT_ID(N'${quoteIdent(schemaName)}.${quoteIdent(tableName)}', N'U') IS NULL BEGIN $selectInto; END"
+    }
+
+    private fun renderSqlServerSelectInto(query: SqlQuery.Select, tableName: SqlIdentifier): String = buildString {
+        val limit = query.limit
+        val fetch = limit?.fetch
+        append("SELECT")
+        query.quantifier?.let { append(" ${renderQuantifier(it)}") }
+        if (limit?.offset == null && fetch != null) append(" TOP (${renderExpr(fetch.limit)})")
+        append(" ")
+        append(if (query.select.isEmpty()) "*" else query.select.joinToString(", ") { renderSelectItem(it) })
+        append(" INTO ${renderIdentifier(tableName)}")
+        if (query.from.isNotEmpty()) append(query.from.joinToString(", ", " FROM ") { renderTable(it) })
+        query.where?.let { append(" WHERE ${renderPredicate(it)}") }
+        query.groupBy?.let { append(" ${renderGroup(it)}") }
+        query.having?.let { append(" HAVING ${renderPredicate(it)}") }
+        if (query.window.isNotEmpty()) {
+            append(query.window.joinToString(", ", " WINDOW ") { renderWindowItem(it) })
+        }
+        query.qualify?.let { append(" QUALIFY ${renderPredicate(it)}") }
+        if (query.orderBy.isNotEmpty()) {
+            append(query.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
+        }
+        if (limit?.offset != null) append(" ${renderLimit(limit)}")
+    }
+
     private fun commentOperation(comment: String?): SqlServerExtendedPropertyOperation =
         if (comment == null) SqlServerExtendedPropertyOperation.Drop else SqlServerExtendedPropertyOperation.Add
 
@@ -643,6 +704,9 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
         }
         else -> super.renderExpr(expr)
     }
+
+    override fun renderPredicateBooleanLiteral(value: Boolean): String =
+        if (value) "1 = 1" else "1 = 0"
 
     override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
         "CEIL" -> renderRenamedFunction("CEILING", expr.args)

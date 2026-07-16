@@ -4,6 +4,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -16,6 +17,7 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.union
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.upsert.upsert
+import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.testfixtures.entities.DialectUser
 import com.kotlinorm.testfixtures.entities.UserRelation
 import com.kotlinorm.testutils.ExpectedTask
@@ -23,6 +25,7 @@ import com.kotlinorm.testutils.assertTaskEquals
 import com.kotlinorm.testutils.coreSqlDialects
 import com.kotlinorm.testutils.initializeCoreSqlTestDefaults
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class CoreOrmDialectSqlTest {
 
@@ -63,6 +66,60 @@ class CoreOrmDialectSqlTest {
 
             assertTaskEquals(expected.getValue(dialect.dbType), task, dialect.label)
         }
+    }
+
+    @Test
+    fun `select limit zero renders explicit empty limit for every supported dialect`() {
+        initializeCoreSqlTestDefaults()
+
+        val expected = mapOf(
+            DBType.Mysql to ExpectedTask(
+                "SELECT `id` FROM `tb_user` WHERE `deleted` = 0 LIMIT 0"
+            ),
+            DBType.Postgres to ExpectedTask(
+                """SELECT "id" FROM "tb_user" WHERE "deleted" = FALSE LIMIT 0"""
+            ),
+            DBType.SQLite to ExpectedTask(
+                """SELECT "id" FROM "tb_user" WHERE "deleted" = 0 LIMIT 0"""
+            ),
+            DBType.Mssql to ExpectedTask(
+                "SELECT TOP (0) [id] FROM [tb_user] WHERE [deleted] = 0"
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "ID" FROM "TB_USER" WHERE "DELETED" = 0 FETCH NEXT 0 ROWS ONLY"""
+            )
+        )
+
+        coreSqlDialects.forEach { dialect ->
+            val task = DialectUser()
+                .select { it.id }
+                .limit(0)
+                .build(dialect.wrapper)
+                .atomicTask
+
+            assertTaskEquals(expected.getValue(dialect.dbType), task, dialect.label)
+        }
+    }
+
+    @Test
+    fun `sql server page without orderBy uses primary key order`() {
+        initializeCoreSqlTestDefaults()
+
+        val task = DialectUser()
+            .select { [it.id, it.username] }
+            .withTotal()
+            .page(3, 5)
+            .build(CapturingDialectWrapper(DBType.Mssql))
+            .second
+            .atomicTask
+
+        assertTaskEquals(
+            ExpectedTask(
+                "SELECT [id], [username] FROM [tb_user] WHERE [deleted] = 0 ORDER BY [id] ASC OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY"
+            ),
+            task,
+            "mssql"
+        )
     }
 
     @Test
@@ -253,6 +310,112 @@ class CoreOrmDialectSqlTest {
     }
 
     @Test
+    fun `predicate boolean constants render dialect safe sql for sql server and oracle`() {
+        initializeCoreSqlTestDefaults()
+
+        val expectedFalse = mapOf(
+            DBType.Mssql to ExpectedTask(
+                "SELECT [id] FROM [tb_user] WHERE 1 = 0 AND [deleted] = 0",
+                emptyMap()
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "ID" FROM "TB_USER" WHERE 1 = 0 AND "DELETED" = 0""",
+                emptyMap()
+            )
+        )
+        val expectedTrue = mapOf(
+            DBType.Mssql to ExpectedTask(
+                "SELECT [id] FROM [tb_user] WHERE 1 = 1 AND [deleted] = 0",
+                emptyMap()
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "ID" FROM "TB_USER" WHERE 1 = 1 AND "DELETED" = 0""",
+                emptyMap()
+            )
+        )
+        val expectedEmptyIn = mapOf(
+            DBType.Mssql to ExpectedTask(
+                "SELECT [id] FROM [tb_user] WHERE 1 = 0 AND [deleted] = 0",
+                emptyMap()
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "ID" FROM "TB_USER" WHERE 1 = 0 AND "DELETED" = 0""",
+                emptyMap()
+            )
+        )
+        val expectedEmptyNotIn = mapOf(
+            DBType.Mssql to ExpectedTask(
+                "SELECT [id] FROM [tb_user] WHERE 1 = 1 AND [deleted] = 0",
+                emptyMap()
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "ID" FROM "TB_USER" WHERE 1 = 1 AND "DELETED" = 0""",
+                emptyMap()
+            )
+        )
+        val expectedUpdateFalse = mapOf(
+            DBType.Mssql to ExpectedTask(
+                "UPDATE [tb_user] SET [username] = :usernameNew WHERE 1 = 0 AND [deleted] = 0",
+                mapOf("usernameNew" to "trinity")
+            ),
+            DBType.Oracle to ExpectedTask(
+                """UPDATE "TB_USER" SET "USERNAME" = :usernameNew WHERE 1 = 0 AND "DELETED" = 0""",
+                mapOf("usernameNew" to "trinity")
+            )
+        )
+        val expectedDeleteTrue = mapOf(
+            DBType.Mssql to ExpectedTask("DELETE FROM [tb_user] WHERE 1 = 1", emptyMap()),
+            DBType.Oracle to ExpectedTask("""DELETE FROM "TB_USER" WHERE 1 = 1""", emptyMap())
+        )
+
+        coreSqlDialects
+            .filter { it.dbType == DBType.Mssql || it.dbType == DBType.Oracle }
+            .forEach { dialect ->
+                val falseTask = DialectUser()
+                    .select { it.id }
+                    .where { false.asSql() }
+                    .build(dialect.wrapper)
+                    .atomicTask
+                val trueTask = DialectUser()
+                    .select { it.id }
+                    .where { true.asSql() }
+                    .build(dialect.wrapper)
+                    .atomicTask
+                val emptyInTask = DialectUser()
+                    .select { it.id }
+                    .where { it.id in emptyList<Int>() }
+                    .build(dialect.wrapper)
+                    .atomicTask
+                val emptyNotInTask = DialectUser()
+                    .select { it.id }
+                    .where { it.id !in emptyList<Int>() }
+                    .build(dialect.wrapper)
+                    .atomicTask
+                val updateFalseTask = DialectUser(username = "neo")
+                    .update()
+                    .set { it.username = "trinity" }
+                    .where { false.asSql() }
+                    .build(dialect.wrapper)
+                    .atomicTasks
+                    .single()
+                val deleteTrueTask = DialectUser()
+                    .delete()
+                    .logic(false)
+                    .where { true.asSql() }
+                    .build(dialect.wrapper)
+                    .atomicTasks
+                    .single()
+
+                assertTaskEquals(expectedFalse.getValue(dialect.dbType), falseTask, "${dialect.label} false.asSql")
+                assertTaskEquals(expectedTrue.getValue(dialect.dbType), trueTask, "${dialect.label} true.asSql")
+                assertTaskEquals(expectedEmptyIn.getValue(dialect.dbType), emptyInTask, "${dialect.label} empty IN")
+                assertTaskEquals(expectedEmptyNotIn.getValue(dialect.dbType), emptyNotInTask, "${dialect.label} empty NOT IN")
+                assertTaskEquals(expectedUpdateFalse.getValue(dialect.dbType), updateFalseTask, "${dialect.label} update false.asSql")
+                assertTaskEquals(expectedDeleteTrue.getValue(dialect.dbType), deleteTrueTask, "${dialect.label} delete true.asSql")
+            }
+    }
+
+    @Test
     fun `on conflict upsert renders complete sql for every supported dialect`() {
         initializeCoreSqlTestDefaults()
 
@@ -334,28 +497,64 @@ class CoreOrmDialectSqlTest {
     }
 
     @Test
+    fun `join limit zero renders explicit empty limit for every supported dialect`() {
+        initializeCoreSqlTestDefaults()
+
+        val expected = mapOf(
+            DBType.Mysql to ExpectedTask(
+                "SELECT `tb_user`.`id` AS `id` FROM `tb_user` LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` WHERE `tb_user`.`deleted` = 0 LIMIT 0"
+            ),
+            DBType.Postgres to ExpectedTask(
+                """SELECT "tb_user"."id" AS "id" FROM "tb_user" LEFT JOIN "user_relation" ON "tb_user"."id" = "user_relation"."id2" WHERE "tb_user"."deleted" = FALSE LIMIT 0"""
+            ),
+            DBType.SQLite to ExpectedTask(
+                """SELECT "tb_user"."id" AS "id" FROM "tb_user" LEFT JOIN "user_relation" ON "tb_user"."id" = "user_relation"."id2" WHERE "tb_user"."deleted" = 0 LIMIT 0"""
+            ),
+            DBType.Mssql to ExpectedTask(
+                "SELECT TOP (0) [tb_user].[id] AS [id] FROM [tb_user] LEFT JOIN [user_relation] ON [tb_user].[id] = [user_relation].[id2] WHERE [tb_user].[deleted] = 0"
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "TB_USER"."ID" AS "ID" FROM "TB_USER" LEFT JOIN "USER_RELATION" ON "TB_USER"."ID" = "USER_RELATION"."ID2" WHERE "TB_USER"."DELETED" = 0 FETCH NEXT 0 ROWS ONLY"""
+            )
+        )
+
+        coreSqlDialects.forEach { dialect ->
+            val task = DialectUser()
+                .join(UserRelation()) { user, relation ->
+                    leftJoin(relation) { user.id == relation.id2 }
+                    select { user.id }
+                    limit(0)
+                }
+                .build(dialect.wrapper)
+                .atomicTask
+
+            assertTaskEquals(expected.getValue(dialect.dbType), task, dialect.label)
+        }
+    }
+
+    @Test
     fun `union with limit offset renders complete sql for every supported dialect`() {
         initializeCoreSqlTestDefaults()
 
         val expected = mapOf(
             DBType.Mysql to ExpectedTask(
-                "(SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) UNION (SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id@1 AND `deleted` = 0) LIMIT 5 OFFSET 2",
+                "(SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) UNION (SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id@1 AND `deleted` = 0) ORDER BY `id` ASC LIMIT 5 OFFSET 2",
                 mapOf("id" to 1, "id@1" to 2)
             ),
             DBType.Postgres to ExpectedTask(
-                """(SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = FALSE) UNION (SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = FALSE) LIMIT 5 OFFSET 2""",
+                """(SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = FALSE) UNION (SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = FALSE) ORDER BY "id" ASC LIMIT 5 OFFSET 2""",
                 mapOf("id" to 1, "id@1" to 2)
             ),
             DBType.SQLite to ExpectedTask(
-                """SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0 UNION SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = 0 LIMIT 5 OFFSET 2""",
+                """SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0 UNION SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = 0 ORDER BY "id" ASC LIMIT 5 OFFSET 2""",
                 mapOf("id" to 1, "id@1" to 2)
             ),
             DBType.Mssql to ExpectedTask(
-                "(SELECT [id] FROM [tb_user] WHERE [tb_user].[id] = :id AND [deleted] = 0) UNION (SELECT [id] FROM [tb_user] WHERE [tb_user].[id] = :id@1 AND [deleted] = 0) OFFSET 2 ROWS FETCH NEXT 5 ROWS ONLY",
+                "(SELECT [id] FROM [tb_user] WHERE [tb_user].[id] = :id AND [deleted] = 0) UNION (SELECT [id] FROM [tb_user] WHERE [tb_user].[id] = :id@1 AND [deleted] = 0) ORDER BY [id] ASC OFFSET 2 ROWS FETCH NEXT 5 ROWS ONLY",
                 mapOf("id" to 1, "id@1" to 2)
             ),
             DBType.Oracle to ExpectedTask(
-                """(SELECT "ID" FROM "TB_USER" WHERE "TB_USER"."ID" = :id AND "DELETED" = 0) UNION (SELECT "ID" FROM "TB_USER" WHERE "TB_USER"."ID" = :id@1 AND "DELETED" = 0) OFFSET 2 ROWS FETCH NEXT 5 ROWS ONLY""",
+                """(SELECT "ID" FROM "TB_USER" WHERE "TB_USER"."ID" = :id AND "DELETED" = 0) UNION (SELECT "ID" FROM "TB_USER" WHERE "TB_USER"."ID" = :id@1 AND "DELETED" = 0) ORDER BY "ID" ASC OFFSET 2 ROWS FETCH NEXT 5 ROWS ONLY""",
                 mapOf("id" to 1, "id@1" to 2)
             )
         )
@@ -365,11 +564,49 @@ class CoreOrmDialectSqlTest {
                 DialectUser().select { it.id }.where { it.id == 1 },
                 DialectUser().select { it.id }.where { it.id == 2 }
             )
+                .orderBy("id" to SqlOrdering.Asc)
                 .limit(5, 2)
                 .build(dialect.wrapper)
                 .atomicTask
 
             assertTaskEquals(expected.getValue(dialect.dbType), task, dialect.label)
+        }
+    }
+
+    @Test
+    fun `union limit zero renders explicit empty limit when ordered`() {
+        initializeCoreSqlTestDefaults()
+
+        val task = union(
+            DialectUser().select { it.id }.where { it.id == 1 },
+            DialectUser().select { it.id }.where { it.id == 2 }
+        )
+            .orderBy("id" to SqlOrdering.Asc)
+            .limit(0)
+            .build(CapturingDialectWrapper(DBType.Mssql))
+            .atomicTask
+
+        assertTaskEquals(
+            ExpectedTask(
+                "(SELECT [id] FROM [tb_user] WHERE [tb_user].[id] = :id AND [deleted] = 0) UNION (SELECT [id] FROM [tb_user] WHERE [tb_user].[id] = :id@1 AND [deleted] = 0) ORDER BY [id] ASC OFFSET 0 ROWS FETCH NEXT 0 ROWS ONLY",
+                mapOf("id" to 1, "id@1" to 2)
+            ),
+            task,
+            "mssql"
+        )
+    }
+
+    @Test
+    fun `sql server union limit without orderBy fails before rendering invalid offset fetch`() {
+        initializeCoreSqlTestDefaults()
+
+        assertFailsWith<InvalidDataAccessApiUsageException> {
+            union(
+                DialectUser().select { it.id },
+                DialectUser().select { it.id }
+            )
+                .limit(0)
+                .build(CapturingDialectWrapper(DBType.Mssql))
         }
     }
 

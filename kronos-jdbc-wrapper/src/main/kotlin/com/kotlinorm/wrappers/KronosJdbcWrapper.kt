@@ -106,7 +106,9 @@ class KronosJdbcWrapper @JvmOverloads constructor(
     }
 
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
-        val (jdbcSql, paramLists) = task.parsedArr()
+        val parsedSqls = task.parsedSqlArr()
+        val jdbcSql = parsedSqls.firstOrNull()?.jdbcSql
+        val paramLists = parsedSqls.map { it.jdbcParamList }
         if (paramLists.isEmpty()) return IntArray(0)
         val sql = jdbcSql ?: task.sql
         return withHandle { handle ->
@@ -114,7 +116,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
                 originalSql = task.sql,
                 jdbcSql = sql,
                 params = emptyArray(),
-                parameterNames = emptyList(),
+                parameterNames = parsedSqls.first().parameterNames,
                 operationType = task.operationType,
                 stash = task.stash
             )

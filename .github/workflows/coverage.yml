@@ -255,6 +255,17 @@ jobs:
               });
             }
 
+      - name: Upload coverage XML for diagnostics
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: |
+            kronos-syntax/build/reports/kover/report.xml
+            kronos-codegen/build/reports/kover/report.xml
+            kronos-core/build/reports/kover/report.xml
+            kronos-compiler-plugin/build/reports/kover/report.xml
+
       - name: Enforce coverage comparison gate
         if: always()
         run: |

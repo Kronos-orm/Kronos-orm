@@ -296,14 +296,14 @@ with(Kronos) {
 
 ## 无值策略
 
-单个条件需要局部空值规则时，在条件表达式上使用 `.ifNoValue(...)`。
+单个动态空值条件需要跳过时，在条件表达式上使用 `.takeIf(...)`。
 
 ```kotlin group="No value 1" name="ignore" icon="kotlin"
 val name: String? = null
 
 val users = User()
     .select()
-    .where { (it.name == name).ifNoValue(NoValueStrategyType.Ignore) }
+    .where { (it.name == name).takeIf(name != null) }
     .toList()
 ```
 

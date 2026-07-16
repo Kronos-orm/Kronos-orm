@@ -62,7 +62,7 @@ class PrettySqlRenderer(
         }
         query.where?.let {
             append("\nWHERE\n")
-            append("${renderIndent(1)}${renderExprPretty(it)}")
+            append("${renderIndent(1)}${renderPredicatePretty(it)}")
         }
         query.groupBy?.let {
             append("\n")
@@ -70,7 +70,7 @@ class PrettySqlRenderer(
         }
         query.having?.let {
             append("\nHAVING\n")
-            append("${renderIndent(1)}${renderExprPretty(it)}")
+            append("${renderIndent(1)}${renderPredicatePretty(it)}")
         }
         if (query.window.isNotEmpty()) {
             append("\nWINDOW\n")
@@ -78,7 +78,7 @@ class PrettySqlRenderer(
         }
         query.qualify?.let {
             append("\nQUALIFY\n")
-            append("${renderIndent(1)}${renderExprPretty(it)}")
+            append("${renderIndent(1)}${renderPredicatePretty(it)}")
         }
         if (query.orderBy.isNotEmpty()) {
             append("\nORDER BY\n")
@@ -154,7 +154,7 @@ class PrettySqlRenderer(
         })
         statement.where?.let {
             append("\nWHERE\n")
-            append("${renderIndent(1)}${renderExprPretty(it)}")
+            append("${renderIndent(1)}${renderPredicatePretty(it)}")
         }
         statement.returning?.let {
             append("\n")
@@ -167,7 +167,7 @@ class PrettySqlRenderer(
         append(renderTablePretty(statement.table, 0))
         statement.where?.let {
             append("\nWHERE\n")
-            append("${renderIndent(1)}${renderExprPretty(it)}")
+            append("${renderIndent(1)}${renderPredicatePretty(it)}")
         }
         statement.returning?.let {
             append("\n")
@@ -249,7 +249,7 @@ class PrettySqlRenderer(
     }
 
     private fun renderJoinConditionPretty(condition: SqlJoinCondition): String = when (condition) {
-        is SqlJoinCondition.On -> "ON ${renderExprPretty(condition.condition)}"
+        is SqlJoinCondition.On -> "ON ${renderPredicatePretty(condition.condition)}"
         is SqlJoinCondition.Using -> condition.columnNames.joinToString(", ", "USING (", ")") { quoteIdent(it) }
     }
 
@@ -277,7 +277,7 @@ class PrettySqlRenderer(
                 })
                 action.where?.let {
                     append("\nWHERE\n")
-                    append("${renderIndent(1)}${renderExprPretty(it)}")
+                    append("${renderIndent(1)}${renderPredicatePretty(it)}")
                 }
             }
         }
@@ -335,7 +335,7 @@ class PrettySqlRenderer(
         } else {
             val columns = if (target.columns.isNotEmpty()) target.columns else statement.primaryKeys
             append(columns.joinToString(", ", "(", ")") { renderIdentifier(it) })
-            target.where?.let { append(" WHERE ${renderExprPretty(it)}") }
+            target.where?.let { append(" WHERE ${renderPredicatePretty(it)}") }
         }
         when (val action = statement.action) {
             SqlUpsertAction.DoNothing -> append(" DO NOTHING")
@@ -346,7 +346,7 @@ class PrettySqlRenderer(
                 })
                 action.where?.let {
                     append("\nWHERE\n")
-                    append("${renderIndent(1)}${renderExprPretty(it)}")
+                    append("${renderIndent(1)}${renderPredicatePretty(it)}")
                 }
             }
         }
@@ -391,6 +391,9 @@ class PrettySqlRenderer(
 
     private fun renderExprPretty(expr: SqlExpr): String =
         compactRenderer.renderExpr(expr)
+
+    private fun renderPredicatePretty(expr: SqlExpr): String =
+        compactRenderer.renderPredicate(expr)
 
     private fun renderCompactTable(table: SqlTable): String =
         compactRenderer.renderTable(table)

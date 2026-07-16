@@ -20,7 +20,9 @@ import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.database.SqlManager.renderStatement
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.SqlQueryPlan
@@ -64,7 +66,7 @@ class UnionClause<Selected : KPojo> internal constructor(
     }
 
     fun limit(limit: Int, offset: Int? = null): UnionClause<Selected> {
-        limitClause = if (limit > 0) SqlLimit.limit(limit, offset) else null
+        limitClause = if (limit >= 0) SqlLimit.limit(limit, offset) else null
         return this
     }
 
@@ -122,6 +124,7 @@ class UnionClause<Selected : KPojo> internal constructor(
 
     internal override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan {
         val dataSource = wrapper.orDefault()
+        validateSqlServerLimit(dataSource)
         val parameters = linkedMapOf<String, Any?>()
         val parameterCounter = mutableMapOf<String, Int>()
         val queries = selectables.map { selectable ->
@@ -135,6 +138,14 @@ class UnionClause<Selected : KPojo> internal constructor(
             )
         }.withUnionTail()
         return SqlQueryPlan(query, parameters)
+    }
+
+    private fun validateSqlServerLimit(dataSource: KronosDataSourceWrapper) {
+        if (dataSource.dbType == DBType.Mssql && limitClause != null && orderByItems.isEmpty()) {
+            throw InvalidDataAccessApiUsageException(
+                "SQL Server union limit() requires orderBy() because OFFSET/FETCH cannot be rendered without ORDER BY."
+            )
+        }
     }
 
     private fun SqlQuery.withUnionTail(): SqlQuery =
@@ -155,7 +166,8 @@ class UnionClause<Selected : KPojo> internal constructor(
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
                 targetType = selectedType,
-                resultColumnTypes = resultColumnTypes()
+                resultColumnTypes = resultColumnTypes(),
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
     }

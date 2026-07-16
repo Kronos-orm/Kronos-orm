@@ -60,7 +60,6 @@ object ErrorMessages {
     const val MISSING_RECEIVER_ENDSWITH = "Missing receiver for 'endsWith()' call"
     const val MISSING_RECEIVER_CONTAINS = "Missing receiver for 'contains()' call"
     const val MISSING_RECEIVER_ASSQL = "Missing receiver for 'asSql()' call"
-    const val MISSING_RECEIVER_IFNOVALUE = "Missing receiver for 'ifNoValue()' call"
     const val MISSING_RECEIVER_TAKEIF = "Missing receiver for 'takeIf()' call"
 
     // ========================================================================

@@ -8,6 +8,9 @@
 package com.kotlinorm.syntax.render
 
 import com.kotlinorm.syntax.expr.SqlType
+import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.statement.SqlColumnDefinition
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlIndexDefinition
@@ -122,6 +125,35 @@ class DdlRendererTest {
             "ALTER TABLE [user] DROP DEFAULT FOR [status]",
             SqlDdlStatement.AlterTable.AlterColumnDefault(id("user"), id("status"), null)
                 .toSql(SqlDialect.SqlServer)
+        )
+    }
+
+    @Test
+    fun rendersOracleAndSqlServerCreateTableAsSelect() {
+        val query = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(col("id"))),
+            from = listOf(table("user")),
+            where = SqlExpr.Binary(
+                col("name"),
+                SqlBinaryOperator.Equal,
+                SqlExpr.Parameter(SqlParameter.Named("name"))
+            )
+        )
+        val statement = SqlDdlStatement.CreateTableAsSelect(id("user_copy"), query)
+
+        val oracle = statement.toRenderedSql(
+            SqlRenderContext(SqlDialect.Oracle, parameterValues = mapOf("name" to "Ada"))
+        )
+        assertEquals(
+            "BEGIN EXECUTE IMMEDIATE 'CREATE TABLE \"USER_COPY\" AS SELECT \"ID\" FROM \"USER\" WHERE \"NAME\" = ''Ada'''; " +
+                "EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF; END;",
+            oracle.sql
+        )
+        assertEquals(emptyMap(), oracle.parameters)
+        assertEquals(
+            "IF OBJECT_ID(N'[dbo].[user_copy]', N'U') IS NULL BEGIN SELECT [id] INTO [user_copy] " +
+                "FROM [user] WHERE [name] = :name; END",
+            statement.toSql(SqlDialect.SqlServer)
         )
     }
 }

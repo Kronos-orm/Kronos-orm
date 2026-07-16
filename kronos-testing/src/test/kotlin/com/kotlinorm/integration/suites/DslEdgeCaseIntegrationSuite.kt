@@ -379,7 +379,7 @@ abstract class DslEdgeCaseIntegrationSuite(
     }
 
     private fun recreateAliasMatrixUsers() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
         val table = IntegrationAliasMatrixUser()
         wrapper.table.dropTable(table)

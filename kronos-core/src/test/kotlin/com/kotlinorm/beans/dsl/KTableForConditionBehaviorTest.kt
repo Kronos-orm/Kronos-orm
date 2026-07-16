@@ -83,6 +83,19 @@ class KTableForConditionBehaviorTest {
             linkedMapOf<String, Any?>("username" to TransformerSafeValue("ann", typeOf<String>())),
             table.parameterValues
         )
+        val wildcardLikeTable = KTableForCondition<KPojo>()
+        assertEquals(
+            SqlExpr.Like(
+                SqlExpr.Column(tableName = "u", columnName = "user_name"),
+                SqlExpr.Parameter(SqlParameter.Named("username")),
+                withNot = true
+            ),
+            wildcardLikeTable.likeConditionExpr(username, null, not = true, value = "%_\\")
+        )
+        assertEquals(
+            linkedMapOf<String, Any?>("username" to TransformerSafeValue("%_\\", typeOf<String>())),
+            wildcardLikeTable.parameterValues
+        )
         assertEquals(
             SqlExpr.Binary(idColumn, SqlBinaryOperator.Regexp, SqlExpr.Parameter(SqlParameter.Named("idPattern"))),
             table.regexpConditionExpr(id, null, not = false, value = 123)
@@ -90,13 +103,88 @@ class KTableForConditionBehaviorTest {
         assertEquals(
             SqlExpr.In(
                 idColumn,
-                SqlInRightOperand.Values(listOf(SqlExpr.Parameter(SqlParameter.Named("idList"))))
+                SqlInRightOperand.Values(listOf(SqlExpr.Parameter(SqlParameter.Named("idList"), expandAsList = true)))
             ),
             table.inConditionExpr(id, null, not = false, value = listOf(1, 2, 3))
         )
         assertEquals(
             SqlExpr.Between(idColumn, SqlExpr.NumberLiteral("1"), SqlExpr.NumberLiteral("5")),
             table.betweenConditionExpr(id, null, not = false, value = 1..5)
+        )
+    }
+
+    @Test
+    fun `in collection binding stores original rhs and marks occurrence expandable`() {
+        val idColumn = SqlExpr.Column(tableName = "tb_user", columnName = "id")
+        val list = listOf(1, 2, 3)
+        val listTable = KTableForCondition<KPojo>()
+
+        assertEquals(
+            SqlExpr.In(
+                idColumn,
+                SqlInRightOperand.Values(listOf(SqlExpr.Parameter(SqlParameter.Named("idList"), expandAsList = true)))
+            ),
+            listTable.inConditionExpr(id, null, not = false, value = list)
+        )
+        assertEquals(list, listTable.parameterValues["idList"])
+
+        val array = arrayOf(1, 2)
+        val arrayTable = KTableForCondition<KPojo>()
+        arrayTable.inConditionExpr(id, null, not = false, value = array)
+        assertEquals(true, arrayTable.parameterValues["idList"] === array)
+
+        val intArray = intArrayOf(1, 2)
+        val intArrayTable = KTableForCondition<KPojo>()
+        intArrayTable.inConditionExpr(id, null, not = false, value = intArray)
+        assertEquals(true, intArrayTable.parameterValues["idList"] === intArray)
+    }
+
+    @Test
+    fun `literal string helper expressions escape like wildcards`() {
+        val usernameColumn = SqlExpr.Column(tableName = "u", columnName = "user_name")
+        val escape = SqlExpr.StringLiteral("\\")
+
+        val containsTable = KTableForCondition<KPojo>()
+        assertEquals(
+            SqlExpr.Like(
+                usernameColumn,
+                SqlExpr.Parameter(SqlParameter.Named("username")),
+                escape = escape
+            ),
+            containsTable.containsConditionExpr(username, null, not = false, value = "%_\\")
+        )
+        assertEquals(
+            mapOf<String, Any?>("username" to TransformerSafeValue("%\\%\\_\\\\%", typeOf<String>())),
+            containsTable.parameterValues
+        )
+
+        val startsWithTable = KTableForCondition<KPojo>()
+        assertEquals(
+            SqlExpr.Like(
+                usernameColumn,
+                SqlExpr.Parameter(SqlParameter.Named("username")),
+                escape = escape
+            ),
+            startsWithTable.startsWithConditionExpr(username, null, not = false, value = "literal%_\\")
+        )
+        assertEquals(
+            mapOf<String, Any?>("username" to TransformerSafeValue("literal\\%\\_\\\\%", typeOf<String>())),
+            startsWithTable.parameterValues
+        )
+
+        val endsWithTable = KTableForCondition<KPojo>()
+        assertEquals(
+            SqlExpr.Like(
+                usernameColumn,
+                SqlExpr.Parameter(SqlParameter.Named("username")),
+                escape = escape,
+                withNot = true
+            ),
+            endsWithTable.endsWithConditionExpr(username, null, not = true, value = "%_mid\\")
+        )
+        assertEquals(
+            mapOf<String, Any?>("username" to TransformerSafeValue("%\\%\\_mid\\\\", typeOf<String>())),
+            endsWithTable.parameterValues
         )
     }
 
@@ -164,7 +252,7 @@ class KTableForConditionBehaviorTest {
         assertEquals(
             SqlExpr.In(
                 idColumn,
-                SqlInRightOperand.Values(listOf(SqlExpr.Parameter(SqlParameter.Named("idList")))),
+                SqlInRightOperand.Values(listOf(SqlExpr.Parameter(SqlParameter.Named("idList"), expandAsList = true))),
                 withNot = true
             ),
             KTableForCondition<KPojo>().inConditionExpr(id, null, not = true, value = arrayOf(1, 2))
@@ -275,6 +363,107 @@ class KTableForConditionBehaviorTest {
     }
 
     @Test
+    fun `non-empty primitive arrays bind as expanded in parameters`() {
+        val values = listOf<Any>(
+            booleanArrayOf(true),
+            byteArrayOf(1),
+            shortArrayOf(2),
+            intArrayOf(3),
+            longArrayOf(4L),
+            floatArrayOf(5f),
+            doubleArrayOf(6.0),
+            charArrayOf('7')
+        )
+        val expectedExpr = SqlExpr.In(
+            SqlExpr.Column(tableName = "tb_user", columnName = "id"),
+            SqlInRightOperand.Values(
+                listOf(SqlExpr.Parameter(SqlParameter.Named("idList"), expandAsList = true))
+            )
+        )
+
+        values.forEach { value ->
+            val table = KTableForCondition<KPojo>()
+
+            assertEquals(expectedExpr, table.inConditionExpr(id, null, not = false, value = value))
+            assertEquals(mapOf<String, Any?>("idList" to value), table.parameterValues)
+        }
+    }
+
+    @Test
+    fun `literal like no value strategies return exact outcomes`() {
+        val usernameColumn = SqlExpr.Column(tableName = "u", columnName = "user_name")
+
+        assertEquals(
+            listOf<SqlExpr?>(
+                null,
+                SqlExpr.BooleanLiteral(false),
+                SqlExpr.BooleanLiteral(true),
+                SqlExpr.Binary(usernameColumn, SqlBinaryOperator.Is(withNot = true), SqlExpr.NullLiteral),
+                null,
+                SqlExpr.BooleanLiteral(false),
+                SqlExpr.BooleanLiteral(true)
+            ),
+            listOf(
+                KTableForCondition<KPojo>().startsWithConditionExpr(
+                    username, null, not = false, value = null, noValueStrategyType = NoValueStrategyType.Ignore
+                ),
+                KTableForCondition<KPojo>().endsWithConditionExpr(
+                    username, null, not = false, value = null, noValueStrategyType = NoValueStrategyType.False
+                ),
+                KTableForCondition<KPojo>().containsConditionExpr(
+                    username, null, not = false, value = null, noValueStrategyType = NoValueStrategyType.True
+                ),
+                KTableForCondition<KPojo>().startsWithConditionExpr(
+                    username, null, not = true, value = null, noValueStrategyType = NoValueStrategyType.JudgeNull
+                ),
+                KTableForCondition<KPojo>().containsConditionExpr(
+                    username, null, not = false, value = null, noValueStrategyType = NoValueStrategyType.Auto
+                ),
+                KTableForCondition<KPojo>().apply { operationType = KOperationType.UPDATE }
+                    .startsWithConditionExpr(username, null, not = false, value = null),
+                KTableForCondition<KPojo>().apply { operationType = KOperationType.DELETE }
+                    .endsWithConditionExpr(username, null, not = true, value = null)
+            )
+        )
+    }
+
+    @Test
+    fun `literal like accepts expression field function and subquery right sides`() {
+        val usernameColumn = SqlExpr.Column(tableName = "u", columnName = "user_name")
+        val escape = SqlExpr.StringLiteral("\\")
+        val rawExpr = SqlExpr.StringLiteral("literal")
+        val owner = Field("owner_name", "ownerName", tableName = "tb_order")
+        val ownerColumn = SqlExpr.Column(tableName = "tb_order", columnName = "owner_name")
+        val lowered = KronosFunctionExpr(
+            SqlExpr.Function(SqlIdentifier.of("LOWER"), args = listOf(ownerColumn)),
+            "lower"
+        )
+        val query = ConditionSelectable()
+
+        assertEquals(
+            listOf(
+                SqlExpr.Like(usernameColumn, rawExpr, escape = escape),
+                SqlExpr.Like(usernameColumn, lowered.expr, escape = escape),
+                SqlExpr.Like(usernameColumn, ownerColumn, escape = escape),
+                SqlExpr.Like(usernameColumn, SqlExpr.Subquery(query.query), escape = escape),
+                SqlExpr.Like(usernameColumn, SqlExpr.Subquery(query.query), escape = escape)
+            ),
+            listOf(
+                KTableForCondition<KPojo>().startsWithConditionExpr(username, null, not = false, value = rawExpr),
+                KTableForCondition<KPojo>().endsWithConditionExpr(username, null, not = false, value = lowered),
+                KTableForCondition<KPojo>().containsConditionExpr(username, null, not = false, value = owner),
+                KTableForCondition<KPojo>().startsWithConditionExpr(username, null, not = false, value = query),
+                KTableForCondition<KPojo>().endsWithConditionExpr(
+                    username,
+                    null,
+                    not = false,
+                    value = QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.All)
+                )
+            )
+        )
+    }
+
+    @Test
     fun `raw and logical helpers compose exact expressions`() {
         val table = KTableForCondition<KPojo>()
         val first = SqlExpr.BooleanLiteral(true)
@@ -326,7 +515,6 @@ class KTableForConditionBehaviorTest {
             assertEquals(true, (null as CharSequence?).contains)
             assertEquals(1, comparable.compareTo(2))
             assertEquals(1, (1 as Any?).compareTo("x"))
-            assertEquals(true, (true as Boolean?).ifNoValue(NoValueStrategyType.False))
             assertEquals(true, (true as Boolean?).takeIf(false))
             assertEquals(true, (1 as Comparable<*>?) like "x")
             assertEquals(true, (1 as Comparable<*>?) notLike "x")

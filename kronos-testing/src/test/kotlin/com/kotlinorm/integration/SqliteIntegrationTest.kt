@@ -2,22 +2,27 @@ package com.kotlinorm.integration
 
 import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.suites.CascadeIntegrationSuite
+import com.kotlinorm.integration.suites.ComplexQueryProjectionIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DmlUpsertCornerCaseIntegrationSuite
 import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
+import com.kotlinorm.integration.suites.SafetyCornerCaseIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.StrategyIntegrationSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
+import com.kotlinorm.integration.suites.TypeDialectDdlCornerIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
 import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.sqlite
+import kotlin.test.Test
 
 class SqliteSchemaIntegrationTest : SchemaIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteSchemaSyncRegressionTest : SchemaSyncRegressionSuite(sqlite, StandardIntegrationScenarioProfile)
@@ -25,13 +30,23 @@ class SqliteCrudWhereIntegrationTest : CrudWhereIntegrationSuite(sqlite, Standar
 class SqliteQueryIntegrationTest : QueryIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteComplexQueryProjectionIntegrationTest : ComplexQueryProjectionIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteDmlUpsertCornerCaseIntegrationTest : DmlUpsertCornerCaseIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteUpsertIntegrationTest : UpsertIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteErrorIntegrationTest : ErrorIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteWrapperSqlIntegrationTest : WrapperSqlIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteCascadeIntegrationTest : CascadeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteValueTypeIntegrationTest : ValueTypeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteTypeDialectDdlCornerIntegrationTest :
+    TypeDialectDdlCornerIntegrationSuite(sqlite, StandardIntegrationScenarioProfile) {
+    @Test
+    fun sqliteTextDateAndTimeColumnsShouldMapToLocalDateAndLocalTimeAgainstRealDatabase() {
+        verifySqliteTextDateAndTimeColumnsMapToLocalDateAndLocalTimeAgainstRealDatabase()
+    }
+}
 class SqliteFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteTransactionIntegrationTest : TransactionIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteSafetyCornerCaseIntegrationTest : SafetyCornerCaseIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteStrategyIntegrationTest : StrategyIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)

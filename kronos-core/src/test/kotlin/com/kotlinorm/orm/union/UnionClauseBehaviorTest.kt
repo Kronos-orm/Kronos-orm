@@ -60,11 +60,11 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
-    fun `non positive union limit clears query tail limit`() {
+    fun `zero union limit remains an explicit empty result limit`() {
         val task = baseUnion().limit(10).limit(0).build()
 
         assertEquals(
-            "(SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) UNION (SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id@1 AND `deleted` = 0)",
+            "(SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) UNION (SELECT `id` FROM `tb_user` WHERE `tb_user`.`id` = :id@1 AND `deleted` = 0) LIMIT 0",
             task.atomicTask.sql
         )
         assertEquals(mapOf("id" to 1, "id@1" to 2), task.atomicTask.paramMap)

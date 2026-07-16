@@ -7,6 +7,21 @@
 
 ## 📝 更新日志
 
+### 0.2.4
+
+- 🐛 修复 identity-source select 的生成投影类型，并在 alias、生成投影、window 派生查询与嵌套投影中保留包括 `@Serialize` 在内的源字段元数据 ([#246](https://github.com/Kronos-orm/Kronos-orm/issues/246))。
+- 🐛 修复普通 Kotlin `if` / `when` 条件的编译器 lowering，只生成实际选中分支的 SQL 与参数；`contains`、`startsWith`、`endsWith` 会转义 LIKE 字面量通配符 ([#249](https://github.com/Kronos-orm/Kronos-orm/issues/249))。
+- 🐛 通过运行时 source identity 绑定与参数重命名，修复自连接、同表多次连接、关联子查询和嵌套查询层 ([#252](https://github.com/Kronos-orm/Kronos-orm/issues/252))。
+- 🐛 修复命名参数绑定：只在显式列表位置展开集合，`ByteArray` 及其他数组作为单个 JDBC 参数绑定；为空时间和二进制值增加 JDBC 类型提示 ([#251](https://github.com/Kronos-orm/Kronos-orm/issues/251))。
+- 🐛 游标分页会自动追加主键或唯一键 tie-breaker，为 Map 结果传递并隐藏内部游标字段，避免非唯一排序值上的同值行丢失；同时修复 `limit(0)` ([#248](https://github.com/Kronos-orm/Kronos-orm/issues/248))。
+- 🐛 修复自定义生成主键的 upsert 冲突目标推断，并将聚合存在性检查改为 `SELECT 1`，使 PostgreSQL 行锁可正常使用 ([#247](https://github.com/Kronos-orm/Kronos-orm/issues/247))。
+- 🐛 改进时间类型转换、DDL/默认值渲染、布尔谓词、CREATE TABLE AS SELECT、schema sync、codegen 数据源 setter 与多方言 mutation SQL ([#250](https://github.com/Kronos-orm/Kronos-orm/issues/250))。
+
+#### 升级说明
+
+- 将条件中的 `ifNoValue(...)` 改为普通 Kotlin 控制流：用 `.takeIf(...)` 跳过条件，或用 `if` / `else` 搭配 `true.asSql()` / `false.asSql()` 设置显式 fallback。
+- 当排序本身不唯一时，游标分页现在要求模型存在主键或唯一索引。Map 结果会隐藏自动追加的 tie-breaker 列；类型化投影必须选出构造下一个 cursor token 所需的全部字段。
+
 ### 0.2.3
 
 - ✨ 新增游标分页 `withCursor().cursor(...)`，返回 `(hasNext, nextCursor, rows)`，并与带总数的页码分页保持互斥。

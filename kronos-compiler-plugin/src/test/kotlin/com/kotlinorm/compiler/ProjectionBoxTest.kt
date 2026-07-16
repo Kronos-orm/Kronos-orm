@@ -47,6 +47,12 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun kpojoExpansionGeneratedProjection() = box("kpojoExpansionGeneratedProjection")
 
     /**
+     * Verifies generated and derived projections preserve source serialization metadata.
+     */
+    @Test
+    fun serializedProjectionMetadata() = box("serializedProjectionMetadata")
+
+    /**
      * Verifies single-source select forms keep Source as Selected and Context.
      */
     @Test

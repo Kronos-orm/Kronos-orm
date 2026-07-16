@@ -64,6 +64,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
@@ -409,8 +410,27 @@ fun buildFieldFromPropertyAccess(
             )
         )
     
-    // Build field from property
-    return buildFieldFromProperty(irProperty)
+    // Build field from property and preserve runtime source identity for DSL receivers.
+    return buildFieldFromProperty(
+        irProperty,
+        tableNameExpr = buildSourceScopedTableNameExpr(call.dispatchReceiver!!, irClass)
+    )
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+internal fun buildSourceScopedTableNameExpr(receiver: IrExpression, irClass: IrClass): IrExpression {
+    val declaredTableName = builder.getTableNameExpr(irClass)
+    val stableReceiver = when (receiver) {
+        is IrGetValue -> receiver.symbol.owner as? IrValueParameter
+        is IrTypeOperatorCall -> (receiver.argument as? IrGetValue)?.symbol?.owner as? IrValueParameter
+        else -> null
+    }
+    return builder.irCall(sourceIdentityResolveTableNameSymbol).apply {
+        arguments[0] = builder.irGetObject(sourceIdentityScopeSymbol)
+        arguments[1] = stableReceiver?.let(builder::irGet) ?: builder.irNull()
+        arguments[2] = declaredTableName
+    }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -447,7 +467,11 @@ fun buildFieldFromPropertyRef(
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBuilderWithScope)
-fun buildFieldFromProperty(irProperty: IrProperty, metadataClass: IrClass? = null): IrExpression {
+fun buildFieldFromProperty(
+    irProperty: IrProperty,
+    metadataClass: IrClass? = null,
+    tableNameExpr: IrExpression? = null
+): IrExpression {
     val propertyName = irProperty.name.asString()
 
     // Get property type
@@ -482,7 +506,7 @@ fun buildFieldFromProperty(irProperty: IrProperty, metadataClass: IrClass? = nul
     // Table name
     val parent = irProperty.parent as? IrClass
     val tableNameOwner = metadataClass ?: parent
-    val tableNameExpr = builder.getTableNameExpr(
+    val resolvedTableNameExpr = tableNameExpr ?: builder.getTableNameExpr(
         tableNameOwner ?: error(ErrorMessages.cannotFindClassForProperty(propertyName, null))
     )
 
@@ -536,7 +560,7 @@ fun buildFieldFromProperty(irProperty: IrProperty, metadataClass: IrClass? = nul
         arguments[2] = columnTypeExpr                          // type
         arguments[3] = primaryKeyExpr                          // primaryKey
         arguments[4] = dateFormatExpr                          // dateFormat
-        arguments[5] = tableNameExpr                           // tableName
+        arguments[5] = resolvedTableNameExpr                   // tableName
         arguments[6] = cascadeExpr                             // cascade
         arguments[7] = kTypeExpr                               // kType
         arguments[8] = ignoreExpr                              // ignore

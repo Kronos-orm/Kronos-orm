@@ -16,7 +16,7 @@ abstract class SchemaIntegrationSuite(
 ) : IntegrationSuiteSupport(environment, profile) {
     @Test
     fun schemaLifecycleExecutesAgainstRealDatabase() {
-        assumeDatabaseAvailable()
+        requireDatabaseAvailable()
         configureKronos()
 
         profile.dropTables()

@@ -5,6 +5,7 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import org.apache.commons.dbcp2.BasicDataSource
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -53,10 +54,38 @@ class CodegenConfigTest {
         assertTrue(ds is BasicDataSource)
     }
 
-    // NOTE: testReadConfigWithExtendConfig is skipped because readConfig() has a bug:
-    // after merging extendConfig + config, the "extend" key from the original config
-    // remains in the merged map, causing an infinite while loop (ConfigReader.kt:106-119).
-    // This should be fixed in the source code by removing "extend" from config after merge.
+    @Test
+    fun testReadConfigWithExtendConfig() {
+        val tempDir = createTempDirectory("kronos_extend_config_test").toFile()
+        val extendFile = File(tempDir, "base.toml")
+        val configFile = File(tempDir, "config.toml")
+        try {
+            extendFile.writeText(
+                """
+                inherited = "base"
+                overridden = "base"
+                """.trimIndent()
+            )
+            configFile.writeText(
+                """
+                extend = "${extendFile.invariantSeparatorsPath}"
+                overridden = "child"
+                local = "child"
+                """.trimIndent()
+            )
+
+            assertEquals(
+                mapOf(
+                    "inherited" to "base",
+                    "overridden" to "child",
+                    "local" to "child"
+                ),
+                readConfig(configFile.absolutePath)
+            )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
 
     @Test
     fun testReadConfigWithInvalidFileThrows() {

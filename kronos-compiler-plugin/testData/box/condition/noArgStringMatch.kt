@@ -60,6 +60,7 @@ fun expectLikeCondition(
     fieldName: String,
     value: Any?,
     not: Boolean = false,
+    escape: SqlExpr? = null,
 ): String? {
     val like = actual.expr as? SqlExpr.Like
     val column = like?.expr as? SqlExpr.Column
@@ -67,6 +68,7 @@ fun expectLikeCondition(
         like == null -> "Fail: $label condition was ${actual.expr}"
         column?.columnName != fieldName -> "Fail: $label field was ${column?.columnName}"
         like.withNot != not -> "Fail: $label not was ${like.withNot}"
+        like.escape != escape -> "Fail: $label escape was ${like.escape}"
         noArgStringParameter(actual, like.pattern) != value -> "Fail: $label value was ${noArgStringParameter(actual, like.pattern)}"
         else -> null
     }
@@ -96,33 +98,36 @@ fun box(): String {
         tableNamingStrategy = lineHumpNamingStrategy
     }
 
-    val user = NoArgStringMatchUser(name = "Ada", pattern = "^A.*")
+    val user = NoArgStringMatchUser(name = "A%_\\", pattern = "^A.*")
     val failures = listOfNotNull(
-        expectLikeCondition("like", noArgStringWhere(user) { it.name.like }, "name", TransformerSafeValue("Ada", typeOf<String>())),
+        expectLikeCondition("like", noArgStringWhere(user) { it.name.like }, "name", TransformerSafeValue("A%_\\", typeOf<String>())),
         expectLikeCondition(
             "notLike",
             noArgStringWhere(user) { it.name.notLike },
             "name",
-            TransformerSafeValue("Ada", typeOf<String>()),
+            TransformerSafeValue("A%_\\", typeOf<String>()),
             not = true
         ),
         expectLikeCondition(
             "startsWith",
             noArgStringWhere(user) { it.name.startsWith },
             "name",
-            TransformerSafeValue("Ada%", typeOf<String>())
+            TransformerSafeValue("A\\%\\_\\\\%", typeOf<String>()),
+            escape = SqlExpr.StringLiteral("\\")
         ),
         expectLikeCondition(
             "endsWith",
             noArgStringWhere(user) { it.name.endsWith },
             "name",
-            TransformerSafeValue("%Ada", typeOf<String>())
+            TransformerSafeValue("%A\\%\\_\\\\", typeOf<String>()),
+            escape = SqlExpr.StringLiteral("\\")
         ),
         expectLikeCondition(
             "contains",
             noArgStringWhere(user) { it.name.contains },
             "name",
-            TransformerSafeValue("%Ada%", typeOf<String>())
+            TransformerSafeValue("%A\\%\\_\\\\%", typeOf<String>()),
+            escape = SqlExpr.StringLiteral("\\")
         ),
         expectRegexpCondition(
             "regexp",

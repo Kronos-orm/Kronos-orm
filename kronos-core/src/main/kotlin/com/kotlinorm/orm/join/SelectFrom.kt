@@ -85,21 +85,23 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     fun on(on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
 
-        t1.afterFilter {
-            sourceValues = context.paramMap
-            operationType = KOperationType.SELECT
-            on(t1)
-            parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
-            context.listOfPojo.drop(1).forEach { (kClass, kPojo) ->
-                context.joinables.add(
-                    KJoinable(
-                        kPojo.__tableName,
-                        SqlJoinType.Left,
-                        kClass,
-                        kPojo,
-                        condition = sqlExpr
+        context.withSourceScope {
+            t1.afterFilter {
+                sourceValues = context.paramMap
+                operationType = KOperationType.SELECT
+                on(t1)
+                val condition = context.mergeConditionParameters(sqlExpr, parameterValues)
+                context.listOfPojo.drop(1).forEach { (kClass, kPojo) ->
+                    context.joinables.add(
+                        KJoinable(
+                            kPojo.__tableName,
+                            SqlJoinType.Left,
+                            kClass,
+                            kPojo,
+                            condition = condition
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -168,23 +170,25 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         if (null == on) throw EmptyFieldsException()
         val metadata = another.resolveRuntimeMetadata()
         val tableName = metadata.tableName
-        t1.afterFilter {
-            sourceValues = context.paramMap
-            operationType = KOperationType.SELECT
-            on(t1)
-            parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
-            context.joinables.add(
-                KJoinable(
-                    tableName,
-                    joinType,
-                    metadata.kClass,
-                    another,
-                    condition = sqlExpr,
-                    tableAliasOverrides = context.derivedJoinAliasOverrides[tableName]?.let { alias ->
-                        mapOf(tableName to alias)
-                    }.orEmpty()
+        context.withSourceScope {
+            t1.afterFilter {
+                sourceValues = context.paramMap
+                operationType = KOperationType.SELECT
+                on(t1)
+                val condition = context.mergeConditionParameters(sqlExpr, parameterValues)
+                context.joinables.add(
+                    KJoinable(
+                        tableName,
+                        joinType,
+                        metadata.kClass,
+                        another,
+                        condition = condition,
+                        tableAliasOverrides = context.derivedJoinAliasOverrides[tableName]?.let { alias ->
+                            mapOf(tableName to alias)
+                        }.orEmpty()
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -197,17 +201,19 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     fun select(someFields: ToSelect<T1, Any?>): SelectFrom<T1, Selected, Context> {
         if (null == someFields) return this
 
-        t1.afterSelect {
-            withQualifiedFieldArgs { someFields(t1) }
-            if (fields.isEmpty() && selectItems.isEmpty()) {
-                throw EmptyFieldsException()
-            }
-            context.registerSelectedFields(fields)
-            projectionItems.forEach { projection ->
-                if (projection is KTableForSelect.ProjectionItem.SelectItemValue ||
-                    projection is KTableForSelect.ProjectionItem.ScalarSubqueryValue
-                ) {
-                    context.projectionItems += projection
+        context.withSourceScope {
+            t1.afterSelect {
+                withQualifiedFieldArgs { someFields(t1) }
+                if (fields.isEmpty() && selectItems.isEmpty()) {
+                    throw EmptyFieldsException()
+                }
+                context.registerSelectedFields(fields)
+                projectionItems.forEach { projection ->
+                    if (projection is KTableForSelect.ProjectionItem.SelectItemValue ||
+                        projection is KTableForSelect.ProjectionItem.ScalarSubqueryValue
+                    ) {
+                        context.projectionItems += projection
+                    }
                 }
             }
         }
@@ -227,10 +233,12 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     fun cascade(someFields: ToReference<T1, Any?>) {
         if (someFields == null) throw EmptyFieldsException()
         context.cascadeEnabled = true
-        t1.afterReference {
-            someFields(t1)
-            if (fields.isEmpty()) throw EmptyFieldsException()
-            context.cascadeAllowed = fields.toSet()
+        context.withSourceScope {
+            t1.afterReference {
+                someFields(t1)
+                if (fields.isEmpty()) throw EmptyFieldsException()
+                context.cascadeAllowed = fields.toSet()
+            }
         }
     }
 
@@ -244,9 +252,11 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         if (someFields == null) throw EmptyFieldsException()
 
         context.orderEnabled = true
-        (context.receiverPojo as Context).afterSort {
-            withQualifiedFieldArgs { someFields(context.receiverPojo as Context) }
-            context.orderByItems = sortedItems.toList()
+        context.withSourceScope {
+            (context.receiverPojo as Context).afterSort {
+                withQualifiedFieldArgs { someFields(context.receiverPojo as Context) }
+                context.orderByItems = sortedItems.toList()
+            }
         }
     }
 
@@ -261,13 +271,15 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         context.groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (null == someFields) throw EmptyFieldsException()
-        t1.afterSelect {
-            withQualifiedFieldArgs { someFields(t1) }
-            if (fields.isEmpty()) {
-                throw EmptyFieldsException()
+        context.withSourceScope {
+            t1.afterSelect {
+                withQualifiedFieldArgs { someFields(t1) }
+                if (fields.isEmpty()) {
+                    throw EmptyFieldsException()
+                }
+                // 设置分组字段
+                context.groupByFields = fields.toLinkedSet()
             }
-            // 设置分组字段
-            context.groupByFields = fields.toLinkedSet()
         }
     }
 
@@ -312,15 +324,17 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     fun by(someFields: ToSelect<T1, Any?>) {
         // 检查someFields是否为空，为空则抛出异常
         if (null == someFields) throw EmptyFieldsException()
-        t1.afterSelect {
-            // 执行someFields中定义的查询逻辑
-            someFields(t1)
-            if (fields.isEmpty()) {
-                throw EmptyFieldsException()
+        context.withSourceScope {
+            t1.afterSelect {
+                // 执行someFields中定义的查询逻辑
+                someFields(t1)
+                if (fields.isEmpty()) {
+                    throw EmptyFieldsException()
+                }
+                context.andWhere(context.andAll(fields.map { field ->
+                    field.toSqlParameterEq(field.name, useTableAlias = true)
+                }))
             }
-            context.andWhere(context.andAll(fields.map { field ->
-                field.toSqlParameterEq(field.name, useTableAlias = true)
-            }))
         }
     }
 
@@ -346,12 +360,13 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
                 field.toSqlParameterEq(field.name, useTableAlias = true)
             }))
         } else {
-            t1.afterFilter {
-                sourceValues = context.paramMap
-                operationType = context.operationType
-                withQualifiedFieldArgs { selectCondition(t1) } // 执行用户提供的条件函数
-                parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
-                context.andWhere(sqlExpr)
+            context.withSourceScope {
+                t1.afterFilter {
+                    sourceValues = context.paramMap
+                    operationType = context.operationType
+                    withQualifiedFieldArgs { selectCondition(t1) } // 执行用户提供的条件函数
+                    context.andWhere(context.mergeConditionParameters(sqlExpr, parameterValues))
+                }
             }
         }
     }
@@ -369,12 +384,13 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw EmptyFieldsException()
         context.havingEnabled = true // 标记为HAVING条件
-        t1.afterFilter {
-            sourceValues = context.paramMap // 设置属性参数映射
-            operationType = context.operationType
-            withQualifiedFieldArgs { selectCondition(t1) } // 执行传入的条件函数
-            parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
-            context.andHaving(sqlExpr)
+        context.withSourceScope {
+            t1.afterFilter {
+                sourceValues = context.paramMap // 设置属性参数映射
+                operationType = context.operationType
+                withQualifiedFieldArgs { selectCondition(t1) } // 执行传入的条件函数
+                context.andHaving(context.mergeConditionParameters(sqlExpr, parameterValues))
+            }
         }
     }
 
@@ -453,7 +469,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
                 targetType = selectedType,
-                resultColumnTypes = resultColumnTypes(resultFieldsByLabel)
+                resultColumnTypes = resultColumnTypes(resultFieldsByLabel),
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             ), context.operationType, context.selectedFieldsByAlias, context.cascadeSelectedProps ?: mutableSetOf()
         )
     }
@@ -469,7 +486,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
-                targetType = typeOf<Int>()
+                targetType = typeOf<Int>(),
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
     }

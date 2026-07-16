@@ -59,6 +59,7 @@ fun expectParameterizedLike(
     actual: CapturedStringMatrix,
     value: Any?,
     not: Boolean,
+    escape: SqlExpr? = null,
 ): String? {
     val like = actual.expr as? SqlExpr.Like
     val column = like?.expr as? SqlExpr.Column
@@ -66,6 +67,7 @@ fun expectParameterizedLike(
         like == null -> "Fail: $label condition was ${actual.expr}"
         column?.columnName != "name" -> "Fail: $label field was ${column?.columnName}"
         like.withNot != not -> "Fail: $label not was ${like.withNot}"
+        like.escape != escape -> "Fail: $label escape was ${like.escape}"
         stringMatrixParameter(actual, like.pattern) != value ->
             "Fail: $label value was ${stringMatrixParameter(actual, like.pattern)}"
         else -> null
@@ -112,9 +114,10 @@ fun box(): String {
         ),
         expectParameterizedLike(
             "startsWith",
-            stringMatrixWhere(user) { it.name.startsWith("A") },
-            TransformerSafeValue("A%", typeOf<String>()),
-            not = false
+            stringMatrixWhere(user) { it.name.startsWith("A%_\\") },
+            TransformerSafeValue("A\\%\\_\\\\%", typeOf<String>()),
+            not = false,
+            escape = SqlExpr.StringLiteral("\\")
         ),
         expectParameterizedLike(
             "negatedLike",
@@ -124,15 +127,17 @@ fun box(): String {
         ),
         expectParameterizedLike(
             "endsWith",
-            stringMatrixWhere(user) { it.name.endsWith("a") },
-            TransformerSafeValue("%a", typeOf<String>()),
-            not = false
+            stringMatrixWhere(user) { it.name.endsWith("%_a\\") },
+            TransformerSafeValue("%\\%\\_a\\\\", typeOf<String>()),
+            not = false,
+            escape = SqlExpr.StringLiteral("\\")
         ),
         expectParameterizedLike(
             "contains",
-            stringMatrixWhere(user) { it.name.contains("d") },
-            TransformerSafeValue("%d%", typeOf<String>()),
-            not = false
+            stringMatrixWhere(user) { it.name.contains("%d_\\") },
+            TransformerSafeValue("%\\%d\\_\\\\%", typeOf<String>()),
+            not = false,
+            escape = SqlExpr.StringLiteral("\\")
         ),
         expectParameterizedRegexp(
             "regexp",

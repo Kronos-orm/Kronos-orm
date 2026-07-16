@@ -88,7 +88,7 @@ private fun namedParameterRenamer(renames: Map<String, String>): SqlNodeRewriter
                     if (newName == null) {
                         expr
                     } else {
-                        SqlExpr.Parameter(SqlParameter.Named(newName))
+                        expr.copy(parameter = SqlParameter.Named(newName))
                     }
                 }
                 is SqlExpr.In -> expr.copy(

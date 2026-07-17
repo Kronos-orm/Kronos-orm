@@ -36,6 +36,9 @@ import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.utils.extractNumberInParentheses
 
 object SqliteStatements : DatabaseStatements() {
+    override val defaultIndexType: String = "NORMAL"
+    override val defaultIndexMethod: String = ""
+
     override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
         getColumnType(expected.type, expected.length, expected.scale) ==
             getColumnType(current.type, current.length, current.scale) &&

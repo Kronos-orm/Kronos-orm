@@ -35,6 +35,9 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 
 object PostgresqlStatements : DatabaseStatements() {
+    override val defaultIndexType: String = "NORMAL"
+    override val defaultIndexMethod: String = "BTREE"
+
     override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
         getColumnType(expected.type, expected.length, expected.scale) ==
             getColumnType(current.type, current.length, current.scale) &&

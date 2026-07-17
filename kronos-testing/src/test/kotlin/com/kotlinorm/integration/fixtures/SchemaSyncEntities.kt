@@ -5,10 +5,11 @@ import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.enums.KColumnType.INT
+import com.kotlinorm.annotations.TableIndex
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.enums.KColumnType.BIGINT
 import com.kotlinorm.enums.KColumnType.DATETIME
+import com.kotlinorm.enums.KColumnType.INT
 import com.kotlinorm.enums.KColumnType.VARCHAR
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
@@ -71,4 +72,25 @@ data class SchemaSyncShapeV2(
     @ColumnType(VARCHAR, 40)
     @Default("'active'")
     var status: String? = null,
+) : KPojo
+
+@Table("kt_postgres_index_sync")
+@TableIndex(
+    name = "idx_postgres_index_sync_value",
+    columns = ["value"],
+    type = "NORMAL",
+    method = "BTREE",
+)
+@TableIndex(
+    name = "idx_postgres_index_sync_category",
+    columns = ["category"],
+)
+data class PostgresIndexSyncProbe(
+    @PrimaryKey(custom = true)
+    @ColumnType(VARCHAR, 64)
+    var id: String? = null,
+    @ColumnType(VARCHAR, 80)
+    var value: String? = null,
+    @ColumnType(VARCHAR, 80)
+    var category: String? = null,
 ) : KPojo

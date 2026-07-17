@@ -220,7 +220,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
 
         // 新增、修改、删除字段
         val diffColumns = columnDiffer(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }
-        val diffIndexes = indexDiffer(kronosIndexes, tableIndexes)
+        val diffIndexes = indexDiffer(kronosIndexes, tableIndexes, dbType)
 
         val statements = statementsOf(dataSource.dbType).syncTable(
             DatabaseSyncTable(

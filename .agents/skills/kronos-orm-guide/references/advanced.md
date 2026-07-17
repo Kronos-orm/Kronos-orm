@@ -226,16 +226,18 @@ where { (it.age == nullableAge).takeIf(nullableAge != null) }
 where { (it.status == 0).takeUnless(includeInactive) }
 where { if (nullableAge != null) { it.age == nullableAge } else { true.asSql() } }
 where { if (nullableAge != null) { it.age == nullableAge } else { false.asSql() } }
+data class UserFilter(val id: Int? = null, val name: String? = null)
+val filter = UserFilter(id = 7)
 where {
     when {
-        filter.id != null -> it.id == filter.id.value
-        filter.name != null -> it.name == filter.name.value
+        filter.id != null -> it.id == filter.id
+        filter.name != null -> it.name == filter.name
         else -> it.active == true
     }
 }
 ```
 
-`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值，读取 KPojo 属性时不需要 `.value`。未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较时，使用 `.value` 明确读取 Kotlin 值，例如 `it.id == filter.id.value`。
+`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值。普通 class、data class、object、companion/`@JvmStatic` 和顶层属性在 SQL 比较中都是运行时值，不需要 `.value`。未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较时，使用 `.value` 明确读取 Kotlin 值，例如 `it.id == probe.id.value`。
 
 字面量 `where { it.age == null }` / `where { it.age != null }` 表示 SQL `IS NULL` / `IS NOT NULL`；动态变量为 `null` 时才进入无值策略。
 

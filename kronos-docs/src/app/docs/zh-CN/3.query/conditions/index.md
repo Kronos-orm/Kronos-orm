@@ -577,19 +577,22 @@ WHERE `status` = :status
 也可以使用普通 Kotlin `if` 和 `when` 选择完整的 SQL 条件分支：
 
 ```kotlin group="Dynamic branches" name="kotlin" icon="kotlin"
+data class UserFilter(val id: Int? = null, val name: String? = null)
+
+val filter = UserFilter(id = 7)
 val users = User()
     .select()
     .where {
         when {
-            filter.id != null -> it.id == filter.id.value
-            filter.name != null -> it.name == filter.name.value
+            filter.id != null -> it.id == filter.id
+            filter.name != null -> it.name == filter.name
             else -> it.active == true
         }
     }
     .toList()
 ```
 
-`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流，在这些位置读取 `filter.id` 不需要 `.value`。如果未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较，则需要显式读取 Kotlin 值，例如 `it.id == filter.id.value`。
+`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流。普通 Kotlin 对象的属性在 SQL 比较中也按运行时值处理，因此 `it.id == filter.id` 不需要 `.value`；这包括普通 class、data class、object、companion 或 `@JvmStatic` 属性以及顶层属性。捕获的 KPojo 属性具有字段语义；当该 KPojo 不是当前查询 source 时，使用 `.value` 读取其值，例如 `it.id == probe.id.value`。
 
 `null` 和空集合的默认处理规则见 {{ $.keyword("configuration/no-value-strategy", ["无值策略"]) }}。
 

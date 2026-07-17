@@ -21,6 +21,7 @@ package com.kotlinorm.compiler.core
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
 import com.kotlinorm.compiler.utils.FieldClassId
 import com.kotlinorm.compiler.utils.FieldFqName
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
 import com.kotlinorm.compiler.utils.KCascadeClassId
 import com.kotlinorm.compiler.utils.KCascadeFqName
@@ -627,6 +628,12 @@ val registerKPojoFactorySymbol: IrSimpleFunctionSymbol
 context(context: IrPluginContext)
 fun IrType.isKPojoType(): Boolean {
     return classFqName == KPojoFqName || superTypes().any { it.classFqName == KPojoFqName }
+}
+
+/** Returns whether properties of this type represent SQL source fields in a DSL lambda. */
+context(context: IrPluginContext)
+fun IrType.isKronosSqlSourceType(): Boolean {
+    return isKPojoType() || classFqName?.parent() == GeneratedProjectionPackageFqName
 }
 
 /**

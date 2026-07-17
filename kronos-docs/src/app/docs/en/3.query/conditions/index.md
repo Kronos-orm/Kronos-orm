@@ -551,23 +551,45 @@ WHERE `name` = :name AND `age` > :age
 
 `patch` supplies named parameters that are not read from the current KPojo object.
 
-## Skip dynamic no-value predicates
+## Build dynamic predicates
 
-Use `.takeIf(...)` when a dynamic predicate should be omitted for a `null` value.
+Use `.takeIf(...)` to keep a predicate when a Kotlin condition is `true`, or `.takeUnless(...)` to keep it when the condition is `false`.
 
 ```kotlin group="No value" name="kotlin" icon="kotlin"
 val minAge: Int? = null
+val includeInactive = false
 
 val users = User()
     .select()
-    .where { (it.age >= minAge).takeIf(minAge != null) }
+    .where {
+        (it.age >= minAge).takeIf(minAge != null) &&
+            (it.status == 0).takeUnless(includeInactive)
+    }
     .toList()
 ```
 
 ```sql group="No value" name="Mysql" icon="mysql"
 SELECT `id`, `name`, `age`
 FROM `user`
+WHERE `status` = :status
 ```
+
+Ordinary Kotlin `if` and `when` expressions can select complete SQL predicate branches:
+
+```kotlin group="Dynamic branches" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        when {
+            filter.id != null -> it.id == filter.id.value
+            filter.name != null -> it.name == filter.name.value
+            else -> it.active == true
+        }
+    }
+    .toList()
+```
+
+The Boolean arguments of `takeIf`/`takeUnless` and the conditions of `if`/`when` are ordinary Kotlin control flow. Reading `filter.id` there does not require `.value`. In a SQL comparison, a KPojo that is not a source of the current query must use `.value`, for example `it.id == filter.id.value`.
 
 Default no-value handling for `null` values and empty collections is described in {{ $.keyword("configuration/no-value-strategy", ["No Value Strategy"]) }}.
 

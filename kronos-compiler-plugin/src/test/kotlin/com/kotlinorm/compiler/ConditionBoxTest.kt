@@ -81,7 +81,7 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun noArgNegatedAndKPojoMinus() = box("noArgNegatedAndKPojoMinus")
 
     /**
-     * Verifies no-value strategies, takeIf, run-wrapped conditions, and negated OR lowering.
+     * Verifies no-value strategies, takeIf/takeUnless, run-wrapped conditions, and negated OR lowering.
      */
     @Test
     fun noValueTakeIfBooleanMatrix() = box("noValueTakeIfBooleanMatrix")

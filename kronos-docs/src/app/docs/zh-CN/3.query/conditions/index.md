@@ -551,23 +551,45 @@ WHERE `name` = :name AND `age` > :age
 
 `patch` 用于补充当前 KPojo 对象中没有提供的命名参数。
 
-## 跳过动态无值条件
+## 构建动态条件
 
-动态条件值为 `null` 且需要跳过该条件时，使用 `.takeIf(...)`。
+Kotlin 条件为 `true` 时使用 `.takeIf(...)` 保留谓词；条件为 `false` 时使用 `.takeUnless(...)` 保留谓词。
 
 ```kotlin group="No value" name="kotlin" icon="kotlin"
 val minAge: Int? = null
+val includeInactive = false
 
 val users = User()
     .select()
-    .where { (it.age >= minAge).takeIf(minAge != null) }
+    .where {
+        (it.age >= minAge).takeIf(minAge != null) &&
+            (it.status == 0).takeUnless(includeInactive)
+    }
     .toList()
 ```
 
 ```sql group="No value" name="Mysql" icon="mysql"
 SELECT `id`, `name`, `age`
 FROM `user`
+WHERE `status` = :status
 ```
+
+也可以使用普通 Kotlin `if` 和 `when` 选择完整的 SQL 条件分支：
+
+```kotlin group="Dynamic branches" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        when {
+            filter.id != null -> it.id == filter.id.value
+            filter.name != null -> it.name == filter.name.value
+            else -> it.active == true
+        }
+    }
+    .toList()
+```
+
+`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流，在这些位置读取 `filter.id` 不需要 `.value`。如果未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较，则需要显式读取 Kotlin 值，例如 `it.id == filter.id.value`。
 
 `null` 和空集合的默认处理规则见 {{ $.keyword("configuration/no-value-strategy", ["无值策略"]) }}。
 

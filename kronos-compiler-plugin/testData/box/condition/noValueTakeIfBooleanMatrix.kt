@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies default no-value behavior, takeIf, explicit boolean fallbacks, run-wrapped conditions, and negated OR lowering.
+// Verifies no-value behavior, dynamic gates, boolean fallbacks, run conditions, and negated OR lowering.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -81,6 +81,9 @@ fun box(): String {
     val takeIfExpr = takeIfTrue.expr as? SqlExpr.Binary
 
     val takeIfFalse = noValueMatrixWhere(user) { (it.name == "Ada").takeIf(false) }
+    val takeUnlessFalse = noValueMatrixWhere(user) { (it.age > 18).takeUnless(false) }
+    val takeUnlessExpr = takeUnlessFalse.expr as? SqlExpr.Binary
+    val takeUnlessTrue = noValueMatrixWhere(user) { (it.name == "Ada").takeUnless(true) }
     val explicitFalse = noValueMatrixWhere(nullName) {
         if (missingName != null) { it.name == missingName } else { false.asSql() }
     }
@@ -125,6 +128,15 @@ fun box(): String {
         },
         expectNoValueMatrix(takeIfFalse.expr == null) {
             "takeIf false condition was ${takeIfFalse.expr}"
+        },
+        expectNoValueMatrix((takeUnlessExpr?.left as? SqlExpr.Column)?.columnName == "age") {
+            "takeUnless field was ${takeUnlessExpr?.left}"
+        },
+        expectNoValueMatrix(takeUnlessExpr?.operator == SqlBinaryOperator.GreaterThan) {
+            "takeUnless operator was ${takeUnlessExpr?.operator}"
+        },
+        expectNoValueMatrix(takeUnlessTrue.expr == null) {
+            "takeUnless true condition was ${takeUnlessTrue.expr}"
         },
         expectNoValueMatrix((explicitTrue.expr as? SqlExpr.BooleanLiteral)?.boolean == true) {
             "explicit true fallback was ${explicitTrue.expr}"

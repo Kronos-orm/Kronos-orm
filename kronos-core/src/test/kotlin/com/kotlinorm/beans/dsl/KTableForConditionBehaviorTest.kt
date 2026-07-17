@@ -516,6 +516,7 @@ class KTableForConditionBehaviorTest {
             assertEquals(1, comparable.compareTo(2))
             assertEquals(1, (1 as Any?).compareTo("x"))
             assertEquals(true, (true as Boolean?).takeIf(false))
+            assertEquals(true, (true as Boolean?).takeUnless(true))
             assertEquals(true, (1 as Comparable<*>?) like "x")
             assertEquals(true, (1 as Comparable<*>?) notLike "x")
             assertEquals(true, (1 as Comparable<*>?) between 1..2)

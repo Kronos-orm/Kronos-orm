@@ -17,13 +17,14 @@ For dynamic condition values that enter the no-value strategy, the default logic
 
 ## Control dynamic no-value predicates
 
-Use Kotlin conditions to decide which predicate participates. Use an ordinary `if`/`else` when a missing value needs an explicit fallback; `.takeIf(...)` remains available when a predicate only needs to be omitted.
+Use Kotlin conditions to decide which predicate participates. Use `.takeIf(...)` to keep a predicate when its condition is true, `.takeUnless(...)` to keep it when the condition is false, and ordinary `if`/`else` or `when` when a missing value needs an explicit fallback.
 
 ```kotlin
 val age: Int? = null
 val namePattern: String? = null
 
 where { (it.age == age).takeIf(age != null) }
+where { (it.status == 0).takeUnless(includeInactive) }
 where {
     if (namePattern != null) {
         it.name like namePattern
@@ -33,6 +34,8 @@ where {
 }
 where { it.age.isNull.takeIf(age == null) }
 ```
+
+The Boolean arguments of `takeIf`/`takeUnless` and the conditions of `if`/`when` are ordinary Kotlin control flow. They do not become SQL predicates.
 
 ## No-value outcomes
 

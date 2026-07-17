@@ -17,6 +17,7 @@
 // Verifies all condition clauses reject KPojo properties from unregistered SQL sources.
 
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.select.select
@@ -24,8 +25,8 @@ import com.kotlinorm.orm.update.update
 
 data class ConditionDiagnosticUser(
     var id: Int? = null,
-    var ownerId: Int? = null,
     var name: String? = null,
+    var ownerId: Int? = null,
     var value: Int? = null,
 ) : KPojo
 
@@ -57,6 +58,10 @@ fun invalidSelectWhereAndHaving() {
     ConditionDiagnosticUser()
         .select()
         .where { it.id == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>ConditionDiagnosticUser(id = 11).id<!> }
+
+    ConditionDiagnosticUser()
+        .select()
+        .where { it.id == f.length(<!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.name<!>) }
 
     ConditionDiagnosticUser()
         .select()

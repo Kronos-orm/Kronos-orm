@@ -627,12 +627,7 @@ context(context: IrPluginContext, builder: IrBlockBuilder)
 internal fun extractFieldExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression? {
     return when (expression) {
         is IrCall -> when {
-            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
-                // Skip `.value` property — it's a KTableForCondition helper that returns the raw value
-                val propName = expression.symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
-                if (propName == "value") null
-                else buildFieldFromPropertyAccess(expression, errorReporter)
-            }
+            expression.isKronosSourcePropertyAccess() -> buildFieldFromPropertyAccess(expression, errorReporter)
             else -> null
         }
         is IrPropertyReference -> buildFieldFromPropertyRef(expression, errorReporter)
@@ -687,12 +682,14 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
     return when (expression) {
         is IrCall -> when {
             expression.origin == IrStatementOrigin.GET_PROPERTY -> {
-                val irClass = expression.dispatchReceiver!!.type.classOrNull!!.owner
+                val receiver = expression.dispatchReceiverArgument ?: return null
+                if (!receiver.type.isKronosSqlSourceType()) return null
+                val irClass = receiver.type.classOrNull?.owner ?: return null
                 if (irClass.isGeneratedProjectionClass()) {
                     return builder.irString("")
                 }
                 if (irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
-                    buildSourceScopedTableNameExpr(expression.dispatchReceiver!!, irClass)
+                    buildSourceScopedTableNameExpr(receiver, irClass)
                 } else null
             }
             expression.isKronosFunction() -> {
@@ -768,8 +765,7 @@ private fun IrWhen.nullGuardedFieldExpression(): IrExpression? {
 private fun IrExpression.directFieldGetterExpression(): IrCall? =
     when (this) {
         is IrCall -> {
-            val propName = symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
-            if (origin == IrStatementOrigin.GET_PROPERTY && propName != "value") this else null
+            if (origin == IrStatementOrigin.GET_PROPERTY) this else null
         }
         is IrTypeOperatorCall -> argument.directFieldGetterExpression()
         else -> null

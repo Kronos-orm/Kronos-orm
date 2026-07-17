@@ -247,4 +247,10 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
      */
     @Test
     fun generatedProjectionWhereFunctionAndOperator() = box("generatedProjectionWhereFunctionAndOperator")
+
+    /**
+     * Verifies properties captured from ordinary Kotlin objects remain runtime values.
+     */
+    @Test
+    fun capturedNonKPojoValues() = box("capturedNonKPojoValues")
 }

@@ -1079,21 +1079,28 @@ private fun IrExpression?.intValueOrNull(): Int? {
     return (this as? IrConst)?.value as? Int
 }
 
-/**
- * Checks if an expression is a KPojo property access
- */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrExpression.isKPojoProperty(): Boolean {
-    return this is IrPropertyReference || (this is IrCall && origin == IrStatementOrigin.GET_PROPERTY)
+context(context: IrPluginContext)
+internal fun IrCall.isKronosSourcePropertyAccess(): Boolean {
+    if (origin != IrStatementOrigin.GET_PROPERTY) return false
+    val receiver = dispatchReceiverArgument ?: return false
+    return receiver.type.isKronosSqlSourceType()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+private fun IrExpression.isKronosSourceProperty(): Boolean {
+    return this is IrPropertyReference || (this is IrCall && isKronosSourcePropertyAccess())
 }
 
 /**
  * Checks whether an expression should be lowered as a Kronos field-like function argument.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
 fun IrExpression.isKronosFieldExpression(): Boolean {
     return when {
-        isKPojoProperty() -> true
+        isKronosSourceProperty() -> true
         this !is IrCall -> false
         isKronosFunction() -> true
         else -> operatorFunctionName() != null

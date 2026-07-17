@@ -577,19 +577,22 @@ WHERE `status` = :status
 Ordinary Kotlin `if` and `when` expressions can select complete SQL predicate branches:
 
 ```kotlin group="Dynamic branches" name="kotlin" icon="kotlin"
+data class UserFilter(val id: Int? = null, val name: String? = null)
+
+val filter = UserFilter(id = 7)
 val users = User()
     .select()
     .where {
         when {
-            filter.id != null -> it.id == filter.id.value
-            filter.name != null -> it.name == filter.name.value
+            filter.id != null -> it.id == filter.id
+            filter.name != null -> it.name == filter.name
             else -> it.active == true
         }
     }
     .toList()
 ```
 
-The Boolean arguments of `takeIf`/`takeUnless` and the conditions of `if`/`when` are ordinary Kotlin control flow. Reading `filter.id` there does not require `.value`. In a SQL comparison, a KPojo that is not a source of the current query must use `.value`, for example `it.id == filter.id.value`.
+The Boolean arguments of `takeIf`/`takeUnless` and the conditions of `if`/`when` are ordinary Kotlin control flow. Properties of ordinary Kotlin objects are runtime values in SQL comparisons too, so `it.id == filter.id` does not use `.value`. This includes regular classes, data classes, objects, companion or `@JvmStatic` properties, and top-level properties. A captured KPojo property is field-shaped; when that KPojo is not a source of the current query, use `.value`, for example `it.id == probe.id.value`.
 
 Default no-value handling for `null` values and empty collections is described in {{ $.keyword("configuration/no-value-strategy", ["No Value Strategy"]) }}.
 

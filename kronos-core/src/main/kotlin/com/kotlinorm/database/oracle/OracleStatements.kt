@@ -13,6 +13,7 @@ import com.kotlinorm.database.DatabaseStatements
 import com.kotlinorm.database.DatabaseSyncTable
 import com.kotlinorm.database.asInt
 import com.kotlinorm.database.cell
+import com.kotlinorm.database.sameColumnAttributesAs
 import com.kotlinorm.database.toColumnDefinition
 import com.kotlinorm.database.toCreateIndexStatement
 import com.kotlinorm.enums.KColumnType
@@ -32,6 +33,13 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 
 object OracleStatements : DatabaseStatements() {
+    override fun canonicalColumnName(name: String): String = name.uppercase()
+
+    override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
+        getColumnType(expected.type, expected.length, expected.scale) ==
+            getColumnType(current.type, current.length, current.scale) &&
+            expected.sameColumnAttributesAs(current)
+
     override fun databaseName(wrapper: KronosDataSourceWrapper): String = wrapper.userName.uppercase()
 
     private fun table(tableName: String) = SqlIdentifier.of(tableName.uppercase())
@@ -236,16 +244,20 @@ object OracleStatements : DatabaseStatements() {
         else -> "VARCHAR2(255)"
     }
 
-    private fun getKColumnType(type: String, length: Int, scale: Int): KColumnType = when (type.uppercase()) {
-        "NUMBER" -> when (length) {
-            1 -> BIT
-            3 -> TINYINT
-            5 -> SMALLINT
-            7 -> MEDIUMINT
-            19 -> BIGINT
-            else -> INT
+    private fun getKColumnType(type: String, length: Int, scale: Int): KColumnType =
+        when {
+            type.startsWith("TIMESTAMP", ignoreCase = true) -> TIMESTAMP
+            else -> when (type.uppercase()) {
+                "NUMBER" -> when (length) {
+                    1 -> BIT
+                    3 -> TINYINT
+                    5 -> SMALLINT
+                    7 -> MEDIUMINT
+                    19 -> BIGINT
+                    else -> INT
+                }
+                "VARCHAR2" -> VARCHAR
+                else -> KColumnType.fromString(type)
+            }
         }
-        "VARCHAR2" -> VARCHAR
-        else -> KColumnType.fromString(type)
-    }
 }

@@ -190,7 +190,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      * Synchronize table structure
      *
      * @param instance Table instance
-     * @return Whether the table is created
+     * @return `true` when the table already existed and was synchronized; `false` when it was created
      */
     inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
         // 表名

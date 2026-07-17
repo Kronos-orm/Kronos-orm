@@ -14,6 +14,7 @@ import com.kotlinorm.database.DatabaseStatements
 import com.kotlinorm.database.DatabaseSyncTable
 import com.kotlinorm.database.asInt
 import com.kotlinorm.database.cell
+import com.kotlinorm.database.sameColumnAttributesAs
 import com.kotlinorm.database.toColumnDefinition
 import com.kotlinorm.database.toCreateIndexStatement
 import com.kotlinorm.enums.KColumnType
@@ -35,6 +36,11 @@ import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.utils.extractNumberInParentheses
 
 object SqliteStatements : DatabaseStatements() {
+    override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
+        getColumnType(expected.type, expected.length, expected.scale) ==
+            getColumnType(current.type, current.length, current.scale) &&
+            expected.sameColumnAttributesAs(current, compareComment = false)
+
     override fun databaseName(wrapper: KronosDataSourceWrapper): String =
         wrapper.url.substringAfter("//")
 

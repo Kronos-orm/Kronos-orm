@@ -62,7 +62,7 @@ object JvmDateTimeTransformer : ValueTransformer {
     ): Any {
         val targetTypeName = targetKotlinType.classifierName()
         val pattern = dateTimeFormat ?: defaultDateFormat
-        val formatter = DateTimeFormatter.ofPattern(pattern)
+        val formatter = lazy(LazyThreadSafetyMode.NONE) { DateTimeFormatter.ofPattern(pattern) }
         when (targetTypeName) {
             "java.time.LocalDate" -> return value.toLocalDate(formatter)
             "java.time.LocalTime" -> return value.toLocalTime(formatter)
@@ -70,7 +70,7 @@ object JvmDateTimeTransformer : ValueTransformer {
         val localDateTime = value.toLocalDateTime(formatter)
         return when (targetTypeName) {
             "java.time.LocalDateTime" -> localDateTime
-            "kotlin.String" -> DateTimeFormatter.ofPattern(pattern).format(localDateTime)
+            "kotlin.String" -> formatter.value.format(localDateTime)
             "kotlin.Long" -> localDateTime.atZone(timeZone).toInstant().toEpochMilli()
             "kotlin.time.Instant" -> kotlin.time.Instant.fromEpochMilliseconds(localDateTime.atZone(timeZone).toInstant().toEpochMilli())
             "java.time.LocalDate" -> localDateTime.toLocalDate()
@@ -87,7 +87,7 @@ object JvmDateTimeTransformer : ValueTransformer {
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun Any.toLocalDateTime(formatter: DateTimeFormatter): LocalDateTime =
+    private fun Any.toLocalDateTime(formatter: Lazy<DateTimeFormatter>): LocalDateTime =
         when (this) {
             is Number -> LocalDateTime.ofInstant(Instant.ofEpochMilli(toLong()), timeZone)
             is Instant -> LocalDateTime.ofInstant(this, timeZone)
@@ -99,10 +99,10 @@ object JvmDateTimeTransformer : ValueTransformer {
             is LocalDate -> atStartOfDay()
             is LocalTime -> LocalDate.ofEpochDay(0).atTime(this)
             is kotlin.time.Instant -> LocalDateTime.ofInstant(Instant.ofEpochMilli(toEpochMilliseconds()), timeZone)
-            else -> parseLocalDateTime(toString(), formatter)
+            else -> parseLocalDateTime(toString(), formatter.value)
         }
 
-    private fun Any.toLocalDate(formatter: DateTimeFormatter): LocalDate =
+    private fun Any.toLocalDate(formatter: Lazy<DateTimeFormatter>): LocalDate =
         when (this) {
             is java.sql.Date -> toLocalDate()
             is LocalDate -> this
@@ -110,7 +110,7 @@ object JvmDateTimeTransformer : ValueTransformer {
             else -> {
                 val text = toString()
                 try {
-                    LocalDate.parse(text, formatter)
+                    LocalDate.parse(text, formatter.value)
                 } catch (_: DateTimeParseException) {
                     try {
                         LocalDate.parse(text)
@@ -121,7 +121,7 @@ object JvmDateTimeTransformer : ValueTransformer {
             }
         }
 
-    private fun Any.toLocalTime(formatter: DateTimeFormatter): LocalTime =
+    private fun Any.toLocalTime(formatter: Lazy<DateTimeFormatter>): LocalTime =
         when (this) {
             is java.sql.Time -> toLocalTime()
             is LocalTime -> this
@@ -129,7 +129,7 @@ object JvmDateTimeTransformer : ValueTransformer {
             else -> {
                 val text = toString()
                 try {
-                    LocalTime.parse(text, formatter)
+                    LocalTime.parse(text, formatter.value)
                 } catch (_: DateTimeParseException) {
                     try {
                         LocalTime.parse(text)

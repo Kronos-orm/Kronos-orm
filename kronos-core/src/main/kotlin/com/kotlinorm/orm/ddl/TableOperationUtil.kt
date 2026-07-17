@@ -23,7 +23,6 @@ import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.database.SqlManager.statementsOf
-import com.kotlinorm.database.sameDefinitionAs
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import kotlin.reflect.typeOf
@@ -115,8 +114,8 @@ fun columnDiffer(
     expect: List<Field>,
     current: List<Field>
 ): TableColumnDiff {
-    fun String.columnKey(): String =
-        if (dbType == DBType.Oracle || dbType == DBType.Mssql) uppercase() else this
+    val statements = statementsOf(dbType)
+    fun String.columnKey(): String = statements.canonicalColumnName(this)
 
     val currentByName = current.associateBy { it.columnName.columnKey() }
     val expectedNames = expect.map { it.columnName.columnKey() }.toSet()
@@ -128,10 +127,10 @@ fun columnDiffer(
         } else null
     }
 
-    val need2Move = if (dbType == DBType.SQLite) emptyList() else moveColumn(expect, current, dbType)
+    val need2Move = if (statements.supportsColumnReordering) moveColumn(expect, current, dbType) else emptyList()
     val toModified = expect.mapIndexedNotNull { index, col ->
         val tableColumn = currentByName[col.columnName.columnKey()]
-        if (tableColumn != null && (!col.sameDefinitionAs(tableColumn, dbType) || col.columnName.columnKey() in need2Move)
+        if (tableColumn != null && (!statements.sameColumnDefinition(col, tableColumn) || col.columnName.columnKey() in need2Move)
         ) {
             Triple(col, if (index == 0) null else expect[index - 1], tableColumn)
         } else null
@@ -179,8 +178,8 @@ fun moveColumn(
     current: List<Field>,
     dbType: DBType? = null
 ): List<String> {
-    fun String.columnKey(): String =
-        if (dbType == DBType.Oracle || dbType == DBType.Mssql) uppercase() else this
+    val canonicalColumnName = dbType?.let { statementsOf(it)::canonicalColumnName } ?: { name: String -> name }
+    fun String.columnKey(): String = canonicalColumnName(this)
 
     // 取交集
     val expectedNames = expect.map { it.columnName.columnKey() }.toSet()

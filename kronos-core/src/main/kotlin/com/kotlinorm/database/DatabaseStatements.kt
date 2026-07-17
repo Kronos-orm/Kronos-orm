@@ -35,6 +35,12 @@ data class DatabaseSyncTable(
 )
 
 abstract class DatabaseStatements {
+    internal open val supportsColumnReordering: Boolean = false
+
+    internal open fun canonicalColumnName(name: String): String = name
+
+    internal abstract fun sameColumnDefinition(expected: Field, current: Field): Boolean
+
     abstract fun databaseName(wrapper: KronosDataSourceWrapper): String
     abstract fun tableExists(): SqlQuery
     open fun tableComment(): SqlQuery? = null

@@ -694,16 +694,32 @@ open class KTableForCondition<T : KPojo>(
     operator fun Any?.compareTo(other: Any?) = 1
 
     /**
-     * Take the value if the condition is true
+     * Keeps this SQL predicate when [boolean] is true.
      *
-     * Only for compiler plugin condition rewriting
+     * This is a Kronos condition-DSL operator rather than Kotlin's standard [kotlin.takeIf]. The nullable
+     * receiver represents the SQL predicate produced by the expression on the left. [boolean] is evaluated
+     * as ordinary Kotlin code and does not become part of the generated SQL.
      *
-     * Return the value itself whether which condition is true or not
+     * Example: `where { (it.age >= minAge).takeIf(minAge != null) }`
      *
-     * @param block The condition block
-     * @return The value itself
+     * @param boolean whether this SQL predicate should be kept
+     * @return a compiler-rewritten placeholder value
      */
     fun Boolean?.takeIf(boolean: Boolean) = true
+
+    /**
+     * Keeps this SQL predicate when [boolean] is false.
+     *
+     * This is a Kronos condition-DSL operator rather than Kotlin's standard [kotlin.takeUnless]. The nullable
+     * receiver represents the SQL predicate produced by the expression on the left. [boolean] is evaluated
+     * as ordinary Kotlin code and does not become part of the generated SQL.
+     *
+     * Example: `where { (it.status == 0).takeUnless(includeInactive) }`
+     *
+     * @param boolean whether this SQL predicate should be omitted
+     * @return a compiler-rewritten placeholder value
+     */
+    fun Boolean?.takeUnless(boolean: Boolean) = true
 
     /**
      * Checks if the given value is like the specified string.

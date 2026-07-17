@@ -296,7 +296,7 @@ with(Kronos) {
 
 ## 无值策略
 
-单个动态空值条件需要跳过时，在条件表达式上使用 `.takeIf(...)`。
+Kotlin 条件为 true 时使用 `.takeIf(...)` 保留谓词，条件为 false 时使用 `.takeUnless(...)` 保留谓词。
 
 ```kotlin group="No value 1" name="ignore" icon="kotlin"
 val name: String? = null
@@ -306,6 +306,8 @@ val users = User()
     .where { (it.name == name).takeIf(name != null) }
     .toList()
 ```
+
+Boolean 判定按普通 Kotlin 代码执行。例如 `(it.status == 0).takeUnless(includeInactive)` 会在 `includeInactive` 为 true 时跳过状态谓词。
 
 ```sql group="No value 1" name="ignore sql" icon="mysql"
 SELECT `id`, `name`

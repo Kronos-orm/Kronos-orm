@@ -17,13 +17,14 @@
 
 ## 控制动态无值条件
 
-使用 Kotlin 条件决定动态谓词是否参与查询。缺失值需要显式 fallback 时使用普通 `if`/`else`；只需跳过条件时仍可使用 `.takeIf(...)`。
+使用 Kotlin 条件决定动态谓词是否参与查询。条件为 true 时用 `.takeIf(...)` 保留谓词，条件为 false 时用 `.takeUnless(...)` 保留谓词；缺失值需要显式 fallback 时使用普通 `if`/`else` 或 `when`。
 
 ```kotlin
 val age: Int? = null
 val namePattern: String? = null
 
 where { (it.age == age).takeIf(age != null) }
+where { (it.status == 0).takeUnless(includeInactive) }
 where {
     if (namePattern != null) {
         it.name like namePattern
@@ -33,6 +34,8 @@ where {
 }
 where { it.age.isNull.takeIf(age == null) }
 ```
+
+`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流，不会生成 SQL 谓词。
 
 ## 无值处理结果
 

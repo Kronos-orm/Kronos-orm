@@ -256,7 +256,7 @@ with(Kronos) {
 
 ## No-value strategy
 
-Use `.takeIf(...)` on one condition when a dynamic empty value should omit that predicate.
+Use `.takeIf(...)` to keep a predicate when a Kotlin condition is true, or `.takeUnless(...)` to keep it when the condition is false.
 
 ```kotlin group="No value 1" name="ignore" icon="kotlin"
 val name: String? = null
@@ -266,6 +266,8 @@ val users = User()
     .where { (it.name == name).takeIf(name != null) }
     .toList()
 ```
+
+The Boolean gate is ordinary Kotlin code. For example, `(it.status == 0).takeUnless(includeInactive)` omits the status predicate when `includeInactive` is true.
 
 ```sql group="No value 1" name="ignore sql" icon="mysql"
 SELECT `id`, `name`

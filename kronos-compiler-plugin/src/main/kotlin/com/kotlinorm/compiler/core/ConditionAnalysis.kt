@@ -352,17 +352,25 @@ private fun analyzeMethodSqlExpr(
                 value = receiver
             )
         }
-        "takeIf" -> {
+        "takeIf", "takeUnless" -> {
             val receiver = call.conditionReceiver()
             val predicate = call.getValueArgumentSafe(0) ?: return null
-            // Generate runtime: if (predicate) expr else null
             val sqlExpr = analyzeAndBuildSqlExpr(irFunction, receiver, errorReporter, setNot) ?: return null
-            builder.irIfThenElse(
-                sqlExpr.type.makeNullable(),
-                predicate,
-                sqlExpr,
-                builder.irNull()
-            )
+            if (funcName == "takeIf") {
+                builder.irIfThenElse(
+                    sqlExpr.type.makeNullable(),
+                    predicate,
+                    sqlExpr,
+                    builder.irNull()
+                )
+            } else {
+                builder.irIfThenElse(
+                    sqlExpr.type.makeNullable(),
+                    predicate,
+                    builder.irNull(),
+                    sqlExpr
+                )
+            }
         }
         else -> {
             errorReporter.reportWarning(

@@ -1457,8 +1457,18 @@ where { "name = :name".asSql() }.patch("name" to "Kronos")
 // 动态空值条件
 val age: Int? = null
 where { (it.age == age).takeIf(age != null) }
+where { (it.status == 0).takeUnless(includeInactive) }
 where { if (age != null) { it.age == age } else { false.asSql() } }
+where {
+    when {
+        filter.id != null -> it.id == filter.id.value
+        filter.name != null -> it.name == filter.name.value
+        else -> it.active == true
+    }
+}
 ```
+
+`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值，读取 KPojo 属性时不需要 `.value`。未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较时，使用 `.value` 明确读取 Kotlin 值，例如 `it.id == filter.id.value`。
 
 `select().where()` 在没有可查询非空字段时保留无条件查询。`update().where()` 和 `delete().where()` 没有可查询字段时进入写入安全检查，建议启用 DataGuard 统一拦截全表写入。逻辑删除字段、级联字段、非数据库列和忽略字段不参与空 `where()` 的 query-by-example 条件。对象属性值为 `null` 时不会由空 `where()` 生成 `IS NULL`；需要 SQL NULL 判断时使用 `where { it.field == null }` 或 `where { it.field.isNull }`。动态变量值为 `null` 时仍走无值策略，例如 `where { it.field == value }`。
 

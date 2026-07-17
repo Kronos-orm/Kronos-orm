@@ -124,7 +124,7 @@ data class Movie(
     var directorId: Long? = null,
     @Cascade(["directorId"], ["id"])
     var director: Director? = null,
-    @LogicDelete @Default("0")
+    @LogicDelete
     var deleted: Boolean? = false,
     @CreateTime
     var createTime: LocalDateTime? = null,

@@ -382,6 +382,34 @@ data class User(
 ) : KPojo
 ```
 
+`@Default` is copied into the table DDL as a raw SQL expression. It is not a Kotlin value, and Kronos does not translate one database dialect's expression into another dialect's expression. The following table lists recommended literal forms for automatically inferred Kotlin types:
+
+| Kotlin type / inferred `KColumnType` | MySQL | PostgreSQL | SQLite | SQLServer | Oracle |
+|--------------------------------------|-------|------------|--------|-----------|--------|
+| `Boolean` / `BIT` | `0` / `1` | `false` / `true` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Byte`, `Short`, `Int`, `Long` / integer types | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Float`, `Double`, `BigDecimal` / numeric types | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` |
+| `Char`, `String`, other types mapped to `VARCHAR` | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` |
+| `Date`, `LocalDate` / `DATE` | `'2026-01-02'` | `DATE '2026-01-02'` | `'2026-01-02'` | `CONVERT(date, '2026-01-02')` | `DATE '2026-01-02'` |
+| `LocalTime` / `TIME` | `'12:34:56'` | `TIME '12:34:56'` | `'12:34:56'` | `CONVERT(time, '12:34:56')` | `TIMESTAMP '1970-01-01 12:34:56'` |
+| `LocalDateTime` / `DATETIME` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | `CONVERT(datetime2, '2026-01-02T03:04:05')` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `java.sql.Timestamp` / `TIMESTAMP` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | Not supported by SQLServer `rowversion` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `ByteArray` / `BLOB` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` |
+
+For example, a Boolean default must use the expression accepted by the selected database:
+
+```kotlin
+// PostgreSQL
+@Default("false")
+var deleted: Boolean? = null
+
+// MySQL, SQLite, SQLServer, or Oracle
+@Default("0")
+var deleted: Boolean? = null
+```
+
+PostgreSQL rejects `BOOLEAN DEFAULT 0` and `BOOLEAN DEFAULT 1`; use `false` and `true` instead. If one model must create schemas on multiple database types, keep dialect-specific defaults in separate schema definitions or migrations. Database functions such as `CURRENT_DATE` and `CURRENT_TIMESTAMP` are also raw expressions and must be valid for the selected database. Non-empty binary defaults vary by database version and column type; define them in a dialect-specific migration instead of relying on a portable `@Default` value.
+
 ## {{ $.annotation("NonNull") }}Column non-null constraint
 
 This annotation is used to declare a column as non-null; if not specified, the default non-null constraint is used.

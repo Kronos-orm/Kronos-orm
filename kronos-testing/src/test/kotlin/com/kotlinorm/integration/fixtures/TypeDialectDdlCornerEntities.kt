@@ -89,6 +89,29 @@ data class TypeDialectCornerRecord(
     val defaultedNumber: Int?,
 )
 
+@Table("kt_type_dialect_boolean_default")
+data class TypeDialectBooleanDefaultValue(
+    @PrimaryKey
+    @ColumnType(INT)
+    var id: Int? = null,
+
+    @ColumnType(BIT)
+    @Default("0")
+    var defaultFalse: Boolean? = null,
+
+    @ColumnType(BIT)
+    @Default("1")
+    var defaultTrue: Boolean? = null,
+
+    @ColumnType(INT)
+    @Default("0")
+    var numericZero: Int? = null,
+
+    @ColumnType(INT)
+    @Default("1")
+    var numericOne: Int? = null,
+) : KPojo
+
 @Table("kt_type_dialect_sync_corner")
 data class TypeDialectSyncCornerV1(
     @PrimaryKey

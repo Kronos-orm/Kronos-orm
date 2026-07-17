@@ -3,6 +3,7 @@ package com.kotlinorm.integration.suites
 import com.kotlinorm.database.SqlExecutor.execute
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.integration.fixtures.TypeDialectBooleanDefaultValue
 import com.kotlinorm.integration.fixtures.TypeDialectCornerRecord
 import com.kotlinorm.integration.fixtures.TypeDialectCornerValue
 import com.kotlinorm.integration.fixtures.TypeDialectSyncCornerRecord
@@ -15,19 +16,47 @@ import com.kotlinorm.orm.ddl.queryTableColumns
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.wrappers.KronosBadSqlGrammarException
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 abstract class TypeDialectDdlCornerIntegrationSuite(
     environment: IntegrationDatabaseEnvironment,
     profile: IntegrationScenarioProfile,
 ) : IntegrationSuiteSupport(environment, profile) {
+    protected fun verifyPostgresRejectsNumericBooleanDefaultsAgainstRealDatabase() {
+        requireDatabaseAvailable()
+        requireDatabaseType(DBType.Postgres)
+        configureKronos()
+
+        with(wrapper.table) {
+            dropTable(TypeDialectBooleanDefaultValue())
+        }
+
+        val error = assertFailsWith<KronosBadSqlGrammarException> {
+            wrapper.table.syncTable(TypeDialectBooleanDefaultValue())
+        }
+
+        assertEquals("42804", (error.cause as SQLException).sqlState)
+        assertEquals(
+            "CREATE TABLE IF NOT EXISTS \"public\".\"kt_type_dialect_boolean_default\" " +
+                "(\"id\" INTEGER NOT NULL PRIMARY KEY, " +
+                "\"default_false\" BOOLEAN DEFAULT 0, " +
+                "\"default_true\" BOOLEAN DEFAULT 1, " +
+                "\"numeric_zero\" INTEGER DEFAULT 0, " +
+                "\"numeric_one\" INTEGER DEFAULT 1)",
+            error.sql,
+        )
+    }
+
     @Test
     fun quotedIdentifiersDefaultsTextAndNumericValuesRoundTripAgainstRealDatabase() {
         recreateCornerValueTable()

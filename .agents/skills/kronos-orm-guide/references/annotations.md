@@ -123,11 +123,27 @@ var payload: Map<String, Any?>? = null
 
 ```kotlin
 @Default("0")
-var deleted: Boolean? = false
+var score: Int? = null
 
 @Default("CURRENT_TIMESTAMP")
 var createTime: String? = null
 ```
+
+`@Default` 是原生数据库默认值表达式，不会在数据库之间自动转换。常用类型的推荐写法：
+
+| Kotlin 类型 / `KColumnType` | MySQL | PostgreSQL | SQLite | SQL Server | Oracle |
+|---|---|---|---|---|---|
+| `Boolean` / `BIT` | `0` / `1` | `false` / `true` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Byte`、`Short`、`Int`、`Long` / 整数 | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Float`、`Double`、`BigDecimal` / 数值 | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` |
+| `Char`、`String` / 字符串 | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` |
+| `Date`、`LocalDate` / `DATE` | `'2026-01-02'` | `DATE '2026-01-02'` | `'2026-01-02'` | `CONVERT(date, '2026-01-02')` | `DATE '2026-01-02'` |
+| `LocalTime` / `TIME` | `'12:34:56'` | `TIME '12:34:56'` | `'12:34:56'` | `CONVERT(time, '12:34:56')` | `TIMESTAMP '1970-01-01 12:34:56'` |
+| `LocalDateTime` / `DATETIME` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | `CONVERT(datetime2, '2026-01-02T03:04:05')` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `java.sql.Timestamp` / `TIMESTAMP` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | 不支持，SQL Server 将其映射为 `rowversion` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `ByteArray` / `BLOB` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` |
+
+PostgreSQL 的 Boolean 列不接受数字默认值 `0/1`，请使用 `@Default("false")` 或 `@Default("true")`。数据库函数（如 `CURRENT_TIMESTAMP`）也必须使用目标数据库支持的原生语法。非空二进制默认值应放在方言专用迁移脚本中。
 
 ## @LogicDelete
 

@@ -420,6 +420,63 @@ class TableOperationUtilTest {
     }
 
     @Test
+    fun `postgres index differ normalizes method case and implicit btree defaults`() {
+        val expected = listOf(
+            KTableIndex("idx_explicit", arrayOf("value"), "NORMAL", "BTREE"),
+            KTableIndex("idx_default", arrayOf("category")),
+            KTableIndex("idx_unique", arrayOf("code"), "", "UNIQUE")
+        )
+        val current = listOf(
+            KTableIndex("IDX_EXPLICIT", arrayOf("value"), "normal", "btree"),
+            KTableIndex("IDX_DEFAULT", arrayOf("category"), "NORMAL", "btree"),
+            KTableIndex("IDX_UNIQUE", arrayOf("code"), "UNIQUE", "btree")
+        )
+
+        assertEquals(
+            TableIndexDiff(toAdd = emptyList(), toDelete = emptyList()),
+            indexDiffer(expected, current, DBType.Postgres)
+        )
+    }
+
+    @Test
+    fun `index differ applies dialect default index definitions`() {
+        val cases = listOf(
+            DBType.Mysql to KTableIndex("IDX_DEFAULT", arrayOf("value"), "NORMAL", "BTREE"),
+            DBType.Postgres to KTableIndex("IDX_DEFAULT", arrayOf("value"), "NORMAL", "btree"),
+            DBType.SQLite to KTableIndex("IDX_DEFAULT", arrayOf("value"), "NORMAL", ""),
+            DBType.Mssql to KTableIndex("IDX_DEFAULT", arrayOf("VALUE"), "NONCLUSTERED", ""),
+            DBType.Oracle to KTableIndex("IDX_DEFAULT", arrayOf("VALUE"), "NORMAL", "")
+        )
+
+        cases.forEach { (dbType, current) ->
+            assertEquals(
+                TableIndexDiff(toAdd = emptyList(), toDelete = emptyList()),
+                indexDiffer(listOf(KTableIndex("idx_default", arrayOf("value"))), listOf(current), dbType),
+                dbType.name
+            )
+        }
+    }
+
+    @Test
+    fun `postgres index differ preserves semantic index changes`() {
+        val expected = listOf(
+            KTableIndex("idx_method", arrayOf("value"), "NORMAL", "HASH"),
+            KTableIndex("idx_unique", arrayOf("code"), "UNIQUE", "BTREE"),
+            KTableIndex("idx_columns", arrayOf("tenant_id", "value"), "NORMAL", "BTREE")
+        )
+        val current = listOf(
+            KTableIndex("idx_method", arrayOf("value"), "NORMAL", "btree"),
+            KTableIndex("idx_unique", arrayOf("code"), "NORMAL", "btree"),
+            KTableIndex("idx_columns", arrayOf("value", "tenant_id"), "NORMAL", "btree")
+        )
+
+        assertEquals(
+            TableIndexDiff(toAdd = expected, toDelete = current),
+            indexDiffer(expected, current, DBType.Postgres)
+        )
+    }
+
+    @Test
     fun `metadata queries render syntax statements and map rows`() {
         val wrapper = RecordingWrapper(
             dbType = DBType.Mysql,

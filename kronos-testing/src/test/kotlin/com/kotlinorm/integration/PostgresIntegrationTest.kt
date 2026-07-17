@@ -10,6 +10,7 @@ import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
+import com.kotlinorm.integration.suites.PostgresIndexSyncRegressionSuite
 import com.kotlinorm.integration.suites.PostgresUpsertOriginalCaseIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
@@ -27,6 +28,7 @@ import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.postgre
 
 class PostgresSchemaIntegrationTest : SchemaIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresSchemaSyncRegressionTest : SchemaSyncRegressionSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresIndexSyncRegressionTest : PostgresIndexSyncRegressionSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresSerializedListProjectionIntegrationTest :
     SerializedListProjectionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresCrudWhereIntegrationTest : CrudWhereIntegrationSuite(postgres, StandardIntegrationScenarioProfile)

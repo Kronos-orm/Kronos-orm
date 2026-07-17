@@ -38,6 +38,8 @@ import com.kotlinorm.utils.extractNumberInParentheses
 
 object MysqlStatements : DatabaseStatements() {
     override val supportsColumnReordering: Boolean = true
+    override val defaultIndexType: String = "NORMAL"
+    override val defaultIndexMethod: String = "BTREE"
 
     override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
         getColumnType(expected.type, expected.length, expected.scale) ==

@@ -36,10 +36,33 @@ data class DatabaseSyncTable(
 
 abstract class DatabaseStatements {
     internal open val supportsColumnReordering: Boolean = false
+    internal open val defaultIndexType: String = "NORMAL"
+    internal open val defaultIndexMethod: String = ""
 
     internal open fun canonicalColumnName(name: String): String = name
 
     internal abstract fun sameColumnDefinition(expected: Field, current: Field): Boolean
+
+    internal open fun sameIndexDefinition(expected: KTableIndex, current: KTableIndex): Boolean =
+        normalizeIndexDefinition(expected) == normalizeIndexDefinition(current)
+
+    private fun normalizeIndexDefinition(index: KTableIndex): KTableIndex {
+        val unique = index.type.equals("UNIQUE", ignoreCase = true) ||
+            index.method.equals("UNIQUE", ignoreCase = true)
+        val type = if (unique) "UNIQUE" else index.type.ifBlank { defaultIndexType }.uppercase()
+        val method = index.method.takeUnless {
+            it.isBlank() ||
+                it.equals("UNIQUE", ignoreCase = true) ||
+                it.equals(index.type, ignoreCase = true)
+        }?.uppercase() ?: defaultIndexMethod.uppercase()
+
+        return KTableIndex(
+            name = index.name.lowercase(),
+            columns = index.columns.map(::canonicalColumnName).toTypedArray(),
+            type = type,
+            method = method
+        )
+    }
 
     abstract fun databaseName(wrapper: KronosDataSourceWrapper): String
     abstract fun tableExists(): SqlQuery

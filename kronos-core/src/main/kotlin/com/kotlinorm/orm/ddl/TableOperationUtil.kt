@@ -149,15 +149,19 @@ fun columnDiffer(
  *
  * @param expect The list of expected indexes.
  * @param current The list of current indexes in the database.
+ * @param dbType The database dialect used to compare index definitions.
  * @return A `TableIndexDiff` object containing the indexes to add and delete.
  */
 fun indexDiffer(
     expect: List<KTableIndex>,
-    current: List<KTableIndex>
+    current: List<KTableIndex>,
+    dbType: DBType? = null
 ): TableIndexDiff {
+    val sameDefinition = dbType?.let { statementsOf(it)::sameIndexDefinition }
+        ?: { expected: KTableIndex, actual: KTableIndex -> expected == actual }
 
-    val toAdd = expect.filter { index -> index !in current }
-    val toDelete = current.filter { index -> index !in expect }
+    val toAdd = expect.filter { expected -> current.none { sameDefinition(expected, it) } }
+    val toDelete = current.filter { actual -> expect.none { sameDefinition(it, actual) } }
 
     return TableIndexDiff(toAdd, toDelete)
 }

@@ -31,6 +31,9 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 
 object MssqlStatements : DatabaseStatements() {
+    override val defaultIndexType: String = "NONCLUSTERED"
+    override val defaultIndexMethod: String = ""
+
     override fun canonicalColumnName(name: String): String = name.uppercase()
 
     override fun sameColumnDefinition(expected: Field, current: Field): Boolean =

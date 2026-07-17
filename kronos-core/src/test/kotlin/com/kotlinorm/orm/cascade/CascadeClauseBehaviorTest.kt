@@ -5,6 +5,7 @@ import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.generator.customIdGenerator
 import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -16,6 +17,7 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KIdGenerator
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
@@ -27,11 +29,14 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.LinkedHashSet
+import java.util.UUID
 import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @Table("cascade_select_parent")
 data class CascadeSelectBehaviorParent(
@@ -238,6 +243,74 @@ data class CascadeInsertReverseChild(
     var parent: CascadeInsertReverseParent? = null
 ) : KPojo
 
+@Table("cascade_assigned_key_parent")
+data class CascadeAssignedKeyParent(
+    @PrimaryKey(custom = true)
+    var id: String? = null,
+    var name: String? = null,
+    @Cascade(["id"], ["parentId"])
+    var children: List<CascadeAssignedKeyChild>? = null
+) : KPojo
+
+@Table("cascade_assigned_key_child")
+data class CascadeAssignedKeyChild(
+    @PrimaryKey(custom = true)
+    var id: String? = null,
+    var parentId: String? = null,
+    var name: String? = null
+) : KPojo
+
+@Table("cascade_uuid_key_parent")
+data class CascadeUuidKeyParent(
+    @PrimaryKey(uuid = true)
+    var id: String? = null,
+    var name: String? = null,
+    @Cascade(["id"], ["parentId"])
+    var children: List<CascadeUuidKeyChild>? = null
+) : KPojo
+
+@Table("cascade_uuid_key_child")
+data class CascadeUuidKeyChild(
+    @PrimaryKey(uuid = true)
+    var id: String? = null,
+    var parentId: String? = null,
+    var name: String? = null
+) : KPojo
+
+@Table("cascade_snowflake_key_parent")
+data class CascadeSnowflakeKeyParent(
+    @PrimaryKey(snowflake = true)
+    var id: Long? = null,
+    var name: String? = null,
+    @Cascade(["id"], ["parentId"])
+    var children: List<CascadeSnowflakeKeyChild>? = null
+) : KPojo
+
+@Table("cascade_snowflake_key_child")
+data class CascadeSnowflakeKeyChild(
+    @PrimaryKey(snowflake = true)
+    var id: Long? = null,
+    var parentId: Long? = null,
+    var name: String? = null
+) : KPojo
+
+@Table("cascade_custom_key_parent")
+data class CascadeCustomKeyParent(
+    @PrimaryKey(custom = true)
+    var id: String? = null,
+    var name: String? = null,
+    @Cascade(["id"], ["parentId"])
+    var children: List<CascadeCustomKeyChild>? = null
+) : KPojo
+
+@Table("cascade_custom_key_child")
+data class CascadeCustomKeyChild(
+    @PrimaryKey(custom = true)
+    var id: String? = null,
+    var parentId: String? = null,
+    var name: String? = null
+) : KPojo
+
 class CascadeClauseBehaviorTest : MysqlTestBase() {
 
     @Test
@@ -310,6 +383,190 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             ),
             wrapper.actionGeneratedKeyRequests
         )
+    }
+
+    @Test
+    fun `cascade insert executes children with assigned custom primary keys`() {
+        val child = CascadeAssignedKeyChild(id = "child-1", name = "child")
+        val parent = CascadeAssignedKeyParent(id = "parent-1", name = "root", children = listOf(child))
+        val wrapper = CascadeRecordingWrapper()
+
+        parent.insert().execute(wrapper)
+
+        assertEquals("parent-1", child.parentId)
+        assertEquals(
+            listOf(
+                "INSERT INTO `cascade_assigned_key_parent` (`id`, `name`) VALUES (:id, :name)",
+                "INSERT INTO `cascade_assigned_key_child` (`id`, `parent_id`, `name`) VALUES (:id, :parentId, :name)"
+            ),
+            wrapper.actionSql
+        )
+        assertEquals(
+            listOf(
+                mapOf<String, Any?>("id" to "parent-1", "name" to "root"),
+                mapOf<String, Any?>("id" to "child-1", "parentId" to "parent-1", "name" to "child")
+            ),
+            wrapper.actionParams
+        )
+        assertEquals(
+            listOf<GeneratedKeyRequest?>(null, null),
+            wrapper.actionGeneratedKeyRequests
+        )
+    }
+
+    @Test
+    fun `cascade insert executes children with assigned UUID primary keys`() {
+        val child = CascadeUuidKeyChild(
+            id = "22222222-2222-2222-2222-222222222222",
+            name = "child"
+        )
+        val parent = CascadeUuidKeyParent(
+            id = "11111111-1111-1111-1111-111111111111",
+            name = "root",
+            children = listOf(child)
+        )
+        val wrapper = CascadeRecordingWrapper()
+
+        parent.insert().execute(wrapper)
+
+        assertEquals("11111111-1111-1111-1111-111111111111", child.parentId)
+        assertEquals(
+            listOf(
+                "INSERT INTO `cascade_uuid_key_parent` (`id`, `name`) VALUES (:id, :name)",
+                "INSERT INTO `cascade_uuid_key_child` (`id`, `parent_id`, `name`) VALUES (:id, :parentId, :name)"
+            ),
+            wrapper.actionSql
+        )
+        assertEquals(
+            listOf(
+                mapOf<String, Any?>(
+                    "id" to "11111111-1111-1111-1111-111111111111",
+                    "name" to "root"
+                ),
+                mapOf<String, Any?>(
+                    "id" to "22222222-2222-2222-2222-222222222222",
+                    "parentId" to "11111111-1111-1111-1111-111111111111",
+                    "name" to "child"
+                )
+            ),
+            wrapper.actionParams
+        )
+        assertEquals(
+            listOf<GeneratedKeyRequest?>(null, null),
+            wrapper.actionGeneratedKeyRequests
+        )
+    }
+
+    @Test
+    fun `cascade insert generates UUID keys and propagates the parent key`() {
+        val child = CascadeUuidKeyChild(name = "child")
+        val parent = CascadeUuidKeyParent(name = "root", children = listOf(child))
+        val wrapper = CascadeRecordingWrapper()
+
+        parent.insert().execute(wrapper)
+
+        val parentId = assertNotNull(parent.id)
+        val childId = assertNotNull(child.id)
+        assertEquals(parentId, UUID.fromString(parentId).toString())
+        assertEquals(childId, UUID.fromString(childId).toString())
+        assertEquals(parentId, child.parentId)
+        assertEquals(
+            listOf(
+                "INSERT INTO `cascade_uuid_key_parent` (`id`, `name`) VALUES (:id, :name)",
+                "INSERT INTO `cascade_uuid_key_child` (`id`, `parent_id`, `name`) VALUES (:id, :parentId, :name)"
+            ),
+            wrapper.actionSql
+        )
+        assertEquals(
+            listOf(
+                mapOf<String, Any?>("id" to parentId, "name" to "root"),
+                mapOf<String, Any?>("id" to childId, "parentId" to parentId, "name" to "child")
+            ),
+            wrapper.actionParams
+        )
+        assertEquals(
+            listOf<GeneratedKeyRequest?>(null, null),
+            wrapper.actionGeneratedKeyRequests
+        )
+    }
+
+    @Test
+    fun `cascade insert generates snowflake keys and propagates the parent key`() {
+        val child = CascadeSnowflakeKeyChild(name = "child")
+        val parent = CascadeSnowflakeKeyParent(name = "root", children = listOf(child))
+        val wrapper = CascadeRecordingWrapper()
+
+        parent.insert().execute(wrapper)
+
+        val parentId = assertNotNull(parent.id)
+        val childId = assertNotNull(child.id)
+        assertTrue(parentId > 0L)
+        assertTrue(childId > 0L)
+        assertEquals(parentId, child.parentId)
+        assertEquals(
+            listOf(
+                "INSERT INTO `cascade_snowflake_key_parent` (`id`, `name`) VALUES (:id, :name)",
+                "INSERT INTO `cascade_snowflake_key_child` (`id`, `parent_id`, `name`) VALUES (:id, :parentId, :name)"
+            ),
+            wrapper.actionSql
+        )
+        assertEquals(
+            listOf(
+                mapOf<String, Any?>("id" to parentId, "name" to "root"),
+                mapOf<String, Any?>("id" to childId, "parentId" to parentId, "name" to "child")
+            ),
+            wrapper.actionParams
+        )
+        assertEquals(
+            listOf<GeneratedKeyRequest?>(null, null),
+            wrapper.actionGeneratedKeyRequests
+        )
+    }
+
+    @Test
+    fun `cascade insert generates custom keys and propagates the parent key`() {
+        val previousGenerator = customIdGenerator
+        val generatedIds = mutableListOf("custom-parent", "custom-child")
+        customIdGenerator = object : KIdGenerator<String> {
+            override fun nextId(): String = generatedIds.removeFirst()
+        }
+
+        try {
+            val child = CascadeCustomKeyChild(name = "child")
+            val parent = CascadeCustomKeyParent(name = "root", children = listOf(child))
+            val wrapper = CascadeRecordingWrapper()
+
+            parent.insert().execute(wrapper)
+
+            assertEquals("custom-parent", parent.id)
+            assertEquals("custom-child", child.id)
+            assertEquals("custom-parent", child.parentId)
+            assertEquals(emptyList(), generatedIds)
+            assertEquals(
+                listOf(
+                    "INSERT INTO `cascade_custom_key_parent` (`id`, `name`) VALUES (:id, :name)",
+                    "INSERT INTO `cascade_custom_key_child` (`id`, `parent_id`, `name`) VALUES (:id, :parentId, :name)"
+                ),
+                wrapper.actionSql
+            )
+            assertEquals(
+                listOf(
+                    mapOf<String, Any?>("id" to "custom-parent", "name" to "root"),
+                    mapOf<String, Any?>(
+                        "id" to "custom-child",
+                        "parentId" to "custom-parent",
+                        "name" to "child"
+                    )
+                ),
+                wrapper.actionParams
+            )
+            assertEquals(
+                listOf<GeneratedKeyRequest?>(null, null),
+                wrapper.actionGeneratedKeyRequests
+            )
+        } finally {
+            customIdGenerator = previousGenerator
+        }
     }
 
     @Test

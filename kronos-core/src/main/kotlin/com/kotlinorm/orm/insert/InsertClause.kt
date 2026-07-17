@@ -271,9 +271,13 @@ class InsertClause<T : KPojo>(val pojo: T) {
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = primaryKey
 
-        val primaryKeyValue = primaryKeyField.resolveGeneratedPrimaryKeyValue(paramMap[primaryKeyField.name])
+        val currentPrimaryKeyValue = paramMap[primaryKeyField.name]
+        val primaryKeyValue = primaryKeyField.resolveGeneratedPrimaryKeyValue(currentPrimaryKeyValue)
         if (primaryKeyValue != null) {
             paramMap[primaryKeyField.name] = primaryKeyValue
+            if (currentPrimaryKeyValue == null) {
+                pojo[primaryKeyField.name] = primaryKeyValue
+            }
         }
         if (primaryKeyField.primaryKey == PrimaryKeyType.IDENTITY) {
             databaseGeneratesIdentity = true

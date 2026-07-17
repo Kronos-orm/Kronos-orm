@@ -86,24 +86,27 @@ object CascadeInsertClause {
         val operationResult = this //当前任务的执行结果, 用于获取自增主键值
         pojo.toTreeNode(NodeInfo(true), cascadeAllowed, KOperationType.INSERT) {
             val metadata = kPojo.resolveRuntimeMetadata()
-            val identity = (metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns))
-                .takeIf { it.primaryKey == PrimaryKeyType.IDENTITY } ?: return@toTreeNode // 若没有自增主键，直接返回
             if(insertIgnore) return@toTreeNode // 若有子节点提升到本节点的父节点，在此层级不需要执行插入操作，而是在insertIgnore为true的子节点的下一层级执行插入操作
-            val lastInsertId = if (kPojo != pojo) { // 判断当前进行的插入操作是否为最外层的插入操作
+            val primaryKey = metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns)
+            val nodeOperationResult = if (kPojo != pojo) { // 判断当前进行的插入操作是否为最外层的插入操作
                 kPojo.insert().cascade(enabled = false).withId().execute(wrapper)
             } else {
                 operationResult // 若是最外层的插入操作，直接获取当前任务的执行结果
-            }.lastInsertId
-            val propName = identity.name
-            if (lastInsertId != null && lastInsertId != 0L && dataMap[propName] == null) { // 若自增主键值不为空且未被赋值
-                val typeSafeId =
-                    getTypeSafeValue(
-                        identity.kType!!,
-                        lastInsertId
-                    ) // 获取自增主键值的类型安全值，如将Long转为Int/Short等
-                dataMap[propName] = typeSafeId // 将自增主键值赋给当前插入任务的数据映射
-                kPojo[propName] = typeSafeId // 将自增主键值赋给当前插入任务的POJO
             }
+            if (primaryKey.primaryKey == PrimaryKeyType.IDENTITY) {
+                val lastInsertId = nodeOperationResult.lastInsertId
+                val propName = primaryKey.name
+                if (lastInsertId != null && lastInsertId != 0L && dataMap[propName] == null) { // 若自增主键值不为空且未被赋值
+                    val typeSafeId =
+                        getTypeSafeValue(
+                            primaryKey.kType!!,
+                            lastInsertId
+                        ) // 获取自增主键值的类型安全值，如将Long转为Int/Short等
+                    dataMap[propName] = typeSafeId // 将自增主键值赋给当前插入任务的数据映射
+                    kPojo[propName] = typeSafeId // 将自增主键值赋给当前插入任务的POJO
+                }
+            }
+            dataMap[primaryKey.name] = kPojo[primaryKey.name]
         }
     }
 

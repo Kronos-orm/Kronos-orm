@@ -394,6 +394,34 @@ data class User(
 ) : KPojo
 ```
 
+`@Default` 会把内容原样写入表结构 DDL，参数不是 Kotlin 值，Kronos 也不会自动把一种数据库方言的表达式转换成另一种方言。下面按自动推断出的 Kotlin 类型列出推荐的默认值字面量：
+
+| Kotlin 类型 / 推断出的 `KColumnType` | MySQL | PostgreSQL | SQLite | SQLServer | Oracle |
+|--------------------------------------|-------|------------|--------|-----------|--------|
+| `Boolean` / `BIT` | `0` / `1` | `false` / `true` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Byte`、`Short`、`Int`、`Long` / 整数类型 | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Float`、`Double`、`BigDecimal` / 数值类型 | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` |
+| `Char`、`String`、其他映射为 `VARCHAR` 的类型 | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` |
+| `Date`、`LocalDate` / `DATE` | `'2026-01-02'` | `DATE '2026-01-02'` | `'2026-01-02'` | `CONVERT(date, '2026-01-02')` | `DATE '2026-01-02'` |
+| `LocalTime` / `TIME` | `'12:34:56'` | `TIME '12:34:56'` | `'12:34:56'` | `CONVERT(time, '12:34:56')` | `TIMESTAMP '1970-01-01 12:34:56'` |
+| `LocalDateTime` / `DATETIME` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | `CONVERT(datetime2, '2026-01-02T03:04:05')` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `java.sql.Timestamp` / `TIMESTAMP` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | SQLServer 的 `rowversion` 不支持用户默认值 | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `ByteArray` / `BLOB` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` |
+
+例如，Boolean 默认值必须使用目标数据库接受的表达式：
+
+```kotlin
+// PostgreSQL
+@Default("false")
+var deleted: Boolean? = null
+
+// MySQL、SQLite、SQLServer 或 Oracle
+@Default("0")
+var deleted: Boolean? = null
+```
+
+PostgreSQL 不接受 `BOOLEAN DEFAULT 0` 和 `BOOLEAN DEFAULT 1`，应改用 `false` 和 `true`。如果同一个模型需要在多个数据库上建表，请在 schema 定义或迁移脚本中分别维护方言默认值。`CURRENT_DATE`、`CURRENT_TIMESTAMP` 等数据库函数同样会作为原生表达式写入，必须符合目标数据库语法。非空二进制默认值会受到数据库版本和具体列类型限制，应放在方言专用迁移脚本中，不要依赖一套可移植的 `@Default` 写法。
+
 ## {{ $.annotation("NonNull") }}列非空约束
 
 此注解用于声明列为非空，如果不指定则使用默认的非空约束

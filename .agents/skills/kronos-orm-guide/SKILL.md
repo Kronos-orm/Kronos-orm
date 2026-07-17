@@ -1332,13 +1332,14 @@ val affectedRows = wrapper.batchUpdate(task)
 
 ## 逻辑删除与乐观锁
 
-`@LogicDelete` 标记删除字段。启用后，普通 `delete()` 生成写入删除标记的 `UPDATE`；需要物理删除时使用 `.logic(false)`。
+`@LogicDelete` 标记删除字段。逻辑删除字段必须使用 `@Default` 声明数据库中的活动值：MySQL、SQLite、SQL Server 和 Oracle 使用 `@Default("0")`，PostgreSQL 使用 `@Default("false")`。启用后，普通 `delete()` 生成写入删除标记的 `UPDATE`；需要物理删除时使用 `.logic(false)`。
 
 ```kotlin
 data class User(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     @LogicDelete
+    @Default("0") // PostgreSQL 使用 @Default("false")
     var deleted: Boolean? = null
 ) : KPojo
 

@@ -25,6 +25,7 @@ import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
 import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.postgres
+import kotlin.test.Test
 
 class PostgresSchemaIntegrationTest : SchemaIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresSchemaSyncRegressionTest : SchemaSyncRegressionSuite(postgres, StandardIntegrationScenarioProfile)
@@ -45,7 +46,12 @@ class PostgresErrorIntegrationTest : ErrorIntegrationSuite(postgres, StandardInt
 class PostgresWrapperSqlIntegrationTest : WrapperSqlIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresCascadeIntegrationTest : CascadeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresValueTypeIntegrationTest : ValueTypeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
-class PostgresTypeDialectDdlCornerIntegrationTest : TypeDialectDdlCornerIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresTypeDialectDdlCornerIntegrationTest : TypeDialectDdlCornerIntegrationSuite(postgres, StandardIntegrationScenarioProfile) {
+    @Test
+    fun postgresRejectsNumericBooleanDefaultsAgainstRealDatabase() {
+        verifyPostgresRejectsNumericBooleanDefaultsAgainstRealDatabase()
+    }
+}
 class PostgresFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresTransactionIntegrationTest : TransactionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresSafetyCornerCaseIntegrationTest : SafetyCornerCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)

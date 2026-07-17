@@ -147,12 +147,13 @@ PostgreSQL 的 Boolean 列不接受数字默认值 `0/1`，请使用 `@Default("
 
 ## @LogicDelete
 
-标记逻辑删除字段。启用后 delete 操作变为 UPDATE（设置标记值），select 自动过滤已删除记录。普通 upsert 匹配到已逻辑删除记录时会更新原行并恢复活动值；`onConflict()` upsert 会在插入列和冲突更新赋值中维护活动值。
+标记逻辑删除字段。逻辑删除字段必须使用 `@Default` 声明数据库中的活动值：MySQL、SQLite、SQL Server 和 Oracle 使用 `@Default("0")`，PostgreSQL 使用 `@Default("false")`。启用后 delete 操作变为 UPDATE（设置标记值），select 自动过滤已删除记录。普通 upsert 匹配到已逻辑删除记录时会更新原行并恢复活动值；`onConflict()` upsert 会在插入列和冲突更新赋值中维护活动值。
 
 ```kotlin
 // 属性级别
 data class User(
     @LogicDelete
+    @Default("0") // PostgreSQL 使用 @Default("false")
     var deleted: Boolean? = false
 ) : KPojo
 

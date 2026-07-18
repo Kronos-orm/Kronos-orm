@@ -162,10 +162,11 @@ logicDeleteStrategy = "deleted"
 optimisticLockStrategy = "version"
 ```
 
-When the database table contains matching columns, `field.annotations()` writes the Kronos annotations.
+When the database table contains matching columns, `field.annotations()` writes the Kronos annotations. The logical-delete column must define `DEFAULT 0` (`DEFAULT false` on PostgreSQL) for Codegen to emit the `@Default` annotation shown below.
 
 ```kotlin group="Annotations 2" name="User.kt" icon="kotlin"
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.UpdateTime
@@ -179,6 +180,7 @@ data class User(
     @UpdateTime
     var updateTime: java.time.LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

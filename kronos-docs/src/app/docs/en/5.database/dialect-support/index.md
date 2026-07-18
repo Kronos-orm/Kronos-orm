@@ -8,9 +8,7 @@ Kronos chooses the SQL dialect and table-structure statements from `KronosDataSo
 ```kotlin
 val wrapper = KronosJdbcWrapper(dataSource)
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 
 println(wrapper.dbType)
 println(wrapper.sqlDialect)

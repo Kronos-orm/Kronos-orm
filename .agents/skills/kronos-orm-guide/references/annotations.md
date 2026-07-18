@@ -153,7 +153,7 @@ PostgreSQL 的 Boolean 列不接受数字默认值 `0/1`，请使用 `@Default("
 // 属性级别
 data class User(
     @LogicDelete
-    @Default("0") // PostgreSQL 使用 @Default("false")
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = false
 ) : KPojo
 
@@ -275,7 +275,7 @@ annotation class TableIndex(
 data class User(...) : KPojo
 ```
 
-`type = "UNIQUE"` 标记唯一索引；`method = "BTREE"` 等值会在支持的方言中渲染为索引方法；`concurrently = true` 面向 PostgreSQL，并发索引语句会放在事务性 DDL 批次之外执行。当前源码没有公开 `@ColumnIndex` 注解，单列索引也使用类级别 `@TableIndex(columns = ["name"])`。
+`type = "UNIQUE"` 标记唯一索引；`method = "BTREE"` 等值会在支持的方言中渲染为索引方法；`concurrently = true` 面向 PostgreSQL，并发索引语句会放在事务性 DDL 批次之外执行。单列索引使用类级别 `@TableIndex(columns = ["name"])`。
 
 ## @Serialize
 
@@ -292,7 +292,7 @@ data class User(
 ) : KPojo
 ```
 
-需要通过 `with(Kronos)` 配置 `serializeProcessor`（如 `GsonProcessor`、`JacksonProcessor`、Kotlinx Serialization 处理器）。处理器会收到字段声明 `KType`，可用于保留集合和嵌套集合的泛型信息。
+需要通过 `Kronos.serializeProcessor = ...` 配置序列化处理器（如 `GsonProcessor`、`JacksonProcessor`、Kotlinx Serialization 处理器）。处理器会收到字段声明 `KType`，可用于保留集合和嵌套集合的泛型信息。
 
 ## @Ignore
 

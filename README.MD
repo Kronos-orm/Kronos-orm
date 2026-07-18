@@ -296,7 +296,9 @@ data class Movie(
     @Column("movie_summary")
     val summary: String? = null,
     @Version val version: Long? = null,
-    @LogicDelete val deleted: Boolean? = null,
+    @LogicDelete
+    @Default("0") // @Default("false") for Postgres
+    val deleted: Boolean? = null,
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     @UpdateTime val updateTime: String? = null,
     @CreateTime val createTime: LocalDateTime? = null

@@ -8,9 +8,7 @@ Kronos 会通过 `KronosDataSourceWrapper.dbType` 选择 SQL 方言和表结构�
 ```kotlin
 val wrapper = KronosJdbcWrapper(dataSource)
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 
 println(wrapper.dbType)
 println(wrapper.sqlDialect)

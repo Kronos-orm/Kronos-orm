@@ -59,9 +59,7 @@ val wrapper = KronosJdbcWrapper(
     }
 )
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 
 // 创建一个User对象
 val user: User = User(

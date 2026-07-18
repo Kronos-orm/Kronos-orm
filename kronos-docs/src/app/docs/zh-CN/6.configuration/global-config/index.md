@@ -24,9 +24,7 @@ import org.apache.commons.dbcp2.BasicDataSource
 
 val wrapper = KronosJdbcWrapper(BasicDataSource())
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 > **Warning**
@@ -47,10 +45,8 @@ User(id = 1)
 应用需要按运行时上下文选择数据源时，在 `Kronos.dataSource` 函数里返回不同 wrapper。
 
 ```kotlin group="Data source 3" name="dynamic" icon="kotlin"
-with(Kronos) {
-    dataSource = {
-        if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
-    }
+Kronos.dataSource = {
+    if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
 }
 ```
 
@@ -69,9 +65,7 @@ with(Kronos) {
 ，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
 
 ```kotlin group="Naming 1" name="table" icon="kotlin"
-with(Kronos) {
-    tableNamingStrategy = lineHumpNamingStrategy
-}
+Kronos.tableNamingStrategy = lineHumpNamingStrategy
 ```
 
 ```text group="Naming 1" name="result"
@@ -83,9 +77,7 @@ UserProfile -> user_profile
 `NoneNamingStrategy` 保持 Kotlin 类名和数据库名称原样。Kronos 默认使用该策略。
 
 ```kotlin group="Naming 2" name="none" icon="kotlin"
-with(Kronos) {
-    tableNamingStrategy = noneNamingStrategy
-}
+Kronos.tableNamingStrategy = noneNamingStrategy
 ```
 
 ```text group="Naming 2" name="none result"
@@ -102,9 +94,7 @@ UserProfile -> UserProfile
 Kotlin 属性名需要映射到数据库列名时，给字段设置同样的命名策略。
 
 ```kotlin group="Naming 3" name="field" icon="kotlin"
-with(Kronos) {
-    fieldNamingStrategy = lineHumpNamingStrategy
-}
+Kronos.fieldNamingStrategy = lineHumpNamingStrategy
 ```
 
 ```text group="Naming 3" name="field result"
@@ -135,9 +125,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
 
 data class User(
     @PrimaryKey(true)
@@ -170,9 +158,7 @@ data class User(
 > 全局设置更新时间后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
 ```kotlin group="Common strategies 2" name="update time" icon="kotlin" {2}
-with(Kronos) {
-    updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
-}
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
 
 data class User(
     @PrimaryKey(true)
@@ -200,13 +186,12 @@ data class User(
 > 全局设置逻辑删除后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
 ```kotlin group="Common strategies 3" name="logic delete" icon="kotlin" {2}
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 
 data class User(
     @PrimaryKey(true)
     var id: Int? = null,
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null
     // 若没有deleted属性，则逻辑删除策略不会对该表生效
 ) : KPojo
@@ -241,9 +226,7 @@ WHERE `user`.`deleted` = 0
 > 全局设置乐观锁后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
 ```kotlin group="Common strategies 4" name="version" icon="kotlin" {2}
-with(Kronos) {
-    optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
-}
+Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
 
 data class User(
     @PrimaryKey(true)
@@ -266,9 +249,7 @@ data class User(
 Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
 
 ```kotlin group="Time 1" name="format" icon="kotlin"
-with(Kronos) {
-    defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
-}
+Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
 > **Note**
@@ -346,9 +327,7 @@ WHERE `user`.`name` IS NULL
 如可以通过引入`GSON`库来实现序列化解析器：
 
 ```kotlin group="GsonProcessor" name="Main.kt" icon="kotlin"
-with(Kronos) {
-    serializeProcessor = GsonProcessor
-}
+Kronos.serializeProcessor = GsonProcessor
 ```
 
 ```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
@@ -382,17 +361,13 @@ object GsonProcessor : KronosSerializeProcessor {
 设置 `logPath` 后，Kronos 会向控制台和指定路径输出日志。
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
-with(Kronos) {
-    logPath = listOf("console", "/var/log/kronos")
-}
+Kronos.logPath = listOf("console", "/var/log/kronos")
 ```
 
 使用空数组关闭内置日志输出。
 
 ```kotlin group="Logging 2" name="off" icon="kotlin"
-with(Kronos) {
-    logPath = emptyList()
-}
+Kronos.logPath = emptyList()
 ```
 
 ## 关闭智能值转换
@@ -424,7 +399,5 @@ Kronos默认开启`getTypeSafeValue`以及`safeMapperTo`函数进行智能值转
 当安全赋值需要保留 Map 原始值，并由目标属性赋值过程直接校验类型时，设置 `strictSetValue = true`。
 
 ```kotlin
-with(Kronos) {
-    strictSetValue = true
-}
+Kronos.strictSetValue = true
 ```

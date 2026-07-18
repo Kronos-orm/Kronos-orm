@@ -36,7 +36,7 @@ Used to specify the index of the data table.
 ['concurrently', 'Whether to create index concurrently, <b>only applicable to PostgreSQL</b>', 'Boolean', false]
 ])}}
 
-Current source has no public `@ColumnIndex` annotation. For a single-column index, pass one column name to `@TableIndex(columns = [...])`.
+For a single-column index, pass one column name to `@TableIndex(columns = [...])`.
 
 ```kotlin group="TableIndex" name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.Column
@@ -75,9 +75,7 @@ The annotation is used to specify whether the creation time strategy is enabled 
 
 ```kotlin
 // Disable the creation time feature for a specific table when the global creation time feature is enabled.
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
 
 @CreateTime(enable = false)
 data class User(
@@ -86,9 +84,7 @@ data class User(
 ) : KPojo
 
 // Enabling the creation time for a table with creation time turned off globally
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("create_time", "createTime"))
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("create_time", "createTime"))
 
 @CreateTime
 data class User(
@@ -107,9 +103,7 @@ Used to specify whether the data table is enabled for update time strategy, the 
 
 ```kotlin
 // Disable the update time feature for a specific table when the global update time function is enabled.
-with(Kronos) {
-    updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
-}
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
 
 @UpdateTime(enable = false)
 data class User(
@@ -118,9 +112,7 @@ data class User(
 ) : KPojo
 
 // Enabling update time for a table with update time turned off globally
-with(Kronos) {
-    updateTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("update_time", "updateTime"))
-}
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("update_time", "updateTime"))
 
 @UpdateTime
 data class User(
@@ -139,23 +131,21 @@ Used to specify whether the logical deletion strategy is enabled for the data ta
 
 ```kotlin
 // Disable the logical deletion for a table with logical deletion globally enabled
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 
 @LogicDelete(enable = false)
 data class User(
     val id: Int? = null,
+    @Default("0") // @Default("false") for Postgres
     val deleted: Boolean? = null // or just remove this field to disable logical deletion
 ) : KPojo
 
 // Enabling the logical deletion for a table with logical deletion turned off globally
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = false, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = false, field = Field("deleted"))
 @LogicDelete
 data class User(
   val id: Int? = null,
+  @Default("0") // @Default("false") for Postgres
   val deleted: Boolean? = null // logical deletion field
 ) : KPojo
 ```
@@ -401,11 +391,11 @@ For example, a Boolean default must use the expression accepted by the selected 
 ```kotlin
 // PostgreSQL
 @Default("false")
-var deleted: Boolean? = null
+var enabled: Boolean? = null
 
 // MySQL, SQLite, SQLServer, or Oracle
 @Default("0")
-var deleted: Boolean? = null
+var enabled: Boolean? = null
 ```
 
 PostgreSQL rejects `BOOLEAN DEFAULT 0` and `BOOLEAN DEFAULT 1`; use `false` and `true` instead. If one model must create schemas on multiple database types, keep dialect-specific defaults in separate schema definitions or migrations. Database functions such as `CURRENT_DATE` and `CURRENT_TIMESTAMP` are also raw expressions and must be valid for the selected database. Non-empty binary defaults vary by database version and column type; define them in a dialect-specific migration instead of relying on a portable `@Default` value.
@@ -465,6 +455,7 @@ This annotation is used to declare a field as logically deleted. If not specifie
 @Table("tb_user")
 data class User(
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     val deleted: Boolean? = null
 ) : KPojo
 ```

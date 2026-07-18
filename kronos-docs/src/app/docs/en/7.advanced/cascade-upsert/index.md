@@ -276,13 +276,14 @@ The profile object in memory is ignored by this database call.
 
 Cascade upsert follows the same strategy fields as insert and update. On the insert branch, `@LogicDelete` and `@Version` fields receive their configured initial values. On the update branch, logically deleted rows can be matched by the `on` fields, the logic-delete column is restored to the normal value, and the version column is incremented by the update strategy.
 
-```kotlin group="Strategy fields 1" name="kotlin" icon="kotlin" {6-9,18-21}
+```kotlin group="Strategy fields 1" name="kotlin" icon="kotlin" {6-10,19-22}
 @Table("account_flag")
 data class AccountFlag(
     @PrimaryKey
     var id: Long? = null,
     var name: String? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

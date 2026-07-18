@@ -4,7 +4,7 @@
 
 Kronos reads `@TableIndex` metadata when `wrapper.table.createTable(...)` or `wrapper.table.syncTable(...)` builds DDL. The runtime metadata shape is `KTableIndex`.
 
-Current source has no public `@ColumnIndex` annotation. For a single-column index, declare a class-level `@TableIndex` with one column name.
+For a single-column index, declare a class-level `@TableIndex` with one column name.
 
 Use {{ $.keyword("mapping/table-and-column", ["Table and Column"]) }} for table and column name mapping before adding index definitions.
 

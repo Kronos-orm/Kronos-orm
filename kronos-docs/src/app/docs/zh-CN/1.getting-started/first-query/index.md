@@ -45,9 +45,7 @@ val wrapper = KronosJdbcWrapper(
     }
 )
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 连接细节见 {{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。

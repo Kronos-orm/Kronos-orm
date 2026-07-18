@@ -154,15 +154,14 @@ val rowNumber: Int? = rows.first().rn
 
 1. 全局策略：
 ```kotlin
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 ```
 
 2. 注解方式：
 ```kotlin
 data class User(
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = false
 ) : KPojo
 ```
@@ -187,9 +186,7 @@ data class User(
 
 或全局配置：
 ```kotlin
-with(Kronos) {
-    optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
-}
+Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
 ```
 
 insert 会初始化版本号，update、逻辑删除和 upsert 更新分支会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
@@ -256,9 +253,7 @@ data class User(
 
 需要配置序列化处理器：
 ```kotlin
-with(Kronos) {
-    serializeProcessor = JacksonProcessor()  // 或 GsonProcessor
-}
+Kronos.serializeProcessor = JacksonProcessor()  // 或 GsonProcessor
 ```
 
 自定义处理器实现 `KronosSerializeProcessor` 时，`serialize` 和 `deserialize` 都会收到字段声明上的 `KType`。处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段时，直接使用这个完整声明类型。
@@ -596,9 +591,7 @@ val mysqlWrapper = KronosJdbcWrapper(mysqlDataSource)
 val pgWrapper = KronosJdbcWrapper(pgDataSource)
 
 // 默认数据源
-with(Kronos) {
-    dataSource = { mysqlWrapper }
-}
+Kronos.dataSource = { mysqlWrapper }
 
 // 指定数据源执行
 user.insert().execute(pgWrapper)
@@ -655,9 +648,7 @@ dependencies {
 ```kotlin
 KronosLoggerApp.detectLoggerImplementation()
 
-with(Kronos) {
-    loggerType = KLoggerType.JDK_LOGGER
-}
+Kronos.loggerType = KLoggerType.JDK_LOGGER
 ```
 
 ---
@@ -804,6 +795,7 @@ data class User(
     @UpdateTime
     var updateTime: java.time.LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

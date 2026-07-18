@@ -6,6 +6,7 @@
 Use `@Version` on the KPojo field that stores the optimistic lock version. The annotation is enabled by default.
 
 ```kotlin group="KPojo 1" name="Product.kt" icon="kotlin"
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Version
@@ -18,6 +19,7 @@ data class Product(
     @Version
     var version: Int? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null
 ) : KPojo
 ```
@@ -29,9 +31,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
-with(Kronos) {
-    optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
-}
+Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
 ```
 
 ## Insert initializes the version

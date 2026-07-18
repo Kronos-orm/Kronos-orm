@@ -1,15 +1,20 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import java.io.File
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.intellij.platform)
 }
 
-val macIdeaEapHome = "/Applications/IntelliJ IDEA 2026.2 EAP.app/Contents"
-val windowsIdeaEapExecutable = "C:/Program Files/JetBrains/IntelliJ IDEA 262.8377.35/bin/idea64.exe"
-val localIdeaEapVersion = "2026.2"
+val stableIdeaVersion = "2026.2"
+val stableIdeaBuild = "262.8665.258"
+val macIdeaHomes = listOf(
+    "/Applications/IntelliJ IDEA.app/Contents",
+    "${System.getProperty("user.home")}/Applications/IntelliJ IDEA.app/Contents"
+)
+val windowsIdeaExecutable = "C:/Program Files/JetBrains/IntelliJ IDEA 2026.2/bin/idea64.exe"
 val kronosIdeaPluginVersion = providers.gradleProperty("kronos.idea.plugin.version")
     .orElse(providers.provider { rootProject.version.toString() })
 
@@ -29,17 +34,14 @@ val ideaHome = providers.gradleProperty("kronos.idea.localPath")
     .map(::normalizeIdeaHome)
     .orElse(
         providers.provider {
-            when {
-                file(macIdeaEapHome).isDirectory -> normalizeIdeaHome(macIdeaEapHome)
-                file(windowsIdeaEapExecutable).isFile -> normalizeIdeaHome(windowsIdeaEapExecutable)
-                else -> null
-            }
+            macIdeaHomes.firstOrNull { file(it).isDirectory }?.let(::normalizeIdeaHome)
+                ?: windowsIdeaExecutable.takeIf { file(it).isFile }?.let(::normalizeIdeaHome)
         }
     )
 val ideaVersion = providers.gradleProperty("kronos.idea.version")
-    .orElse(localIdeaEapVersion)
+    .orElse(stableIdeaVersion)
 val ideaJavaCompilerVersion = providers.gradleProperty("kronos.idea.java.compiler.version")
-    .orElse("261.26222.72")
+    .orElse(stableIdeaBuild)
 val ideaSandboxContainer = providers.gradleProperty("kronos.idea.sandbox")
     .map { rootProject.layout.projectDirectory.dir(it) }
     .orElse(rootProject.layout.projectDirectory.dir("../Kronos-orm-idea-sandbox"))
@@ -83,6 +85,10 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
+tasks.named("verifyPluginSignature") {
+    dependsOn("signPlugin")
+}
+
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_25)
@@ -99,6 +105,24 @@ kotlin {
 intellijPlatform {
     instrumentCode.set(true)
     sandboxContainer.set(ideaSandboxContainer)
+
+    publishing {
+        token.set(providers.environmentVariable("PUBLISH_TOKEN"))
+        channels.set(listOf("default"))
+        hidden.set(false)
+    }
+
+    signing {
+        certificateChain.set(providers.environmentVariable("CERTIFICATE_CHAIN"))
+        certificateChainFile.set(
+            layout.file(providers.environmentVariable("CERTIFICATE_CHAIN_FILE").map(::File))
+        )
+        privateKey.set(providers.environmentVariable("PRIVATE_KEY"))
+        privateKeyFile.set(
+            layout.file(providers.environmentVariable("PRIVATE_KEY_FILE").map(::File))
+        )
+        password.set(providers.environmentVariable("PRIVATE_KEY_PASSWORD"))
+    }
 
     pluginConfiguration {
         id.set("com.kotlinorm.kronos-idea-plugin")
@@ -124,18 +148,6 @@ intellijPlatform {
             <p><b>Editor diagnostics</b><br>Reports projection, scalar subquery, predicate subquery, and INSERT SELECT shape errors in the editor.</p>
             <p><b>Code Generator</b><br>Reads IDEA Database data sources and previews or writes KPojo files.</p>
             <p><b>Templates</b><br>Copies the built-in KPojo template into .kronos/templates for project customization.</p>
-            <p><b>Projection completion</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-completion.png" width="640" alt="Kronos IDEA projection completion">
-            </p>
-            <p><b>Projection context docs</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-context-docs.png" width="640" alt="Kronos IDEA projection context documentation">
-            </p>
-            <p><b>Projection documentation</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-docs.png" width="640" alt="Kronos IDEA projection documentation">
-            </p>
-            <p><b>Code generator</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-code-generator.png" width="640" alt="Kronos IDEA code generator">
-            </p>
             """.trimIndent()
         )
         vendor {

@@ -14,7 +14,7 @@ CREATE TABLE tb_user (
     email VARCHAR(128),
     create_time DATETIME,
     update_time DATETIME,
-    deleted BIT,
+    deleted BIT DEFAULT 0,
     version INT
 );
 ```
@@ -79,6 +79,7 @@ For the `tb_user` table above, `create_time` becomes `createTime`, and matching 
 package com.example.entity
 
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.NonNull
 import com.kotlinorm.annotations.PrimaryKey
@@ -99,6 +100,7 @@ data class User(
     @UpdateTime
     var updateTime: java.time.LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

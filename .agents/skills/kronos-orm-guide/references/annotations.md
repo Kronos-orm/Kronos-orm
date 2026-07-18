@@ -14,6 +14,8 @@ annotation class Table(val name: String)
 data class User(val id: Int? = null) : KPojo
 ```
 
+KPojo 类本身不能声明类级泛型参数。为 KPojo 使用具体属性类型；否则编译时会报告 `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED`。普通非 KPojo 泛型类仍然可以使用，非泛型 KPojo 中的 `List<String>` 等具体泛型属性也可以使用。
+
 ## @PrimaryKey
 
 标记主键字段。不设置参数时为手动主键；设置 `identity`、`uuid`、`snowflake` 或 `custom` 时，字段分别映射为对应的 `PrimaryKeyType`。

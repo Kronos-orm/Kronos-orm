@@ -287,6 +287,7 @@ Use the diagnostic code to find the DSL shape that needs to change.
 | Diagnostic | What to check | Fix |
 |------------|---------------|-----|
 | `__tableName must be overridden by the compiler plugin` | The source set was compiled without Kronos support | Enable the Gradle or Maven plugin for that module and recompile |
+| `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED` | A KPojo class declares class-level type parameters | Remove the KPojo type parameters and use concrete property types |
 | `KRONOS_SELECT_ITEM_REQUIRES_ALIAS` | Function, aggregate, scalar subquery, window function, or raw SQL in `select { ... }` | Add `.alias("resultName")` |
 | `KRONOS_DUPLICATE_PROJECTION_FIELD` | Two selected items produce the same result property | Remove one field or give one item a different alias |
 | `KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE` | A selected alias has the same name as an input field | Choose an alias that does not collide with the source `KPojo` |

@@ -24,28 +24,28 @@ import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
 
 /**
- * FIR diagnostics for condition expressions that reference unavailable SQL sources.
+ * FIR diagnostics for unsupported KPojo declarations.
  */
-object KronosConditionDiagnostics : KtDiagnosticsContainer() {
-    val UNREGISTERED_CONDITION_SOURCE: KtDiagnosticFactory0 = KtDiagnosticFactory0(
-        "KRONOS_UNREGISTERED_CONDITION_SOURCE",
+object KronosKPojoDiagnostics : KtDiagnosticsContainer() {
+    val GENERIC_KPOJO_NOT_SUPPORTED: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+        "KRONOS_GENERIC_KPOJO_NOT_SUPPORTED",
         Severity.ERROR,
-        SourceElementPositioningStrategies.DEFAULT,
+        SourceElementPositioningStrategies.DECLARATION_NAME,
         kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
-    override fun getRendererFactory(): BaseDiagnosticRendererFactory = KronosConditionDiagnosticMessages
+    override fun getRendererFactory(): BaseDiagnosticRendererFactory = KronosKPojoDiagnosticMessages
 }
 
 /**
- * User-facing messages for Kronos condition diagnostics.
+ * User-facing messages for KPojo declaration diagnostics.
  */
-object KronosConditionDiagnosticMessages : BaseDiagnosticRendererFactory() {
-    override val MAP by KtDiagnosticFactoryToRendererMap("KronosCondition") { map ->
+object KronosKPojoDiagnosticMessages : BaseDiagnosticRendererFactory() {
+    override val MAP by KtDiagnosticFactoryToRendererMap("KronosKPojo") { map ->
         map.put(
-            KronosConditionDiagnostics.UNREGISTERED_CONDITION_SOURCE,
-            "KPojo property is not a registered SQL source in this condition; use .value for its Kotlin value"
+            KronosKPojoDiagnostics.GENERIC_KPOJO_NOT_SUPPORTED,
+            "Generic KPojo declarations are not supported; use a non-generic KPojo with concrete property types"
         )
     }
 }

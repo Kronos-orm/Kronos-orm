@@ -22,7 +22,6 @@ import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
-import kotlin.reflect.KClass
 
 /**
  * FIR diagnostics emitted for projection DSL misuse that Kotlin's normal type system cannot express.
@@ -32,7 +31,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_SELECT_ITEM_REQUIRES_ALIAS",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -40,7 +39,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_DUPLICATE_PROJECTION_FIELD",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -48,7 +47,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -56,7 +55,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -64,7 +63,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -72,7 +71,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -80,7 +79,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -88,7 +87,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_INSERT_SELECT_VALUE_COUNT_MISMATCH",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -96,7 +95,7 @@ object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_INSERT_SELECT_VALUE_TYPE_MISMATCH",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -145,15 +144,4 @@ object KronosProjectionDiagnosticMessages : BaseDiagnosticRendererFactory() {
             "Insert-select value type must match the target insertable field type"
         )
     }
-}
-
-private fun psiElementClass(): KClass<*> {
-    val classNames = listOf(
-        "com.intellij.psi.PsiElement",
-        "org.jetbrains.kotlin.com.intellij.psi.PsiElement",
-    )
-    val psiClass = classNames.firstNotNullOfOrNull { name ->
-        runCatching { Class.forName(name).kotlin }.getOrNull()
-    }
-    return requireNotNull(psiClass) { "Unable to find IntelliJ PsiElement class for Kronos diagnostics" }
 }

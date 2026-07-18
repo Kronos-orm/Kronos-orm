@@ -23,6 +23,14 @@ data class User(
 
 `@Table("tb_user")` 指定数据库表名。`@PrimaryKey(identity = true)` 声明自增主键。普通列来自类属性，列名默认按当前列名策略生成。
 
+KPojo 类本身不能声明类级泛型参数。请为每个 KPojo 使用具体的属性类型；否则编译时会报告 `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED`。这个限制不影响普通非 KPojo 泛型类，也不影响在非泛型 KPojo 中使用 `List<String>` 等具体泛型类型。
+
+```kotlin
+data class User(
+    var tags: List<String>? = null
+) : KPojo
+```
+
 ## 为什么使用 var 和默认值
 
 Kronos 可以读取 `val` 属性作为列，但 `update().set { ... }`、`upsert().set { ... }` 和 Map 结果回填需要可写属性时，应使用 `var`。

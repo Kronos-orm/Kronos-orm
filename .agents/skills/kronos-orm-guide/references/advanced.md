@@ -1,5 +1,7 @@
 # Kronos ORM 高级功能
 
+实体约束：KPojo 类本身不能声明类级泛型参数。请使用具体属性类型；否则编译时会报告 `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED`。普通非 KPojo 泛型类不受此限制，非泛型 KPojo 可以使用 `List<String>` 等具体泛型属性。
+
 ## 目录
 
 1. [级联操作](#级联操作)

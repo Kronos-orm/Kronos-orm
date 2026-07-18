@@ -23,6 +23,14 @@ data class User(
 
 `@Table("tb_user")` names the database table. `@PrimaryKey(identity = true)` declares an identity primary key. Other properties become columns, and their database names follow the current field naming strategy unless an annotation overrides them.
 
+A KPojo class cannot declare class-level type parameters. Use concrete property types for each KPojo; otherwise compilation reports `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED`. This restriction does not apply to ordinary non-KPojo generic classes or concrete generic property types such as `List<String>` in a non-generic KPojo.
+
+```kotlin
+data class User(
+    var tags: List<String>? = null
+) : KPojo
+```
+
 ## Why var and defaults are used
 
 Kronos can read `val` properties as columns, but use `var` when `update().set { ... }`, `upsert().set { ... }`, or map-based result filling needs to write a property.

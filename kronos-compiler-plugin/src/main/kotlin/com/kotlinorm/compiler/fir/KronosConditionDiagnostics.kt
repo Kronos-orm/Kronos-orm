@@ -22,7 +22,6 @@ import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
-import kotlin.reflect.KClass
 
 /**
  * FIR diagnostics for condition expressions that reference unavailable SQL sources.
@@ -32,7 +31,7 @@ object KronosConditionDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_UNREGISTERED_CONDITION_SOURCE",
         Severity.ERROR,
         SourceElementPositioningStrategies.DEFAULT,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -49,15 +48,4 @@ object KronosConditionDiagnosticMessages : BaseDiagnosticRendererFactory() {
             "KPojo property is not a registered SQL source in this condition; use .value for its Kotlin value"
         )
     }
-}
-
-private fun psiElementClass(): KClass<*> {
-    val classNames = listOf(
-        "com.intellij.psi.PsiElement",
-        "org.jetbrains.kotlin.com.intellij.psi.PsiElement",
-    )
-    val psiClass = classNames.firstNotNullOfOrNull { name ->
-        runCatching { Class.forName(name).kotlin }.getOrNull()
-    }
-    return requireNotNull(psiClass) { "Unable to find IntelliJ PsiElement class for Kronos diagnostics" }
 }

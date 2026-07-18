@@ -22,7 +22,6 @@ import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
-import kotlin.reflect.KClass
 
 /**
  * FIR diagnostics for unsupported KPojo declarations.
@@ -32,7 +31,7 @@ object KronosKPojoDiagnostics : KtDiagnosticsContainer() {
         "KRONOS_GENERIC_KPOJO_NOT_SUPPORTED",
         Severity.ERROR,
         SourceElementPositioningStrategies.DECLARATION_NAME,
-        psiElementClass(),
+        kronosDiagnosticPsiElementClass(),
         getRendererFactory()
     )
 
@@ -49,15 +48,4 @@ object KronosKPojoDiagnosticMessages : BaseDiagnosticRendererFactory() {
             "Generic KPojo declarations are not supported; use a non-generic KPojo with concrete property types"
         )
     }
-}
-
-private fun psiElementClass(): KClass<*> {
-    val classNames = listOf(
-        "com.intellij.psi.PsiElement",
-        "org.jetbrains.kotlin.com.intellij.psi.PsiElement",
-    )
-    val psiClass = classNames.firstNotNullOfOrNull { name ->
-        runCatching { Class.forName(name).kotlin }.getOrNull()
-    }
-    return requireNotNull(psiClass) { "Unable to find IntelliJ PsiElement class for Kronos diagnostics" }
 }

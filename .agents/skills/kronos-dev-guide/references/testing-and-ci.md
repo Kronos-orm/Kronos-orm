@@ -281,7 +281,7 @@ All workflows in `.github/workflows/`:
 | `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out `kronos-example-ktor` and `kronos-example-spring-boot`, rewires them to the current Kronos version, and runs backend smoke tests only |
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
-| `publish.yml` | push to `main` | Snapshot or release publishing to Maven Central |
+| `publish.yml` | push to `main` | Snapshot publishing to Central Snapshots, or formal release publishing to Maven Central, JetBrains Marketplace, and GitHub Releases |
 | `greetings.yml` | new issues/PRs | Bilingual welcome messages |
 | `stale.yml` | daily 15:40 UTC | Marks stale issues (60d) and PRs, closes after grace period |
 
@@ -402,11 +402,28 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 - Trigger: push to `main` (version must NOT end with `-SNAPSHOT`)
 - Flow:
   1. `bump-version.sh release-from-current` strips `-SNAPSHOT`
-  2. Commit + tag `v$VERSION`
-  3. `./gradlew publishAllToMavenCentral` with GPG signing
-  4. `bump-version.sh next-snapshot` bumps to next SNAPSHOT
-  5. Commit + push
-- Secrets: `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY` (ASCII-armored GPG), `SIGNING_PASSWORD`
+  2. Commits and pushes the release version
+  3. Builds JVM artifacts
+  4. Runs `:kronos-idea-plugin:publishPlugin`, which builds, signs, and uploads the current release version to the public JetBrains Marketplace `default` channel
+  5. Runs `publishAllToMavenCentral` with GPG signing
+  6. Creates or updates the GitHub Release with JVM artifacts, the signed IDEA plugin zip, and checksums
+  7. Opens a PR that bumps the project to the next SNAPSHOT version
+- Maven Central secrets: `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY` (ASCII-armored GPG), `SIGNING_PASSWORD`
+- JetBrains Marketplace secrets: `JETBRAINS_MARKETPLACE_TOKEN`, `IDEA_CERTIFICATE_CHAIN`, `IDEA_PRIVATE_KEY`, `IDEA_PRIVATE_KEY_PASSWORD`
+
+The IDEA plugin version comes from `rootProject.version`; do not hard-code a
+release number in the plugin build. Snapshot pushes never upload to Marketplace.
+The formal release job must fail if Marketplace credentials are absent, plugin
+signing fails, upload fails, or the expected signed zip is missing. Only the
+signed zip for the current release version may be attached to the GitHub Release.
+
+Create `JETBRAINS_MARKETPLACE_TOKEN` in the JetBrains Marketplace profile. Store
+the complete PEM certificate chain, matching complete PEM private key, and key
+password in the other three repository secrets. Never commit or print these
+values. For local verification, prefer the file-backed
+`CERTIFICATE_CHAIN_FILE` and `PRIVATE_KEY_FILE` inputs and run `signPlugin`,
+`verifyPluginStructure`, `verifyPluginSignature`, and Plugin Verifier without
+invoking `publishPlugin`.
 
 ### Publishing Convention Plugin
 `build-logic/src/main/kotlin/publishing.gradle.kts`:

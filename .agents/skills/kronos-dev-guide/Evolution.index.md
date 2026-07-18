@@ -1,5 +1,7 @@
 | 症状/关键词 | 经验记录 |
 |---|---|
+| IDEA plugin；`signPlugin`；`verifyPluginSignature`；`publishPlugin`；Marketplace；PEM；`supportsKotlinPluginMode`；Plugin Verifier；`-offline` | [IDEA 插件签名与校验必须使用明确输入](evolution/2026-07-18-idea-plugin-signing-and-verification.md) |
+| IDEA plugin；`buildPlugin`；2026.2；EAP；`javaCompiler`；platform build | [IDEA 平台与 Java compiler 必须使用同一正式 build](evolution/2026-07-18-idea-platform-java-compiler-build-alignment.md) |
 | condition IR；普通对象属性变列；顶层属性 NPE；`KPojo.value`；嵌套 `value`；函数参数 | [Condition field lowering must classify the receiver](evolution/2026-07-17-condition-field-lowering-source-ownership.md) |
 | FIR condition diagnostic；`takeIf`；`takeUnless`；`if`；`when`；Kotlin control flow；`.value` 误报 | [Condition diagnostics must respect Kotlin control flow](evolution/2026-07-17-condition-diagnostics-control-flow-boundary.md) |
 | IDEA plugin；projection completion；`it.`；空 selector；window alias；`rn` 补全缺失 | [IDEA 投影补全必须支持空 selector](evolution/2026-07-13-idea-projection-completion-empty-selector.md) |

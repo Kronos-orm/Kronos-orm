@@ -287,6 +287,7 @@ User.kt:12:13: error: [Kronos] Unsupported field
 | 诊断 | 检查点 | 修复方式 |
 |------|--------|----------|
 | `__tableName must be overridden by the compiler plugin` | 当前 source set 没有经过 Kronos 编译期支持 | 为该模块启用 Gradle 或 Maven 插件后重新编译 |
+| `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED` | KPojo 类声明了类级泛型参数 | 移除 KPojo 类的泛型参数，并使用具体的属性类型 |
 | `KRONOS_SELECT_ITEM_REQUIRES_ALIAS` | `select { ... }` 中包含函数、聚合、标量子查询、窗口函数或原生 SQL | 添加 `.alias("resultName")` |
 | `KRONOS_DUPLICATE_PROJECTION_FIELD` | 两个投影项生成了同名结果属性 | 删除重复字段，或给其中一个投影项设置不同 alias |
 | `KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE` | selected alias 与输入字段同名 | 使用不和源 `KPojo` 字段冲突的 alias |

@@ -133,6 +133,8 @@ data class Movie(
 ) : KPojo
 ```
 
+KPojo 类本身不能声明类级泛型参数。必须为 KPojo 使用具体的属性类型，否则编译时会报告 `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED`；普通非 KPojo 泛型类仍然可以使用，非泛型 KPojo 也可以拥有 `List<String>` 这样的具体泛型属性。
+
 常用注解速查：
 
 | 注解 | 作用 | 示例 |

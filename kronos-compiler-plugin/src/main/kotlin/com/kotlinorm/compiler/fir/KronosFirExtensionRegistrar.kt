@@ -28,9 +28,10 @@ class KronosFirExtensionRegistrar : FirExtensionRegistrar() {
      * Installs projection declaration generation before call refinement consumes those symbols.
      */
     override fun ExtensionRegistrarContext.configurePlugin() {
-        registerDiagnosticContainers(KronosProjectionDiagnostics, KronosConditionDiagnostics)
+        registerDiagnosticContainers(KronosProjectionDiagnostics, KronosConditionDiagnostics, KronosKPojoDiagnostics)
         +::KronosProjectionCheckersExtension
         +::KronosConditionCheckersExtension
+        +::KronosKPojoCheckersExtension
         +::KronosProjectionDeclarationGenerationExtension
         +::KronosProjectionCallRefinementExtension
     }

@@ -88,9 +88,7 @@ val wrapper by lazy {
     )
 }
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 ```kotlin group="MySQL" name="Driver coordinate" icon="gradlekts"
@@ -119,9 +117,7 @@ val wrapper by lazy {
     )
 }
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 ```kotlin group="PostgreSQL" name="Driver coordinate" icon="gradlekts"
@@ -148,9 +144,7 @@ val wrapper by lazy {
     )
 }
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 ```kotlin group="SQLite" name="Driver coordinate" icon="gradlekts"
@@ -179,9 +173,7 @@ val wrapper by lazy {
     )
 }
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 ```kotlin group="SQL Server" name="Driver coordinate" icon="gradlekts"
@@ -210,9 +202,7 @@ val wrapper by lazy {
     )
 }
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 ```kotlin group="Oracle" name="Driver coordinate" icon="gradlekts"

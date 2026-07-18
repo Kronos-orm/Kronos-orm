@@ -178,6 +178,7 @@ data class User(
     @PrimaryKey
     var id: Int? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

@@ -224,12 +224,10 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.PrimaryKeyType
 
 fun configurePrimaryKeyStrategy() {
-    with(Kronos) {
-        primaryKeyStrategy = KronosCommonStrategy(
-            enabled = true,
-            field = Field("id", "id", primaryKey = PrimaryKeyType.IDENTITY)
-        )
-    }
+    Kronos.primaryKeyStrategy = KronosCommonStrategy(
+        enabled = true,
+        field = Field("id", "id", primaryKey = PrimaryKeyType.IDENTITY)
+    )
 }
 ```
 

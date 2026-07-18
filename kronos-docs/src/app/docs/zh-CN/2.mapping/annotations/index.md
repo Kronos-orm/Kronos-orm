@@ -35,7 +35,7 @@ data class User(
   ['concurrently', '是否并发创建索引，<b>仅适用于 PostgreSQL</b>', 'Boolean', false]
 ])}}
 
-当前源码没有公开的`@ColumnIndex`注解。单列索引也使用`@TableIndex(columns = [...])`，并传入一个列名。
+单列索引使用`@TableIndex(columns = [...])`，并传入一个列名。
 
 ```kotlin group="TableIndex" name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.Column
@@ -74,9 +74,7 @@ CREATE UNIQUE INDEX `idx_name_create_time` ON `tb_user` (`name`, `create_time`) 
 
 ```kotlin
 // 在全局开启创建时间的情况下取消某张表的创建时间功能
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
 
 @CreateTime(enable = false)
 data class User(
@@ -85,9 +83,7 @@ data class User(
 ) : KPojo
 
 // 在全局关闭创建时间的情况下开启某张表的创建时间功能
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("create_time", "createTime"))
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("create_time", "createTime"))
 
 @CreateTime
 data class User(
@@ -106,9 +102,7 @@ data class User(
 
 ```kotlin
 // 在全局开启更新时间的情况下取消某张表的更新时间功能
-with(Kronos) {
-    updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
-}
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
 
 @UpdateTime(enable = false)
 data class User(
@@ -117,9 +111,7 @@ data class User(
 ) : KPojo
 
 // 在全局关闭更新时间的情况下开启某张表的更新时间功能
-with(Kronos) {
-    updateTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("update_time", "updateTime"))
-}
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = false, field = Field("update_time", "updateTime"))
 
 @UpdateTime
 data class User(
@@ -138,25 +130,23 @@ data class User(
 
 ```kotlin
 // 在全局开启逻辑删除的情况下取消某张表的逻辑删除功能
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 
 @LogicDelete(enable = false)
 data class User(
     val id: Int? = null,
+    @Default("0") // @Default("false") for Postgres
     val deleted: Boolean? = null // 或者直接删除该字段，禁用逻辑删除功能
 ) : KPojo
 
 
 // 在全局关闭逻辑删除的情况下开启某张表的逻辑删除功能
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = false, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = false, field = Field("deleted"))
 
 @LogicDelete
 data class User(
   val id: Int? = null,
+  @Default("0") // @Default("false") for Postgres
   val deleted: Boolean? = null // 逻辑删除字段
 ) : KPojo
 ```
@@ -413,11 +403,11 @@ data class User(
 ```kotlin
 // PostgreSQL
 @Default("false")
-var deleted: Boolean? = null
+var enabled: Boolean? = null
 
 // MySQL、SQLite、SQLServer 或 Oracle
 @Default("0")
-var deleted: Boolean? = null
+var enabled: Boolean? = null
 ```
 
 PostgreSQL 不接受 `BOOLEAN DEFAULT 0` 和 `BOOLEAN DEFAULT 1`，应改用 `false` 和 `true`。如果同一个模型需要在多个数据库上建表，请在 schema 定义或迁移脚本中分别维护方言默认值。`CURRENT_DATE`、`CURRENT_TIMESTAMP` 等数据库函数同样会作为原生表达式写入，必须符合目标数据库语法。非空二进制默认值会受到数据库版本和具体列类型限制，应放在方言专用迁移脚本中，不要依赖一套可移植的 `@Default` 写法。
@@ -478,6 +468,7 @@ data class User(
 @Table("tb_user")
 data class User(
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     val deleted: Boolean? = null
 ) : KPojo
 ```

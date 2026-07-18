@@ -82,9 +82,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-with(Kronos) {
-    loggerType = KLoggerType.JDK_LOGGER
-}
+Kronos.loggerType = KLoggerType.JDK_LOGGER
 ```
 
 JDK Logger 会接收同样的 ORM 执行信息。
@@ -115,9 +113,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-with(Kronos) {
-    loggerType = KLoggerType.COMMONS_LOGGER
-}
+Kronos.loggerType = KLoggerType.COMMONS_LOGGER
 ```
 
 > **Note**

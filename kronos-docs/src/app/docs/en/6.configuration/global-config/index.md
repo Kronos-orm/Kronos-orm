@@ -24,9 +24,7 @@ import org.apache.commons.dbcp2.BasicDataSource
 
 val wrapper = KronosJdbcWrapper(BasicDataSource())
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 > **Warning**
@@ -47,10 +45,8 @@ User(id = 1)
 Return different wrappers from `Kronos.dataSource` when the application chooses a data source at runtime.
 
 ```kotlin group="Data source 3" name="dynamic" icon="kotlin"
-with(Kronos) {
-    dataSource = {
-        if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
-    }
+Kronos.dataSource = {
+    if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
 }
 ```
 
@@ -67,9 +63,7 @@ Creating a custom table naming strategy `KronosNamingStrategy` is detailed in: {
 This strategy converts kotlin class names to underscore-separated lowercase strings, e.g., `ADataClass` -> `a_data_class`, and database table/column names to camel names, e.g., `user_name` -> `userName`.
 
 ```kotlin group="Naming 1" name="table" icon="kotlin"
-with(Kronos) {
-    tableNamingStrategy = lineHumpNamingStrategy
-}
+Kronos.tableNamingStrategy = lineHumpNamingStrategy
 ```
 
 ```text group="Naming 1" name="result"
@@ -81,9 +75,7 @@ UserProfile -> user_profile
 `NoneNamingStrategy` leaves kotlin class names and database names unchanged. Kronos uses this strategy by default.
 
 ```kotlin group="Naming 2" name="none" icon="kotlin"
-with(Kronos) {
-    tableNamingStrategy = noneNamingStrategy
-}
+Kronos.tableNamingStrategy = noneNamingStrategy
 ```
 
 ```text group="Naming 2" name="none result"
@@ -100,9 +92,7 @@ Similar to the global table naming strategy, the column naming strategy refers t
 Use the same naming strategy for columns when Kotlin property names should map to database column names.
 
 ```kotlin group="Naming 3" name="field" icon="kotlin"
-with(Kronos) {
-    fieldNamingStrategy = lineHumpNamingStrategy
-}
+Kronos.fieldNamingStrategy = lineHumpNamingStrategy
 ```
 
 ```text group="Naming 3" name="field result"
@@ -130,9 +120,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
 ```
 
 > **Note**
@@ -155,9 +143,7 @@ By creating a custom update strategy `KronosCommonStrategy`, see: {{ $.keyword("
 The global default for update time strategy is turned off and needs to be manually enabled.
 
 ```kotlin group="Common strategies 2" name="update time" icon="kotlin"
-with(Kronos) {
-    updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
-}
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
 ```
 
 > **Note**
@@ -177,9 +163,7 @@ By creating a custom logical deletion strategy `KronosCommonStrategy`, see: {{ $
 The global default for the logical delete strategy is turned off and needs to be manually enabled.
 
 ```kotlin group="Common strategies 3" name="logic delete" icon="kotlin"
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 ```
 
 ```sql group="Common strategies 3" name="logic delete sql" icon="mysql"
@@ -208,9 +192,7 @@ By creating a custom optimistic lock strategy `KronosCommonStrategy`, see: {{ $.
 The global default for the optimistic lock strategy is turned off and needs to be manually enabled.
 
 ```kotlin group="Common strategies 4" name="version" icon="kotlin"
-with(Kronos) {
-    optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
-}
+Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
 ```
 
 > **Note**
@@ -226,9 +208,7 @@ Used to specify the default date-time formatting pattern. The default value is `
 Kronos uses `yyyy-MM-dd HH:mm:ss` to format the date/time by default, you can change the default format by the following ways:
 
 ```kotlin group="Time 1" name="format" icon="kotlin"
-with(Kronos) {
-    defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
-}
+Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
 > **Note**
@@ -306,9 +286,7 @@ By creating a `KronosSerializeProcessor` custom serialization processor, see: {{
 For example, serialization parsers can be implemented by introducing the `GSON` library:
 
 ```kotlin group="GsonProcessor" name="Main.kt" icon="kotlin"
-with(Kronos) {
-    serializeProcessor = GsonProcessor
-}
+Kronos.serializeProcessor = GsonProcessor
 ```
 
 ```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
@@ -342,17 +320,13 @@ Used to set the path and switch for log output under global default conditions.
 Write logs to the console and a file path by setting `logPath`.
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
-with(Kronos) {
-    logPath = listOf("console", "/var/log/kronos")
-}
+Kronos.logPath = listOf("console", "/var/log/kronos")
 ```
 
 Turn off bundled log output with an empty list.
 
 ```kotlin group="Logging 2" name="off" icon="kotlin"
-with(Kronos) {
-    logPath = emptyList()
-}
+Kronos.logPath = emptyList()
 ```
 
 ## Smart Value Conversion
@@ -384,7 +358,5 @@ Kronos enables the `getTypeSafeValue` and `safeMapperTo` functions for smart val
 Set `strictSetValue = true` when safe assignment should keep raw map values and let the target property assignment validate the type directly.
 
 ```kotlin
-with(Kronos) {
-    strictSetValue = true
-}
+Kronos.strictSetValue = true
 ```

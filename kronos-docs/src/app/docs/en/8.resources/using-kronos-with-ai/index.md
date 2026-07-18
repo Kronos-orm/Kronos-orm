@@ -98,6 +98,7 @@ data class User(
     var name: String? = null,
     var email: String? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = false,
     @Version
     var version: Int? = null

@@ -124,7 +124,8 @@ data class Movie(
     var directorId: Long? = null,
     @Cascade(["directorId"], ["id"])
     var director: Director? = null,
-    @LogicDelete @Default("0")
+    @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = false,
     @CreateTime
     var createTime: LocalDateTime? = null,
@@ -349,9 +350,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-with(Kronos) {
-    loggerType = KLoggerType.JDK_LOGGER
-}
+Kronos.loggerType = KLoggerType.JDK_LOGGER
 ```
 
 使用 Apache Commons Logging 时，应用还需要加入对应 API：
@@ -366,9 +365,7 @@ dependencies {
 ```kotlin
 KronosLoggerApp.detectLoggerImplementation()
 
-with(Kronos) {
-    loggerType = KLoggerType.COMMONS_LOGGER
-}
+Kronos.loggerType = KLoggerType.COMMONS_LOGGER
 ```
 
 ---
@@ -553,6 +550,7 @@ data class User(
     @UpdateTime
     var updateTime: java.time.LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null
@@ -613,9 +611,7 @@ File generated successfully: src/main/kotlin/com/example/entity/User.kt
 ```kotlin
 val wrapper = KronosJdbcWrapper(dataSource)
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 
 println(wrapper.dbType)
 println(wrapper.sqlDialect)
@@ -1339,7 +1335,7 @@ data class User(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     @LogicDelete
-    @Default("0") // PostgreSQL 使用 @Default("false")
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null
 ) : KPojo
 

@@ -70,6 +70,7 @@ Create Kotlin data classes, implement `KPojo`, and add annotations for table nam
 
 ```kotlin group="Model" name="Director.kt" icon="kotlin"
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.UpdateTime
@@ -86,6 +87,7 @@ data class Director(
     @UpdateTime
     var updateTime: LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = false,
     @Version
     var version: Int? = 0
@@ -96,6 +98,7 @@ data class Director(
 import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
@@ -119,6 +122,7 @@ data class Movie(
     @UpdateTime
     var updateTime: LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = false
 ) : KPojo
 ```

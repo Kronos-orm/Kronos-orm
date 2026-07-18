@@ -4,7 +4,7 @@
 
 `wrapper.table.createTable(...)`或`wrapper.table.syncTable(...)`生成 DDL 时，会读取`@TableIndex`元数据。运行时的索引元数据结构是`KTableIndex`。
 
-当前源码没有公开的`@ColumnIndex`注解。单列索引也使用类级别的`@TableIndex`，并在`columns`中写一个列名。
+单列索引使用类级别的`@TableIndex`，并在`columns`中写一个列名。
 
 添加索引定义前，可先查看 {{ $.keyword("mapping/table-and-column", ["表与列"]) }} 中的表名和列名映射。
 

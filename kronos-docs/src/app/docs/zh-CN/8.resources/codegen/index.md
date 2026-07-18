@@ -162,10 +162,11 @@ logicDeleteStrategy = "deleted"
 optimisticLockStrategy = "version"
 ```
 
-数据库表包含对应字段时，`field.annotations()` 会写出 Kronos 注解。
+数据库表包含对应字段时，`field.annotations()` 会写出 Kronos 注解。逻辑删除列需要定义`DEFAULT 0`（PostgreSQL 使用`DEFAULT false`），Codegen 才会生成下例中的`@Default`注解。
 
 ```kotlin group="Annotations 2" name="User.kt" icon="kotlin"
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.UpdateTime
@@ -179,6 +180,7 @@ data class User(
     @UpdateTime
     var updateTime: java.time.LocalDateTime? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

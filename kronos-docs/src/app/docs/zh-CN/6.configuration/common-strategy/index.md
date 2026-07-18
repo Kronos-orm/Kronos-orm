@@ -10,12 +10,10 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(
-        enabled = true,
-        field = Field("create_time", "createTime")
-    )
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(
+    enabled = true,
+    field = Field("create_time", "createTime")
+)
 ```
 
 该策略指向 `create_time` 数据库列和 `createTime` Kotlin 属性。策略只会作用于包含该属性的 KPojo 模型。
@@ -34,12 +32,10 @@ with(Kronos) {
 全局策略不需要生效时，将 `enabled` 设置为 `false`。这样仍保留 `Field` 元数据，但不会把该行为应用到 insert、update、delete、select 或 upsert 操作。
 
 ```kotlin group="CommonStrategy 2" name="disabled" icon="kotlin"
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(
-        enabled = false,
-        field = Field("deleted")
-    )
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(
+    enabled = false,
+    field = Field("deleted")
+)
 ```
 
 ## 复用到其他通用字段

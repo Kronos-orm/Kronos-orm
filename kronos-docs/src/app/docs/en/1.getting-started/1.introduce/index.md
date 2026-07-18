@@ -60,9 +60,7 @@ val wrapper = KronosJdbcWrapper(
     }
 )
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 
 // Create a User object
 val user: User = User(

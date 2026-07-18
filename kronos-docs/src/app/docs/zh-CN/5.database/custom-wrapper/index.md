@@ -179,9 +179,7 @@ fun kronosWrapper(dataSource: DataSource): KronosDataSourceWrapper {
 
 @Bean
 fun kronosConfiguration(wrapper: KronosDataSourceWrapper): Any {
-    with(Kronos) {
-        dataSource = { wrapper }
-    }
+    Kronos.dataSource = { wrapper }
     return Any()
 }
 ```

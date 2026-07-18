@@ -6,6 +6,7 @@
 Use `@LogicDelete` on the KPojo field that marks deleted rows. The annotation is enabled by default.
 
 ```kotlin group="KPojo 1" name="User.kt" icon="kotlin"
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.interfaces.KPojo
@@ -15,6 +16,7 @@ data class User(
     var id: Int? = null,
     var name: String? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null
 ) : KPojo
 ```
@@ -26,9 +28,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 ```
 
 ## Delete writes the delete marker

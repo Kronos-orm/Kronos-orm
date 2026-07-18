@@ -155,9 +155,7 @@ Convert the value to the specified type.
 You can register custom value transformers through the `registerValueTransformer` function.
 
 ```kotlin
-with(Kronos) {
-    registerValueTransformer(TestTransformer())
-}
+Kronos.registerValueTransformer(TestTransformer())
 ```
 {{ $.hr() }}
 

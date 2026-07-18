@@ -10,12 +10,10 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
-with(Kronos) {
-    createTimeStrategy = KronosCommonStrategy(
-        enabled = true,
-        field = Field("create_time", "createTime")
-    )
-}
+Kronos.createTimeStrategy = KronosCommonStrategy(
+    enabled = true,
+    field = Field("create_time", "createTime")
+)
 ```
 
 This strategy points to the `create_time` database column and the `createTime` Kotlin property. The strategy only applies to KPojo models that expose the configured property.
@@ -34,12 +32,10 @@ This strategy points to the `create_time` database column and the `createTime` K
 Set `enabled = false` when the global strategy should stay inactive. This keeps the configured `Field` metadata available without applying the behavior to insert, update, delete, select, or upsert operations.
 
 ```kotlin group="CommonStrategy 2" name="disabled" icon="kotlin"
-with(Kronos) {
-    logicDeleteStrategy = KronosCommonStrategy(
-        enabled = false,
-        field = Field("deleted")
-    )
-}
+Kronos.logicDeleteStrategy = KronosCommonStrategy(
+    enabled = false,
+    field = Field("deleted")
+)
 ```
 
 ## Use the same pattern for other fields

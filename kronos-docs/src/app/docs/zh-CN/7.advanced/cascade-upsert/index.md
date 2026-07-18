@@ -276,13 +276,14 @@ UPDATE `account` SET `email` = :emailNew WHERE `id` = :id;
 
 级联 upsert 沿用 insert 与 update 的策略字段。insert 分支会为`@LogicDelete`和`@Version`字段写入初始值。update 分支可以通过`on`字段匹配逻辑删除记录，将逻辑删除列恢复为正常值，并通过更新策略递增版本列。
 
-```kotlin group="策略字段 1" name="kotlin" icon="kotlin" {6-9,18-21}
+```kotlin group="策略字段 1" name="kotlin" icon="kotlin" {6-10,19-22}
 @Table("account_flag")
 data class AccountFlag(
     @PrimaryKey
     var id: Long? = null,
     var name: String? = null,
     @LogicDelete
+    @Default("0") // @Default("false") for Postgres
     var deleted: Boolean? = null,
     @Version
     var version: Int? = null

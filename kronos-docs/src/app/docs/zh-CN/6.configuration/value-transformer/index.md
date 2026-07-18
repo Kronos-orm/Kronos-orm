@@ -154,9 +154,7 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
 您可以通过以下方式注册自定义值转换器：
 
 ```kotlin
-with(Kronos) {
-    registerValueTransformer(TestTransformer())
-}
+Kronos.registerValueTransformer(TestTransformer())
 ```
 {{ $.hr() }}
 

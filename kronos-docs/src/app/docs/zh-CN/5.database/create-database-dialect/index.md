@@ -274,9 +274,7 @@ val wrapper = KronosJdbcWrapper(dataSource)
 check(wrapper.dbType == DBType.YourDatabase)
 check(wrapper.sqlDialect == YourDatabaseDialect)
 
-with(Kronos) {
-    dataSource = { wrapper }
-}
+Kronos.dataSource = { wrapper }
 ```
 
 ```text group="Connect" name="result"

@@ -302,8 +302,8 @@ Pagination verification covers `limitStyle` and the renderer's `renderLimit(...)
 val (_, pageTask) = User()
     .select()
     .orderBy { it.id.asc() }
-    .withTotal()
     .page(2, 20)
+    .withTotal()
     .build(wrapper)
 
 val (sql, _) = pageTask

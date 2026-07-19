@@ -1,5 +1,9 @@
 | 症状/关键词 | 经验记录 |
 |---|---|
+| generated code；`Patch.kt`；detekt；Codacy；static analysis；codegen template | [Generated sources need durable static-analysis policy](evolution/2026-07-20-generated-source-static-analysis.md) |
+| non-root JOIN cascade projection；hidden local key；`profile_id`；owner source | [Non-root JOIN cascade must preserve the owner local key](evolution/2026-07-20-join-cascade-owner-local-key.md) |
+| runtime `__tableName` override；stale qualifier；select/page；JOIN；UNION；DDL | [Runtime table overrides must rebind qualifiers](evolution/2026-07-20-runtime-table-name-qualifier-binding.md) |
+| typed query；`KSelectable.pojo`；generic `Source`；DSL 泛型擦除；member extension；JVM signature clash | [Typed query properties and JVM signatures](evolution/2026-07-19-typed-query-properties-and-jvm-signatures.md) |
 | IDEA plugin；`signPlugin`；`verifyPluginSignature`；`publishPlugin`；Marketplace；PEM；`supportsKotlinPluginMode`；Plugin Verifier；`-offline` | [IDEA 插件签名与校验必须使用明确输入](evolution/2026-07-18-idea-plugin-signing-and-verification.md) |
 | IDEA plugin；`buildPlugin`；2026.2；EAP；`javaCompiler`；platform build | [IDEA 平台与 Java compiler 必须使用同一正式 build](evolution/2026-07-18-idea-platform-java-compiler-build-alignment.md) |
 | condition IR；普通对象属性变列；顶层属性 NPE；`KPojo.value`；嵌套 `value`；函数参数 | [Condition field lowering must classify the receiver](evolution/2026-07-17-condition-field-lowering-source-ownership.md) |

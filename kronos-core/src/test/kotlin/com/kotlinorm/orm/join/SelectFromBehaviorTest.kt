@@ -1,267 +1,291 @@
-/**
+/*
  * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 package com.kotlinorm.orm.join
 
-import com.kotlinorm.testfixtures.entities.UserRelation
-import com.kotlinorm.testfixtures.entities.TestUser
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.testfixtures.cascade.onetoone.Car
 import com.kotlinorm.testfixtures.cascade.onetoone.CarDetails
-import com.kotlinorm.exceptions.EmptyFieldsException
-import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.testfixtures.entities.TestUser
+import com.kotlinorm.testfixtures.entities.UserRelation
 import com.kotlinorm.testutils.MysqlTestBase
+import com.kotlinorm.utils.createInstance
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class SelectFromBehaviorTest : MysqlTestBase() {
-
     @Test
-    fun `build carries join syntax query statement`() {
-        val selectFrom = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select { [user.id, user.username, relation.gender] }
+    fun `build retains the recursive query statement and result column types`() {
+        val query = TestUser().join(UserRelation()) { user, relation ->
+            leftJoin { user.id == relation.id2 }
+                .select { [user.username, relation.id2] }
         }
+        val task = query.build().atomicTask
 
-        val task = selectFrom.build()
-
-        assertEquals(selectFrom.toSqlQuery(), task.atomicTask.statement)
-    }
-
-    @Test
-    fun `build carries joined column types beyond root selected type`() {
-        val task = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select { [user.id, relation.id2] }
-        }.build().atomicTask
-
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
+        assertEquals(query.toSqlQuery(), task.statement)
+        assertEquals(typeOf<String?>(), task.resultColumnTypes["username"])
         assertEquals(typeOf<Int?>(), task.resultColumnTypes["id2"])
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["ID2"])
     }
 
     @Test
-    fun `join selectable currently keeps source class as selected type`() {
-        val wrapper = CapturingMysqlWrapper()
-        val selectFrom = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select { [user.id, relation.gender] }
+    fun `relation operations are immutable and preserve reusable raw sources`() {
+        val initial = TestUser().join(UserRelation()) { _, _ -> this }
+        val left = initial.leftJoin { user -> user.id == 1 }
+        val right = initial.rightJoin { user -> user.id == 2 }
+
+        assertNotEquals(left.joinState.current, right.joinState.current)
+        assertFailsWith<IllegalStateException> { initial.select { it.id } }
+        left.select { it.id }
+        right.select { it.id }
+    }
+
+    @Test
+    fun `select refuses incomplete multi-source trees`() {
+        assertFailsWith<IllegalStateException> {
+            TestUser().join(UserRelation(), JoinTreeC()) { user, relation, _ ->
+                leftJoin { user.id == relation.id2 }
+                    .select { user.id }
+            }
+        }
+    }
+
+    @Test
+    fun `relation refuses calls after every pending operand is consumed`() {
+        assertFailsWith<IllegalStateException> {
+            TestUser().join(UserRelation()) { user, relation ->
+                leftJoin { user.id == relation.id2 }
+                    .rightJoin { user.id == relation.id2 }
+            }
+        }
+    }
+
+    @Test
+    fun `page view does not mutate the reusable joined query`() {
+        val query = TestUser().join(UserRelation()) { user, relation ->
+            leftJoin { user.id == relation.id2 }
+                .select { user.id }
         }
 
-        selectFrom.toList(wrapper)
+        val baseSql = query.build().atomicTask.sql
+        val pageSql = query.page(2, 5).build().atomicTask.sql
 
-        assertEquals(typeOf<TestUser>(), selectFrom.selectedType)
-        assertEquals(
-            listOf<QueryCall>(QueryCall.ToList(typeOf<TestUser>())),
-            wrapper.calls
-        )
+        assertEquals(baseSql, query.build().atomicTask.sql)
+        assertNotEquals(baseSql, pageSql)
     }
 
     @Test
-    fun `option methods mutate join context directly`() {
-        val selectFrom = joinQuery()
-
-        selectFrom.cascade(false)
-        selectFrom.patch("id" to 7)
-        selectFrom.db(TestUser() to "archive")
-
-        assertEquals(false, selectFrom.context.cascadeEnabled)
-        assertEquals(7, selectFrom.context.paramMap["id"])
-        assertEquals(mapOf("tb_user" to "archive"), selectFrom.context.databaseOfTable)
-    }
-
-    @Test
-    fun `field callbacks update join context conditions and cascade scope`() {
-        val selectFrom = joinQuery()
-
-        selectFrom.by { [it.id, it.username] }
-
-        assertEquals(
-            listOf("Binary", "Binary"),
-            listOf(
-                selectFrom.context.where!!::class.simpleName,
-                selectFrom.context.joinables.single().condition!!::class.simpleName
-            )
-        )
-    }
-
-    @Test
-    fun `on where and having callbacks materialize join conditions and parameters`() {
-        val selectFrom = TestUser(7, "neo").join(UserRelation(1, "test", 1, 1)) { user, relation ->
-            select { [user.id, relation.gender] }
-        }
-
-        selectFrom.on { it.id == 7 }
-        selectFrom.patch("username" to "neo")
-        selectFrom.where()
-        selectFrom.having { it.username == "neo" }
-
-        assertEquals(1, selectFrom.context.joinables.size)
-        assertEquals("Binary", selectFrom.context.joinables.single().condition!!::class.simpleName)
-        assertEquals("Binary", selectFrom.context.where!!::class.simpleName)
-        assertEquals("Binary", selectFrom.context.having!!::class.simpleName)
-        assertEquals(mapOf<String, Any?>("id" to 7, "username" to "neo"), selectFrom.context.paramMap)
-        assertEquals(true, selectFrom.context.havingEnabled)
-    }
-
-    @Test
-    fun `valid group order distinct paging and limit callbacks mutate join context`() {
-        val selectFrom = joinQuery()
-
-        selectFrom.groupBy { [it.id, it.username] }
-        selectFrom.orderBy { it.id.desc() }
-        selectFrom.distinct()
-        selectFrom.page(3, 20)
-        selectFrom.limit(5)
-
-        assertEquals(true, selectFrom.context.groupEnabled)
-        assertEquals(setOf("id", "username"), selectFrom.context.groupByFields.map { it.name }.toSet())
-        assertEquals(true, selectFrom.context.orderEnabled)
-        assertEquals(listOf("FieldItem"), selectFrom.context.orderByItems.map { it::class.simpleName })
-        assertEquals(true, selectFrom.context.distinctEnabled)
-        assertEquals(true, selectFrom.context.pageEnabled)
-        assertEquals(20, selectFrom.context.pageSize)
-        assertEquals(3, selectFrom.context.pageIndex)
-        assertEquals(5, selectFrom.context.limitCapacity)
-    }
-
-    @Test
-    fun `cascade reference callback records selected join cascade fields`() {
-        val selectFrom = CarDetails().join(Car()) { details, car ->
-            leftJoin(car) { details.carId == car.id }
-            select { details.id }
-        }
-
-        selectFrom.cascade { [CarDetails::car] }
-
-        assertEquals(true, selectFrom.context.cascadeEnabled)
-        assertEquals(setOf("car"), selectFrom.context.cascadeAllowed!!.map { it.name }.toSet())
-    }
-
-    @Test
-    fun `null join field callbacks fail fast`() {
-        assertEquals(
-            listOf(
-                EmptyFieldsException::class,
-                EmptyFieldsException::class,
-                EmptyFieldsException::class,
-                EmptyFieldsException::class,
-                EmptyFieldsException::class,
-                EmptyFieldsException::class
-            ),
-            listOf(
-                assertFailsWith<EmptyFieldsException> { joinQuery().on(null) }::class,
-                assertFailsWith<EmptyFieldsException> { joinQuery().by(null) }::class,
-                assertFailsWith<EmptyFieldsException> { joinQuery().cascade(null) }::class,
-                assertFailsWith<EmptyFieldsException> { joinQuery().having(null) }::class,
-                assertFailsWith<EmptyFieldsException> { joinQuery().groupBy(null) }::class,
-                assertFailsWith<EmptyFieldsException> { joinQuery().orderBy(null) }::class
-            )
-        )
-    }
-
-    @Test
-    fun `terminal query methods route to wrapper with expected result contracts`() {
-        val user = TestUser(2, "typed")
-        val row = mapOf<String, Any>("id" to 1, "username" to "row")
+    fun `terminal mapping methods preserve explicit and selected result contracts`() {
+        val query = joinQuery()
+        val selectedType = query.selectedType
+        val nullableSelectedType = query.nullableSelectedType
+        val user = TestUser(id = 2, username = "typed")
+        val row = mapOf<String, Any>("id" to 1, "gender" to 1)
         val scalar = mapOf<String, Any>("total" to 1)
+        @Suppress("UNCHECKED_CAST")
+        val selectedClass = selectedType.classifier as KClass<out KPojo>
+        val selectedRow = selectedClass.createInstance().fromMapData<KPojo>(row)
+        assertNotEquals(TestUser::class, selectedClass)
+        assertEquals(selectedClass, nullableSelectedType.classifier)
         val wrapper = CapturingMysqlWrapper(
             mapRows = listOf(row),
             typedRows = listOf(user),
+            selectedRows = listOf(selectedRow),
             mapResult = scalar,
-            objectResult = user
+            objectResult = user,
+            selectedObjectResult = selectedRow
         )
 
         assertEquals(listOf(row), joinQuery().toMapList(wrapper))
         assertEquals(scalar, joinQuery().toMap(wrapper))
         assertEquals(scalar, joinQuery().toMapOrNull(wrapper))
         assertEquals(listOf(user), joinQuery().toList<TestUser>(wrapper))
-        val defaultList: List<TestUser> = joinQuery().toList(wrapper)
-        assertEquals(listOf(user), defaultList)
+        val defaultList = joinQuery().toList(wrapper)
+        assertEquals(selectedClass, defaultList.single()::class)
+        assertSelectedValues(defaultList.single())
         assertEquals(user, joinQuery().first<TestUser>(wrapper))
-        val defaultOne: TestUser = joinQuery().first(wrapper)
-        assertEquals(user, defaultOne)
+        val defaultOne = joinQuery().first(wrapper)
+        assertEquals(selectedClass, defaultOne::class)
+        assertSelectedValues(defaultOne)
         assertEquals(user, joinQuery().firstOrNull<TestUser>(wrapper))
-        val defaultOneOrNull: TestUser? = joinQuery().firstOrNull(wrapper)
-        assertEquals(user, defaultOneOrNull)
+        val defaultOneOrNull = joinQuery().firstOrNull(wrapper)
+        assertEquals(selectedClass, defaultOneOrNull!!::class)
+        assertSelectedValues(defaultOneOrNull)
 
         assertEquals(
-            listOf<QueryCall>(
+            listOf(
                 QueryCall.ToList(typeOf<Map<String, Any?>>()),
                 QueryCall.First(typeOf<Map<String, Any?>>()),
                 QueryCall.First(typeOf<Map<String, Any?>?>()),
                 QueryCall.ToList(typeOf<TestUser>()),
-                QueryCall.ToList(typeOf<TestUser>()),
+                QueryCall.ToList(selectedType),
                 QueryCall.First(typeOf<TestUser>()),
-                QueryCall.First(typeOf<TestUser>()),
+                QueryCall.First(selectedType),
                 QueryCall.First(typeOf<TestUser?>()),
-                QueryCall.First(typeOf<TestUser?>())
+                QueryCall.First(nullableSelectedType)
             ),
             wrapper.calls
         )
     }
 
     @Test
-    fun `toMapOrNull returns null without throwing`() {
-        val wrapper = CapturingMysqlWrapper(mapResult = null)
+    fun `toMapOrNull returns null and default first reports the generated SQL`() {
+        val nullMapWrapper = CapturingMysqlWrapper(mapResult = null)
+        assertEquals(null, joinQuery().toMapOrNull(nullMapWrapper))
+        assertEquals(
+            listOf<QueryCall>(QueryCall.First(typeOf<Map<String, Any?>?>())),
+            nullMapWrapper.calls
+        )
 
-        assertEquals(null, joinQuery().toMapOrNull(wrapper))
-        assertEquals(listOf<QueryCall>(QueryCall.First(typeOf<Map<String, Any?>?>())), wrapper.calls)
-    }
-
-    @Test
-    fun `default first reports no record when wrapper returns null`() {
-        val wrapper = CapturingMysqlWrapper(objectResult = null)
-
-        val error = assertFailsWith<NoSuchElementException> {
-            val result: TestUser = joinQuery().first(wrapper)
-            result
-        }
+        val emptyWrapper = CapturingMysqlWrapper(objectResult = null)
+        val error = assertFailsWith<NoSuchElementException> { joinQuery().first(emptyWrapper) }
 
         assertEquals(
-            "No result found for query: SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender` FROM `tb_user` LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 LIMIT 1",
+            "No result found for query: SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender` " +
+                "FROM `tb_user` LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` " +
+                "WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 LIMIT 1",
             error.message
         )
         assertEquals(
-            listOf<QueryCall>(QueryCall.First(typeOf<TestUser>())),
-            wrapper.calls
+            listOf<QueryCall>(QueryCall.First(joinQuery().selectedType)),
+            emptyWrapper.calls
         )
     }
 
-    private fun joinQuery(): SelectFrom2<TestUser, UserRelation> =
-        TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select { [user.id, relation.gender] }
+    @Test
+    fun `joined query modifiers keep optional paths observable`() {
+        val query = joinQuery()
+
+        assertSame(query, query.limit(-1))
+        assertSame(query, query.patch("id" to 9).lock(null).cascade(false).where(null))
+        assertFailsWith<EmptyFieldsException> { query.orderBy(null) }
+        assertFailsWith<EmptyFieldsException> { query.groupBy(null) }
+        assertFailsWith<EmptyFieldsException> { query.having(null) }
+        assertFailsWith<EmptyFieldsException> { query.by(null) }
+
+        val filtered = TestUser(id = 4).join(UserRelation(id2 = 4)) { user, relation ->
+            leftJoin { user.id == relation.id2 }
+                .select { [user.id, relation.gender] }
+                .by { user.id }
+                .where(null)
+                .having { relation.gender == 1 }
+                .groupBy { user.id }
+                .orderBy { user.id.desc() }
         }
+
+        val sql = filtered.build().atomicTask.sql
+        assertTrue(sql.contains("GROUP BY"))
+        assertTrue(sql.contains("HAVING"))
+        assertTrue(sql.contains("ORDER BY"))
+    }
+
+    @Test
+    fun `joined cascade fields accept class qualified references`() {
+        val query = CarDetails().join(Car()) { details, car ->
+            leftJoin { details.carId == car.id }
+                .select { details.id }
+                .cascade { [CarDetails::car] }
+        }
+
+        assertEquals(true, query.context.cascadeEnabled)
+        assertEquals(setOf("car"), query.context.cascadeAllowed!!.map { it.name }.toSet())
+    }
+
+    @Test
+    fun `default terminal APIs and select all cursor retain their contracts`() {
+        val query = joinQuery()
+        val selectedType = query.selectedType
+        @Suppress("UNCHECKED_CAST")
+        val selectedClass = selectedType.classifier as KClass<out KPojo>
+        val selectedRow = selectedClass.createInstance().fromMapData<KPojo>(mapOf("id" to 1, "gender" to 1))
+        val mapRow = mapOf<String, Any>("id" to 1, "gender" to 1)
+        val user = TestUser(id = 1, username = "typed")
+        val wrapper = CapturingMysqlWrapper(
+            mapRows = listOf(mapRow),
+            typedRows = listOf(user),
+            selectedRows = listOf(selectedRow),
+            mapResult = mapRow,
+            objectResult = user,
+            selectedObjectResult = selectedRow
+        )
+        val previousDataSource = Kronos.dataSource
+
+        try {
+            Kronos.dataSource = { wrapper }
+            assertSame(query, query.single())
+            assertSame(query, query.db(query.state.sources.last() to "archive"))
+            assertSame(query, query.lock())
+            assertEquals(listOf(mapRow), query.toMapList())
+            assertEquals(mapRow, query.toMap())
+            assertEquals(mapRow, query.toMapOrNull())
+            assertEquals(listOf(user), query.toList<TestUser>())
+            assertEquals(listOf(selectedRow), query.toList())
+            assertEquals(user, query.first<TestUser>())
+            val selected = query.first()
+            assertEquals(1, selected.id)
+            assertEquals(1, selected.gender)
+            assertEquals(user, query.firstOrNull<TestUser>())
+            val selectedNullable = query.firstOrNull()
+            assertEquals(1, selectedNullable?.id)
+            assertEquals(1, selectedNullable?.gender)
+            assertFailsWith<EmptyFieldsException> { query.having() }
+            assertFailsWith<EmptyFieldsException> { query.cascade { } }
+
+            val selectAll = TestUser().join(UserRelation()) { source, relation ->
+                innerJoin { source.id == relation.id2 }
+                    .select()
+                    .orderBy { source.id.asc() }
+            }
+            val cursorTask = selectAll.cursor(pageSize = 1).build().atomicTask
+            assertTrue(cursorTask.sql.contains("ORDER BY"))
+        } finally {
+            Kronos.dataSource = previousDataSource
+        }
+    }
+
+    private fun joinQuery() =
+        TestUser(id = 1).join(UserRelation(id = 1, username = "test", gender = 1, id2 = 1)) { user, relation ->
+            leftJoin { user.id == relation.id2 }
+                .select { [user.id, relation.gender] }
+        }
+
+    private fun assertSelectedValues(row: KPojo) {
+        assertEquals(1, row["id"])
+        assertEquals(1, row["gender"])
+    }
 }
 
 private class CapturingMysqlWrapper(
     private val mapRows: List<Map<String, Any>> = emptyList(),
     private val typedRows: List<Any?> = emptyList(),
+    private val selectedRows: List<Any?> = emptyList(),
     private val mapResult: Map<String, Any>? = null,
-    private val objectResult: Any? = null
+    private val objectResult: Any? = null,
+    private val selectedObjectResult: Any? = null
 ) : SampleMysqlJdbcWrapper() {
     val calls = mutableListOf<QueryCall>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
         calls += QueryCall.ToList(task.targetType)
-        return if (task.targetType == typeOf<Map<String, Any?>>()) mapRows else typedRows
+        return when {
+            task.targetType == typeOf<Map<String, Any?>>() -> mapRows
+            task.targetType.classifier == TestUser::class -> typedRows
+            else -> selectedRows
+        }
     }
 
     override fun first(task: KAtomicQueryTask): Any? {
@@ -270,8 +294,10 @@ private class CapturingMysqlWrapper(
             task.targetType == typeOf<Map<String, Any?>?>()
         ) {
             mapResult
-        } else {
+        } else if (task.targetType.classifier == TestUser::class) {
             objectResult
+        } else {
+            selectedObjectResult
         }
     }
 }

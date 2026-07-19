@@ -47,8 +47,8 @@ fun configureKronosTenantSource() {
 @RestController
 class UserController {
     @GetMapping("/users")
-    fun getUsers(pi: Int, ps: Int): Triple<Int, List<User>, Int> {
-        return User().select().withTotal().page(pi, ps).toList()
+    fun getUsers(pi: Int, ps: Int): PageResult<User> {
+        return User().select().page(pi, ps).withTotal().toList()
     }
 }
 ```
@@ -61,13 +61,13 @@ class UserController {
 查询和写入执行 API 可以接收可选的 `KronosDataSourceWrapper`。当租户数据源已经确定，或请求上下文不可用时，直接使用该参数。
 
 ```kotlin group="Explicit wrapper" name="kotlin" icon="kotlin"
-fun loadTenantUsers(tenantId: String, pi: Int, ps: Int): Triple<Int, List<User>, Int> {
+fun loadTenantUsers(tenantId: String, pi: Int, ps: Int): PageResult<User> {
     val wrapper = tenantWrapper(tenantId)
 
     return User()
         .select()
-        .withTotal()
         .page(pi, ps)
+        .withTotal()
         .toList(wrapper)
 }
 
@@ -99,8 +99,8 @@ fun main(args: Array<String>) {
 
             User()
                 .select()
-                .withTotal()
                 .page(pi, ps)
+                .withTotal()
                 .toList(wrapper)
         }
     }

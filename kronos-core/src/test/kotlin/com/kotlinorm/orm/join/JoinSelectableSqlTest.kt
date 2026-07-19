@@ -33,8 +33,8 @@ class JoinSelectableSqlTest : MysqlTestBase() {
 
         val task = SubqueryUser()
             .join(orders) { user, order ->
-                leftJoin(order) { user.id == order.userId }
-                select { [user.id, order.status] }
+                leftJoin { user.id == order.userId }
+                    .select { [user.id, order.status] }
             }
             .build()
             .atomicTask

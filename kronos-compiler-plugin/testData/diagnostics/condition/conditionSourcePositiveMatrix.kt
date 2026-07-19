@@ -186,11 +186,11 @@ fun validCurrentAndExplicitValueSources() {
 fun validJoinSources() {
     val context = ConditionPositiveContext(ownerId = 9)
     ConditionPositiveUser().join(ConditionPositiveOrder()) { user, order ->
-        on { user.id == order.userId }
-        on { user.ownerId == context.ownerId }
-        leftJoin(order) { user.id == order.userId }
-        where { user.status == order.status }
-        having { order.amount > user.status }
+        leftJoin {
+            user.id == order.userId && user.ownerId == context.ownerId
+        }.select { user.id }
+            .where { user.status == order.status }
+            .having { order.amount > user.status }
     }
 }
 

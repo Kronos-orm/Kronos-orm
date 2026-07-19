@@ -35,6 +35,7 @@ data class KronosProjectionModel(
     val sourceType: ConeKotlinType,
     val fields: List<KronosProjectionField>,
     val contextFields: List<KronosProjectionField>,
+    val shadowedSourceNames: Set<Name>,
     val anchor: KtSourceElement,
     val sourceDeclaration: KtSourceElement,
 )
@@ -47,5 +48,25 @@ data class KronosProjectionField(
     val type: ConeKotlinType,
     val source: KtSourceElement?,
     val sourceName: Name = name,
+    /** The concrete KPojo class that owns [sourceName], when the field comes from a JOIN source. */
+    val sourceClassId: ClassId? = null,
+    /** The output name requested in source before deterministic collision suffixes are assigned. */
+    val requestedName: Name = name,
     val signature: String = name.asString(),
+    /** Whether this field directly reads the source property whose name is in [sourceName]. */
+    val isSourceAlias: Boolean = false,
+    /** Identifies the exact alias expression within its containing projection lambda. */
+    val aliasOccurrence: ProjectionAliasOccurrence? = null,
 )
+
+data class ProjectionAliasOccurrence(
+    val scopeId: Long,
+    val startOffset: Int,
+    val endOffset: Int,
+) {
+    fun overlaps(other: ProjectionAliasOccurrence): Boolean =
+        scopeId == other.scopeId && startOffset < other.endOffset && other.startOffset < endOffset
+
+    val rangeSize: Int
+        get() = endOffset - startOffset
+}

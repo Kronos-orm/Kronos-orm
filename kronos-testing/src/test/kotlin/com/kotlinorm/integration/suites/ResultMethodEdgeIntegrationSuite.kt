@@ -24,20 +24,23 @@ abstract class ResultMethodEdgeIntegrationSuite(
     profile: IntegrationScenarioProfile,
 ) : IntegrationSuiteSupport(environment, profile) {
     @Test
-    fun pagedQueryListSupportsDestructuringWithoutExplicitKPojoFlag() {
+    fun pagedQueryListExposesNamedResultWithoutExplicitKPojoFlag() {
         recreateTables()
         profile.seedUsersAndOrders()
 
-        val (total, pageUsers) = IntegrationUser()
+        val page = IntegrationUser()
             .select { [it.id, it.name] }
             .orderBy { it.id.asc() }
+            .page(pageIndex = 2, pageSize = 2)
             .withTotal()
-            .page(pi = 2, ps = 2)
             .toList<IntegrationPageProjection>()
 
-        assertEquals(4, total)
-        assertEquals(listOf(3, 4), pageUsers.map { it.id })
-        assertEquals(listOf("Linus", "NoOrder"), pageUsers.map { it.name })
+        assertEquals(4, page.total)
+        assertEquals(2, page.totalPages)
+        assertEquals(2, page.pageIndex)
+        assertEquals(2, page.pageSize)
+        assertEquals(listOf(3, 4), page.records.map { it.id })
+        assertEquals(listOf("Linus", "NoOrder"), page.records.map { it.name })
     }
 
     @Test
@@ -48,8 +51,8 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val (total, pageUsers) = IntegrationUser()
             .select { [it.id, it.name, it.score] }
             .orderBy { it.id.asc() }
+            .page(pageIndex = 3, pageSize = 2)
             .withTotal()
-            .page(pi = 3, ps = 2)
             .toList<IntegrationPageProjection>()
 
         assertEquals(5, total)
@@ -81,8 +84,8 @@ abstract class ResultMethodEdgeIntegrationSuite(
         val (total, rows) = IntegrationUser()
             .select { [it.id, it.name, it.score] }
             .orderBy { it.id.asc() }
+            .page(pageIndex = 1, pageSize = 10)
             .withTotal()
-            .page(pi = 1, ps = 10)
             .toMapList()
 
         assertEquals(5, total)
@@ -148,29 +151,27 @@ abstract class ResultMethodEdgeIntegrationSuite(
         recreateTables()
         profile.seedUsersAndOrders()
 
-        val (hasNext, cursor, firstPage) = IntegrationUser()
+        val firstPage = IntegrationUser()
             .select { [it.id, it.name] }
             .orderBy { it.id.asc() }
-            .withCursor()
-            .cursor(offset = 2)
+            .cursor(pageSize = 2)
             .toList<IntegrationPageProjection>()
 
-        assertTrue(hasNext)
-        assertNotNull(cursor)
-        assertEquals(listOf(1, 2), firstPage.map { it.id })
-        assertEquals(listOf("Ada", "Grace"), firstPage.map { it.name })
+        assertTrue(firstPage.hasNext)
+        val cursor = assertNotNull(firstPage.nextCursor)
+        assertEquals(listOf(1, 2), firstPage.records.map { it.id })
+        assertEquals(listOf("Ada", "Grace"), firstPage.records.map { it.name })
 
-        val (nextHasNext, nextCursor, secondPage) = IntegrationUser()
+        val secondPage = IntegrationUser()
             .select { [it.id, it.name] }
             .orderBy { it.id.asc() }
-            .withCursor()
-            .cursor(cursor, offset = 2)
+            .cursor(pageSize = 2, after = cursor)
             .toList<IntegrationPageProjection>()
 
-        assertFalse(nextHasNext)
-        assertNull(nextCursor)
-        assertEquals(listOf(3, 4), secondPage.map { it.id })
-        assertEquals(listOf("Linus", "NoOrder"), secondPage.map { it.name })
+        assertFalse(secondPage.hasNext)
+        assertNull(secondPage.nextCursor)
+        assertEquals(listOf(3, 4), secondPage.records.map { it.id })
+        assertEquals(listOf("Linus", "NoOrder"), secondPage.records.map { it.name })
     }
 
     @Test

@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.testfixtures.entities.UserRelation
 import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.testfixtures.cascade.onetoone.Car
@@ -194,21 +195,22 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
-    fun `group order having page and limit callbacks mutate complete select context`() {
+    fun `group order and having stay on base while page state is isolated`() {
         val clause = TestUser(7, "neo")
             .select { [it.id, it.username] }
             .where()
             .groupBy { [it.gender] }
             .having { it.gender == 1 }
             .orderBy { [it.id.desc(), it.username.asc()] }
-        clause.withTotal().page(2, 10)
+        val page = clause.page(2, 10)
 
         assertEquals(setOf("id", "username"), clause.context.selectedFields.map { it.name }.toSet())
         assertEquals(listOf("gender"), clause.context.groupByItems.map { it.toString().substringAfter("columnName=").substringBefore(",") })
         assertEquals("Binary", clause.context.where!!::class.simpleName)
         assertEquals("Binary", clause.context.having!!::class.simpleName)
         assertEquals(listOf("FieldItem", "FieldItem"), clause.context.orderByItems.map { it::class.simpleName })
-        assertEquals(SqlLimit.limit(10, 10), clause.context.limit)
+        assertEquals(null, clause.context.limit)
+        assertEquals(SqlLimit.limit(10, 10), (page.toSqlQuery() as SqlQuery.Select).limit)
     }
 
     @Test
@@ -273,6 +275,13 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
         assertEquals(user, TestUser().select().firstOrNull<TestUser>(wrapper))
         val defaultOneOrNull: TestUser? = TestUser().select().firstOrNull(wrapper)
         assertEquals(user, defaultOneOrNull)
+        val selectable: KSelectable<TestUser> = TestUser().select()
+        val selectableOne = selectable.first(wrapper)
+        assertEquals(user.id, selectableOne.id)
+        assertEquals(user, selectable.first<TestUser>(wrapper))
+        val selectableOneOrNull = selectable.firstOrNull(wrapper)
+        assertEquals(user.id, selectableOneOrNull?.id)
+        assertEquals(user, selectable.firstOrNull<TestUser>(wrapper))
 
         assertEquals(
             listOf<QueryCall>(
@@ -281,6 +290,10 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
                 QueryCall.First(typeOf<Map<String, Any?>?>()),
                 QueryCall.ToList(typeOf<TestUser>()),
                 QueryCall.ToList(typeOf<TestUser>()),
+                QueryCall.First(typeOf<TestUser>()),
+                QueryCall.First(typeOf<TestUser>()),
+                QueryCall.First(typeOf<TestUser?>()),
+                QueryCall.First(typeOf<TestUser?>()),
                 QueryCall.First(typeOf<TestUser>()),
                 QueryCall.First(typeOf<TestUser>()),
                 QueryCall.First(typeOf<TestUser?>()),

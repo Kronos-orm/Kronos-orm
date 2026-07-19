@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies projection diagnostics inspect mutableListOf and setOf projection forms.
+// Verifies duplicate-name opt-in diagnostics inspect mutableListOf and setOf projection forms.
 
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
@@ -31,7 +31,7 @@ data class ProjectionMutableSetDiagUser(
 fun invalidDuplicateInMutableListProjection() {
     ProjectionMutableSetDiagUser()
         .select {
-            mutableListOf(it.id, <!KRONOS_DUPLICATE_PROJECTION_FIELD!>it.id<!>)
+            mutableListOf(it.id, it.<!OPT_IN_USAGE_ERROR!>id<!>)
         }
 }
 
@@ -45,6 +45,6 @@ fun invalidFunctionWithoutAliasInSetProjection() {
 fun invalidAliasConflictInMutableListProjection() {
     ProjectionMutableSetDiagUser()
         .select {
-            mutableListOf(it.id, <!KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE!>f.length(it.username).alias("username")<!>)
+            mutableListOf(it.id, f.length(it.username).alias("username"))
         }
 }

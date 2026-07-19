@@ -46,6 +46,39 @@ abstract class KSelectable<Selected : KPojo>(
     internal open fun buildTotalCountTask(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask =
         error("Total count is not supported for ${this::class.simpleName}.")
 
+    internal open fun outputStableKeyCandidates(): List<List<String>> = emptyList()
+
+    @PublishedApi
+    internal open fun prepareFirstResult() = Unit
+
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+    @kotlin.internal.LowPriorityInOverloadResolution
+    inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
+        prepareFirstResult()
+        return build(wrapper).first(wrapper)
+    }
+
+    @JvmName("firstProjection")
+    @Suppress("UNCHECKED_CAST")
+    fun first(wrapper: KronosDataSourceWrapper? = null): Selected {
+        prepareFirstResult()
+        return build(wrapper).first(wrapper, selectedType) as Selected
+    }
+
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+    @kotlin.internal.LowPriorityInOverloadResolution
+    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        prepareFirstResult()
+        return build(wrapper).firstOrNull(wrapper)
+    }
+
+    @JvmName("firstProjectionOrNull")
+    @Suppress("UNCHECKED_CAST")
+    fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
+        prepareFirstResult()
+        return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
+    }
+
     @Suppress("UNCHECKED_CAST")
     internal fun resultColumnTypes(fieldsByLabel: Map<String, Field> = emptyMap()): Map<String, KType> {
         val selectedClass = selectedType.classifier as? KClass<*> ?: return emptyMap()

@@ -3,6 +3,7 @@ package com.kotlinorm.plugin.idea.codegen
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.nio.charset.StandardCharsets
@@ -31,7 +32,7 @@ class KronosTemplateManager(
     }
 
     fun copyBuiltInKPojoToProject(): VirtualFile {
-        val baseDir = project.baseDir ?: error("Project base directory is not available.")
+        val baseDir = projectDirectory() ?: error("Project base directory is not available.")
         return WriteCommandAction.writeCommandAction(project).compute<VirtualFile, RuntimeException> {
             val dir = VfsUtil.createDirectoryIfMissing(baseDir, ".kronos/templates")
                 ?: error("Could not create .kronos/templates.")
@@ -47,11 +48,14 @@ class KronosTemplateManager(
         template.projectFile?.let { VfsUtil.loadText(it) } ?: BuiltInKPojoTemplate
 
     private fun templateDirectory(): VirtualFile? {
-        val baseDir = project.baseDir ?: return null
+        val baseDir = projectDirectory() ?: return null
         return ApplicationManager.getApplication().runReadAction<VirtualFile?> {
             baseDir.findFileByRelativePath(".kronos/templates")
         }
     }
+
+    private fun projectDirectory(): VirtualFile? =
+        project.basePath?.let(LocalFileSystem.getInstance()::findFileByPath)
 }
 
 const val BuiltInKPojoName = "KPojo"

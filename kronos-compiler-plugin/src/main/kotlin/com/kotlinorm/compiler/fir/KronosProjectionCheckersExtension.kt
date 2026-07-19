@@ -22,7 +22,10 @@ import com.kotlinorm.compiler.utils.EqualsFunctionName
 import com.kotlinorm.compiler.utils.GeneratedProjectionFieldIdentifierRegex
 import com.kotlinorm.compiler.utils.InsertClauseClassId
 import com.kotlinorm.compiler.utils.InsertFunctionName
+import com.kotlinorm.compiler.utils.JoinedSelectQueryClassId
 import com.kotlinorm.compiler.utils.KSelectableClassId
+import com.kotlinorm.compiler.utils.CursorPageQueryClassId
+import com.kotlinorm.compiler.utils.OffsetPageQueryClassId
 import com.kotlinorm.compiler.utils.PlainAggregateFunctionNames
 import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationClassId
 import com.kotlinorm.compiler.utils.SelectAliasFunctionName
@@ -31,17 +34,24 @@ import com.kotlinorm.compiler.utils.SelectClauseClassId
 import com.kotlinorm.compiler.utils.SelectFunctionName
 import com.kotlinorm.compiler.utils.SelectGroupByFunctionName
 import com.kotlinorm.compiler.utils.SelectLimitFunctionName
+import com.kotlinorm.compiler.utils.SelectOrderByFunctionName
 import com.kotlinorm.compiler.utils.SelectPackageFqName
 import com.kotlinorm.compiler.utils.SortAscendingFunctionName
 import com.kotlinorm.compiler.utils.SortDescendingFunctionName
 import com.kotlinorm.compiler.utils.SubqueryQuantifierFunctionNames
+import com.kotlinorm.compiler.utils.UnsafeProjectionOverrideAnnotationClassId
+import com.kotlinorm.compiler.utils.UnionClauseClassId
+import com.kotlinorm.compiler.utils.isJoinSourceClassId
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.diagnostics.reportOn
+import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.expression.ExpressionCheckers
 import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirFunctionCallChecker
+import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirOptInUsageBaseChecker
+import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirOptInUsageBaseChecker.loadExperimentalityForMarkerAnnotation
 import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtension
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.declarations.FirProperty
@@ -62,12 +72,14 @@ import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
 import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
+import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.references.FirErrorNamedReference
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.references.FirResolvedErrorReference
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
+import org.jetbrains.kotlin.fir.visitors.FirDefaultVisitorVoid
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
@@ -107,7 +119,11 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     private val ScalarReceiverAndArgumentFunctionNames = setOf(CompareToFunctionName, EqualsFunctionName)
     private val SelectedTypeArgumentIndexByClassId = mapOf(
         SelectClauseClassId to 1,
-        KSelectableClassId to 0
+        JoinedSelectQueryClassId to 1,
+        KSelectableClassId to 0,
+        UnionClauseClassId to 0,
+        OffsetPageQueryClassId to 0,
+        CursorPageQueryClassId to 0,
     )
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -117,6 +133,9 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
             name == InsertFunctionName -> checkInsertSelectValueCount(expression)
             name in ScalarSubqueryCandidateFunctionNames -> checkScalarSubqueryLimitUsage(expression)
             name in PredicateSubqueryFunctionNames -> checkPredicateSubqueryShape(expression)
+        }
+        if (name == SelectOrderByFunctionName) {
+            checkOrderByProjectionOverride(expression)
         }
         if (!expression.isKronosSelectCall()) return
         checkSelectProjection(expression)
@@ -131,7 +150,6 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         val sourceType = expression.selectSourceType()
         val sourceFieldNames = sourceType?.sourceFieldNames().orEmpty()
         val sourceValues = lambda.anonymousFunction.valueParameters.projectionSourceValueAccessors()
-
         val seenNames = linkedSetOf<String>()
         items.forEach { item ->
             if (item.hasResolutionError()) return@forEach
@@ -144,23 +162,46 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
 
                     is ProjectionItemResult.Named -> {
                         if (!seenNames.add(result.name.asString())) {
-                            reporter.reportOn(
-                                item.source,
-                                KronosProjectionDiagnostics.DUPLICATE_PROJECTION_FIELD
-                            )
-                        }
-                        if (
-                            result.origin == ProjectionItemOrigin.ExplicitAlias &&
-                            result.name.asString() in sourceFieldNames
-                        ) {
-                            reporter.reportOn(
-                                item.source,
-                                KronosProjectionDiagnostics.SELECTED_FIELD_CONFLICTS_WITH_SOURCE
-                            )
+                            reportProjectionOverrideOptIn(item)
                         }
                     }
                 }
             }
+        }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkOrderByProjectionOverride(call: FirFunctionCall) {
+        if (!call.isKronosOrderByCall()) return
+        val model = call.contextProjectionModel() ?: return
+        if (model.shadowedSourceNames.isEmpty()) return
+        val lambda = call.argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return
+        val accesses = mutableListOf<FirPropertyAccessExpression>()
+        lambda.anonymousFunction.body?.accept(
+            ContextProjectionAccessVisitor(
+                model.contextClassId,
+                model.shadowedSourceNames,
+                accesses::add
+            )
+        )
+        accesses.forEach { access -> reportProjectionOverrideOptIn(access) }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportProjectionOverrideOptIn(item: FirStatement) {
+        val marker = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(UnsafeProjectionOverrideAnnotationClassId)
+            as? org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
+            ?: return
+        val experimentality = marker.loadExperimentalityForMarkerAnnotation(context.session)
+            ?: return
+        with(FirOptInUsageBaseChecker) {
+            reportNotAcceptedExperimentalities(
+            listOf(experimentality),
+            item,
+            item.source,
+            false
+            )
         }
     }
 
@@ -308,7 +349,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     context(context: CheckerContext)
     private fun FirExpression.isKSelectableExpression(): Boolean {
         val type = safeResolvedType() as? ConeClassLikeType ?: return false
-        return type.lookupTag.classId == SelectClauseClassId || type.lookupTag.classId == KSelectableClassId
+        return type.lookupTag.classId in SelectedTypeArgumentIndexByClassId
     }
 
     context(context: CheckerContext)
@@ -338,7 +379,8 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
     }
 
     private fun ConeClassLikeType.selectedTypeArgumentOrNull(): ConeKotlinType? {
-        val selectedArgumentIndex = SelectedTypeArgumentIndexByClassId[lookupTag.classId] ?: return null
+        val selectedArgumentIndex = SelectedTypeArgumentIndexByClassId[lookupTag.classId]
+            ?: if (lookupTag.classId.isJoinSourceClassId()) 0 else return null
         return (typeArguments.getOrNull(selectedArgumentIndex) as? ConeKotlinTypeProjection)?.type
     }
 
@@ -393,7 +435,26 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         if (calleeReference.name != SelectFunctionName) return false
         val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirNamedFunctionSymbol
         val callableId = symbol?.callableId ?: return false
-        return callableId.packageName == SelectPackageFqName && callableId.callableName == SelectFunctionName
+        return callableId.callableName == SelectFunctionName && (
+            callableId.packageName == SelectPackageFqName || callableId.classId?.isJoinSourceClassId() == true
+        )
+    }
+
+    private fun FirFunctionCall.isKronosOrderByCall(): Boolean {
+        val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirNamedFunctionSymbol
+        val callableId = symbol?.callableId ?: return false
+        return callableId.callableName == SelectOrderByFunctionName && (
+            callableId.classId == SelectClauseClassId || callableId.classId == JoinedSelectQueryClassId
+        )
+    }
+
+    context(context: CheckerContext)
+    private fun FirFunctionCall.contextProjectionModel(): KronosProjectionModel? {
+        val receiverType = explicitReceiver?.safeResolvedType() as? ConeClassLikeType ?: return null
+        val contextType = (receiverType.typeArguments.getOrNull(2) as? ConeKotlinTypeProjection)?.type
+            as? ConeClassLikeType
+            ?: return null
+        return KronosProjectionRegistry.find(context.session, contextType.lookupTag.classId)
     }
 
     context(context: CheckerContext)
@@ -510,6 +571,28 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
         return left.lookupTag.classId == right.lookupTag.classId
     }
 
+}
+
+private class ContextProjectionAccessVisitor(
+    private val contextClassId: org.jetbrains.kotlin.name.ClassId,
+    private val shadowedNames: Set<Name>,
+    private val report: (FirPropertyAccessExpression) -> Unit
+) : FirDefaultVisitorVoid() {
+    override fun visitElement(element: FirElement) {
+        element.acceptChildren(this)
+    }
+
+    override fun visitPropertyAccessExpression(propertyAccessExpression: FirPropertyAccessExpression) {
+        val symbol = (propertyAccessExpression.calleeReference as? FirResolvedNamedReference)
+            ?.resolvedSymbol as? FirPropertySymbol
+        if (
+            symbol?.callableId?.classId == contextClassId &&
+            propertyAccessExpression.calleeReference.name in shadowedNames
+        ) {
+            report(propertyAccessExpression)
+        }
+        propertyAccessExpression.acceptChildren(this)
+    }
 }
 
 private sealed interface ProjectionItemResult {

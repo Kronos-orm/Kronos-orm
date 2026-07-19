@@ -89,7 +89,49 @@ data class UserAliasProjection(
 )
 ```
 
-Selected names must be unique in the result shape. Alias computed items when the selected item is not a direct field, or when a direct field should use a different result property name.
+Alias computed items when the selected item is not a direct field, or when a direct field should use a different result property name.
+
+## Resolve duplicate output names
+
+Duplicate requested output names are rejected unless the declaration or expression opts in to `UnsafeProjectionOverride`. After opt-in, Kronos preserves every selected value: the first occurrence keeps its name, and later occurrences receive `_1`, `_2`, and so on.
+
+```kotlin group="Duplicate projection" name="kotlin" icon="kotlin"
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val rows = User()
+    .select { [it.id, it.id, it.name.alias("id_1")] }
+    .toList()
+
+val first = rows.first()
+val originalId = first.id
+val repeatedId = first.id_2
+val reservedAlias = first.id_1
+```
+
+Explicit names are reserved before suffixes are allocated. The requested names `id`, `id`, `id_1` therefore resolve to `id`, `id_2`, `id_1`, not `id`, `id_1`, `id_1`. The same names are used for SQL labels, generated properties, typed mapping, map keys, derived queries, and union output.
+
+Prefer explicit aliases such as `userId` and `orderId` when the values have different meanings. Use the opt-in when preserving repeated names is intentional.
+
+### Replace or shadow a source name
+
+A selected alias may reuse a source field name without opt-in if no same-layer Context clause reads that name. `where`, `groupBy`, and `having` still use source fields. `orderBy` uses the post-select Context, so reading a shadowed name there requires opt-in and resolves to the selected value and its Kotlin type.
+
+```kotlin group="Context shadow" name="opt-in" icon="kotlin"
+@OptIn(UnsafeProjectionOverride::class)
+val ordered = User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+    .where { it.name != null }       // Source.name
+    .orderBy { it.name.desc() }      // selected Int? name
+```
+
+Remove the source field before restoring the same name when replacement is the intended shape; this form does not require opt-in.
+
+```kotlin group="Context shadow" name="source minus" icon="kotlin"
+val replaced = User()
+    .select { [it - it.name, f.length(it.name).alias("name")] }
+    .orderBy { it.name.desc() }
+```
 
 ## Use raw SQL select items
 
@@ -207,7 +249,7 @@ SELECT `id`, `name`, `age`, `id` AS `sourceId`
 FROM `user`
 ```
 
-Use `it - ...` when most columns should be returned with a few exclusions, or when aliases should be appended after a full projection. Final projection output names must remain unique.
+Use `it - ...` when most columns should be returned with a few exclusions, or when aliases should be appended after a full projection. Resolved output names are always unique; repeated requested names require the opt-in described above.
 
 ## Project from join queries
 
@@ -222,15 +264,15 @@ data class UserOrderRow(
 )
 
 val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select {
+    leftJoin { user.id == order.userId }
+        .select {
         [
             user.id.alias("userId"),
             user.name.alias("username"),
             order.id.alias("orderId"),
             order.status
         ]
-    }
+        }
 }.toList<UserOrderRow>()
 ```
 

@@ -382,6 +382,18 @@ CTAS 也可以通过 `buildCreateTableAsSelectTask(Target(), query)` 先生成 S
 
 `select { it }`、`select { [it] }` 和 `select { listOf(it) }` 都和 `select()` 一样返回源 KPojo 类型。排除字段、追加 alias、函数、原生 SQL 或其他投影项时才生成投影类型。
 
+重复投影输出名需要用 Kotlin 标准 opt-in 确认；保留全部值后，第一次出现使用原名，后续值使用 `_1`、`_2` 等确定性后缀。显式请求名会先全局保留，例如 `id, id, id_1` 解析为 `id, id_2, id_1`。
+
+```kotlin
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val duplicated = User()
+    .select { [it.id, it.id, it.name.alias("id_1")] }
+```
+
+Selected alias 遮蔽 Source 名称时，只有同层 `orderBy` Context 实际读取冲突名称才需要 opt-in；`where`、`groupBy` 和 `having` 仍读取 Source。先用 `it - it.name` 移除 Source 字段再恢复同名 alias 不需要 opt-in。生成投影和 Context 属性使用 selected 表达式的实际类型。
+
 ```kotlin
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
@@ -438,14 +450,16 @@ val firstOrders = ranked
 排序、分页和聚合可以和投影组合：
 
 ```kotlin
-val (total, rows, totalPages) = User()
+val page = User()
     .select { [it.id, it.name, f.count(it.id).alias("orderCount")] }
     .groupBy { [it.id, it.name] }
     .having { f.count(it.id) > 0 }
     .orderBy { it.id.desc() }
-    .withTotal()
     .page(1, 20)
+    .withTotal()
     .toList<User>()
+
+val rows = page.records
 ```
 
 标量子查询可以作为 select 字段使用。
@@ -488,8 +502,8 @@ val paidOrders = Order()
     .where { it.status == 1 }
 
 val users = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 

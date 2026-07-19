@@ -63,6 +63,48 @@ class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
     fun joinSelectableSource() = box("joinSelectableSource")
 
     /**
+     * Verifies opted-in join projection output names and generated Selected properties agree.
+     */
+    @Test
+    fun joinDuplicateProjectionNames() = box("joinDuplicateProjectionNames")
+
+    /**
+     * Verifies an unaliased field from a non-root JOIN source is generated on Selected.
+     */
+    @Test
+    fun joinNonRootUnaliasedProjection() = box("joinNonRootUnaliasedProjection")
+
+    /**
+     * Verifies raw nested JOIN operands retain distinct left/right AST shapes.
+     */
+    @Test
+    fun joinNestedSourceShapes() = box("joinNestedSourceShapes")
+
+    /**
+     * Verifies the table/selectable/raw JOIN operand matrix and generated result types.
+     */
+    @Test
+    fun joinOperandMatrix() = box("joinOperandMatrix")
+
+    /**
+     * Verifies generated JOIN Selected types remain selectable and union-compatible.
+     */
+    @Test
+    fun joinDerivedUnionComposition() = box("joinDerivedUnionComposition")
+
+    /**
+     * Verifies generated JOIN Selected queries compose as scalar and predicate subqueries.
+     */
+    @Test
+    fun joinSelectedSubqueryComposition() = box("joinSelectedSubqueryComposition")
+
+    /**
+     * Verifies JOIN Selected types survive offset, total, and cursor pagination stages.
+     */
+    @Test
+    fun joinPaginationTypeStages() = box("joinPaginationTypeStages")
+
+    /**
      * Verifies join select generated projections flow into no-arg queryList.
      */
     @Test

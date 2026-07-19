@@ -362,23 +362,26 @@ val users = User()
     .toList()
 // result: List<{ id: Long?, username: String? }>
 
-// Pagination
-val (total, list, totalPages) = User()
+// Pagination with a named PageResult
+val page = User()
     .select { [it.id, it.username] }
     .where { it.id < 10 && it.username like "a%" }
-    .withTotal()
     .page(1, 10)
+    .withTotal()
     .toList()
-// total: Int; list: List<{ id: Long?, username: String? }>; totalPages: Int
+val total = page.total
+val list = page.records
+val totalPages = page.totalPages
 
 // Join
 val usersWithRoles = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    on { user.id == relation.userId && user.id == role.userId }
-    select {
-        [user.id, user.username, relation.id.alias("relationId"),
-                role.role, f.count(1).alias("count")]
-    }
-    where { user.id < 10 }
+    leftJoin { user.id == relation.userId }
+        .leftJoin { user.id == role.userId }
+        .select {
+            [user.id, user.username, relation.id.alias("relationId"),
+                    role.role, f.count(1).alias("count")]
+        }
+        .where { user.id < 10 }
 }.toList()
 // result: List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
 

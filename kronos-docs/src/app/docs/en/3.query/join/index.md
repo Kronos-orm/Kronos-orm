@@ -1,387 +1,207 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Query from multiple tables
+## Query from multiple sources
 
-In Kronos, we can use `KPojo.join(KPojo1, KPojo2, ...)` to query associated data from multiple tables.
+`join(...)` creates a composable FROM source tree. Declare one relation method for every right-side source, then call `select { ... }` to turn the completed source into an executable query.
 
-`KSelectable` query results can also be consumed as derived join sources. See {{ $.keyword("query/subqueries", ["Subqueries"]) }} for derived query source rules.
+```kotlin group="Basic join" name="kotlin" icon="kotlin"
+val query = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
+        .where { user.enabled == true }
+}
 
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
+val rows = query.toList()
 ```
 
-## Join a selectable source
+```sql group="Basic join" name="Mysql" icon="mysql"
+SELECT `user`.`id`, `user`.`name`, `order`.`status`
+FROM `user`
+LEFT JOIN `order` ON `user`.`id` = `order`.`user_id`
+WHERE `user`.`enabled` = :enabled
+```
 
-A `KSelectable` built from `select { ... }` can be passed to `join(...)`. The right-side parameter exposes the selected fields and aliases from the derived source.
+The source parameters are declared once in the outer lambda and captured by relation and query clauses. Do not repeat them on `leftJoin`, `select`, `where`, or `orderBy`.
 
-```kotlin group="Join source 1" name="kotlin" icon="kotlin"
+## Choose a relation type
+
+Use `innerJoin`, `leftJoin`, `rightJoin`, or `fullJoin` with a condition. Use conditionless `crossJoin()` for a Cartesian product. There is no implicit join type or separate `on { ... }` method.
+
+```kotlin group="Relation types" name="multiple sources" icon="kotlin"
+val rows = User().join(Order(), Product()) { user, order, product ->
+    innerJoin { user.id == order.userId }
+        .leftJoin { order.productId == product.id }
+        .select {
+            [user.id, product.name.alias("productName"), order.amount]
+        }
+}.toList()
+```
+
+```kotlin group="Relation types" name="cross join" icon="kotlin"
+val combinations = User().join(Region()) { user, region ->
+    crossJoin()
+        .select { [user.id, region.name.alias("regionName")] }
+}.toList()
+```
+
+`fullJoin` support depends on the selected database dialect. See {{ $.keyword("database/dialect-support", ["Dialect Support"]) }}.
+
+## Select, filter, group, and order
+
+`select` is the type boundary between a raw JOIN source and a query. After `select`, use the same `where`, `by`, `groupBy`, `having`, `orderBy`, `distinct`, `limit`, `lock`, `patch`, and result methods as other selected queries.
+
+```kotlin group="Join query clauses" name="kotlin" icon="kotlin"
+val rows = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select {
+            [
+                user.id.alias("userId"),
+                f.count(order.id).alias("orderCount")
+            ]
+        }
+        .where { user.enabled == true }
+        .groupBy { user.id }
+        .having { f.count(order.id) > 0 }
+        .orderBy { it.orderCount.desc() }
+}.toList()
+```
+
+`where`, `groupBy`, and `having` use the joined Source fields. `orderBy` uses the post-select Context and can read selected aliases such as `orderCount`.
+
+## Join a selected or paged source
+
+Any `KSelectable`, including a selected query, a joined query, a union, or an offset page, can be a JOIN operand. The corresponding source parameter exposes that operand's selected output fields.
+
+```kotlin group="Derived join source" name="selected source" icon="kotlin"
 val paidOrders = Order()
     .select { [it.userId, it.status] }
     .where { it.status == 1 }
 
-val users = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+val rows = User().join(paidOrders) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 
-```sql group="Join source 1" name="Mysql" icon="mysql"
-SELECT `user`.`id` AS `id`,
-       `user`.`name` AS `name`,
-       `q`.`status` AS `status`
-FROM `user`
-LEFT JOIN (
-    SELECT `user_id` AS `userId`, `status`
-    FROM `order`
-    WHERE `order`.`status` = :status
-) AS `q`
-ON `user`.`id` = `q`.`userId`
+```kotlin group="Derived join source" name="finite page source" icon="kotlin"
+val recentOrders = Order()
+    .select { [it.id, it.userId, it.createdAt] }
+    .orderBy { it.createdAt.desc() }
+    .page(pageIndex = 1, pageSize = 100)
+
+val rows = User().join(recentOrders) { user, order ->
+    innerJoin { user.id == order.userId }
+        .select { [user.id, order.id.alias("orderId")] }
+}.toList()
 ```
 
-The join result can keep using `orderBy`, `page`, and `withTotal()`.
+`OffsetPageQuery` is selectable. Total-page and cursor-page execution stages are not relational sources.
 
-```kotlin group="Join source 2" name="paged source" icon="kotlin"
-val (total, rows) = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    orderBy { order.status.desc() }
-    page(1, 10)
-    select { [user.id, user.name, order.status] }
-}.withTotal().toMapList()
+## Build a nested JOIN tree
+
+End an inner JOIN block with its relation call to keep a raw `JoinSource`. That source can become either side of another join without flattening its grouping.
+
+```kotlin group="Nested join" name="right nested" icon="kotlin"
+val companyRegion = Company().join(Region()) { company, region ->
+    innerJoin { company.regionId == region.id }
+}
+
+val rows = User().join(companyRegion) { user, company, region ->
+    leftJoin { user.companyId == company.id }
+        .select {
+            [user.id, company.name, region.name.alias("regionName")]
+        }
+}.toList()
 ```
 
-```sql group="Join source 2" name="paged sql" icon="mysql"
-SELECT `user`.`id` AS `id`,
-       `user`.`name` AS `name`,
-       `q`.`status` AS `status`
-FROM `user`
-LEFT JOIN (
-    SELECT `user_id` AS `userId`, `status`
-    FROM `order`
-    WHERE `order`.`status` = :status
-) AS `q`
-ON `user`.`id` = `q`.`userId`
-ORDER BY `q`.`status` DESC
-LIMIT 10
-OFFSET 0
+The SQL shape is `User LEFT JOIN (Company INNER JOIN Region)`. A raw `JoinSource` cannot execute, filter, sort, or page until the outer layer calls `select`.
+
+## Compose a selected JOIN
+
+The value returned by JOIN `select` is a `KSelectable`. It can become a derived source, participate in `union`, feed INSERT SELECT, or be joined again.
+
+```kotlin group="Join composition" name="derived" icon="kotlin"
+val joined = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, order.status.alias("orderStatus")] }
+}
+
+val active = joined
+    .select { [it.id, it.orderStatus] }
+    .where { it.orderStatus == 1 }
+    .toList()
 ```
 
-## Specify the join condition and join type
-
-In Kronos, we use `left join` to connect multiple tables by default. If you don't need to specify the connection method, you can use the `on` method to specify the connection conditions.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
+```kotlin group="Join composition" name="union" icon="kotlin"
+val all = union(joined, joined)
+    .select { [it.id, it.orderStatus] }
+    .toList()
 ```
 
-You can specify both the join method and the join condition with the `leftJoin`, `rightJoin`, `innerJoin`, `crossJoin`, and `fullJoin` functions.
+## Self-join and duplicate output names
 
-```kotlin name="demo" icon="kotlin" {2-6}
-val users: List<User> =
-    User().join(UserInfo(), UserTeam()) { user, userInfo, userTeam ->
-        leftJoin { user.id == userInfo.userId }
-        innerJoin { user.id == userTeam.userId }
-        select { [user.id, user.name, userInfo.age, userTeam.teamId] }
-    }.toList()
+Self-joins use distinct source parameters even when both operands have the same KPojo type. Prefer aliases that describe each role.
+
+```kotlin group="Self join" name="aliases" icon="kotlin"
+val hierarchy = Employee().join(Employee()) { manager, report ->
+    leftJoin { manager.id == report.managerId }
+        .select {
+            [
+                manager.id.alias("managerId"),
+                report.id.alias("reportId")
+            ]
+        }
+}.toList()
 ```
 
-```sql name="join type sql" icon="mysql"
-SELECT `user`.`id`,
-       `user`.`name`,
-       `user_info`.`age`,
-       `user_team`.`team_id` AS `teamId`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-INNER JOIN `user_team` ON `user`.`id` = `user_team`.`user_id`
+If repeated names are intentional, opt in to deterministic suffixing. The first value keeps its name and later values receive `_1`, `_2`, and so on.
+
+```kotlin group="Self join" name="duplicate names" icon="kotlin"
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val rows = User().join(Company()) { user, company ->
+    leftJoin { user.companyId == company.id }
+        .select { [user.id, company.id] }
+}.toList()
+
+val userId = rows.first().id
+val companyId = rows.first().id_1
 ```
 
-## {{ $.title("db") }}Specify the database name(cross-database join)
+See {{ $.keyword("query/projection", ["Projection"]) }} for explicit-name reservation and Context shadowing rules.
 
-In Kronos, we can use the `db` method to specify the database name.
+## Page a joined query
 
-Combine one or more tables with their respective database names and pass them as parameters to the method using one or more `Pair` classes for cross-database joint queries.
+Apply pagination after `select`. An offset page returns rows directly; call `withTotal()` on that page for a named `PageResult`.
 
-```kotlin name="demo" icon="kotlin" {4}
-val users: List<User> =
-    User().join(UserInfo(), UserTeam(), UserRole()) { user, userInfo, userTeam, userRole ->
-        on { user.id == userInfo.userId && user.id == userTeam.userId && user.id == userRole.userId }
-        db(userInfo to "user_info_database", userRole to "user_role_database")
-        select { [user.id, user.name, userInfo.age, userTeam.teamId, userRole.roleName] }
-    }.toList()
+```kotlin group="Join page" name="kotlin" icon="kotlin"
+val query = User().join(Order()) { user, order ->
+    innerJoin { user.id == order.userId }
+        .select { [user.id, order.status] }
+        .orderBy { it.id.asc() }
+}
+
+val records = query.page(pageIndex = 1, pageSize = 20).toList()
+val page = query.page(pageIndex = 1, pageSize = 20).withTotal().toList()
+
+val total = page.total
+val pageRecords = page.records
 ```
 
-```sql name="cross database sql" icon="mysql"
-SELECT `user`.`id`,
-       `user`.`name`,
-       `user_info_database`.`user_info`.`age`,
-       `user_team`.`team_id` AS `teamId`,
-       `user_role_database`.`user_role`.`role_name` AS `roleName`
-FROM `user`
-LEFT JOIN `user_info_database`.`user_info` ON `user`.`id` = `user_info_database`.`user_info`.`user_id`
-LEFT JOIN `user_team` ON `user`.`id` = `user_team`.`user_id`
-LEFT JOIN `user_role_database`.`user_role` ON `user`.`id` = `user_role_database`.`user_role`.`user_id`
+Cursor and derived-page contracts are covered in {{ $.keyword("query/sorting-pagination-aggregation", ["Sorting, Pagination, and Aggregation"]) }}.
+
+## Choose result and database
+
+Joined queries support generated projection rows, DTOs, map results, single-row methods, and an explicit `KronosDataSourceWrapper` exactly like normal selects.
+
+```kotlin group="Join result" name="wrapper" icon="kotlin"
+val rows = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, order.status] }
+        .db(order to "archive")
+}.toMapList(customWrapper)
 ```
 
-## {{ $.title("select") }}Specify the query fields
-
-In Kronos, we can specify query fields using the `select` method, with `[]` for multiple fields.
-
-You can use `alias` to specify aliases for the field, such as `select { [user.id, user.name.alias("userName"), userInfo.age] }`.
-
-If you need to query all fields of a table, you can use `select { user }`, `select { [user, userInfo, userTeam.teamId] }`.
-
-When you don't specify query fields, all fields are queried by default. We will rename the same fields in different tables to avoid field conflicts.
-
-Strings can be used as custom query fields, such as `select { "count(`user.id`)".alias("count") }`.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```text name="result shape"
-rows.first().id
-rows.first().name
-rows.first().age
-```
-
-### Query all fields or exclude some columns
-
-You can pass `KPojo` to query all columns, use `-` to exclude columns, and use `[]` to combine the final select list.
-
-```kotlin name="kotlin" icon="kotlin" {6}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user - user.id, userInfo.age] }
-    }
-        .toList()
-```
-
-## {{ $.title("by") }}Specifying Query Fields
-
-In Kronos, we can use `by` method to specify the query fields, with `[]` for multiple fields.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        by { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-## {{ $.title("where") }}Specify the query conditions
-
-In Kronos, we can use the `where` method to specify the query {{ $.keyword("query/conditions", ["conditional expression"]) }}.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        where { user.id == 1 }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="where sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-WHERE `user`.`id` = :id
-```
-
-Inside an explicit `where` block, `.eq` can expand the current KPojo object's field values into equality conditions, and you can combine those conditions with other expressions.
-
-```kotlin name="kotlin" icon="kotlin" {6}
-val users: List<User> =
-    User(1, "Kronos").join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        where { user.eq }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-Kronos supports the minus operator `-` to exclude fields from the explicit `.eq` expansion.
-
-```kotlin name="kotlin" icon="kotlin" {6}
-val users: List<User> =
-    User(1, "Kronos").join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        where { (user - user.id).eq }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-## {{ $.title("patch") }}Add parameters to custom query conditions
-
-In Kronos, we can use the `patch` method to add parameters to a custom query condition.
-
-```kotlin name="demo" icon="kotlin" {2-7}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-        where { "user.id = :id".asSql() }
-        patch("id" to 1)
-    }.toList()
-```
-
-## {{ $.title("groupBy") }}, {{ $.title("having") }}Set grouping and aggregation conditions
-
-In Kronos, we can specify grouping fields using the `groupBy` method and specify aggregation conditions using the `having` method.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        groupBy { [user.id, userInfo.age] }
-        having { userInfo.age > 18 }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="group sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-GROUP BY `user`.`id`, `user_info`.`age`
-HAVING `user_info`.`age` > :age
-```
-
-## {{ $.title("orderBy") }}Set sorting conditions
-
-In Kronos, we can specify sorting conditions using the `orderBy` method.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        orderBy { [user.id.asc(), userInfo.age.desc()] }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="order sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-ORDER BY `user`.`id` ASC, `user_info`.`age` DESC
-```
-
-## {{ $.title("limit") }}Specify the maximum number of records to query
-
-In Kronos, we can specify the maximum number of records to query using the `limit` method.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        limit(10)
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="limit sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-LIMIT 10
-```
-
-## {{ $.title("distinct") }}Specify query deduplication
-
-In Kronos, we can specify query deduplication using the `distinct` method.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        distinct()
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="distinct sql" icon="mysql"
-SELECT DISTINCT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-```
-
-## {{ $.title("page") }}, {{ $.title("withTotal") }}Query paging
-
-The `page` method is used to specify paging queries, please note that the `page` method parameter starts from 1.
-
-In different databases, paging queries have different syntaxes, Kronos generates paging queries based on different databases.
-
-The `withTotal` method is used to query paging queries with total record counts.
-
-> **Warning**
-> After using the `page` method, the result of the query **will not** include the total number of records by default, if you need to query the total number of records, be sure to use the `withTotal` method.
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val (total, list) =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        page(1, 10)
-        select { [user.id, user.name, userInfo.age] }
-    }.withTotal().toMapList()
-```
-
-```sql name="page sql" icon="mysql"
-SELECT COUNT(*) FROM (
-    SELECT 1
-    FROM `user`
-    LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-) AS total_count
-
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-LIMIT 10
-OFFSET 0
-```
-
-## Result methods
-
-Join queries use the same terminal result methods as select queries.
-
-```kotlin name="Result methods" icon="kotlin"
-val mapRows: List<Map<String, Any?>> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toMapList()
-
-val typedRows: List<UserInfoRow> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList<UserInfoRow>()
-```
-
-Result shapes, single-row methods, pagination totals, and custom wrappers are covered in {{ $.keyword("query/result-methods", ["Result Methods"]) }}.
-
-## Specify the data source to use
-
-Pass `KronosDataSourceWrapper` to a terminal result method when this join query should use a specific database connection.
-
-```kotlin name="demo" icon="kotlin" {1}
-val customWrapper = CustomWrapper()
-
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList(customWrapper)
-```
+See {{ $.keyword("query/result-methods", ["Result Methods"]) }} for terminal method behavior.

@@ -107,10 +107,8 @@ class CoreOrmDialectSqlTest {
 
         val task = DialectUser()
             .select { [it.id, it.username] }
-            .withTotal()
             .page(3, 5)
             .build(CapturingDialectWrapper(DBType.Mssql))
-            .second
             .atomicTask
 
         assertTaskEquals(
@@ -154,10 +152,10 @@ class CoreOrmDialectSqlTest {
                 .select { it.id }
                 .where { it.id == 1 }
                 .orderBy { it.id.desc() }
-                .withTotal()
                 .page(1, 10)
+                .withTotal()
                 .build(dialect.wrapper)
-                .first
+                .countTask
                 .atomicTask
 
             assertTaskEquals(expected.getValue(dialect.dbType), countTask, dialect.label)
@@ -198,8 +196,7 @@ class CoreOrmDialectSqlTest {
                 .select { [it.id, it.username] }
                 .where { it.username == "neo" }
                 .orderBy { it.id.desc() }
-                .withCursor()
-                .cursor(mapOf<String, Any?>("id" to 10).toCursor(), offset = 2)
+                .cursor(pageSize = 2, after = mapOf<String, Any?>("id" to 10).toCursor())
                 .toMapList(wrapper)
 
             assertTaskEquals(expected.getValue(dialect.dbType), wrapper.queryTasks.single(), dialect.label)
@@ -484,10 +481,10 @@ class CoreOrmDialectSqlTest {
         coreSqlDialects.forEach { dialect ->
             val task = DialectUser(id = 1)
                 .join(UserRelation(id = 10, gender = 1, id2 = 1)) { user, relation ->
-                    leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-                    select { [user.id, relation.gender] }
-                    where { user.id == 1 }
-                    orderBy { user.id.desc() }
+                    leftJoin { user.id == relation.id2 && user.gender == relation.gender }
+                        .select { [user.id, relation.gender] }
+                        .where { user.id == 1 }
+                        .orderBy { user.id.desc() }
                 }
                 .build(dialect.wrapper)
                 .atomicTask
@@ -521,9 +518,9 @@ class CoreOrmDialectSqlTest {
         coreSqlDialects.forEach { dialect ->
             val task = DialectUser()
                 .join(UserRelation()) { user, relation ->
-                    leftJoin(relation) { user.id == relation.id2 }
-                    select { user.id }
-                    limit(0)
+                    leftJoin { user.id == relation.id2 }
+                        .select { user.id }
+                        .limit(0)
                 }
                 .build(dialect.wrapper)
                 .atomicTask

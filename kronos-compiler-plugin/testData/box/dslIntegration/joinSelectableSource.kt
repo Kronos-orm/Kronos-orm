@@ -49,9 +49,9 @@ fun box(): String {
     val statement = JoinSelectableUser()
         .join(orders) { user, order ->
             val rankStatus: Int? = order.rankStatus
-            leftJoin(order) { user.id == order.userId }
-            select { [user.id, order.rankStatus] }
             if (rankStatus == -1) error("unreachable")
+            leftJoin { user.id == order.userId }
+                .select { [user.id, order.rankStatus] }
         }
         .toSqlQuery(CompilerTestDataSourceWrapper) as SqlQuery.Select
     val join = statement.from.singleOrNull() as? SqlTable.Join

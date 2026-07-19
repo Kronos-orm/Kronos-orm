@@ -23,14 +23,9 @@ import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiElement
-import com.kotlinorm.compiler.fir.KronosIdeProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionIdeBridge
-import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.expressionType
-import org.jetbrains.kotlin.analysis.api.types.KaClassType
-import org.jetbrains.kotlin.analysis.api.types.KaType
-import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
@@ -53,8 +48,7 @@ class KronosProjectionCompletionContributor : CompletionContributor() {
             if (parameters.completionType != CompletionType.BASIC) return@guard
             val receiver = parameters.projectionCompletionReceiver() ?: return@guard
             val projectionType = receiver.completionProjectionType() ?: return@guard
-            val model = projectionType.findCompletionModel() ?: return@guard
-            val fields = if (projectionType.className == model.contextName) model.contextFields else model.fields
+            val fields = projectionType.findCompletionFields() ?: return@guard
             fields.distinctBy { it.name }.forEach { field ->
                 result.addElement(
                     LookupElementBuilder.create(field.name.asKotlinIdentifier())
@@ -65,13 +59,6 @@ class KronosProjectionCompletionContributor : CompletionContributor() {
             }
         }
     }
-}
-
-private data class CompletionProjectionType(
-    val classId: ClassId,
-    val subjectType: String,
-) {
-    val className: String = classId.shortClassName.asString()
 }
 
 private fun PsiElement.parents(): Sequence<PsiElement> = generateSequence(this) { it.parent }
@@ -104,15 +91,18 @@ private fun KtNameReferenceExpression.qualifiedReceiver(): KtExpression? {
     }
 }
 
-private fun KtExpression.completionProjectionType(): CompletionProjectionType? =
-    directCompletionProjectionType()
-        ?: completionProjectionTypeFromLocalInitializer()
-        ?: completionProjectionTypeFromQualifiedReceiver()
+private fun KtExpression.completionProjectionType(): KronosProjectionType? =
+    discoveredProjectionType()?.takeIf { it.isDirectCompletionReceiver }
 
-private fun KtExpression.directCompletionProjectionType(): CompletionProjectionType? =
+private fun KtExpression.discoveredProjectionType(): KronosProjectionType? =
+    analyzedProjectionType()
+        ?: projectionTypeFromLocalInitializer()
+        ?: projectionTypeFromQualifiedReceiver()
+
+private fun KtExpression.analyzedProjectionType(): KronosProjectionType? =
     try {
         analyze(this) {
-            expressionType?.toCompletionProjectionType()
+            expressionType?.toKronosProjectionType()
         }
     } catch (e: ProcessCanceledException) {
         throw e
@@ -122,7 +112,7 @@ private fun KtExpression.directCompletionProjectionType(): CompletionProjectionT
         null
     }
 
-private fun KtExpression.completionProjectionTypeFromLocalInitializer(): CompletionProjectionType? {
+private fun KtExpression.projectionTypeFromLocalInitializer(): KronosProjectionType? {
     val reference = this as? KtNameReferenceExpression ?: return null
     val property = try {
         reference.references
@@ -137,10 +127,10 @@ private fun KtExpression.completionProjectionTypeFromLocalInitializer(): Complet
     } catch (_: Throwable) {
         null
     } ?: return null
-    return property.initializer?.completionProjectionType()
+    return property.initializer?.discoveredProjectionType()
 }
 
-private fun KtExpression.completionProjectionTypeFromQualifiedReceiver(): CompletionProjectionType? {
+private fun KtExpression.projectionTypeFromQualifiedReceiver(): KronosProjectionType? {
     val qualified = this as? KtQualifiedExpression ?: return null
     val selector = qualified.selectorExpression
     val selectorName = (selector as? KtNameReferenceExpression)?.getReferencedName()
@@ -149,40 +139,12 @@ private fun KtExpression.completionProjectionTypeFromQualifiedReceiver(): Comple
             ?.let { it as? KtNameReferenceExpression }
             ?.getReferencedName()
     if (selectorName != "firstOrNull" && selectorName != "singleOrNull" && selectorName != "first") return null
-    val receiverType = qualified.receiverExpression.completionProjectionType() ?: return null
-    val nullable = selectorName == "firstOrNull" || selectorName == "singleOrNull"
-    val subjectType = receiverType.classId.asFqNameString() + if (nullable) "?" else ""
-    return CompletionProjectionType(receiverType.classId, subjectType)
-}
-
-private fun KaType.toCompletionProjectionType(): CompletionProjectionType? {
-    val type = this as? KaClassType ?: return null
-    val directClassId = type.classId.takeIf { it.isCompletionProjectionClassId() }
-    if (directClassId != null) return CompletionProjectionType(directClassId, renderCompletionProjectionTypeText())
-    val argumentClassId = type.typeArguments.firstOrNull()
-        ?.type
-        ?.let { it as? KaClassType }
-        ?.classId
-        ?.takeIf { it.isCompletionProjectionClassId() }
+    val receiverType = qualified.receiverExpression.discoveredProjectionType()
+        ?.takeIf { it.canExtractDirectRow }
         ?: return null
-    return CompletionProjectionType(argumentClassId, renderCompletionProjectionTypeText())
+    val nullable = selectorName == "firstOrNull" || selectorName == "singleOrNull"
+    return receiverType.asDirectCompletionReceiver(nullable)
 }
 
-private fun KaType.renderCompletionProjectionTypeText(): String {
-    val classType = this as? KaClassType ?: return toString()
-    val args = classType.typeArguments
-        .mapNotNull { it.type?.renderCompletionProjectionTypeText() }
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(prefix = "<", postfix = ">")
-        .orEmpty()
-    return classType.classId.asFqNameString() + args + if (toString().trim().endsWith("?")) "?" else ""
-}
-
-private fun ClassId.isCompletionProjectionClassId(): Boolean {
-    if (packageFqName != GeneratedProjectionPackageFqName) return false
-    val className = shortClassName.asString()
-    return className.startsWith("KronosSelectContext_") || className.startsWith("KronosSelectResult_")
-}
-
-private fun CompletionProjectionType.findCompletionModel(): KronosIdeProjectionModel? =
-    KronosProjectionIdeBridge.read().firstOrNull { it.name == className || it.contextName == className }
+private fun KronosProjectionType.findCompletionFields() =
+    KronosProjectionIdeBridge.read().canonicalProjectionClassDeclaration(className)?.fields

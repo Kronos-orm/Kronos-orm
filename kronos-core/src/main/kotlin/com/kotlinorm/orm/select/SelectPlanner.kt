@@ -84,7 +84,10 @@ internal class SelectPlanner(
         parameterCounter: MutableMap<String, Int>,
         totalCount: Boolean
     ): List<SqlSelectItem> {
-        if (totalCount && (context.selectAll || context.projectionItems.all { it is KTableForSelect.ProjectionItem.FieldItem })) {
+        if (
+            totalCount && !context.distinct &&
+            (context.selectAll || context.projectionItems.all { it is KTableForSelect.ProjectionItem.FieldItem })
+        ) {
             return listOf(totalCountSelectItem())
         }
         val visibleItems = if (context.selectAll) {
@@ -93,7 +96,10 @@ internal class SelectPlanner(
             context.projectionItems.mapNotNull { projection ->
                 when (projection) {
                     is KTableForSelect.ProjectionItem.FieldItem ->
-                        projection.field.takeIf { it in context.selectedFields }?.toPlannerSelectItem(projection.expr?.let(context::bindExpr))
+                        projection.field.takeIf { it in context.selectedFields }?.toPlannerSelectItem(
+                            projection.expr?.let(context::bindExpr),
+                            projection.outputName
+                        )
                     is KTableForSelect.ProjectionItem.SelectItemValue -> context.bindSelectItem(projection.item)
                     is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> {
                         val query = projection.query.materializeSqlQuery(parameters, parameterCounter, dataSource)
@@ -123,10 +129,19 @@ internal class SelectPlanner(
         )
     }
 
-    private fun Field.toPlannerSelectItem(exprOverride: SqlExpr? = null): SqlSelectItem.Expr {
+    private fun Field.toPlannerSelectItem(
+        exprOverride: SqlExpr? = null,
+        resolvedOutputName: String? = null
+    ): SqlSelectItem.Expr {
         val expr = exprOverride ?: toPlannerExpr()
-        val outputName = name.ifBlank { context.sourceColumnName(this) }
+        val sourceOutputName = if (context.sourceQuery != null) {
+            context.sourceColumnName(this)
+        } else {
+            name.ifBlank { context.sourceColumnName(this) }
+        }
+        val outputName = resolvedOutputName ?: sourceOutputName
         val alias = when {
+            outputName != sourceOutputName -> outputName
             context.sourceQuery != null -> null
             name != columnName -> name
             else -> null

@@ -60,6 +60,8 @@ class UpdateClause<T : KPojo>(
         pojo = pojo,
         kClass = metadata.kClass,
         tableName = metadata.tableName,
+        declaredTableName = metadata.allColumns.firstOrNull { it.tableName.isNotBlank() }?.tableName
+            ?: metadata.tableName,
         operationType = KOperationType.UPDATE,
         fields = metadata.allColumns,
         allFields = metadata.allFields.toList(),
@@ -166,7 +168,7 @@ class UpdateClause<T : KPojo>(
 
     fun where(updateCondition: ToFilter<T, Boolean?> = null): UpdateClause<T> {
         if (updateCondition == null) return this
-        context.pojo.afterFilter filter@ { filterTable ->
+        context.pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
             with(context) {
                 this@filter.sourceValues = sourceValues.toMutableMap()
                 this@filter.operationType = operationType

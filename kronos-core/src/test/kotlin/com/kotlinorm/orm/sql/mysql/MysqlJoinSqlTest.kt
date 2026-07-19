@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.sql.mysql
 
+import com.kotlinorm.annotations.UnsafeProjectionOverride
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
@@ -22,6 +23,7 @@ import com.kotlinorm.utils.trimWhitespace
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(UnsafeProjectionOverride::class)
 class MysqlJoinSqlTest : MysqlTestBase() {
     init {
         Kronos.serializeProcessor = GsonProcessor
@@ -32,12 +34,10 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (sql, paramMap) = TestUser(1).join(
             UserRelation(1, "123", 1, 1),
         ) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-            select {
-                [user.id, relation.gender]
-            }
-            where { user.id == 1 }
-            orderBy { user.id.desc() }
+            leftJoin { user.id == relation.id2 && user.gender == relation.gender }
+                .select { [user.id, relation.gender] }
+                .where { user.id == 1 }
+                .orderBy { user.id.desc() }
         }.build()
 
         assertEquals(
@@ -57,19 +57,17 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (sql, paramMap) = TestUser(1).join(
             UserRelation(1, "123", 1, 1), Movie(1), Address(1)
         ) { user, relation, movie, address ->
-            leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-            rightJoin(movie) { movie.year == user.id }
-            fullJoin(address) { address.userId == user.id }
-            select {
-                [user.id, relation.gender, movie.id]
-            }
-            where { user.id == 1 }
-            orderBy { user.id.desc() }
+            leftJoin { user.id == relation.id2 && user.gender == relation.gender }
+                .rightJoin { movie.year == user.id }
+                .fullJoin { address.userId == user.id }
+                .select { [user.id, relation.gender, movie.id] }
+                .where { user.id == 1 }
+                .orderBy { user.id.desc() }
         }.build()
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id_1`
                 FROM `tb_user` 
                 LEFT JOIN `user_relation` 
                 ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender` 
@@ -90,19 +88,17 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (sql, paramMap) = TestUser(1).join(
             UserRelation(1, "123", 1, 1), Movie(1), Address(1)
         ) { user, relation, movie, address ->
-            leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-            leftJoin(movie) { movie.year == user.id }
-            leftJoin(address) { address.userId == user.id }
-            select {
-                [user.id, relation.gender, movie.id]
-            }
-            where { user.id == 1 }
-            orderBy { user.id.desc() }
+            leftJoin { user.id == relation.id2 && user.gender == relation.gender }
+                .leftJoin { movie.year == user.id }
+                .leftJoin { address.userId == user.id }
+                .select { [user.id, relation.gender, movie.id] }
+                .where { user.id == 1 }
+                .orderBy { user.id.desc() }
         }.build()
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id_1`
                 FROM `tb_user` 
                 LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender`
                 LEFT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 
@@ -119,16 +115,13 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (cnt, rcd) = TestUser(1).join(
             UserRelation(1, "123", 1, 1), Movie(1), Address(1)
         ) { user, relation, movie, address ->
-            leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-            rightJoin(movie) { movie.year == user.id }
-            fullJoin(address) { address.userId == user.id }
-            select {
-                [user.id, relation.gender, movie.id]
-            }
-            where { user.id == 1 }
-            orderBy { user.id.desc() }
-            page(1, 10)
-        }.withTotal().build()
+            leftJoin { user.id == relation.id2 && user.gender == relation.gender }
+                .rightJoin { movie.year == user.id }
+                .fullJoin { address.userId == user.id }
+                .select { [user.id, relation.gender, movie.id] }
+                .where { user.id == 1 }
+                .orderBy { user.id.desc() }
+        }.page(1, 10).withTotal().build()
         val (sql, paramMap) = cnt
         val (sql2, paramMap2) = rcd
 
@@ -151,13 +144,11 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (sql, paramMap) = TestUser(1).join(
             UserRelation(1, "123", 1, 1),
         ) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-            select {
-                [user.id, relation.gender]
-            }
-            db(relation to "test")
-            where { user.id == 1 }
-            orderBy { user.id.desc() }
+            leftJoin { user.id == relation.id2 && user.gender == relation.gender }
+                .select { [user.id, relation.gender] }
+                .db(relation to "test")
+                .where { user.id == 1 }
+                .orderBy { user.id.desc() }
         }.build()
 
         assertEquals(
@@ -178,11 +169,9 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (sql, paramMap) = TestUser(1).join(
             UserRelation(1, "123", 1, 1),
         ) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select {
-                f.count(1)
-            }
-            where { user.id == 1 }
+            leftJoin { user.id == relation.id2 }
+                .select { f.count(1).alias("count") }
+                .where { user.id == 1 }
         }.build()
 
         assertEquals(
@@ -202,21 +191,21 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         val (sql, paramMap) = TestUser(1).join(
             UserRelation(1, "123", 1, 1),
         ) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select {
-                [
-                    user.id,
-                    f.count(relation.id).alias("relationCount"),
-                ]
-            }
-            groupBy { user.id }
-            having { f.count(relation.id) > 0 }
-            where { user.id == 1 }
+            leftJoin { user.id == relation.id2 }
+                .select {
+                    [
+                        user.id,
+                        f.count(relation.id).alias("relationCount"),
+                    ]
+                }
+                .groupBy { user.id }
+                .having { f.count(relation.id) > 0 }
+                .where { user.id == 1 }
         }.build()
 
         assertEquals(
             """
-                SELECT COUNT(`user_relation`.`id`) AS relationCount, `tb_user`.`id` AS `id` FROM `tb_user`
+                SELECT `tb_user`.`id` AS `id`, COUNT(`user_relation`.`id`) AS relationCount FROM `tb_user`
                 LEFT JOIN `user_relation`
                 ON `tb_user`.`id` = `user_relation`.`id2`
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0

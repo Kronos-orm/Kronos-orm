@@ -1,6 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.PublishPluginTask
+import org.jetbrains.intellij.platform.gradle.tasks.SignPluginTask
+import org.gradle.api.tasks.compile.JavaCompile
 import java.io.File
 
 plugins {
@@ -10,6 +13,8 @@ plugins {
 
 val stableIdeaVersion = "2026.2"
 val stableIdeaBuild = "262.8665.258"
+val stableIdeaSinceBuild = "262"
+val stableIdeaUntilBuild = "262.*"
 val macIdeaHomes = listOf(
     "/Applications/IntelliJ IDEA.app/Contents",
     "${System.getProperty("user.home")}/Applications/IntelliJ IDEA.app/Contents"
@@ -53,6 +58,22 @@ repositories {
     }
 }
 
+val ideaFixtureCompilerPluginArtifact = configurations.create("ideaFixtureCompilerPluginArtifact") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+val ideaFixtureCoreArtifact = configurations.create("ideaFixtureCoreArtifact") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+val ideaFixtureSyntaxArtifact = configurations.create("ideaFixtureSyntaxArtifact") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+
 dependencies {
     implementation(project(":kronos-core"))
     implementation(project(":kronos-codegen"))
@@ -64,6 +85,18 @@ dependencies {
     testImplementation(project(":kronos-compiler-plugin"))
     testImplementation("junit:junit:4.13.2")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.4")
+    add(
+        ideaFixtureCompilerPluginArtifact.name,
+        project(path = ":kronos-compiler-plugin", configuration = "runtimeElements"),
+    )
+    add(
+        ideaFixtureCoreArtifact.name,
+        project(path = ":kronos-core", configuration = "runtimeElements"),
+    )
+    add(
+        ideaFixtureSyntaxArtifact.name,
+        project(path = ":kronos-syntax", configuration = "runtimeElements"),
+    )
 
     intellijPlatform {
         if (ideaHome.isPresent) {
@@ -71,10 +104,31 @@ dependencies {
         } else {
             intellijIdea(ideaVersion)
         }
+        bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
         bundledPlugin("com.intellij.database")
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Plugin.Kotlin)
+        testBundledPlugins(
+            "com.intellij.java",
+            "org.jetbrains.kotlin",
+            "com.intellij.database",
+            "intellij.todo.plugin",
+            "intellij.testRunner.plugin",
+            "intellij.libraries.misc.plugin",
+            "intellij.structureView.plugin",
+            "intellij.grid.core.plugin",
+            "intellij.structuralSearch.plugin",
+            "intellij.execution.serviceView.plugin",
+            "intellij.navbar.plugin",
+        )
+        testBundledModules(
+            "intellij.grid",
+            "intellij.platform.execution.serviceView",
+            "intellij.platform.structuralSearch",
+            "intellij.platform.structureView",
+            "intellij.platform.structureView.backend",
+        )
         javaCompiler(ideaJavaCompilerVersion.get())
         pluginVerifier()
         zipSigner()
@@ -83,16 +137,47 @@ dependencies {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    dependsOn(
+        ideaFixtureCompilerPluginArtifact,
+        ideaFixtureCoreArtifact,
+        ideaFixtureSyntaxArtifact,
+    )
+    doFirst {
+        systemProperty(
+            "kronos.idea.test.compilerPluginJar",
+            ideaFixtureCompilerPluginArtifact.singleFile.absolutePath,
+        )
+        systemProperty(
+            "kronos.idea.test.coreJar",
+            ideaFixtureCoreArtifact.singleFile.absolutePath,
+        )
+        systemProperty(
+            "kronos.idea.test.syntaxJar",
+            ideaFixtureSyntaxArtifact.singleFile.absolutePath,
+        )
+    }
 }
 
 tasks.named("verifyPluginSignature") {
     dependsOn("signPlugin")
 }
 
+val signPluginTask = tasks.named<SignPluginTask>("signPlugin")
+
+tasks.named<PublishPluginTask>("publishPlugin") {
+    dependsOn(signPluginTask)
+    archiveFile.set(signPluginTask.flatMap { it.signedArchiveFile })
+}
+
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_25)
     }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.removeAll(listOf("--release", "8"))
+    options.release.set(25)
 }
 
 kotlin {
@@ -128,6 +213,10 @@ intellijPlatform {
         id.set("com.kotlinorm.kronos-idea-plugin")
         name.set("Kronos-ORM")
         version.set(kronosIdeaPluginVersion)
+        ideaVersion {
+            sinceBuild.set(stableIdeaSinceBuild)
+            untilBuild.set(stableIdeaUntilBuild)
+        }
         description.set(
             """
             <p><b>Kronos IDEA plugin</b> brings Kronos compiler-plugin information into IntelliJ IDEA.</p>
@@ -158,7 +247,7 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            local(ideaHome)
+            current()
         }
     }
 }

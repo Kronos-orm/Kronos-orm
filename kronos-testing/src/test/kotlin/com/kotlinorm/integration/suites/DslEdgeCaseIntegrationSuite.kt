@@ -1,5 +1,6 @@
 package com.kotlinorm.integration.suites
 
+import com.kotlinorm.annotations.UnsafeProjectionOverride
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
@@ -19,6 +20,10 @@ import com.kotlinorm.orm.union.union
 import com.kotlinorm.syntax.order.SqlOrdering
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 abstract class DslEdgeCaseIntegrationSuite(
     environment: IntegrationDatabaseEnvironment,
@@ -29,27 +34,28 @@ abstract class DslEdgeCaseIntegrationSuite(
         recreateTables()
         profile.seedUsersAndOrders()
 
-        val (total, rows) = IntegrationUser()
+        val page = IntegrationUser()
             .join(IntegrationOrder()) { user, order ->
-                innerJoin(order) { user.id == order.userId }
-                select {
-                    [
-                        user.id.alias("userId"),
-                        user.name,
-                        order.amount,
-                    ]
-                }
-                where { order.status == PAID_STATUS }
-                orderBy { user.id.asc() }
-                page(pi = 1, ps = 1)
+                innerJoin { user.id == order.userId }
+                    .select {
+                        [
+                            user.id.alias("userId"),
+                            user.name,
+                            order.amount,
+                        ]
+                    }
+                    .where { order.status == PAID_STATUS }
+                    .orderBy { user.id.asc() }
             }
+            .page(pageIndex = 1, pageSize = 1)
             .withTotal()
             .toList<IntegrationDslEdgeProjection>()
 
-        assertEquals(2, total)
-        assertEquals(listOf(1), rows.map { it.userId })
-        assertEquals(listOf("Ada"), rows.map { it.name })
-        assertEquals(listOf(50), rows.map { it.amount })
+        assertEquals(2, page.total)
+        assertEquals(2, page.totalPages)
+        assertEquals(listOf(1), page.records.map { it.userId })
+        assertEquals(listOf("Ada"), page.records.map { it.name })
+        assertEquals(listOf(50), page.records.map { it.amount })
     }
 
     @Test
@@ -69,8 +75,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .select { [it.id, it.name] }
             .where { it.status == PAID_STATUS }
             .orderBy { it.id.desc() }
+            .page(pageIndex = 1, pageSize = 1)
             .withTotal()
-            .page(pi = 1, ps = 1)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -117,8 +123,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .groupBy { it.userId }
             .having { f.sum(it.amount) > 30 }
             .orderBy { it.userId.asc() }
+            .page(pageIndex = 1, pageSize = 1)
             .withTotal()
-            .page(pi = 1, ps = 1)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -132,30 +138,137 @@ abstract class DslEdgeCaseIntegrationSuite(
         recreateTables()
         profile.seedUsersAndOrders()
 
-        val (total, rows) = IntegrationUser()
+        val page = IntegrationUser()
             .join(IntegrationOrder()) { user, order ->
-                innerJoin(order) { user.id == order.userId }
-                select {
-                    [
-                        user.id.alias("userId"),
-                        user.name,
-                        f.sum(order.amount).alias("totalAmount"),
-                        f.count(order.id).alias("orderCount"),
-                    ]
-                }
-                groupBy { [user.id, user.name] }
-                having { f.sum(order.amount) > 30 }
-                orderBy { user.id.asc() }
-                page(pi = 1, ps = 1)
+                innerJoin { user.id == order.userId }
+                    .select {
+                        [
+                            user.id.alias("userId"),
+                            user.name,
+                            f.sum(order.amount).alias("totalAmount"),
+                            f.count(order.id).alias("orderCount"),
+                        ]
+                    }
+                    .groupBy { [user.id, user.name] }
+                    .having { f.sum(order.amount) > 30 }
+                    .orderBy { user.id.asc() }
             }
+            .page(pageIndex = 1, pageSize = 1)
             .withTotal()
             .toList<IntegrationDslEdgeProjection>()
 
-        assertEquals(2, total)
-        assertEquals(listOf(1), rows.map { it.userId })
-        assertEquals(listOf("Ada"), rows.map { it.name })
-        assertEquals(listOf(70), rows.map { it.totalAmount })
-        assertEquals(listOf(2), rows.map { it.orderCount })
+        assertEquals(2, page.total)
+        assertEquals(2, page.totalPages)
+        assertEquals(listOf(1), page.records.map { it.userId })
+        assertEquals(listOf("Ada"), page.records.map { it.name })
+        assertEquals(listOf(70), page.records.map { it.totalAmount })
+        assertEquals(listOf(2), page.records.map { it.orderCount })
+    }
+
+    @OptIn(UnsafeProjectionOverride::class)
+    @Test
+    fun joinDuplicateProjectionNamesStayAlignedForTypedAndMapRowsAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        val query = IntegrationUser()
+            .join(IntegrationOrder()) { user, order ->
+                innerJoin { user.id == order.userId }
+                    .select { [user.id, order.id] }
+                    .where { order.status == PAID_STATUS }
+                    .orderBy { user.id.asc() }
+            }
+
+        val typedRows = query.toList()
+        assertEquals(listOf(1, 2), typedRows.map { it.id })
+        assertEquals(listOf(1, 3), typedRows.map { it.id_1 })
+
+        val mapRows = query.toMapList()
+        assertEquals(listOf(1, 2), mapRows.map { (it.cell("id") as Number).toInt() })
+        assertEquals(listOf(1, 3), mapRows.map { (it.cell("id_1") as Number).toInt() })
+        assertTrue(mapRows.all { row -> row.hasColumn("id") && row.hasColumn("id_1") })
+    }
+
+    @Test
+    fun joinCursorUsesCompositeOrderAndContinuesFromAfterTokenAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        val query = IntegrationUser()
+            .join(IntegrationOrder()) { user, order ->
+                innerJoin { user.id == order.userId }
+                    .select { [order.id, user.id.alias("userId"), order.amount] }
+                    .orderBy { [user.id.asc(), order.amount.asc()] }
+            }
+
+        val firstPage = query
+            .cursor(pageSize = 2)
+            .toList<IntegrationDslEdgeProjection>()
+
+        assertTrue(firstPage.hasNext)
+        assertNotNull(firstPage.nextCursor)
+        assertEquals(listOf(2, 1), firstPage.records.map { it.id })
+        assertEquals(listOf(1, 1), firstPage.records.map { it.userId })
+        assertEquals(listOf(20, 50), firstPage.records.map { it.amount })
+
+        val secondPage = query
+            .cursor(pageSize = 2, after = firstPage.nextCursor)
+            .toList<IntegrationDslEdgeProjection>()
+
+        assertFalse(secondPage.hasNext)
+        assertNull(secondPage.nextCursor)
+        assertEquals(listOf(3), secondPage.records.map { it.id })
+        assertEquals(listOf(2), secondPage.records.map { it.userId })
+        assertEquals(listOf(40), secondPage.records.map { it.amount })
+    }
+
+    @Test
+    fun joinedSelectedQueryCanBeUsedAsDerivedSourceAndUnionOperandAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        val paidOrders = IntegrationUser()
+            .join(IntegrationOrder()) { user, order ->
+                innerJoin { user.id == order.userId }
+                    .select {
+                        [
+                            user.id.alias("userId"),
+                            user.name.alias("userName"),
+                            order.amount,
+                        ]
+                    }
+                    .where { order.status == PAID_STATUS }
+            }
+        val openOrders = IntegrationUser()
+            .join(IntegrationOrder()) { user, order ->
+                innerJoin { user.id == order.userId }
+                    .select {
+                        [
+                            user.id.alias("userId"),
+                            user.name.alias("userName"),
+                            order.amount,
+                        ]
+                    }
+                    .where { order.status != PAID_STATUS }
+            }
+
+        val derivedRows = paidOrders
+            .select { [it.userId, it.userName, it.amount] }
+            .where { it.amount >= 40 }
+            .orderBy { it.userId.asc() }
+            .toList<IntegrationDslEdgeProjection>()
+
+        assertEquals(listOf(1, 2), derivedRows.map { it.userId })
+        assertEquals(listOf("Ada", "Grace"), derivedRows.map { it.userName })
+        assertEquals(listOf(50, 40), derivedRows.map { it.amount })
+
+        val unionRows = union(paidOrders, openOrders)
+            .orderBy("amount" to SqlOrdering.Asc)
+            .toList<IntegrationDslEdgeProjection>()
+
+        assertEquals(listOf(1, 2, 1), unionRows.map { it.userId })
+        assertEquals(listOf("Ada", "Grace", "Ada"), unionRows.map { it.userName })
+        assertEquals(listOf(20, 40, 50), unionRows.map { it.amount })
     }
 
     @Test
@@ -182,8 +295,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .select { [it.id, it.userId, it.amount, it.rn] }
             .where { it.rn == 1 }
             .orderBy { it.userId.asc() }
+            .page(pageIndex = 1, pageSize = 10)
             .withTotal()
-            .page(pi = 1, ps = 10)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -204,8 +317,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .select { [it.id, it.userName, it.age, it.createTime] }
             .where { it.userName == "Ada" }
             .orderBy { it.createTime.desc() }
+            .page(pageIndex = 1, pageSize = 10)
             .withTotal()
-            .page(pi = 1, ps = 10)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -240,8 +353,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .select { [it.id, it.userName, it.age, it.createTime, it.updateTime, it.rn] }
             .where { it.rn == 1 }
             .orderBy { it.userName.asc() }
+            .page(pageIndex = 1, pageSize = 10)
             .withTotal()
-            .page(pi = 1, ps = 10)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -293,8 +406,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .select { [it.id, it.userName, it.age, it.createTime] }
             .where { it.userName == "Ada" }
             .orderBy { it.createTime.desc() }
+            .page(pageIndex = 1, pageSize = 10)
             .withTotal()
-            .page(pi = 1, ps = 10)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -368,8 +481,8 @@ abstract class DslEdgeCaseIntegrationSuite(
             .select { [it.id, it.name, it.status] }
             .where { it.id > 1 }
             .orderBy { it.id.asc() }
+            .page(pageIndex = 1, pageSize = 1)
             .withTotal()
-            .page(pi = 1, ps = 1)
             .toList<IntegrationDslEdgeProjection>()
 
         assertEquals(2, total)
@@ -390,4 +503,10 @@ abstract class DslEdgeCaseIntegrationSuite(
             IntegrationAliasMatrixUser(id = 3, userName = "Grace", age = 20, createTime = 30, updateTime = 300),
         ).forEach { it.insert().execute() }
     }
+
+    private fun Map<String, Any?>.cell(label: String): Any? =
+        entries.firstOrNull { (key, _) -> key.equals(label, ignoreCase = true) }?.value
+
+    private fun Map<String, Any?>.hasColumn(label: String): Boolean =
+        keys.any { it.equals(label, ignoreCase = true) }
 }

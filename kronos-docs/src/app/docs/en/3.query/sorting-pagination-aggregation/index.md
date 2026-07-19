@@ -107,17 +107,18 @@ LIMIT 10
 
 `first()` and `toMap()` also apply a single-row limit for single-row results.
 
-## Page rows with total count
+## Page rows
 
-Use `withTotal().page(pageIndex, pageSize)` for page queries with totals. Page indexes start at `1`.
+Use `page(pageIndex, pageSize)` for an offset page. Page indexes start at `1`. The returned `OffsetPageQuery` executes one SELECT and `toList()` returns only the records.
 
 ```kotlin group="Page 1" name="kotlin" icon="kotlin"
-val (total, rows, totalPages): Triple<Int, List<User>, Int> = User()
+val query = User()
     .select()
     .where { it.age >= 18 }
     .orderBy { it.id.asc() }
-    .withTotal()
-    .page(2, 20)
+
+val rows: List<User> = query
+    .page(pageIndex = 2, pageSize = 20)
     .toList()
 ```
 
@@ -129,7 +130,20 @@ ORDER BY `id` ASC
 LIMIT 20 OFFSET 20
 ```
 
-```sql group="Page 1" name="Mysql total" icon="mysql"
+Call `withTotal()` on the offset page when the result also needs the total count. `toList()` returns a named `PageResult` with `total`, `records`, `totalPages`, `pageIndex`, and `pageSize`.
+
+```kotlin group="Page 2" name="kotlin" icon="kotlin"
+val page: PageResult<User> = query
+    .page(pageIndex = 2, pageSize = 20)
+    .withTotal()
+    .toList()
+
+val total = page.total
+val records = page.records
+val totalPages = page.totalPages
+```
+
+```sql group="Page 2" name="Mysql total" icon="mysql"
 SELECT COUNT(*)
 FROM (
     SELECT 1
@@ -138,38 +152,33 @@ FROM (
 ) AS total_count
 ```
 
-The result is returned as a triple.
+An offset page remains a finite `KSelectable`, so it can become a derived source with its inner LIMIT/OFFSET intact. A total-page stage is execution-only and cannot be selected, joined, paged, or cursored again.
 
-```kotlin group="Page 2" name="result shape" icon="kotlin"
-Triple(
-    42,
-    listOf(
-        User(id = 21, name = "Ada", age = 18),
-        User(id = 22, name = "Grace", age = 19)
-    ),
-    3
-)
+```kotlin group="Page 3" name="derived page" icon="kotlin"
+val finiteSource = query.page(pageIndex = 2, pageSize = 20)
+
+val outerRows = finiteSource
+    .select { [it.id, it.name] }
+    .where { it.name != null }
+    .toList()
 ```
 
 ## Cursor rows
 
-Use `withCursor().cursor(offset = count)` for the first cursor page. Pass the returned cursor into the next call. Cursor paging requires an `orderBy` over selected fields and returns `(hasNext, nextCursor, rows)`.
+Use `cursor(pageSize, after)` for cursor pagination. Pass the returned `nextCursor` as `after` on the next call. `toList()` returns a named `CursorResult` with `hasNext`, `nextCursor`, and `records`.
 
 ```kotlin group="Cursor" name="kotlin" icon="kotlin"
-val (hasNext, nextCursor, rows) = User()
+val query = User()
     .select { [it.id, it.name, it.age] }
     .where { it.age >= 18 }
     .orderBy { it.id.asc() }
-    .withCursor()
-    .cursor(offset = 20)
+
+val firstPage: CursorResult<User> = query
+    .cursor(pageSize = 20)
     .toList<User>()
 
-val nextPage = User()
-    .select { [it.id, it.name, it.age] }
-    .where { it.age >= 18 }
-    .orderBy { it.id.asc() }
-    .withCursor()
-    .cursor(nextCursor, offset = 20)
+val nextPage: CursorResult<User> = query
+    .cursor(pageSize = 20, after = firstPage.nextCursor)
     .toList<User>()
 ```
 
@@ -181,7 +190,7 @@ ORDER BY `id` ASC
 LIMIT 21
 ```
 
-`withCursor()` is separate from `withTotal().page(...)`; cursor queries do not calculate totals or total pages.
+Cursor ordering must use selected fields. If the requested order is not unique, the selected output must retain a complete primary or unique key so Kronos can append a stable tie-breaker. A cursor page is execution-only: it cannot call `page`, `withTotal`, or become a derived source. Creating page and cursor views does not mutate the reusable base query.
 
 ## Select aggregate values
 
@@ -269,22 +278,21 @@ User()
 
 ## Use the same APIs after joins
 
-Join queries expose the same `orderBy`, `page`, `withTotal`, `groupBy`, and `having` entries inside the join block.
+After JOIN `select`, use the same `orderBy`, `page`, `withTotal`, `groupBy`, and `having` APIs.
 
 ```kotlin group="Join aggregate" name="kotlin" icon="kotlin"
 val rows = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select {
-        [
-            user.id.alias("userId"),
-            f.count(order.id).alias("orderCount")
-        ]
-    }
-    groupBy { user.id }
-    having { f.count(order.id) > 0 }
-    orderBy { user.id.asc() }
-    page(1, 20)
-}.withTotal().toMapList()
+    leftJoin { user.id == order.userId }
+        .select {
+            [
+                user.id.alias("userId"),
+                f.count(order.id).alias("orderCount")
+            ]
+        }
+        .groupBy { user.id }
+        .having { f.count(order.id) > 0 }
+        .orderBy { it.userId.asc() }
+}.page(1, 20).withTotal().toMapList().records
 ```
 
 ```sql group="Join aggregate" name="Mysql" icon="mysql"

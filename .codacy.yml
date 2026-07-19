@@ -1,0 +1,3 @@
+---
+exclude_paths:
+  - "kronos-core/src/main/kotlin/com/kotlinorm/orm/join/Patch.kt"

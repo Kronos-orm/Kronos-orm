@@ -392,8 +392,8 @@ User()
     .join(orderTotals) { user, totals ->
         // user: User
         // totals: OrderTotalRow, generated from orderTotals
-        on { user.id == totals.userId }
-        select { [user.id, user.name, totals.totalAmount] }
+        leftJoin { user.id == totals.userId }
+            .select { [user.id, user.name, totals.totalAmount] }
     }
     .toList()
 ```
@@ -611,19 +611,47 @@ Kronos cannot decide whether the second property should be called `length`, `nam
 User().select { [it.id, f.length(it.name).alias("nameLength")] }
 ```
 
-One result class cannot contain duplicate property names:
+Duplicate requested output names require the standard Kotlin `UnsafeProjectionOverride` opt-in. Without opt-in, IDEA reports the conflicting projection item:
 
 ```kotlin name="duplicate-projection-field" icon="kotlin"
 User().select { [it.id, it.id] }
 ```
 
-A new alias must avoid original input field names:
+After opt-in, Kronos preserves every value. The first occurrence keeps its name, later occurrences receive `_1`, `_2`, and so on, and explicit requested names are reserved before suffix allocation.
 
-```kotlin name="source-conflict" icon="kotlin"
-User().select { [it.id, f.length(it.name).alias("name")] }
+```kotlin name="opted-in-duplicate-projection" icon="kotlin"
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val rows = User()
+    .select { [it.id, it.id, it.name.alias("id_1")] }
+    .toList()
+
+rows.first().id
+rows.first().id_2
+rows.first().id_1
 ```
 
-For `orderBy { ... }` to receive an unambiguous ordering context class, aliases need to avoid original input field names. If `User.name` and the selected alias `name` both exist, `KronosSelectContext_*` would contain two `name` properties, and neither the editor nor the compiler could know which one you meant.
+The requested names `id`, `id`, `id_1` resolve to `id`, `id_2`, `id_1`. IDEA uses these resolved names for completion and generated projection documentation. Prefer explicit aliases when the values have different meanings.
+
+An alias may reuse an input field name. The alias itself, and Source clauses such as `where`, `groupBy`, and `having`, do not require opt-in:
+
+```kotlin name="source-conflict" icon="kotlin"
+User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+    .where { it.name != null }
+```
+
+`orderBy` reads the post-select Context. If it actually reads the shadowed `name`, IDEA requires `UnsafeProjectionOverride`; after opt-in, the Context name resolves to the selected value and selected Kotlin type.
+
+```kotlin name="opted-in-context-shadow" icon="kotlin"
+@OptIn(UnsafeProjectionOverride::class)
+val ordered = User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+    .orderBy { it.name.desc() }
+```
+
+When replacement is intentional, remove the Source field before restoring the name. `select { [it - it.name, f.length(it.name).alias("name")] }` does not require opt-in. See {{ $.keyword("query/projection", ["Projection"]) }} for the complete allocation and Context rules.
 
 ## Receiver quick reference
 
@@ -649,8 +677,8 @@ The IDEA plugin surfaces these Kronos DSL rules directly in the editor:
 | Scenario | Why it is invalid |
 |----------|-------------------|
 | Non-field select item without `.alias("name")` | The result class property has no name |
-| Duplicate selected field names in one query | The result class would contain duplicate properties |
-| Alias conflicts with an original input field | The ordering context class would contain duplicate properties |
+| Duplicate requested output names without `UnsafeProjectionOverride` | All values are preserved only after explicit opt-in and deterministic suffix allocation |
+| `orderBy` reads a Selected value that shadows a Source name without opt-in | The post-select Context resolves that name to the Selected value and type after opt-in |
 | `where` / `having` in the same query accesses a current select alias | Filters read input fields |
 | Scalar subquery selects multiple columns | One property can hold only one value |
 | Scalar subquery misses `.limit(1)` | It is not guaranteed to return one value |

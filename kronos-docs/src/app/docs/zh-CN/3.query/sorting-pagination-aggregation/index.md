@@ -107,17 +107,18 @@ LIMIT 10
 
 `first()` 和 `toMap()` 也会为单行结果应用单行限制。
 
-## 分页并返回总数
+## Offset 分页
 
-使用 `withTotal().page(pageIndex, pageSize)` 查询带总数的分页。页码从 `1` 开始。
+使用 `page(pageIndex, pageSize)` 创建 offset page，页码从 `1` 开始。返回的 `OffsetPageQuery` 只执行一条 SELECT，`toList()` 直接返回记录。
 
 ```kotlin group="Page 1" name="kotlin" icon="kotlin"
-val (total, rows, totalPages): Triple<Int, List<User>, Int> = User()
+val query = User()
     .select()
     .where { it.age >= 18 }
     .orderBy { it.id.asc() }
-    .withTotal()
-    .page(2, 20)
+
+val rows: List<User> = query
+    .page(pageIndex = 2, pageSize = 20)
     .toList()
 ```
 
@@ -129,7 +130,20 @@ ORDER BY `id` ASC
 LIMIT 20 OFFSET 20
 ```
 
-```sql group="Page 1" name="Mysql total" icon="mysql"
+需要总数时，在 offset page 上调用 `withTotal()`。`toList()` 返回命名的 `PageResult`，包含 `total`、`records`、`totalPages`、`pageIndex` 和 `pageSize`。
+
+```kotlin group="Page 2" name="kotlin" icon="kotlin"
+val page: PageResult<User> = query
+    .page(pageIndex = 2, pageSize = 20)
+    .withTotal()
+    .toList()
+
+val total = page.total
+val records = page.records
+val totalPages = page.totalPages
+```
+
+```sql group="Page 2" name="Mysql total" icon="mysql"
 SELECT COUNT(*)
 FROM (
     SELECT 1
@@ -138,38 +152,33 @@ FROM (
 ) AS total_count
 ```
 
-返回值是一个 Triple。
+offset page 仍是有限的 `KSelectable`，可以保留内层 LIMIT/OFFSET 并作为派生 source。带总数分页是执行阶段，不能再次 select、join、page 或 cursor。
 
-```kotlin group="Page 2" name="result shape" icon="kotlin"
-Triple(
-    42,
-    listOf(
-        User(id = 21, name = "Ada", age = 18),
-        User(id = 22, name = "Grace", age = 19)
-    ),
-    3
-)
+```kotlin group="Page 3" name="derived page" icon="kotlin"
+val finiteSource = query.page(pageIndex = 2, pageSize = 20)
+
+val outerRows = finiteSource
+    .select { [it.id, it.name] }
+    .where { it.name != null }
+    .toList()
 ```
 
 ## 游标分页
 
-首次游标分页使用 `withCursor().cursor(offset = count)`。下一次查询把返回的 cursor 传回去。游标分页要求 `orderBy` 使用已选中的字段，返回值是 `(hasNext, nextCursor, rows)`。
+游标分页使用 `cursor(pageSize, after)`。下一次查询把返回的 `nextCursor` 作为 `after` 传入。`toList()` 返回命名的 `CursorResult`，包含 `hasNext`、`nextCursor` 和 `records`。
 
 ```kotlin group="Cursor" name="kotlin" icon="kotlin"
-val (hasNext, nextCursor, rows) = User()
+val query = User()
     .select { [it.id, it.name, it.age] }
     .where { it.age >= 18 }
     .orderBy { it.id.asc() }
-    .withCursor()
-    .cursor(offset = 20)
+
+val firstPage: CursorResult<User> = query
+    .cursor(pageSize = 20)
     .toList<User>()
 
-val nextPage = User()
-    .select { [it.id, it.name, it.age] }
-    .where { it.age >= 18 }
-    .orderBy { it.id.asc() }
-    .withCursor()
-    .cursor(nextCursor, offset = 20)
+val nextPage: CursorResult<User> = query
+    .cursor(pageSize = 20, after = firstPage.nextCursor)
     .toList<User>()
 ```
 
@@ -181,7 +190,7 @@ ORDER BY `id` ASC
 LIMIT 21
 ```
 
-`withCursor()` 与 `withTotal().page(...)` 是分开的入口；游标分页不计算总数和总页数。
+游标排序必须使用已选字段。如果排序本身不唯一，选中输出还必须保留完整的主键或唯一键，Kronos 才能追加稳定 tie-breaker。游标分页是执行阶段，不能调用 `page`、`withTotal` 或作为派生 source。创建 page/cursor view 不会修改可复用的基础查询。
 
 ## 选择聚合值
 
@@ -269,22 +278,21 @@ User()
 
 ## 在 join 后使用相同 API
 
-join 查询在 join 块内提供同样的 `orderBy`、`page`、`withTotal`、`groupBy` 和 `having` 入口。
+JOIN 调用 `select` 后，可以使用同样的 `orderBy`、`page`、`withTotal`、`groupBy` 和 `having` API。
 
 ```kotlin group="Join aggregate" name="kotlin" icon="kotlin"
 val rows = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select {
-        [
-            user.id.alias("userId"),
-            f.count(order.id).alias("orderCount")
-        ]
-    }
-    groupBy { user.id }
-    having { f.count(order.id) > 0 }
-    orderBy { user.id.asc() }
-    page(1, 20)
-}.withTotal().toMapList()
+    leftJoin { user.id == order.userId }
+        .select {
+            [
+                user.id.alias("userId"),
+                f.count(order.id).alias("orderCount")
+            ]
+        }
+        .groupBy { user.id }
+        .having { f.count(order.id) > 0 }
+        .orderBy { it.userId.asc() }
+}.page(1, 20).withTotal().toMapList().records
 ```
 
 ```sql group="Join aggregate" name="Mysql" icon="mysql"

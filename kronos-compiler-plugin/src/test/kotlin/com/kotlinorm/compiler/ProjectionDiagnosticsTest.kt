@@ -151,16 +151,52 @@ class ProjectionDiagnosticsTest : AbstractKronosJvmDiagnosticsSuite("projection"
     fun predicateSubqueryTupleFactoryForms() = diagnostics("predicateSubqueryTupleFactoryForms")
 
     /**
-     * Verifies selected projection property names must be unique.
+     * Verifies repeated Selected names require the standard Kotlin opt-in marker.
      */
     @Test
     fun duplicateProjectionProperty() = diagnostics("duplicateProjectionProperty")
 
     /**
-     * Verifies new selected aliases cannot conflict with source field names.
+     * Verifies join projection fields use the same duplicate-name opt-in diagnostic.
+     */
+    @Test
+    fun joinDuplicateProjection() = diagnostics("joinDuplicateProjection")
+
+    /**
+     * Verifies duplicate projection opt-in behavior across nested, derived, and union query layers.
+     */
+    @Test
+    fun projectionQueryLayerOptIn() = diagnostics("projectionQueryLayerOptIn")
+
+    /**
+     * Verifies a source-name shadow reports only when same-layer Context reads it.
      */
     @Test
     fun selectedAliasConflictsWithSource() = diagnostics("selectedAliasConflictsWithSource")
+
+    /**
+     * Verifies standard Kotlin opt-in scopes and source-minus restoration.
+     */
+    @Test
+    fun projectionAliasOptInScopes() = diagnostics("projectionAliasOptInScopes")
+
+    /**
+     * Verifies file-level standard Kotlin opt-in for projection alias replacement.
+     */
+    @Test
+    fun projectionAliasFileOptIn() = diagnostics("projectionAliasFileOptIn")
+
+    /**
+     * Verifies compiler-wide opt-in accepts duplicate Selected names and shadowed Context reads.
+     */
+    @Test
+    fun projectionCompilerWideOptIn() = diagnostics("projectionCompilerWideOptIn")
+
+    /**
+     * Verifies offset-page Selected shapes participate in scalar and predicate diagnostics.
+     */
+    @Test
+    fun projectionOffsetPageSubqueryDiagnostics() = diagnostics("projectionOffsetPageSubqueryDiagnostics")
 
     /**
      * Verifies same-layer where cannot access current selected aliases.

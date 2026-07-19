@@ -89,7 +89,49 @@ data class UserAliasProjection(
 )
 ```
 
-结果形态中的字段名必须唯一。非直接字段需要 alias；直接字段需要换成另一个结果属性名时，也使用 alias。
+非直接字段需要 alias；直接字段需要换成另一个结果属性名时，也使用 alias。
+
+## 处理重复输出名
+
+如果多个投影项请求相同输出名，默认会产生编译错误。只有在声明或表达式上 opt-in `UnsafeProjectionOverride` 后，Kronos 才会保留全部选中值：第一次出现保留原名，后续值依次使用 `_1`、`_2` 等后缀。
+
+```kotlin group="Duplicate projection" name="kotlin" icon="kotlin"
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val rows = User()
+    .select { [it.id, it.id, it.name.alias("id_1")] }
+    .toList()
+
+val first = rows.first()
+val originalId = first.id
+val repeatedId = first.id_2
+val reservedAlias = first.id_1
+```
+
+Kronos 会先保留全部显式请求名，再分配后缀。因此 `id`、`id`、`id_1` 会解析成 `id`、`id_2`、`id_1`，而不是 `id`、`id_1`、`id_1`。SQL label、生成属性、类型化映射、Map key、派生查询和 union 输出都使用同一组名称。
+
+不同值具有不同业务含义时，优先使用 `userId`、`orderId` 这类显式 alias。只有确实需要保留重复名称时才使用 opt-in。
+
+### 替换或遮蔽源字段名
+
+投影 alias 可以复用源字段名；如果同层 Context 没有读取该名称，则不需要 opt-in。`where`、`groupBy` 和 `having` 仍读取 Source。`orderBy` 读取 select 后的 Context，因此排序读取被遮蔽名称时需要 opt-in，并解析为选中值及其 Kotlin 类型。
+
+```kotlin group="Context shadow" name="opt-in" icon="kotlin"
+@OptIn(UnsafeProjectionOverride::class)
+val ordered = User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+    .where { it.name != null }       // Source.name
+    .orderBy { it.name.desc() }      // 选中的 Int? name
+```
+
+如果本意就是替换源字段，可以先移除源字段，再用相同 alias 恢复；这种写法不需要 opt-in。
+
+```kotlin group="Context shadow" name="source minus" icon="kotlin"
+val replaced = User()
+    .select { [it - it.name, f.length(it.name).alias("name")] }
+    .orderBy { it.name.desc() }
+```
 
 ## 使用原生 SQL select item
 
@@ -207,7 +249,7 @@ SELECT `id`, `name`, `age`, `id` AS `sourceId`
 FROM `user`
 ```
 
-多数表字段都需要返回、只跳过少数字段，或需要在完整字段后追加 alias 时，可以使用 `it - ...`。投影项的最终输出名必须唯一。
+多数表字段都需要返回、只跳过少数字段，或需要在完整字段后追加 alias 时，可以使用 `it - ...`。解析后的输出名始终唯一；请求重复名称时需要使用前述 opt-in。
 
 ## 在 join 查询中投影
 
@@ -222,15 +264,15 @@ data class UserOrderRow(
 )
 
 val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select {
+    leftJoin { user.id == order.userId }
+        .select {
         [
             user.id.alias("userId"),
             user.name.alias("username"),
             order.id.alias("orderId"),
             order.status
         ]
-    }
+        }
 }.toList<UserOrderRow>()
 ```
 

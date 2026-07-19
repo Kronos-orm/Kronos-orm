@@ -16,7 +16,6 @@
 
 package com.kotlinorm.idea
 
-import com.kotlinorm.compiler.fir.KronosIdeProjectionField
 import com.kotlinorm.compiler.fir.KronosIdeProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionIdeBridge
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
@@ -68,27 +67,21 @@ private class KronosProjectionDeclarationViewResolveExtension : KaResolveExtensi
 private class KronosProjectionDeclarationViewFile(
     private val models: List<KronosIdeProjectionModel>,
 ) : KaResolveExtensionFile() {
+    private val declarations by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        projectionClassDeclarations(models)
+    }
+
     override fun getFileName(): String = "KronosProjectionDeclarations.kt"
     override fun getFilePackageName(): FqName = GeneratedProjectionPackageFqName
     override fun getTopLevelCallableNames(): Set<Name> = emptySet()
     override fun getTopLevelClassifierNames(): Set<Name> =
         KronosIdeaSafe.guard("projection classifier names", emptySet()) {
-            models.flatMap { listOf(it.name, it.contextName) }
-                .mapTo(linkedSetOf(), Name::identifier)
+            declarations.mapTo(linkedSetOf()) { declaration -> Name.identifier(declaration.name) }
         }
 
     override fun buildFileText(): String =
         KronosIdeaSafe.guard("projection declaration file text", "package ${GeneratedProjectionPackageFqName.asString()}\n") {
-            buildString {
-                appendLine("package ${GeneratedProjectionPackageFqName.asString()}")
-                appendLine()
-                models.forEach { model ->
-                    appendProjectionClass(model.name, model.fields)
-                    appendLine()
-                    appendProjectionClass(model.contextName, model.contextFields)
-                    appendLine()
-                }
-            }
+            renderProjectionDeclarationFile(models)
         }
 
     override fun createNavigationTargetsProvider(): KaResolveExtensionNavigationTargetsProvider =
@@ -97,23 +90,4 @@ private class KronosProjectionDeclarationViewFile(
                 emptyList()
         }
 
-    private fun StringBuilder.appendProjectionClass(name: String, fields: List<KronosIdeProjectionField>) {
-        KronosIdeaSafe.guard("projection declaration rendering", Unit) {
-            append("data class ")
-            append(name)
-            appendLine("(")
-            fields.forEach { field ->
-                append("    var ")
-                append(field.name.asKotlinIdentifier())
-                append(": ")
-                append(field.type.asRenderableType().asNullableProjectionType())
-                appendLine(" = null,")
-            }
-            appendLine(") : com.kotlinorm.interfaces.KPojo")
-            appendLine()
-        }
-    }
 }
-
-private fun String.asNullableProjectionType(): String =
-    if (endsWith("?")) this else "$this?"

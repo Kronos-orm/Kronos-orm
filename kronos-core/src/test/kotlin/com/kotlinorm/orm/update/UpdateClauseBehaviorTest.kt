@@ -7,6 +7,7 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.testutils.MysqlTestBase
+import com.kotlinorm.wrappers.SamplePostgresJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -105,6 +106,28 @@ class UpdateClauseBehaviorTest : MysqlTestBase() {
         val where = assertNotNull(statement.where, "Update statement should have WHERE clause")
         assertTrue(where is SqlExpr.Binary)
         assertEquals(SqlBinaryOperator.And, where.operator)
+    }
+
+    @Test
+    fun `runtime table override requalifies update where columns`() {
+        val task = TestUser(1, "test")
+            .apply { __tableName += "_001" }
+            .update()
+            .set { it.username = "newName" }
+            .where { it.id == 1 }
+            .build(SamplePostgresJdbcWrapper())
+            .atomicTasks
+            .single()
+
+        assertEquals(
+            """UPDATE "tb_user_001" SET "username" = :usernameNew, "update_time" = :updateTimeNew WHERE "tb_user_001"."id" = :id AND "deleted" = FALSE""",
+            task.sql
+        )
+        assertEquals(
+            mapOf("usernameNew" to "newName", "id" to 1),
+            task.paramMap.filterKeys { it != "updateTimeNew" }
+        )
+        assertNotNull(task.paramMap["updateTimeNew"])
     }
 
     @Test

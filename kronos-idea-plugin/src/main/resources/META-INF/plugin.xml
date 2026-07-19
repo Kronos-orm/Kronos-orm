@@ -36,7 +36,6 @@
   <depends>com.intellij.database</depends>
 
   <extensions defaultExtensionNs="com.intellij">
-    <postStartupActivity implementation="com.kotlinorm.idea.KronosProjectionProbeStartupActivity" />
     <platform.backend.documentation.targetProvider
         id="KronosProjectionDocumentationTargetProvider"
         implementation="com.kotlinorm.idea.KronosProjectionDocumentationTargetProvider"

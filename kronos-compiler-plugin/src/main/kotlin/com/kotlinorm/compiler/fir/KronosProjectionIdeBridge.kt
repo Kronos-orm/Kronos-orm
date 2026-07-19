@@ -19,8 +19,11 @@ package com.kotlinorm.compiler.fir
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+import org.jetbrains.kotlin.fir.types.ProjectionKind
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import java.util.Properties
+import java.util.UUID
 
 /**
  * Shares projection declarations from the FIR compiler-plugin classloader to
@@ -33,23 +36,67 @@ object KronosProjectionIdeBridge {
     private const val ResolveExtensionFallbackPropertyName = "com.kotlinorm.kronos.ide.resolveExtensionFallback"
     private const val LastPublishCountPropertyName = "com.kotlinorm.kronos.ide.projections.count"
     private const val LastPublishPayloadSizePropertyName = "com.kotlinorm.kronos.ide.projections.payloadSize"
+    private const val ModuleOwnerPropertyPrefix = "com.kotlinorm.kronos.ide.projections.owner."
     private val encoder = Base64.getUrlEncoder().withoutPadding()
     private val decoder = Base64.getUrlDecoder()
 
-    fun publish(models: Collection<Pair<String, KronosProjectionModel>>) {
-        val distinctModels = models.distinctBy { it.second.classId }
-        val payload = distinctModels.joinToString("\n") { (moduleName, model) ->
-            listOf(
-                moduleName,
-                model.name.asString(),
-                model.fields.encodeFields(),
-                model.contextName.asString(),
-                model.contextFields.encodeFields(),
-            ).joinToString("|") { it.encode() }
+    fun publishModule(
+        moduleName: String,
+        generationToken: String,
+        models: Collection<KronosProjectionModel>
+    ) {
+        publishModuleSnapshot(
+            moduleName,
+            generationToken,
+            models.map { model ->
+                KronosIdeProjectionModel(
+                    moduleName = moduleName,
+                    name = model.name.asString(),
+                    fields = model.fields.toIdeFields(),
+                    contextName = model.contextName.asString(),
+                    contextFields = model.contextFields.toIdeFields(),
+                )
+            }
+        )
+    }
+
+    /** System properties keep ownership visible when IDEA replaces the compiler-plugin classloader. */
+    internal fun beginModuleSession(moduleName: String): String {
+        val generationToken = UUID.randomUUID().toString()
+        val properties = System.getProperties()
+        synchronized(properties) {
+            properties.setProperty(moduleOwnerPropertyName(moduleName), generationToken)
+            replaceModuleSnapshotLocked(properties, moduleName, emptyList())
         }
-        System.setProperty(PropertyName, payload)
-        System.setProperty(LastPublishCountPropertyName, distinctModels.size.toString())
-        System.setProperty(LastPublishPayloadSizePropertyName, payload.length.toString())
+        return generationToken
+    }
+
+    internal fun publishModuleSnapshot(
+        moduleName: String,
+        generationToken: String,
+        models: Collection<KronosIdeProjectionModel>
+    ) {
+        val properties = System.getProperties()
+        synchronized(properties) {
+            if (properties.getProperty(moduleOwnerPropertyName(moduleName)) != generationToken) return
+            replaceModuleSnapshotLocked(properties, moduleName, models)
+        }
+    }
+
+    private fun replaceModuleSnapshotLocked(
+        properties: Properties,
+        moduleName: String,
+        models: Collection<KronosIdeProjectionModel>
+    ) {
+        val merged = linkedMapOf<String, KronosIdeProjectionModel>()
+        readPayload(properties.getProperty(PropertyName))
+            .filterNot { it.moduleName == moduleName }
+            .forEach { model -> merged[model.identityKey()] = model }
+        models.forEach { model ->
+            val normalized = model.copy(moduleName = moduleName)
+            merged[normalized.identityKey()] = normalized
+        }
+        writePayload(properties, merged.values)
     }
 
     fun markIdeActive() {
@@ -65,31 +112,64 @@ object KronosProjectionIdeBridge {
         System.getProperty(ResolveExtensionFallbackPropertyName) == "true"
 
     fun read(): List<KronosIdeProjectionModel> {
-        val payload = System.getProperty(PropertyName) ?: return emptyList()
-        return payload
-            .lineSequence()
-            .filter { it.isNotBlank() }
-            .mapNotNull { line ->
-                val parts = line.split("|")
-                if (parts.size != 5) return@mapNotNull null
-                KronosIdeProjectionModel(
-                    moduleName = parts[0].decode(),
-                    name = parts[1].decode(),
-                    fields = parts[2].decode().decodeFields(),
-                    contextName = parts[3].decode(),
-                    contextFields = parts[4].decode().decodeFields(),
-                )
-            }
-            .distinctBy { "${it.moduleName}:${it.name}" }
-            .toList()
+        return readPayload(System.getProperty(PropertyName))
     }
 
     fun lastPublishSummary(): String =
         "count=${System.getProperty(LastPublishCountPropertyName, "0")}, " +
             "payloadSize=${System.getProperty(LastPublishPayloadSizePropertyName, "0")}"
 
-    private fun List<KronosProjectionField>.encodeFields(): String =
-        joinToString(",") { "${it.name.asString().encode()}:${it.type.renderIdeType().encode()}" }
+    private fun List<KronosProjectionField>.toIdeFields(): List<KronosIdeProjectionField> =
+        map { field -> KronosIdeProjectionField(field.name.asString(), field.type.renderIdeType()) }
+
+    private fun readPayload(payload: String?): List<KronosIdeProjectionModel> {
+        if (payload.isNullOrBlank()) return emptyList()
+        val modelsByIdentity = linkedMapOf<String, KronosIdeProjectionModel>()
+        payload.lineSequence()
+            .filter { it.isNotBlank() }
+            .mapNotNull(::decodeModel)
+            .forEach { model -> modelsByIdentity[model.identityKey()] = model }
+        return modelsByIdentity.values.sortedWith(IdeModelComparator)
+    }
+
+    private fun decodeModel(line: String): KronosIdeProjectionModel? = runCatching {
+        val parts = line.split("|")
+        if (parts.size != 5) return null
+        KronosIdeProjectionModel(
+            moduleName = parts[0].decode(),
+            name = parts[1].decode(),
+            fields = parts[2].decode().decodeFields(),
+            contextName = parts[3].decode(),
+            contextFields = parts[4].decode().decodeFields(),
+        )
+    }.getOrNull()
+
+    private fun writePayload(properties: Properties, models: Collection<KronosIdeProjectionModel>) {
+        val normalized = models
+            .associateBy { it.identityKey() }
+            .values
+            .sortedWith(IdeModelComparator)
+        val payload = normalized.joinToString("\n", transform = ::encodeModel)
+        if (payload.isEmpty()) {
+            properties.remove(PropertyName)
+        } else {
+            properties.setProperty(PropertyName, payload)
+        }
+        properties.setProperty(LastPublishCountPropertyName, normalized.size.toString())
+        properties.setProperty(LastPublishPayloadSizePropertyName, payload.length.toString())
+    }
+
+    private fun encodeModel(model: KronosIdeProjectionModel): String =
+        listOf(
+            model.moduleName,
+            model.name,
+            model.fields.encodeFields(),
+            model.contextName,
+            model.contextFields.encodeFields(),
+        ).joinToString("|") { it.encode() }
+
+    private fun List<KronosIdeProjectionField>.encodeFields(): String =
+        joinToString(",") { "${it.name.encode()}:${it.type.encode()}" }
 
     private fun String.decodeFields(): List<KronosIdeProjectionField> =
         splitToSequence(",")
@@ -109,6 +189,17 @@ object KronosProjectionIdeBridge {
 
     private fun String.decode(): String =
         String(decoder.decode(this), StandardCharsets.UTF_8)
+
+    private fun KronosIdeProjectionModel.identityKey(): String = "$moduleName:$name"
+
+    private fun moduleOwnerPropertyName(moduleName: String): String =
+        ModuleOwnerPropertyPrefix + moduleName.encode()
+
+    private val IdeModelComparator = compareBy<KronosIdeProjectionModel>(
+        KronosIdeProjectionModel::moduleName,
+        KronosIdeProjectionModel::name,
+        KronosIdeProjectionModel::contextName,
+    )
 }
 
 data class KronosIdeProjectionModel(
@@ -124,14 +215,34 @@ data class KronosIdeProjectionField(
     val type: String,
 )
 
-private fun ConeKotlinType.renderIdeType(): String {
+internal fun ConeKotlinType.renderIdeType(): String {
     val classLike = this as? ConeClassLikeType ?: return "kotlin.Any?"
     val base = classLike.lookupTag.classId.asFqNameString()
     val args = mutableListOf<String>()
     for (argument in classLike.typeArguments) {
-        val projection = argument as? ConeKotlinTypeProjection ?: continue
-        args += projection.type.renderIdeType().removeSuffix("?")
+        val projection = argument as? ConeKotlinTypeProjection
+        args += renderIdeTypeArgument(projection?.type?.renderIdeType(), projection?.kind)
     }
-    val renderedArgs = if (args.isEmpty()) "" else args.joinToString(prefix = "<", postfix = ">")
-    return base + renderedArgs + if (classLike.isMarkedNullable) "?" else ""
+    return renderIdeClassLikeType(base, args, classLike.isMarkedNullable)
+}
+
+internal fun renderIdeTypeArgument(type: String?, kind: ProjectionKind?): String {
+    if (type == null || kind == null) return "*"
+    return when (kind) {
+        ProjectionKind.IN -> "in $type"
+        ProjectionKind.OUT -> "out $type"
+        else -> type
+    }
+}
+
+internal fun renderIdeClassLikeType(
+    classFqName: String,
+    typeArguments: List<String> = emptyList(),
+    nullable: Boolean = false,
+): String {
+    val renderedArguments = typeArguments
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(prefix = "<", postfix = ">")
+        .orEmpty()
+    return classFqName + renderedArguments + if (nullable) "?" else ""
 }

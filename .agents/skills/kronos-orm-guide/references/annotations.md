@@ -164,6 +164,22 @@ data class User(
 data class User(var id: Int? = null) : KPojo
 ```
 
+## @UnsafeProjectionOverride
+
+确认 projection 中的重复 Selected 输出名，或同层 `orderBy` Context 读取被 Selected 值遮蔽的 Source 名称。这个 marker 使用 Kotlin 标准 `@RequiresOptIn(Level.ERROR)`；可以在表达式、函数、类、文件或编译器范围使用 `@OptIn`。
+
+重复输出名会保留全部值：第一次出现使用原名，后续值使用 `_1`、`_2` 等确定性后缀。显式请求名会先全局保留，因此 `id, id, id_1` 解析为 `id, id_2, id_1`。不同业务含义优先使用显式 alias。
+
+```kotlin
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val query = User()
+    .select { [it.id, it.id, it.name.alias("id_1")] }
+```
+
+Selected alias 复用 Source 字段名本身不要求 opt-in；只有同层 `orderBy` 读取冲突 Context 名称时才要求。`where`、`groupBy` 和 `having` 继续读取 Source。先通过 `it - it.name` 移除 Source 字段再恢复同名 alias，也不需要 opt-in。
+
 ## @Version
 
 标记乐观锁版本字段。insert 会初始化版本号，update、逻辑删除和 upsert 更新分支会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。

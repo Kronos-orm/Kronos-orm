@@ -1,32 +1,33 @@
+/*
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ */
+
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.beans.dsl.KJoinable
+import com.kotlinorm.annotations.UnsafeProjectionOverride
 import com.kotlinorm.beans.dsl.SourceIdentityScope
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.syntax.expr.SqlBinaryOperator
-import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.statement.SqlQuery
-import com.kotlinorm.syntax.statement.SqlSelectItem
-import com.kotlinorm.syntax.table.SqlJoinType
 import com.kotlinorm.syntax.table.SqlTable
-import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.testfixtures.entities.UserRelation
-import com.kotlinorm.testutils.initializeCoreSqlTestDefaults
 import com.kotlinorm.testutils.normalizeSql
-import com.kotlinorm.utils.resolveRuntimeMetadata
+import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleSqliteJdbcWrapper
-import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-class SelectFromSourceIdentityTest {
-
+class SelectFromSourceIdentityTest : MysqlTestBase() {
     @Test
     fun `resolver falls back when receiver or active frames do not identify the source`() {
         val source = SourceIdentityCustomer()
@@ -60,10 +61,10 @@ class SelectFromSourceIdentityTest {
 
         assertNull(frame.aliasForSource(customer))
         assertNull(frame.aliasForSource(unknownInvoice))
-        assertEquals("source_identity_customer__k3", frame.aliasFor(customer, setOf(
-            "source_identity_customer__k1",
-            "source_identity_customer__k2"
-        )))
+        assertEquals(
+            "source_identity_customer__k3",
+            frame.aliasFor(customer, setOf("source_identity_customer__k1", "source_identity_customer__k2"))
+        )
         assertEquals("source_identity_customer__k3", frame.existingAliasFor(customer))
         assertEquals("source_identity_invoice__k2", frame.aliasForSource(firstInvoice))
         assertEquals("source_identity_invoice__k3", frame.aliasForSource(secondInvoice))
@@ -73,12 +74,12 @@ class SelectFromSourceIdentityTest {
         assertFalse(frame.hasDuplicatePhysicalTable("source_identity_customer"))
         assertTrue(frame.hasAliasForPhysicalTable("source_identity_customer"))
         assertEquals(
-            listOf(
+            setOf(
                 "source_identity_customer__k3",
                 "source_identity_invoice__k2",
                 "source_identity_invoice__k3",
                 "source_identity_invoice__k4"
-            ).toSet(),
+            ),
             frame.allAliases().toSet()
         )
         assertEquals(
@@ -127,55 +128,91 @@ class SelectFromSourceIdentityTest {
     }
 
     @Test
-    fun `same-table correlated subquery keeps inner and outer source aliases distinct`() {
-        initializeCoreSqlTestDefaults()
+    fun `equal self-join instances retain distinct identity aliases`() {
+        val left = JoinIdentityRow(id = 1)
+        val right = JoinIdentityRow(id = 1)
+        val statement = left.join(right) { first, second ->
+            innerJoin { first.id == second.parentId }
+                .select { [first.id, second.parentId] }
+        }.toSqlQuery() as SqlQuery.Select
 
+        val join = statement.from.single() as SqlTable.Join
+        val leftTable = join.left as SqlTable.Ident
+        val rightTable = join.right as SqlTable.Ident
+
+        assertNotEquals(leftTable.alias, rightTable.alias)
+        assertEquals("join_identity_row__k1", leftTable.alias?.alias)
+        assertEquals("join_identity_row__k2", rightTable.alias?.alias)
+        assertSame(left, left)
+        assertSame(right, right)
+    }
+
+    @OptIn(UnsafeProjectionOverride::class)
+    @Test
+    fun `nested source rebinding reserves aliases across the final leaf set`() {
+        val nestedLeft = JoinIdentityRow(id = 2)
+        val nestedRight = JoinIdentityRow(id = 3)
+        val nested = nestedLeft.join(nestedRight) { first, second ->
+            innerJoin { first.id == second.parentId }
+        }
+        val root = JoinIdentityRow(id = 1)
+        val statement = root.join(nested) { first, second, third ->
+            leftJoin { first.id == second.parentId }
+                .select { [first.id, second.id, third.id] }
+        }.toSqlQuery() as SqlQuery.Select
+
+        val outer = statement.from.single() as SqlTable.Join
+        val inner = outer.right as SqlTable.Join
+        val aliases = listOf(outer.left, inner.left, inner.right)
+            .map { (it as SqlTable.Ident).alias?.alias }
+
+        assertEquals(
+            listOf(
+                "join_identity_row__k1",
+                "join_identity_row__k2",
+                "join_identity_row__k3"
+            ),
+            aliases
+        )
+    }
+
+    @Test
+    fun `source identity frame resolves by object identity rather than table name`() {
+        val first = JoinIdentityRow()
+        val second = JoinIdentityRow()
+        val frame = SourceIdentityScope.frame(listOf(first, second))
+
+        assertTrue(frame.contains(first))
+        assertTrue(frame.contains(second))
+        assertEquals("join_identity_row__k1", frame.aliasForSource(first))
+        assertEquals("join_identity_row__k2", frame.aliasForSource(second))
+    }
+
+    @Test
+    fun `same-table correlated subquery keeps inner and both outer aliases distinct`() {
         val root = UserRelation()
         val outer = UserRelation()
         val inner = UserRelation()
-        val selectFrom = SelectFrom2(root, outer).apply {
-            initializeProjection(typeOf<UserRelation>(), typeOf<UserRelation?>())
-        }
 
-        var rootSource = ""
-        var outerSource = ""
-        var innerSource = ""
-        var correlatedOuterSource = ""
-        selectFrom.context.withSourceScope {
-            rootSource = SourceIdentityScope.resolveTableName(root, root.__tableName)
-            outerSource = SourceIdentityScope.resolveTableName(outer, outer.__tableName)
-            SourceIdentityScope.withFrame(SourceIdentityScope.frame(listOf(inner))) {
-                innerSource = SourceIdentityScope.resolveTableName(inner, inner.__tableName)
-                correlatedOuterSource = SourceIdentityScope.resolveTableName(outer, outer.__tableName)
-            }
-        }
+        val task = root.join(outer) { first, second ->
+            innerJoin { first.id == second.id2 }
+                .select()
+                .where {
+                    exists(
+                        inner.select().where { nested ->
+                            nested.username == first.username && nested.gender > second.gender
+                        }
+                    )
+                }
+        }.build(SampleSqliteJdbcWrapper).atomicTask
 
-        selectFrom.context.joinables += KJoinable(
-            tableName = outer.__tableName,
-            joinType = SqlJoinType.Inner,
-            kClass = outer.resolveRuntimeMetadata().kClass,
-            kPojo = outer,
-            condition = eq(column(rootSource, "id"), column(outerSource, "id2"))
-        )
-        selectFrom.context.where = SqlExpr.ExistsPredicate(
-            SqlQuery.Select(
-                select = listOf(SqlSelectItem.Asterisk()),
-                from = listOf(SqlTable.Ident(inner.__tableName)),
-                where = and(
-                    eq(column(innerSource, "username"), column(rootSource, "username")),
-                    gt(column(innerSource, "gender"), column(correlatedOuterSource, "gender"))
-                )
-            )
-        )
-
-        val task = selectFrom.build(SampleSqliteJdbcWrapper).atomicTask
         val expected = """
             SELECT "user_relation__k1"."id", "user_relation__k1"."username",
                 "user_relation__k1"."gender", "user_relation__k1"."id2"
             FROM "user_relation" AS "user_relation__k1"
             INNER JOIN "user_relation" AS "user_relation__k2"
                 ON "user_relation__k1"."id" = "user_relation__k2"."id2"
-            WHERE EXISTS (SELECT * FROM "user_relation"
+            WHERE EXISTS (SELECT "id", "username", "gender", "id2" FROM "user_relation"
                 WHERE "user_relation"."username" = "user_relation__k1"."username"
                     AND "user_relation"."gender" > "user_relation__k2"."gender")
         """.trimIndent()
@@ -185,63 +222,36 @@ class SelectFromSourceIdentityTest {
     }
 
     @Test
-    fun `same-table correlated subquery through joined source aliases inner and outer occurrences`() {
-        initializeCoreSqlTestDefaults()
+    fun `correlated subquery through joined source reserves the outer joined alias`() {
+        val customer = SourceIdentityCustomer()
+        val outerInvoice = SourceIdentityInvoice()
+        val innerInvoice = SourceIdentityInvoice()
 
-        val root = SourceIdentityCustomer()
-        val outer = SourceIdentityInvoice()
-        val inner = SourceIdentityInvoice()
-        val selectFrom = SelectFrom2(root, outer).apply {
-            initializeProjection(typeOf<SourceIdentityCustomer>(), typeOf<SourceIdentityCustomer?>())
-        }
+        val task = customer.join(outerInvoice) { outerCustomer, outer ->
+            innerJoin { outerCustomer.id == outer.customerId }
+                .select { outerCustomer.id }
+                .where {
+                    exists(
+                        innerInvoice.select().where { inner ->
+                            inner.customerId == outerCustomer.id && inner.amount > outer.amount
+                        }
+                    )
+                }
+        }.build(SampleSqliteJdbcWrapper).atomicTask
 
-        var rootSource = ""
-        var outerJoinSource = ""
-        var innerFieldSource = ""
-        var innerConditionSource = ""
-        var correlatedOuterSource = ""
-        selectFrom.context.withSourceScope {
-            rootSource = SourceIdentityScope.resolveTableName(root, root.__tableName)
-            outerJoinSource = SourceIdentityScope.resolveTableName(outer, outer.__tableName)
-            SourceIdentityScope.withFrame(SourceIdentityScope.frame(listOf(inner))) {
-                innerFieldSource = SourceIdentityScope.resolveTableName(inner, inner.__tableName)
-                correlatedOuterSource = SourceIdentityScope.resolveTableName(outer, outer.__tableName)
-                innerConditionSource = SourceIdentityScope.resolveTableName(inner, inner.__tableName)
-            }
-        }
-
-        val rootId = root.resolveRuntimeMetadata().allFields.first { it.name == "id" }
-        selectFrom.context.registerSelectedFields(listOf(rootId))
-        selectFrom.context.joinables += KJoinable(
-            tableName = outer.__tableName,
-            joinType = SqlJoinType.Inner,
-            kClass = outer.resolveRuntimeMetadata().kClass,
-            kPojo = outer,
-            condition = eq(column(rootSource, "id"), column(outerJoinSource, "customer_id"))
-        )
-        selectFrom.context.where = SqlExpr.ExistsPredicate(
-            SqlQuery.Select(
-                select = listOf(SqlSelectItem.Asterisk()),
-                from = listOf(table(inner.__tableName, innerConditionSource)),
-                where = and(
-                    eq(column(innerConditionSource, "customer_id"), column(rootSource, "id")),
-                    gt(column(innerConditionSource, "amount"), column(correlatedOuterSource, "amount"))
-                )
-            )
-        )
-
-        val task = selectFrom.build(SampleSqliteJdbcWrapper).atomicTask
         val expected = """
             SELECT "source_identity_customer"."id" AS "id"
             FROM "source_identity_customer"
             INNER JOIN "source_identity_invoice" AS "source_identity_invoice__k2"
                 ON "source_identity_customer"."id" = "source_identity_invoice__k2"."customer_id"
-            WHERE EXISTS (SELECT * FROM "source_identity_invoice" AS "source_identity_invoice__k1"
+            WHERE EXISTS (SELECT "source_identity_invoice__k1"."id",
+                "source_identity_invoice__k1"."customer_id" AS "customerId",
+                "source_identity_invoice__k1"."amount", "source_identity_invoice__k1"."status"
+                FROM "source_identity_invoice" AS "source_identity_invoice__k1"
                 WHERE "source_identity_invoice__k1"."customer_id" = "source_identity_customer"."id"
                     AND "source_identity_invoice__k1"."amount" > "source_identity_invoice__k2"."amount")
         """.trimIndent()
 
-        assertEquals("source_identity_invoice", innerFieldSource)
         assertEquals(expected.normalizeSql(), task.sql.normalizeSql())
         assertFalse(
             task.sql.normalizeSql()
@@ -249,32 +259,77 @@ class SelectFromSourceIdentityTest {
         )
     }
 
-    private fun column(tableName: String, columnName: String): SqlExpr.Column =
-        SqlExpr.Column(tableName = tableName, columnName = columnName)
+    @Test
+    fun `late correlated alias rewrites early fields through pagination snapshots`() {
+        val customer = SourceIdentityCustomer()
+        val outerInvoice = SourceIdentityInvoice()
+        val innerInvoice = SourceIdentityInvoice()
 
-    private fun table(tableName: String, alias: String): SqlTable.Ident =
-        SqlTable.Ident(
-            name = tableName,
-            alias = alias.takeUnless { it == tableName }?.let { SqlTableAlias(it) }
-        )
+        val query = customer.join(outerInvoice) { outerCustomer, outer ->
+            innerJoin { outerCustomer.id == outer.customerId }
+                .select { outer.amount }
+                .where { outer.status == 1 }
+                .orderBy { outer.id.desc() }
+                .where {
+                    exists(
+                        innerInvoice.select().where { inner ->
+                            inner.customerId == outerCustomer.id && inner.amount > outer.amount
+                        }
+                    )
+                }
+        }
 
-    private fun eq(left: SqlExpr, right: SqlExpr): SqlExpr =
-        SqlExpr.Binary(left, SqlBinaryOperator.Equal, right)
+        val baseTask = query.build(SampleSqliteJdbcWrapper).atomicTask
+        val pageTask = query.page(1, 5).build(SampleSqliteJdbcWrapper).atomicTask
+        val cursorTask = query.cursor(2).build(SampleSqliteJdbcWrapper).atomicTask
+        val baseSql = """
+            SELECT "source_identity_invoice__k2"."amount" AS "amount"
+            FROM "source_identity_customer"
+            INNER JOIN "source_identity_invoice" AS "source_identity_invoice__k2"
+                ON "source_identity_customer"."id" = "source_identity_invoice__k2"."customer_id"
+            WHERE "source_identity_invoice__k2"."status" = :status
+                AND EXISTS (SELECT "source_identity_invoice__k1"."id",
+                    "source_identity_invoice__k1"."customer_id" AS "customerId",
+                    "source_identity_invoice__k1"."amount", "source_identity_invoice__k1"."status"
+                    FROM "source_identity_invoice" AS "source_identity_invoice__k1"
+                    WHERE "source_identity_invoice__k1"."customer_id" = "source_identity_customer"."id"
+                        AND "source_identity_invoice__k1"."amount" > "source_identity_invoice__k2"."amount")
+            ORDER BY "source_identity_invoice__k2"."id" DESC
+        """.trimIndent().normalizeSql()
+        val cursorSql = """
+            SELECT "source_identity_invoice__k2"."amount" AS "amount",
+                "source_identity_invoice__k2"."id" AS "__kronos_cursor_id",
+                "source_identity_customer"."id" AS "__kronos_cursor_id_1"
+            FROM "source_identity_customer"
+            INNER JOIN "source_identity_invoice" AS "source_identity_invoice__k2"
+                ON "source_identity_customer"."id" = "source_identity_invoice__k2"."customer_id"
+            WHERE "source_identity_invoice__k2"."status" = :status
+                AND EXISTS (SELECT "source_identity_invoice__k1"."id",
+                    "source_identity_invoice__k1"."customer_id" AS "customerId",
+                    "source_identity_invoice__k1"."amount", "source_identity_invoice__k1"."status"
+                    FROM "source_identity_invoice" AS "source_identity_invoice__k1"
+                    WHERE "source_identity_invoice__k1"."customer_id" = "source_identity_customer"."id"
+                        AND "source_identity_invoice__k1"."amount" > "source_identity_invoice__k2"."amount")
+            ORDER BY "source_identity_invoice__k2"."id" DESC,
+                "source_identity_customer"."id" ASC LIMIT 3
+        """.trimIndent().normalizeSql()
 
-    private fun gt(left: SqlExpr, right: SqlExpr): SqlExpr =
-        SqlExpr.Binary(left, SqlBinaryOperator.GreaterThan, right)
-
-    private fun and(left: SqlExpr, right: SqlExpr): SqlExpr =
-        SqlExpr.Binary(left, SqlBinaryOperator.And, right)
+        assertEquals(baseSql, baseTask.sql.normalizeSql())
+        assertEquals("$baseSql LIMIT 5 OFFSET 0", pageTask.sql.normalizeSql())
+        assertEquals(cursorSql, cursorTask.sql.normalizeSql())
+        listOf(baseTask, pageTask, cursorTask).forEach { task ->
+            assertFalse(task.sql.contains("\"source_identity_invoice\".\""))
+        }
+    }
 }
 
-@Table(name = "source_identity_customer")
+@Table("source_identity_customer")
 data class SourceIdentityCustomer(
     @PrimaryKey var id: Int? = null,
     var name: String? = null
 ) : KPojo
 
-@Table(name = "source_identity_invoice")
+@Table("source_identity_invoice")
 data class SourceIdentityInvoice(
     @PrimaryKey var id: Int? = null,
     var customerId: Int? = null,

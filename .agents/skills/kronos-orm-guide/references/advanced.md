@@ -143,10 +143,14 @@ val rows = ranked
     .orderBy { it.rn.asc() }
     .toList()
 
+val firstPerUser = ranked
+    .filter { it.rn == 1 }
+    .toList()
+
 val rowNumber: Int? = rows.first().rn
 ```
 
-函数 SQL 由当前数据库方言渲染。窗口 alias 可以在同层 `orderBy` 中使用；如果要在 `where`、`groupBy` 或 `having` 中使用窗口 alias，先生成投影，再进入下一层查询。
+函数 SQL 由当前数据库方言渲染。窗口 alias 可以在同层 `orderBy` 中使用；谓词需要读取窗口 alias 时，先生成投影，再使用 `filter` 建立派生查询。`filter` receiver 只有当前 `Selected` 字段，并保持该投影作为结果类型。
 
 ---
 
@@ -392,7 +396,7 @@ val duplicated = User()
     .select { [it.id, it.id, it.name.alias("id_1")] }
 ```
 
-Selected alias 遮蔽 Source 名称时，只有同层 `orderBy` Context 实际读取冲突名称才需要 opt-in；`where`、`groupBy` 和 `having` 仍读取 Source。先用 `it - it.name` 移除 Source 字段再恢复同名 alias 不需要 opt-in。生成投影和 Context 属性使用 selected 表达式的实际类型。
+Selected alias 遮蔽 Source 名称时，只有同层 `orderBy` Context 实际读取冲突名称才需要 opt-in；`where`、`groupBy` 和 `having` 仍读取 Source。`filter` 会进入外层派生查询并读取当前 `Selected`，其 receiver 不包含未选中的 Source 字段。先用 `it - it.name` 移除 Source 字段再恢复同名 alias 不需要 opt-in。生成投影和 Context 属性使用 selected 表达式的实际类型。
 
 ```kotlin
 val nameLengths = User()
@@ -402,10 +406,11 @@ val generatedRows = nameLengths.toList()
 val firstLength: Int? = generatedRows.first().nameLength
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
+
+`nameLengths.filter { ... }` 始终建立派生查询边界，等价于 `nameLengths.select().where { ... }`。filter receiver 只暴露 `id` 和 `nameLength`；外层还需要改变输出字段时，使用显式 `select { ... }.where { ... }`。
 
 无参 `toList()` / `first()` 返回编译器生成的投影类型；需要命名结果类型时，使用 `select(UserSummary::class) { ... }` 映射到 DTO，select 输出名要和 DTO 属性名对应。
 
@@ -421,7 +426,7 @@ val total = rows.first()["total"]
 
 `"count(*)".alias("total")` 会保留 `count(*)` 作为 SQL 表达式，并使用 `total` 作为结果名。需要绑定值时，把参数放在 `where { ... }` 和 `patch(...)` 中。
 
-窗口函数结果也是投影字段。需要过滤窗口排名时，先选出 alias，再把查询作为下一层来源：
+窗口函数结果也是投影字段。需要过滤窗口排名时，先选出 alias，再使用 `filter`：
 
 ```kotlin
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
@@ -442,8 +447,7 @@ val ranked = Order()
     }
 
 val firstOrders = ranked
-    .select { [it.id, it.userId, it.status] }
-    .where { it.rn == 1 }
+    .filter { it.rn == 1 }
     .toList()
 ```
 

@@ -1,8 +1,8 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 
-## Conditions for {{ $.title("where") }}, {{ $.title("having") }}, and {{ $.title("on") }}
+## Conditions for {{ $.title("where") }}, {{ $.title("having") }}, `filter`, and {{ $.title("on") }}
 
-Kronos condition DSL is used in `where`, `having`, and `on` blocks. You can write Kotlin operators and Kronos condition helpers in the same expression.
+Kronos condition DSL is used in `where`, `having`, `filter`, and `on` blocks. You can write Kotlin operators and Kronos condition helpers in the same expression.
 
 ```kotlin group="Condition entry" name="kotlin" icon="kotlin"
 val users = User()
@@ -16,6 +16,38 @@ SELECT `id`, `name`, `age`
 FROM `user`
 WHERE (`user`.`age` >= :ageMin AND `user`.`name` LIKE :name) OR `user`.`id` = :id
 ```
+
+## Choose the filtering layer
+
+`where` filters the current SQL layer's source fields. `having` filters grouped rows with source expressions and aggregates. Use `filter` after `select { ... }` when the predicate must read the selected result, including generated aliases.
+
+```kotlin group="Result filter" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
+
+val rows = Order()
+    .select {
+        [
+            it.id,
+            f.rowNumber()
+                .over { orderBy(it.id.asc()) }
+                .alias("rn")
+        ]
+    }
+    .filter { it.rn > 1 }
+    .toList()
+```
+
+```sql group="Result filter" name="Mysql" icon="mysql"
+SELECT `q`.`id`, `q`.`rn`
+FROM (
+    SELECT `id`,
+           ROW_NUMBER() OVER (ORDER BY `id` ASC) AS rn
+    FROM `order`
+) AS `q`
+WHERE `q`.`rn` > :rnMin
+```
+
+`filter` always creates this derived-query boundary. Its receiver is only the `Selected` result, so this example exposes `id` and `rn`, but no unselected `Order` fields. It preserves that result shape and is equivalent to calling `select().where { ... }` on the selected query explicitly.
 
 ## Choose the {{ $.title("where") }} call
 
@@ -490,7 +522,7 @@ WHERE (`score` + 10) > (`score` - 10)
 
 Function details are covered in {{ $.keyword("query/functions", ["Built-in Functions"]) }}.
 
-Window functions are selected expressions. Use them in `select { ... }` and filter their aliases in the next query layer; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
+Window functions are selected expressions. Use them in `select { ... }`, then use `filter` to apply a predicate to their aliases through a derived query; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
 
 ## Expand object equality
 

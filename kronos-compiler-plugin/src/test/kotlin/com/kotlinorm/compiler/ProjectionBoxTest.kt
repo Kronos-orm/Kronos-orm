@@ -149,6 +149,30 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun windowAliasDerivedWhere() = box("windowAliasDerivedWhere")
 
     /**
+     * Verifies filter exposes generated projection aliases through a derived-query condition receiver.
+     */
+    @Test
+    fun generatedProjectionFilterReceiver() = box("generatedProjectionFilterReceiver")
+
+    /**
+     * Verifies filter exposes generated window aliases through a derived-query condition receiver.
+     */
+    @Test
+    fun windowAliasFilter() = box("windowAliasFilter")
+
+    /**
+     * Verifies filter boundaries and Selected receivers across JOIN, UNION, and already-derived queries.
+     */
+    @Test
+    fun filterSelectableBoundaryMatrix() = box("filterSelectableBoundaryMatrix")
+
+    /**
+     * Verifies aggregate, scalar, serialized, and custom projection aliases remain filterable.
+     */
+    @Test
+    fun filterAliasReceiverMatrix() = box("filterAliasReceiverMatrix")
+
+    /**
      * Verifies an opted-in same-name alias keeps the selected expression type through mapping.
      */
     @Test

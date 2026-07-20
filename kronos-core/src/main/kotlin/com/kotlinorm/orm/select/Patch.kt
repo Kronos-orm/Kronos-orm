@@ -17,6 +17,7 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.KTableForCondition
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToSelect
@@ -57,6 +58,16 @@ inline fun <reified S : KPojo> KSelectable<S>.select(
         sourceAlias = DerivedQueryAlias
     )
 }
+
+/**
+ * Filters this query's selected result rows through a derived-query boundary.
+ *
+ * Unlike [SelectClause.where], whose receiver is the current query layer's source type,
+ * this predicate receives only the [KSelectable] result type emitted by the current query.
+ */
+inline fun <reified S : KPojo> KSelectable<S>.filter(
+    noinline predicate: KTableForCondition<S>.(it: S) -> Boolean?
+): SelectClause<S, S, S> = select().where(predicate)
 
 @PublishedApi
 internal inline fun <T : KPojo, reified R : KPojo> T.selectGeneratedProjection(

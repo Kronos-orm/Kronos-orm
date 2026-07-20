@@ -178,7 +178,7 @@ val query = User()
     .select { [it.id, it.id, it.name.alias("id_1")] }
 ```
 
-Selected alias 复用 Source 字段名本身不要求 opt-in；只有同层 `orderBy` 读取冲突 Context 名称时才要求。`where`、`groupBy` 和 `having` 继续读取 Source。先通过 `it - it.name` 移除 Source 字段再恢复同名 alias，也不需要 opt-in。
+Selected alias 复用 Source 字段名本身不要求 opt-in；只有同层 `orderBy` 读取冲突 Context 名称时才要求。`where`、`groupBy` 和 `having` 继续读取 Source。`filter` 会建立外层派生查询并读取当前 `Selected`，receiver 不包含未选中的 Source 字段。先通过 `it - it.name` 移除 Source 字段再恢复同名 alias，也不需要 opt-in。
 
 ## @Version
 

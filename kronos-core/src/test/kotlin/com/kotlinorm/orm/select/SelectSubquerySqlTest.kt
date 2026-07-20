@@ -21,6 +21,7 @@ import com.kotlinorm.annotations.Table
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+import com.kotlinorm.beans.subquery.SubqueryLogicUser
 import com.kotlinorm.beans.subquery.SubqueryOrder
 import com.kotlinorm.beans.subquery.SubqueryUser
 import com.kotlinorm.interfaces.KPojo
@@ -169,6 +170,113 @@ class SelectSubquerySqlTest : MysqlTestBase() {
             sql
         )
         assertEquals(mapOf("id" to 1, "name" to "Ada"), params)
+    }
+
+    @Test
+    fun `filter is syntax sugar for a derived result predicate`() {
+        val (filteredSql, filteredParams) = SubqueryUser()
+            .select { [it.id, it.name] }
+            .where { it.id == 1 }
+            .filter { it.name == "Ada" }
+            .build()
+        val (manualSql, manualParams) = SubqueryUser()
+            .select { [it.id, it.name] }
+            .where { it.id == 1 }
+            .select()
+            .where { it.name == "Ada" }
+            .build()
+
+        val expectedSql =
+            "SELECT `q`.`id`, `q`.`name` FROM (SELECT `id`, `name` FROM `tb_subquery_user` WHERE `tb_subquery_user`.`id` = :id) AS `q` WHERE `q`.`name` = :name"
+        val expectedParams = mapOf("id" to 1, "name" to "Ada")
+        assertEquals(expectedSql, filteredSql)
+        assertEquals(expectedParams, filteredParams)
+        assertEquals(expectedSql, manualSql)
+        assertEquals(expectedParams, manualParams)
+    }
+
+    @Test
+    fun `filter renames colliding inner and outer parameters`() {
+        val (sql, params) = SubqueryOrder()
+            .select { [it.id, it.status] }
+            .where { it.status == 10 }
+            .filter { it.status == 20 }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`id`, `q`.`status` FROM (SELECT `id`, `status` FROM `tb_subquery_order` WHERE `tb_subquery_order`.`status` = :status@1) AS `q` WHERE `q`.`status` = :status",
+            sql
+        )
+        assertEquals(mapOf("status" to 20, "status@1" to 10), params)
+    }
+
+    @Test
+    fun `repeated filters preserve one derived boundary per call`() {
+        val (sql, params) = SubqueryOrder()
+            .select { [it.id, it.status] }
+            .filter { it.status > 1 }
+            .filter { it.status < 3 }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`id`, `q`.`status` FROM (SELECT `q`.`id`, `q`.`status` FROM (SELECT `id`, `status` FROM `tb_subquery_order`) AS `q` WHERE `q`.`status` > :statusMin) AS `q` WHERE `q`.`status` < :statusMax",
+            sql
+        )
+        assertEquals(mapOf("statusMin" to 1, "statusMax" to 3), params)
+    }
+
+    @Test
+    fun `filter keeps logic delete predicate in the inner query`() {
+        val (sql, params) = SubqueryLogicUser()
+            .select { [it.id, it.deleted] }
+            .filter { it.id > 1 }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`id`, `q`.`deleted` FROM (SELECT `id`, `deleted` FROM `tb_subquery_logic_user` WHERE `deleted` = 0) AS `q` WHERE `q`.`id` > :idMin",
+            sql
+        )
+        assertEquals(mapOf("idMin" to 1), params)
+    }
+
+    @Test
+    fun `filter preserves distinct ordering and limit in the inner query`() {
+        val (sql, params) = SubqueryOrder()
+            .select { [it.id, it.status] }
+            .distinct()
+            .orderBy { it.status.desc() }
+            .limit(2)
+            .filter { it.status > 1 }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`id`, `q`.`status` FROM (SELECT DISTINCT `id`, `status` FROM `tb_subquery_order` ORDER BY `status` DESC LIMIT 2) AS `q` WHERE `q`.`status` > :statusMin",
+            sql
+        )
+        assertEquals(mapOf("statusMin" to 1), params)
+    }
+
+    @Test
+    fun `filter preserves grouping having ordering and pagination in the inner query`() {
+        val (sql, params) = SubqueryOrder()
+            .select {
+                [
+                    it.status,
+                    f.count(it.id).alias("total"),
+                ]
+            }
+            .groupBy { it.status }
+            .having { f.count(it.id) > 1 }
+            .orderBy { it.status.asc() }
+            .page(2, 3)
+            .filter { it.total > 2 }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`status`, `q`.`total` FROM (SELECT `status`, COUNT(`id`) AS total FROM `tb_subquery_order` GROUP BY `status` HAVING COUNT(`id`) > :countMin ORDER BY `status` ASC LIMIT 3 OFFSET 3) AS `q` WHERE `q`.`total` > :totalMin",
+            sql
+        )
+        assertEquals(mapOf("totalMin" to 2, "countMin" to 1), params)
     }
 
     @Test

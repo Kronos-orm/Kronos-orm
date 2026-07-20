@@ -324,9 +324,9 @@ FROM `user`
 
 Subquery forms, derived query sources, and projection visibility rules are covered in {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
 
-## Project from derived query sources
+## Filter derived query results
 
-A selected projection can become the source for the next query layer. This is useful when an alias should be filtered, grouped, or paged after it has been selected.
+A selected projection can become the source for the next query layer. Use `filter { ... }` when an alias should be filtered after it has been selected and the output shape should stay unchanged.
 
 ```kotlin group="Derived projection" name="kotlin" icon="kotlin"
 val nameLengths = User()
@@ -339,13 +339,12 @@ val nameLengths = User()
     }
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
 
 ```sql group="Derived projection" name="Mysql" icon="mysql"
-SELECT `q`.`id`, `q`.`nameLength`
+SELECT `q`.`id`, `q`.`name`, `q`.`nameLength`
 FROM (
     SELECT `id`, `name`, LENGTH(`name`) AS `nameLength`
     FROM `user`
@@ -355,4 +354,4 @@ WHERE `q`.`nameLength` > :nameLengthMin
 
 Use {{ $.keyword("query/sorting-pagination-aggregation", ["Sorting, Pagination, and Aggregation"]) }} when the projection is sorted, paged, grouped, or aggregated.
 
-The receiver in the second `select { ... }` is the generated projection from the first query. It exposes `id`, `name`, and `nameLength`; it does not expose source fields that were not selected.
+The `filter` receiver is the generated `Selected` projection from the first query. It exposes `id`, `name`, and `nameLength`; it does not expose source fields that were not selected. `nameLengths.filter { ... }` is equivalent to `nameLengths.select().where { ... }`. Use an explicit outer `select { ... }` when that layer should also change the returned fields.

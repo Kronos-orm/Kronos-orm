@@ -170,15 +170,14 @@ WHERE `user`.`id` IN (
 )
 ```
 
-Generated projections can be returned directly by no-argument `toList()` or `first()`, and they can be used as the next query source.
+Generated projections can be returned directly by no-argument `toList()` or `first()`. Use `filter` when a selected field or alias should be filtered through the next query layer.
 
 ```kotlin group="Case 1-4" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
 
@@ -790,15 +789,14 @@ FROM "user"
 WHERE ROWNUM <= 10
 ```
 
-Generated projections can be paged after they enter the next query layer.
+Generated projections can be filtered through a derived query and then paged.
 
 ```kotlin group="Case 8-1" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val page = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .page(1, 10)
     .withTotal()
     .toList()

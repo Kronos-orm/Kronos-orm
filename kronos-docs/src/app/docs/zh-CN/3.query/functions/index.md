@@ -210,7 +210,7 @@ FROM `order`
 ORDER BY `rn` ASC
 ```
 
-窗口函数 alias 可以在同一层用于排序。`where`、`groupBy` 或 `having` 需要使用窗口 alias 时，先选出窗口结果，再进入下一层查询过滤；示例见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
+窗口函数 alias 可以在同一层用于排序。谓词需要读取窗口 alias 时，先选出窗口结果，再用 `filter` 通过派生查询进行筛选；示例见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
 
 ```kotlin group="Window function 2" name="consume result" icon="kotlin"
 val first = rows.first()
@@ -219,8 +219,7 @@ val rowNumber: Int? = first.rn
 
 ```kotlin group="Window function 2" name="filter alias" icon="kotlin"
 val firstPerUser = ranked
-    .select { [it.id, it.userId, it.status, it.rn] }
-    .where { it.rn == 1 }
+    .filter { it.rn == 1 }
     .toList()
 ```
 

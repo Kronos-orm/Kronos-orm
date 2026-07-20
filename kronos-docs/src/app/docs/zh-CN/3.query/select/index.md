@@ -170,15 +170,14 @@ WHERE `user`.`id` IN (
 )
 ```
 
-生成投影可以由无参 `toList()` 或 `first()` 直接返回，也可以作为下一层查询源使用。
+生成投影可以由无参 `toList()` 或 `first()` 直接返回。需要通过下一层查询筛选 selected 字段或 alias 时，使用 `filter`。
 
 ```kotlin group="Case 1-4" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
 
@@ -790,15 +789,14 @@ FROM "user"
 WHERE ROWNUM <= 10
 ```
 
-生成投影进入下一层查询后，也可以继续分页。
+生成投影可以通过派生查询筛选，再继续分页。
 
 ```kotlin group="Case 8-1" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val page = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .page(1, 10)
     .withTotal()
     .toList()

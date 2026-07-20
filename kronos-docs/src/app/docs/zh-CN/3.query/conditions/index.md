@@ -1,8 +1,8 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-## {{ $.title("where") }}、{{ $.title("having") }} 和 {{ $.title("on") }} 条件
+## {{ $.title("where") }}、{{ $.title("having") }}、`filter` 和 {{ $.title("on") }} 条件
 
-Kronos 条件 DSL 用在 `where`、`having` 和 `on` 块中。你可以在同一个表达式中写 Kotlin 操作符和 Kronos 条件函数。
+Kronos 条件 DSL 用在 `where`、`having`、`filter` 和 `on` 块中。你可以在同一个表达式中写 Kotlin 操作符和 Kronos 条件函数。
 
 ```kotlin group="Condition entry" name="kotlin" icon="kotlin"
 val users = User()
@@ -16,6 +16,38 @@ SELECT `id`, `name`, `age`
 FROM `user`
 WHERE (`user`.`age` >= :ageMin AND `user`.`name` LIKE :name) OR `user`.`id` = :id
 ```
+
+## 选择筛选层级
+
+`where` 筛选当前 SQL 层的 source 字段，`having` 使用 source 表达式和聚合结果筛选分组行。谓词需要读取 `select { ... }` 的结果或生成 alias 时，使用 `filter`。
+
+```kotlin group="Result filter" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
+
+val rows = Order()
+    .select {
+        [
+            it.id,
+            f.rowNumber()
+                .over { orderBy(it.id.asc()) }
+                .alias("rn")
+        ]
+    }
+    .filter { it.rn > 1 }
+    .toList()
+```
+
+```sql group="Result filter" name="Mysql" icon="mysql"
+SELECT `q`.`id`, `q`.`rn`
+FROM (
+    SELECT `id`,
+           ROW_NUMBER() OVER (ORDER BY `id` ASC) AS rn
+    FROM `order`
+) AS `q`
+WHERE `q`.`rn` > :rnMin
+```
+
+`filter` 始终建立这个派生查询边界。它的 receiver 只有 `Selected` 结果，因此上例只暴露 `id` 和 `rn`，不会暴露未选中的 `Order` 字段。`filter` 保留该结果形态，等价于在已选查询上显式调用 `select().where { ... }`。
 
 ## 选择 {{ $.title("where") }} 调用方式
 
@@ -490,7 +522,7 @@ WHERE (`score` + 10) > (`score` - 10)
 
 函数详情见 {{ $.keyword("query/functions", ["内置函数"]) }}。
 
-窗口函数是 selected 表达式。先在 `select { ... }` 中选择窗口结果，再进入下一层查询过滤 alias；见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
+窗口函数是 selected 表达式。先在 `select { ... }` 中选择窗口结果，再用 `filter` 通过派生查询筛选 alias；见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
 
 ## 展开对象相等条件
 

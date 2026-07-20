@@ -35,7 +35,7 @@ fun operatorWhere(user: OperatorConditionUser, block: ToFilter<OperatorCondition
     var result: SqlExpr? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = sqlExpr
     }
     return result

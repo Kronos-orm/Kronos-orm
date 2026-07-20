@@ -43,7 +43,7 @@ fun tupleNotWhere(user: TupleNotUser, block: ToFilter<TupleNotUser, Boolean?>): 
     var result: SqlExpr? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = sqlExpr
     }
     return result

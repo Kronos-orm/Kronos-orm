@@ -44,7 +44,7 @@ fun reversedEqualityWhere(
     var result: CapturedReversedEquality? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedReversedEquality(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedReversedEquality(null, emptyMap())

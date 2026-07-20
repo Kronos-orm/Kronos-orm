@@ -213,7 +213,7 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
         return this
     }
 
-    fun where(condition: ToFilter<Source, Boolean?> = null): JoinedSelectQuery<Source, Selected, Context> {
+    fun where(condition: ToFilter<Source, Boolean?>? = null): JoinedSelectQuery<Source, Selected, Context> {
         if (condition == null) return this
         context.withSourceScope {
             pojo.afterFilter {
@@ -226,7 +226,7 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
         return this
     }
 
-    fun having(condition: ToFilter<Source, Boolean?> = null): JoinedSelectQuery<Source, Selected, Context> {
+    fun having(condition: ToFilter<Source, Boolean?>? = null): JoinedSelectQuery<Source, Selected, Context> {
         condition ?: throw EmptyFieldsException()
         context.withSourceScope {
             pojo.afterFilter {

@@ -41,7 +41,7 @@ fun whenConditionWhere(user: WhenConditionUser, block: ToFilter<WhenConditionUse
     var result: CapturedWhenCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedWhenCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedWhenCondition(null, emptyMap())

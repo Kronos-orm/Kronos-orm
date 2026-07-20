@@ -17,7 +17,6 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.KSelectable
-import com.kotlinorm.beans.dsl.KTableForCondition
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToSelect
@@ -40,7 +39,7 @@ inline fun <reified T : KPojo> T.select(noinline fields: ToSelect<T, Any?> = nul
     return selectWithType(typeOf<T>(), typeOf<T?>(), fields)
 }
 
-inline fun <reified T : KPojo> T.where(noinline selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T, T, T> {
+inline fun <reified T : KPojo> T.where(noinline selectCondition: ToFilter<T, Boolean?>? = null): SelectClause<T, T, T> {
     return selectWithType(typeOf<T>(), typeOf<T?>()).where(selectCondition)
 }
 
@@ -65,9 +64,9 @@ inline fun <reified S : KPojo> KSelectable<S>.select(
  * Unlike [SelectClause.where], whose receiver is the current query layer's source type,
  * this predicate receives only the [KSelectable] result type emitted by the current query.
  */
-inline fun <reified S : KPojo> KSelectable<S>.filter(
-    noinline predicate: KTableForCondition<S>.(it: S) -> Boolean?
-): SelectClause<S, S, S> = select().where(predicate)
+inline fun <reified Selected : KPojo> KSelectable<Selected>.filter(
+    noinline predicate: ToFilter<Selected, Boolean?>
+): SelectClause<Selected, Selected, Selected> = select().where(predicate)
 
 @PublishedApi
 internal inline fun <T : KPojo, reified R : KPojo> T.selectGeneratedProjection(

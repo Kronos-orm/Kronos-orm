@@ -48,7 +48,7 @@ fun conditionUserWhere(user: ConditionUser, block: ToFilter<ConditionUser, Boole
     var result: CapturedCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedCondition(null, emptyMap())

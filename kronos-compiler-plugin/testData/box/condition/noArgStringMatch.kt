@@ -43,7 +43,7 @@ fun noArgStringWhere(user: NoArgStringMatchUser, block: ToFilter<NoArgStringMatc
     var result: CapturedNoArgStringMatch? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedNoArgStringMatch(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedNoArgStringMatch(null, emptyMap())

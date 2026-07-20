@@ -41,7 +41,7 @@ fun kpojoEqualityWhere(user: KPojoEqualityUser, block: ToFilter<KPojoEqualityUse
     var result: CapturedKPojoEquality? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedKPojoEquality(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedKPojoEquality(null, emptyMap())

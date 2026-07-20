@@ -43,7 +43,7 @@ fun stringMatrixWhere(user: StringMatrixUser, block: ToFilter<StringMatrixUser, 
     var result: CapturedStringMatrix? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedStringMatrix(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedStringMatrix(null, emptyMap())

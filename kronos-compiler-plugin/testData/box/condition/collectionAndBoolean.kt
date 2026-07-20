@@ -42,7 +42,7 @@ fun groupWhere(user: ConditionGroupUser, block: ToFilter<ConditionGroupUser, Boo
     var result: CapturedGroupCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedGroupCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedGroupCondition(null, emptyMap())

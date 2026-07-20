@@ -166,7 +166,7 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
-    fun where(updateCondition: ToFilter<T, Boolean?> = null): UpdateClause<T> {
+    fun where(updateCondition: ToFilter<T, Boolean?>? = null): UpdateClause<T> {
         if (updateCondition == null) return this
         context.pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
             with(context) {

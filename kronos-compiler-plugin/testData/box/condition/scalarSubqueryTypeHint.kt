@@ -37,7 +37,7 @@ fun scalarHintWhere(order: ScalarHintOrder, block: ToFilter<ScalarHintOrder, Boo
     var result: SqlExpr? = null
     order.afterFilter {
         sourceValues = order.toDataMap()
-        block!!(it)
+        block(it)
         result = sqlExpr
     }
     return result

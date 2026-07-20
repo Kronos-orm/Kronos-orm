@@ -41,7 +41,7 @@ fun notEqualOrWhere(user: NotEqualOrUser, block: ToFilter<NotEqualOrUser, Boolea
     var result: CapturedNotEqualOr? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedNotEqualOr(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedNotEqualOr(null, emptyMap())

@@ -45,7 +45,7 @@ fun containsMembershipWhere(
     var result: CapturedContainsMembership? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedContainsMembership(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedContainsMembership(null, emptyMap())

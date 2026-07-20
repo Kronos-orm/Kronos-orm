@@ -40,7 +40,7 @@ fun reversedWhere(user: ReversedComparisonUser, block: ToFilter<ReversedComparis
     var result: CapturedReversedComparison? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedReversedComparison(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedReversedComparison(null, emptyMap())

@@ -94,7 +94,7 @@ fun captureNonKPojoCondition(
     var captured: CapturedNonKPojoCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         captured = CapturedNonKPojoCondition(sqlExpr, parameterValues.toMap())
     }
     return captured ?: CapturedNonKPojoCondition(null, emptyMap())
@@ -107,7 +107,7 @@ fun captureNestedValueCondition(
     var captured: CapturedNonKPojoCondition? = null
     outer.afterFilter {
         sourceValues = outer.toDataMap()
-        block!!(it)
+        block(it)
         captured = CapturedNonKPojoCondition(sqlExpr, parameterValues.toMap())
     }
     return captured ?: CapturedNonKPojoCondition(null, emptyMap())

@@ -8,7 +8,6 @@
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
-import com.kotlinorm.beans.dsl.KTableForCondition
 import com.kotlinorm.beans.dsl.SourceIdentityScope
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
@@ -79,7 +78,7 @@ internal class JoinSourceState<T1 : KPojo>(
     val sources: List<KPojo> = leaves.map(FromSourceLeaf::pojo)
     private val sourceIdentityFrame = SourceIdentityScope.frame(sources)
 
-    fun append(joinType: SqlJoinType, on: ToFilter<T1, Boolean?>): JoinSourceState<T1> {
+    fun append(joinType: SqlJoinType, on: ToFilter<T1, Boolean?>?): JoinSourceState<T1> {
         check(nextOperandIndex < operands.size) {
             "JOIN has no remaining source for ${joinType.displayName()}Join()."
         }
@@ -118,7 +117,7 @@ internal class JoinSourceState<T1 : KPojo>(
         sourceIdentityFrame.aliasForSource(source) ?: source.__tableName
 
     private fun captureCondition(
-        on: KTableForCondition<T1>.(T1) -> Boolean?
+        on: ToFilter<T1, Boolean?>
     ): JoinConditionSnapshot = withSourceScope {
         lateinit var snapshot: JoinConditionSnapshot
         root.afterFilter {

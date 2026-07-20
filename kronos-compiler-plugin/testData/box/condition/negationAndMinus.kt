@@ -45,7 +45,7 @@ fun minusWhere(user: MinusConditionUser, block: ToFilter<MinusConditionUser, Boo
     var result: CapturedMinusCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedMinusCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedMinusCondition(null, emptyMap())

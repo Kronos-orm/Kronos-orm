@@ -264,7 +264,7 @@ class SelectClauseSyntaxTest : MysqlTestBase() {
 
     @Test
     fun testToSqlQueryWithLimitAndOffset() {
-        val statement = TestUser().select().withTotal().page(2, 10).build().second.atomicTask.statement as SqlQuery.Select
+        val statement = TestUser().select().page(2, 10).build().atomicTask.statement as SqlQuery.Select
 
         assertNotNull(statement.limit)
         assertEquals(10, statement.limit!!.fetch!!.limit.numberLiteral())

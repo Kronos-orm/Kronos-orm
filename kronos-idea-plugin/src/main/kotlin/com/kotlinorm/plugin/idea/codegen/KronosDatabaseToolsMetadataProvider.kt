@@ -40,7 +40,7 @@ class KronosDatabaseToolsMetadataProvider(
         )
 
     private fun DasColumn.toIdeaColumn(): KronosIdeaColumn {
-        val dataType = dataType
+        val dataType = dasType.toDataType()
         return KronosIdeaColumn(
             name = name,
             sqlType = dataType.typeName.ifBlank { dataType.specification },

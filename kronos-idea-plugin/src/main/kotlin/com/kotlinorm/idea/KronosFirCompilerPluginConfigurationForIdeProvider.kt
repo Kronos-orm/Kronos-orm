@@ -19,7 +19,11 @@ package com.kotlinorm.idea
 import com.kotlinorm.compiler.plugin.KronosCompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.LanguageFeature
+import org.jetbrains.kotlin.config.LanguageVersionSettings
+import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
 import org.jetbrains.kotlin.idea.fir.extensions.KotlinFirCompilerPluginConfigurationForIdeProvider
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -31,8 +35,33 @@ class KronosFirCompilerPluginConfigurationForIdeProvider : KotlinFirCompilerPlug
 
     override fun provideCompilerConfigurationWithCustomOptions(original: CompilerConfiguration): CompilerConfiguration =
         KronosIdeaSafe.guard("compiler plugin IDE configuration", original) {
-            original
+            original.copy().apply {
+                val languageVersionSettings = original[CommonConfigurationKeys.LANGUAGE_VERSION_SETTINGS]
+                    ?: LanguageVersionSettingsImpl.DEFAULT
+                put(
+                    CommonConfigurationKeys.LANGUAGE_VERSION_SETTINGS,
+                    KronosIdeaLanguageVersionSettings(languageVersionSettings),
+                )
+            }
         }
+}
+
+private class KronosIdeaLanguageVersionSettings(
+    private val delegate: LanguageVersionSettings,
+) : LanguageVersionSettings by delegate {
+    override fun supportsFeature(feature: LanguageFeature): Boolean =
+        feature == LanguageFeature.CollectionLiterals || delegate.supportsFeature(feature)
+
+    override fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State =
+        if (feature == LanguageFeature.CollectionLiterals) {
+            LanguageFeature.State.ENABLED
+        } else {
+            delegate.getFeatureSupport(feature)
+        }
+
+    override fun getCustomizedLanguageFeatures(): Map<LanguageFeature, LanguageFeature.State> =
+        delegate.getCustomizedLanguageFeatures() +
+            (LanguageFeature.CollectionLiterals to LanguageFeature.State.ENABLED)
 }
 
 internal const val KronosCompilerPluginId = "kronos-compiler-plugin"

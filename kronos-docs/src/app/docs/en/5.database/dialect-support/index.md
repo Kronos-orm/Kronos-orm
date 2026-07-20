@@ -79,15 +79,17 @@ FROM "USER"
 
 ## Pagination
 
-`withTotal().page(pageIndex, pageSize)` starts from page 1. Kronos renders the matching pagination syntax for the active database.
+`page(pageIndex, pageSize)` starts from page 1. Add `withTotal()` after `page(...)` when a named `PageResult` with total metadata is required. Kronos renders the matching pagination syntax for the active database.
 
 ```kotlin group="Pagination" name="kotlin" icon="kotlin"
-val (_, users, _) = User()
+val page = User()
     .select { [it.id, it.name] }
     .orderBy { it.id.asc() }
-    .withTotal()
     .page(2, 20)
+    .withTotal()
     .toList()
+
+val users = page.records
 ```
 
 ```sql group="Pagination" name="Mysql" icon="mysql"

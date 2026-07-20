@@ -290,12 +290,27 @@ User.kt:12:13: error: [Kronos] Unsupported field
 | `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED` | KPojo 类声明了类级泛型参数 | 移除 KPojo 类的泛型参数，并使用具体的属性类型 |
 | `KRONOS_SELECT_ITEM_REQUIRES_ALIAS` | `select { ... }` 中包含函数、聚合、标量子查询、窗口函数或原生 SQL | 添加 `.alias("resultName")` |
 | `KRONOS_DUPLICATE_PROJECTION_FIELD` | 两个投影项生成了同名结果属性 | 删除重复字段，或给其中一个投影项设置不同 alias |
-| `KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE` | selected alias 与输入字段同名 | 使用不和源 `KPojo` 字段冲突的 alias |
+| `OPT_IN_USAGE_ERROR` | selected alias 替换了仍存在的同名 source 字段 | 修改 alias、先移除 source 字段，或使用 `@OptIn(UnsafeProjectionOverride::class)` 明确确认 |
 | `KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT` | 标量子查询可能返回多行 | 作为值使用前添加 `.limit(1)` |
 | `KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN` | 标量子查询选择了多列 | 只选择一个字段，或拆成多个表达式 |
 | `KRONOS_PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH` | `field in query`、`ANY`、`SOME`、`ALL` 或 row-value `IN` 左右列数不一致 | 让左侧表达式和右侧查询返回相同列数 |
 | `KRONOS_ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS` | 使用了 `[it.id] in query` 这样的单字段 tuple | 改写为 `it.id in query` |
 | `KRONOS_INSERT_SELECT_VALUE_COUNT_MISMATCH` | `insert<Target> { ... }` 值数量与目标字段数量不一致 | 选择与目标可插入列数量一致的值 |
 | `KRONOS_INSERT_SELECT_VALUE_TYPE_MISMATCH` | insert-select 值类型和目标字段类型不匹配 | 调整顺序，或把标量表达式 cast 成预期 Kotlin 类型 |
+
+显式 projection alias 通常不能替换仍存在的同名 source 字段。如果这种替换是有意的，请使用 Kotlin 标准 opt-in 机制。标记为 `com.kotlinorm.annotations.UnsafeProjectionOverride`，严重级别为 error；提示会说明 selected 值和 Kotlin 类型可能发生变化。
+
+```kotlin
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val query = User().select { [it.id, f.length(it.name).alias("name")] }
+```
+
+先移除字段再恢复同名 alias 时，不需要 opt-in：
+
+```kotlin
+val query = User().select { [it - it.name, f.length(it.name).alias("name")] }
+```
 
 构建配置从 {{ $.keyword("getting-started/quick-start", ["Quick Start"]) }} 开始。数据库执行和 SQL 日志请参考 {{ $.keyword("database/connect-to-db", ["连接到数据库"]) }} 和 {{ $.keyword("configuration/logging", ["日志"]) }}。IDE 检查行为请参考 {{ $.keyword("resources/idea-plugin", ["IntelliJ IDEA 插件"]) }}。

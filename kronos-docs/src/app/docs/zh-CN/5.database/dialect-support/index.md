@@ -79,15 +79,17 @@ FROM "USER"
 
 ## 分页
 
-`withTotal().page(pageIndex, pageSize)` 的页码从 1 开始。Kronos 会把相同 DSL 渲染为当前数据库的分页语法。
+`page(pageIndex, pageSize)` 的页码从 1 开始。需要总数元数据时，在 `page(...)` 后调用 `withTotal()`，得到命名的 `PageResult`。Kronos 会把相同 DSL 渲染为当前数据库的分页语法。
 
 ```kotlin group="Pagination" name="kotlin" icon="kotlin"
-val (_, users, _) = User()
+val page = User()
     .select { [it.id, it.name] }
     .orderBy { it.id.asc() }
-    .withTotal()
     .page(2, 20)
+    .withTotal()
     .toList()
+
+val users = page.records
 ```
 
 ```sql group="Pagination" name="Mysql" icon="mysql"

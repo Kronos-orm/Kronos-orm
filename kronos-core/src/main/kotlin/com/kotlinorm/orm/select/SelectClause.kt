@@ -31,9 +31,13 @@ import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
-import com.kotlinorm.orm.pagination.PagedClause
-import com.kotlinorm.orm.pagination.CursorClause
-import com.kotlinorm.orm.pagination.OffsetPageable
+import com.kotlinorm.orm.pagination.Cursor
+import com.kotlinorm.orm.pagination.CursorPageField
+import com.kotlinorm.orm.pagination.CursorPageQuery
+import com.kotlinorm.orm.pagination.OffsetPageQuery
+import com.kotlinorm.orm.pagination.CursorSpec
+import com.kotlinorm.orm.pagination.checkedCursorFetchSize
+import com.kotlinorm.orm.pagination.checkedPageOffset
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.statement.SqlLock
@@ -55,7 +59,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     contextPojo: Context = pojo as Context,
     sourceQuery: KSelectable<*>? = null,
     sourceAlias: String? = null
-) : KSelectable<Selected>(pojo), OffsetPageable {
+) : KSelectable<Selected>(pojo) {
     override val selectedType: KType = projectionType
     override val nullableSelectedType: KType = nullableProjectionType
     internal val context = SelectContext<Source, Selected, Context>(pojo, contextPojo, projectionType)
@@ -102,9 +106,17 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         )
     }
 
+    internal override fun outputStableKeyCandidates(): List<List<String>> =
+        context.outputStableKeyCandidates()
+
     fun single(): SelectClause<Source, Selected, Context> {
         context.limit = SqlLimit.limit(1)
         return this
+    }
+
+    @PublishedApi
+    internal override fun prepareFirstResult() {
+        limit(1)
     }
 
     fun limit(capacity: Int): SelectClause<Source, Selected, Context> {
@@ -178,17 +190,13 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return this
     }
 
-    override fun applyOffsetPage(pageIndex: Int, pageSize: Int) {
-        context.limit = SqlLimit.limit(pageSize, if (pageIndex > 0) (pageIndex - 1) * pageSize else 0)
+    private fun applyOffsetPage(offset: Int, pageSize: Int) {
+        context.limit = SqlLimit.limit(pageSize, offset)
     }
 
-    private fun applyCursorLimit(offset: Int) {
-        context.limit = SqlLimit.limit(offset + 1)
-    }
-
-    fun applyCursorPage(offset: Int) {
+    private fun prepareCursorPage(fetchSize: Int) {
         context.prepareCursorOrder()
-        applyCursorLimit(offset.coerceAtLeast(0))
+        context.limit = SqlLimit.limit(fetchSize)
     }
 
     fun cascade(enabled: Boolean): SelectClause<Source, Selected, Context> {
@@ -264,13 +272,40 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return this
     }
 
-    fun withTotal(): PagedClause<Source, Selected, SelectClause<Source, Selected, Context>> {
-        return PagedClause(this)
+    fun page(pageIndex: Int, pageSize: Int): OffsetPageQuery<Selected> {
+        require(pageIndex > 0) { "Page index must be greater than zero." }
+        require(pageSize > 0) { "Page size must be greater than zero." }
+        val offset = checkedPageOffset(pageIndex, pageSize)
+        val query = paginationSnapshot()
+        query.applyOffsetPage(offset, pageSize)
+        return OffsetPageQuery(query, pageIndex, pageSize)
     }
 
-    fun withCursor(): CursorClause<Source, Selected, Context> {
-        return CursorClause(this)
+    fun cursor(pageSize: Int, after: Cursor? = null): CursorPageQuery<Selected> {
+        require(pageSize > 0) { "Page size must be greater than zero." }
+        val fetchSize = checkedCursorFetchSize(pageSize)
+        val query = paginationSnapshot()
+        query.context.cursorSpec = CursorSpec(after, pageSize)
+        query.prepareCursorPage(fetchSize)
+        val fields = query.context.orderByItems.map { item ->
+            require(item is SelectOrderItem.FieldItem) { "Cursor pagination requires field-based orderBy items." }
+            val resultLabel = query.context.cursorValueLabel(item.field)
+            CursorPageField(
+                name = item.field.name,
+                resultLabel = resultLabel,
+                hidden = query.context.cursorOnlySelectFields.any { (_, label) -> label == resultLabel }
+            )
+        }
+        return CursorPageQuery(query, pageSize, fields)
     }
+
+    private fun paginationSnapshot(): SelectClause<Source, Selected, Context> =
+        SelectClause<Source, Selected, Context>(
+            pojo = pojo,
+            projectionType = selectedType,
+            nullableProjectionType = nullableSelectedType,
+            contextPojo = context.receiverPojo
+        ).also { snapshot -> snapshot.context.copyStateFrom(context) }
 
     fun patch(vararg pairs: Pair<String, Any?>): SelectClause<Source, Selected, Context> {
         context.sourceValues.putAll(pairs)
@@ -292,8 +327,11 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         } else {
             (context.selectedFields + context.cascadeFields).toLinkedSet()
         }
-        val resultFieldsByLabel = (if (context.selectAll) context.allColumns else context.selectedFields)
-            .associateBy { it.name }
+        val resultFieldsByLabel = if (context.selectAll) {
+            context.allColumns.associateBy { it.name }
+        } else {
+            context.selectedFieldsByOutputName
+        }
         return CascadeSelectClause.build(
             context.cascadeEnabled,
             context.cascadeAllowed,
@@ -318,6 +356,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return build(wrapper).toMapList(wrapper)
     }
 
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+    @kotlin.internal.LowPriorityInOverloadResolution
     inline fun <reified T> toList(
         wrapper: KronosDataSourceWrapper? = null
     ): List<T> {
@@ -338,32 +378,6 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
         limit(1)
         return build(wrapper).toMapOrNull(wrapper)
-    }
-
-    inline fun <reified T> first(
-        wrapper: KronosDataSourceWrapper? = null
-    ): T {
-        limit(1)
-        return build(wrapper).first(wrapper)
-    }
-
-    @JvmName("firstProjection")
-    @Suppress("UNCHECKED_CAST")
-    fun first(wrapper: KronosDataSourceWrapper? = null): Selected {
-        limit(1)
-        return build(wrapper).first(wrapper, selectedType) as Selected
-    }
-
-    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        limit(1)
-        return build(wrapper).firstOrNull(wrapper)
-    }
-
-    @JvmName("firstProjectionOrNull")
-    @Suppress("UNCHECKED_CAST")
-    fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
-        limit(1)
-        return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
     }
 
 }

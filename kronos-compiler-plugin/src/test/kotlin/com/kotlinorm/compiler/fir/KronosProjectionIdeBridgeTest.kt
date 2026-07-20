@@ -16,6 +16,14 @@
 
 package com.kotlinorm.compiler.fir
 
+import org.jetbrains.kotlin.fir.types.ConeFlexibleType
+import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjectionIn
+import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjectionOut
+import org.jetbrains.kotlin.fir.types.ConeStarProjection
+import org.jetbrains.kotlin.fir.types.ProjectionKind
+import org.jetbrains.kotlin.fir.types.impl.ConeClassLikeTypeImpl
+import org.jetbrains.kotlin.fir.types.toLookupTag
+import org.jetbrains.kotlin.name.StandardClassIds
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -26,6 +34,209 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class KronosProjectionIdeBridgeTest {
+    @Test
+    fun `module replacement removes stale models and retains other modules`() = withCleanIdeBridgeProperties {
+        replaceIdeModuleSnapshot(
+            "main",
+            listOf(
+                ideModel("main", "Result_old", "Context_old", "old" to "kotlin.Int?"),
+                ideModel("main", "Result_removed", "Context_removed", "removed" to "kotlin.String?"),
+            )
+        )
+        replaceIdeModuleSnapshot(
+            "feature",
+            listOf(ideModel("feature", "Result_feature", "Context_feature", "feature" to "kotlin.Long?"))
+        )
+
+        replaceIdeModuleSnapshot(
+            "main",
+            listOf(ideModel("ignored", "Result_current", "Context_current", "current" to "kotlin.Boolean?"))
+        )
+
+        assertEquals(
+            listOf("feature:Result_feature:Context_feature", "main:Result_current:Context_current"),
+            KronosProjectionIdeBridge.read().map { "${it.moduleName}:${it.name}:${it.contextName}" }
+        )
+        assertEquals("count=2, payloadSize=${System.getProperty(ProjectionPayloadProperty).length}", KronosProjectionIdeBridge.lastPublishSummary())
+    }
+
+    @Test
+    fun `same module and result name keeps the latest model`() = withCleanIdeBridgeProperties {
+        replaceIdeModuleSnapshot(
+            "main",
+            listOf(ideModel("main", "Result_shared", "Context_first", "value" to "kotlin.Int?"))
+        )
+        replaceIdeModuleSnapshot(
+            "main",
+            listOf(ideModel("main", "Result_shared", "Context_latest", "value" to "kotlin.String?"))
+        )
+
+        val model = KronosProjectionIdeBridge.read().single()
+        assertEquals("Context_latest", model.contextName)
+        assertEquals(listOf(KronosIdeProjectionField("value", "kotlin.String?")), model.fields)
+        assertEquals("count=1, payloadSize=${System.getProperty(ProjectionPayloadProperty).length}", KronosProjectionIdeBridge.lastPublishSummary())
+    }
+
+    @Test
+    fun `empty module snapshot clears only that module`() = withCleanIdeBridgeProperties {
+        replaceIdeModuleSnapshot(
+            "main",
+            listOf(ideModel("main", "Result_main", "Context_main", "id" to "kotlin.Int?"))
+        )
+        replaceIdeModuleSnapshot(
+            "feature",
+            listOf(ideModel("feature", "Result_feature", "Context_feature", "id" to "kotlin.Long?"))
+        )
+
+        replaceIdeModuleSnapshot("main", emptyList())
+
+        assertEquals(listOf("feature:Result_feature"), KronosProjectionIdeBridge.read().map { "${it.moduleName}:${it.name}" })
+        replaceIdeModuleSnapshot("feature", emptyList())
+        assertEquals(emptyList(), KronosProjectionIdeBridge.read())
+        assertEquals("count=0, payloadSize=0", KronosProjectionIdeBridge.lastPublishSummary())
+        assertEquals(null, System.getProperty(ProjectionPayloadProperty))
+    }
+
+    @Test
+    fun `beginning a new module session clears stale models and retains other modules`() =
+        withCleanIdeBridgeProperties {
+            replaceIdeModuleSnapshot(
+                "main",
+                listOf(ideModel("main", "Result_stale", "Context_stale", "id" to "kotlin.Int?"))
+            )
+            replaceIdeModuleSnapshot(
+                "feature",
+                listOf(ideModel("feature", "Result_feature", "Context_feature", "id" to "kotlin.Long?"))
+            )
+
+            KronosProjectionIdeBridge.beginModuleSession("main")
+
+            assertEquals(
+                listOf("feature:Result_feature"),
+                KronosProjectionIdeBridge.read().map { "${it.moduleName}:${it.name}" }
+            )
+        }
+
+    @Test
+    fun `shared owner token rejects a stale bridge state after a new classloader generation`() =
+        withCleanIdeBridgeProperties {
+            val firstBridgeToken = KronosProjectionIdeBridge.beginModuleSession("main")
+            KronosProjectionIdeBridge.publishModuleSnapshot(
+                "main",
+                firstBridgeToken,
+                listOf(ideModel("main", "Result_first", "Context_first", "id" to "kotlin.Int?"))
+            )
+
+            val secondBridgeToken = KronosProjectionIdeBridge.beginModuleSession("main")
+            assertFalse(firstBridgeToken == secondBridgeToken)
+            KronosProjectionIdeBridge.publishModuleSnapshot(
+                "main",
+                firstBridgeToken,
+                listOf(ideModel("main", "Result_stale", "Context_stale", "id" to "kotlin.String?"))
+            )
+
+            assertEquals(emptyList(), KronosProjectionIdeBridge.read())
+            assertEquals("count=0, payloadSize=0", KronosProjectionIdeBridge.lastPublishSummary())
+            KronosProjectionIdeBridge.publishModuleSnapshot(
+                "main",
+                secondBridgeToken,
+                listOf(ideModel("main", "Result_second", "Context_second", "id" to "kotlin.Long?"))
+            )
+            assertEquals(
+                listOf("main:Result_second"),
+                KronosProjectionIdeBridge.read().map { "${it.moduleName}:${it.name}" }
+            )
+        }
+
+    @Test
+    fun `module replacement preserves nested generic field type strings`() = withCleanIdeBridgeProperties {
+        val nestedType = "kotlin.collections.Map<kotlin.String, kotlin.collections.List<kotlin.Int?>>?"
+        replaceIdeModuleSnapshot(
+            "main",
+            listOf(ideModel("main", "Result_nested", "Context_nested", "nested" to nestedType))
+        )
+
+        val model = KronosProjectionIdeBridge.read().single()
+        assertEquals(nestedType, model.fields.single().type)
+        assertEquals(nestedType, model.contextFields.single().type)
+    }
+
+    @Test
+    fun `IDE type rendering preserves nested generic nullability and star positions`() {
+        val nullableString = renderIdeClassLikeType("kotlin.String", nullable = true)
+        val list = renderIdeClassLikeType("kotlin.collections.List", listOf(nullableString))
+        val pair = renderIdeClassLikeType("kotlin.Pair", listOf(list, "*"))
+        val map = renderIdeClassLikeType(
+            "kotlin.collections.Map",
+            listOf("kotlin.String", pair),
+            nullable = true,
+        )
+
+        assertEquals(
+            "kotlin.collections.Map<kotlin.String, kotlin.Pair<kotlin.collections.List<kotlin.String?>, *>>?",
+            map,
+        )
+    }
+
+    @Test
+    fun `IDE type rendering preserves variance nested nullability and star positions`() {
+        val nullableString = renderIdeClassLikeType("kotlin.String", nullable = true)
+        val nullableInt = renderIdeClassLikeType("kotlin.Int", nullable = true)
+        val list = renderIdeClassLikeType("kotlin.collections.List", listOf(nullableInt))
+        val box = renderIdeClassLikeType(
+            "sample.Box",
+            listOf(
+                renderIdeTypeArgument(nullableString, ProjectionKind.IN),
+                renderIdeTypeArgument(list, ProjectionKind.OUT),
+                renderIdeTypeArgument(null, null),
+            ),
+        )
+
+        assertEquals(
+            "sample.Box<in kotlin.String?, out kotlin.collections.List<kotlin.Int?>, *>",
+            box,
+        )
+        assertEquals("*", renderIdeTypeArgument("kotlin.String", null))
+        assertEquals("*", renderIdeTypeArgument(null, ProjectionKind.OUT))
+    }
+
+    @Test
+    fun `IDE type rendering handles real FIR variance star and flexible types`() {
+        val intType = ConeClassLikeTypeImpl(
+            StandardClassIds.Int.toLookupTag(),
+            emptyArray(),
+            false,
+        )
+        val listType = ConeClassLikeTypeImpl(
+            StandardClassIds.List.toLookupTag(),
+            arrayOf(
+                intType,
+                ConeKotlinTypeProjectionIn(intType),
+                ConeStarProjection,
+                ConeKotlinTypeProjectionOut(intType),
+            ),
+            true,
+        )
+        val flexibleType = ConeFlexibleType(intType, intType, isTrivial = true)
+
+        assertEquals(
+            "kotlin.collections.List<kotlin.Int, in kotlin.Int, *, out kotlin.Int>?",
+            listType.renderIdeType(),
+        )
+        assertEquals("kotlin.Any?", flexibleType.renderIdeType())
+    }
+
+    @Test
+    fun `registry starts a clean bridge snapshot when a declaration generator registers`() {
+        val source = Files.readString(
+            Paths.get("src/main/kotlin/com/kotlinorm/compiler/fir/KronosProjectionRegistry.kt")
+        ).replace("\r\n", "\n")
+
+        assertTrue(source.contains("KronosProjectionIdeBridge.beginModuleSession(session.ideModuleName())"))
+        assertTrue(source.contains("ideGenerationTokensBySession = WeakHashMap<FirSession, String>()"))
+        assertTrue(source.contains("ideGenerationTokensBySession[session] = generationToken"))
+    }
+
     @Test
     fun `read decodes current payloads and ignores malformed or old lines`() = withCleanIdeBridgeProperties {
         val current = encodedLine(
@@ -99,7 +310,8 @@ class KronosProjectionIdeBridgeTest {
             "KronosSelectScope_bad",
             encodedField("valid", "kotlin.String?"),
         )
-        System.setProperty(ProjectionPayloadProperty, "\n$malformedFields\n")
+        val invalidBase64 = listOf("%%%", "bad", "fields", "context", "contextFields").joinToString("|")
+        System.setProperty(ProjectionPayloadProperty, "\n$invalidBase64\n$malformedFields\n")
 
         val model = KronosProjectionIdeBridge.read().single()
         assertEquals("KronosSelectResult_bad", model.name)
@@ -195,14 +407,24 @@ class KronosProjectionIdeBridgeTest {
                 "idea.paths.selector",
                 "idea.platform.prefix",
             )
+            val ownerKeys = System.getProperties().stringPropertyNames()
+                .filter { it.startsWith(ProjectionOwnerPropertyPrefix) }
             val oldValues = keys.associateWith { System.getProperty(it) }
+            val oldOwnerValues = ownerKeys.associateWith { System.getProperty(it) }
             try {
                 keys.forEach { System.clearProperty(it) }
+                ownerKeys.forEach { System.clearProperty(it) }
                 block()
             } finally {
+                System.getProperties().stringPropertyNames()
+                    .filter { it.startsWith(ProjectionOwnerPropertyPrefix) }
+                    .forEach { System.clearProperty(it) }
                 keys.forEach { key ->
                     val value = oldValues[key]
                     if (value == null) System.clearProperty(key) else System.setProperty(key, value)
+                }
+                oldOwnerValues.forEach { (key, value) ->
+                    if (value != null) System.setProperty(key, value)
                 }
             }
         }
@@ -216,6 +438,7 @@ private const val ProjectionActiveProperty = "com.kotlinorm.kronos.ide.active"
 private const val ResolveExtensionFallbackProperty = "com.kotlinorm.kronos.ide.resolveExtensionFallback"
 private const val ProjectionCountProperty = "com.kotlinorm.kronos.ide.projections.count"
 private const val ProjectionPayloadSizeProperty = "com.kotlinorm.kronos.ide.projections.payloadSize"
+private const val ProjectionOwnerPropertyPrefix = "com.kotlinorm.kronos.ide.projections.owner."
 
 private fun encodedLine(vararg parts: String): String =
     parts.joinToString("|") { it.encodeUrlBase64() }
@@ -226,6 +449,29 @@ private fun encodedFields(vararg fields: Pair<String, String>): String =
 private fun encodedField(name: String, type: String): String =
     "${name.encodeUrlBase64()}:${type.encodeUrlBase64()}"
 
+private fun replaceIdeModuleSnapshot(
+    moduleName: String,
+    models: Collection<KronosIdeProjectionModel>
+) {
+    val generationToken = KronosProjectionIdeBridge.beginModuleSession(moduleName)
+    KronosProjectionIdeBridge.publishModuleSnapshot(moduleName, generationToken, models)
+}
+
+private fun ideModel(
+    moduleName: String,
+    name: String,
+    contextName: String,
+    vararg fields: Pair<String, String>,
+): KronosIdeProjectionModel {
+    val ideFields = fields.map { (fieldName, type) -> KronosIdeProjectionField(fieldName, type) }
+    return KronosIdeProjectionModel(
+        moduleName = moduleName,
+        name = name,
+        fields = ideFields,
+        contextName = contextName,
+        contextFields = ideFields,
+    )
+}
+
 private fun String.encodeUrlBase64(): String =
     Base64.getUrlEncoder().withoutPadding().encodeToString(toByteArray(StandardCharsets.UTF_8))
-

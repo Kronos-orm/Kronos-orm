@@ -89,6 +89,12 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun directCascadeProjectionKeepsLocalKey() = box("directCascadeProjectionKeepsLocalKey")
 
     /**
+     * Verifies non-root JOIN cascade projections keep hidden local keys and load their relation.
+     */
+    @Test
+    fun joinNonRootCascadeProjection() = box("joinNonRootCascadeProjection")
+
+    /**
      * Verifies select aliases are visible on post-select orderBy Context receivers.
      */
     @Test
@@ -141,4 +147,65 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
      */
     @Test
     fun windowAliasDerivedWhere() = box("windowAliasDerivedWhere")
+
+    /**
+     * Verifies an opted-in same-name alias keeps the selected expression type through mapping.
+     */
+    @Test
+    fun selectedAliasOverrideType() = box("selectedAliasOverrideType")
+
+    /**
+     * Verifies source-minus removes a shadowed source field before Context merging.
+     */
+    @Test
+    fun sourceMinusAliasRestoresContext() = box("sourceMinusAliasRestoresContext")
+
+    /**
+     * Verifies nested generic source aliases retain their generated property type.
+     */
+    @Test
+    fun genericSourceAliasProjectionType() = box("genericSourceAliasProjectionType")
+
+    /**
+     * Verifies duplicate output names stay unique through SQL, mapping, derived select, and union.
+     */
+    @Test
+    fun duplicateProjectionOutputNames() = box("duplicateProjectionOutputNames")
+
+    /**
+     * Verifies projection return types across derived, JOIN, UNION, offset, and cursor layers.
+     */
+    @Test
+    fun projectionQueryLayerCoverageMatrix() = box("projectionQueryLayerCoverageMatrix")
+
+    /**
+     * Verifies generic variance and star projections survive generated projection materialization.
+     */
+    @Test
+    fun projectionGenericVarianceCoverage() = box("projectionGenericVarianceCoverage")
+
+    /**
+     * Verifies same-named non-Kronos APIs are left untouched by projection call refinement.
+     */
+    @Test
+    fun projectionCallShapeIsolation() = box("projectionCallShapeIsolation")
+
+    /**
+     * Verifies JOIN and UNION Selected values retain their scalar and predicate subquery shapes.
+     */
+    @Test
+    fun projectionSelectableLayerSubqueryMatrix() = box("projectionSelectableLayerSubqueryMatrix")
+
+    /**
+     * Verifies implicit source receivers and shadowed JOIN lambda names keep lexical ownership.
+     */
+    @Test
+    fun projectionReceiverScopeMatrix() = box("projectionReceiverScopeMatrix")
+
+    /**
+     * Verifies captured non-source properties and constant aliases retain their concrete generated types.
+     */
+    @Test
+    fun projectionCapturedValueTypes() = box("projectionCapturedValueTypes")
+
 }

@@ -1,389 +1,207 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何查询多表关联数据（或许您也想看看{{ $.keyword("advanced/cascade-select", ["级联查询"]) }}）。
+## 查询多个数据源
 
-## 查询多表关联数据
+`join(...)` 用于构建可组合的 FROM source tree。每个右侧 source 对应一个明确的关系方法；所有关系建立完成后，调用 `select { ... }` 把 source 转成可执行查询。
 
-在Kronos中，我们可以使用`KPojo.join(KPojo1, KPojo2, ...)`方法来查询多表关联数据。
+```kotlin group="Basic join" name="kotlin" icon="kotlin"
+val query = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
+        .where { user.enabled == true }
+}
 
-`KSelectable` 查询结果也可以作为派生 join source 使用，规则见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
+val rows = query.toList()
 ```
 
-## Join 派生查询源
+```sql group="Basic join" name="Mysql" icon="mysql"
+SELECT `user`.`id`, `user`.`name`, `order`.`status`
+FROM `user`
+LEFT JOIN `order` ON `user`.`id` = `order`.`user_id`
+WHERE `user`.`enabled` = :enabled
+```
 
-`select { ... }` 得到的 `KSelectable` 可以传给 `join(...)`。join lambda 右侧参数会暴露派生查询源中选中的字段和 alias。
+source 参数只在外层 lambda 中声明一次，关系和查询子句直接捕获这些参数。`leftJoin`、`select`、`where` 和 `orderBy` 不需要重复声明参数。
 
-```kotlin group="Join source 1" name="kotlin" icon="kotlin"
+## 选择连接类型
+
+`innerJoin`、`leftJoin`、`rightJoin` 和 `fullJoin` 接收连接条件。笛卡尔积使用无条件的 `crossJoin()`。JOIN 不再提供隐式连接类型，也没有单独的 `on { ... }` 方法。
+
+```kotlin group="Relation types" name="multiple sources" icon="kotlin"
+val rows = User().join(Order(), Product()) { user, order, product ->
+    innerJoin { user.id == order.userId }
+        .leftJoin { order.productId == product.id }
+        .select {
+            [user.id, product.name.alias("productName"), order.amount]
+        }
+}.toList()
+```
+
+```kotlin group="Relation types" name="cross join" icon="kotlin"
+val combinations = User().join(Region()) { user, region ->
+    crossJoin()
+        .select { [user.id, region.name.alias("regionName")] }
+}.toList()
+```
+
+`fullJoin` 是否可用取决于数据库方言，见 {{ $.keyword("database/dialect-support", ["方言支持"]) }}。
+
+## 选择、过滤、分组和排序
+
+`select` 是原始 JOIN source 与查询之间的类型边界。调用 `select` 后，可以继续使用普通查询的 `where`、`by`、`groupBy`、`having`、`orderBy`、`distinct`、`limit`、`lock`、`patch` 和结果方法。
+
+```kotlin group="Join query clauses" name="kotlin" icon="kotlin"
+val rows = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select {
+            [
+                user.id.alias("userId"),
+                f.count(order.id).alias("orderCount")
+            ]
+        }
+        .where { user.enabled == true }
+        .groupBy { user.id }
+        .having { f.count(order.id) > 0 }
+        .orderBy { it.orderCount.desc() }
+}.toList()
+```
+
+`where`、`groupBy` 和 `having` 读取 joined Source 字段。`orderBy` 读取 select 后的 Context，因此可以访问 `orderCount` 这类选中 alias。
+
+## 连接选中查询或分页 source
+
+任何 `KSelectable` 都可以作为 JOIN operand，包括普通 select、已选中的 JOIN、union 和 offset page。对应 source 参数会暴露该 operand 的选中输出字段。
+
+```kotlin group="Derived join source" name="selected source" icon="kotlin"
 val paidOrders = Order()
     .select { [it.userId, it.status] }
     .where { it.status == 1 }
 
-val users = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+val rows = User().join(paidOrders) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 
-```sql group="Join source 1" name="Mysql" icon="mysql"
-SELECT `user`.`id` AS `id`,
-       `user`.`name` AS `name`,
-       `q`.`status` AS `status`
-FROM `user`
-LEFT JOIN (
-    SELECT `user_id` AS `userId`, `status`
-    FROM `order`
-    WHERE `order`.`status` = :status
-) AS `q`
-ON `user`.`id` = `q`.`userId`
+```kotlin group="Derived join source" name="finite page source" icon="kotlin"
+val recentOrders = Order()
+    .select { [it.id, it.userId, it.createdAt] }
+    .orderBy { it.createdAt.desc() }
+    .page(pageIndex = 1, pageSize = 100)
+
+val rows = User().join(recentOrders) { user, order ->
+    innerJoin { user.id == order.userId }
+        .select { [user.id, order.id.alias("orderId")] }
+}.toList()
 ```
 
-join 结果可以继续使用 `orderBy`、`page` 和 `withTotal()`。
+只有 `OffsetPageQuery` 可以继续作为关系 source；带总数分页和游标分页是执行阶段，不能作为 JOIN operand。
 
-```kotlin group="Join source 2" name="paged source" icon="kotlin"
-val (total, rows) = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    orderBy { order.status.desc() }
-    page(1, 10)
-    select { [user.id, user.name, order.status] }
-}.withTotal().toMapList()
+## 构建嵌套 JOIN tree
+
+内层 JOIN block 以关系方法结束时会保留原始 `JoinSource`。这个 source 可以作为另一层 JOIN 的左侧或右侧，并保留括号分组。
+
+```kotlin group="Nested join" name="right nested" icon="kotlin"
+val companyRegion = Company().join(Region()) { company, region ->
+    innerJoin { company.regionId == region.id }
+}
+
+val rows = User().join(companyRegion) { user, company, region ->
+    leftJoin { user.companyId == company.id }
+        .select {
+            [user.id, company.name, region.name.alias("regionName")]
+        }
+}.toList()
 ```
 
-```sql group="Join source 2" name="paged sql" icon="mysql"
-SELECT `user`.`id` AS `id`,
-       `user`.`name` AS `name`,
-       `q`.`status` AS `status`
-FROM `user`
-LEFT JOIN (
-    SELECT `user_id` AS `userId`, `status`
-    FROM `order`
-    WHERE `order`.`status` = :status
-) AS `q`
-ON `user`.`id` = `q`.`userId`
-ORDER BY `q`.`status` DESC
-LIMIT 10
-OFFSET 0
+生成的 SQL 形态是 `User LEFT JOIN (Company INNER JOIN Region)`。原始 `JoinSource` 不能直接执行、过滤、排序或分页，外层必须先调用 `select`。
+
+## 组合已选中的 JOIN
+
+JOIN `select` 返回 `KSelectable`，可以继续作为派生 source、参与 `union`、用于 INSERT SELECT，或再次 join。
+
+```kotlin group="Join composition" name="derived" icon="kotlin"
+val joined = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, order.status.alias("orderStatus")] }
+}
+
+val active = joined
+    .select { [it.id, it.orderStatus] }
+    .where { it.orderStatus == 1 }
+    .toList()
 ```
 
-## 指定连接条件及连接方式
-
-在Kronos中，我们默认使用`left join`连接多表，如果不需要指定连接方式，可以使用`on`方法指定连接条件。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
+```kotlin group="Join composition" name="union" icon="kotlin"
+val all = union(joined, joined)
+    .select { [it.id, it.orderStatus] }
+    .toList()
 ```
 
-可以通过`leftJoin`、`rightJoin`、`innerJoin`、`crossJoin`、`fullJoin`等函数同时指定连接方式和连接条件。
+## 自连接与重复输出名
 
-```kotlin name="demo" icon="kotlin" {2-6}
-val users: List<User> =
-    User().join(UserInfo(), UserTeam()) { user, userInfo, userTeam ->
-        leftJoin { user.id == userInfo.userId }
-        innerJoin { user.id == userTeam.userId }
-        select { [user.id, user.name, userInfo.age, userTeam.teamId] }
-    }.toList()
+自连接的两个 operand 即使使用同一种 KPojo 类型，也由不同 source 参数表示。建议使用体现角色的 alias。
+
+```kotlin group="Self join" name="aliases" icon="kotlin"
+val hierarchy = Employee().join(Employee()) { manager, report ->
+    leftJoin { manager.id == report.managerId }
+        .select {
+            [
+                manager.id.alias("managerId"),
+                report.id.alias("reportId")
+            ]
+        }
+}.toList()
 ```
 
-```sql name="join type sql" icon="mysql"
-SELECT `user`.`id`,
-       `user`.`name`,
-       `user_info`.`age`,
-       `user_team`.`team_id` AS `teamId`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-INNER JOIN `user_team` ON `user`.`id` = `user_team`.`user_id`
+确实需要重复名称时，opt-in 确定性后缀分配。第一次出现保留原名，后续值使用 `_1`、`_2` 等后缀。
+
+```kotlin group="Self join" name="duplicate names" icon="kotlin"
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val rows = User().join(Company()) { user, company ->
+    leftJoin { user.companyId == company.id }
+        .select { [user.id, company.id] }
+}.toList()
+
+val userId = rows.first().id
+val companyId = rows.first().id_1
 ```
 
-## {{ $.title("db") }}指定连接数据表的数据库（跨库连表查询）
+显式名称保留和 Context 遮蔽规则见 {{ $.keyword("query/projection", ["投影"]) }}。
 
-在Kronos中，我们可以使用`db`方法指定查询字段。
+## 分页 JOIN 查询
 
-将一张或多张表与其所处的数据库名组合通过一个或多个`Pair`类作为参数传入该方法进行跨库连表查询
+分页在 `select` 后调用。offset page 直接返回记录；需要总数时，在该 page 上调用 `withTotal()`，结果是命名的 `PageResult`。
 
-```kotlin name="demo" icon="kotlin" {4}
-val users: List<User> =
-    User().join(UserInfo(), UserTeam(), UserRole()) { user, userInfo, userTeam, userRole ->
-        on { user.id == userInfo.userId && user.id == userTeam.userId && user.id == userRole.userId }
-        db(userInfo to "user_info_database", userRole to "user_role_database")
-        select { [user.id, user.name, userInfo.age, userTeam.teamId, userRole.roleName] }
-    }.toList()
+```kotlin group="Join page" name="kotlin" icon="kotlin"
+val query = User().join(Order()) { user, order ->
+    innerJoin { user.id == order.userId }
+        .select { [user.id, order.status] }
+        .orderBy { it.id.asc() }
+}
+
+val records = query.page(pageIndex = 1, pageSize = 20).toList()
+val page = query.page(pageIndex = 1, pageSize = 20).withTotal().toList()
+
+val total = page.total
+val pageRecords = page.records
 ```
 
-```sql name="cross database sql" icon="mysql"
-SELECT `user`.`id`,
-       `user`.`name`,
-       `user_info_database`.`user_info`.`age`,
-       `user_team`.`team_id` AS `teamId`,
-       `user_role_database`.`user_role`.`role_name` AS `roleName`
-FROM `user`
-LEFT JOIN `user_info_database`.`user_info` ON `user`.`id` = `user_info_database`.`user_info`.`user_id`
-LEFT JOIN `user_team` ON `user`.`id` = `user_team`.`user_id`
-LEFT JOIN `user_role_database`.`user_role` ON `user`.`id` = `user_role_database`.`user_role`.`user_id`
+游标和派生分页契约见 {{ $.keyword("query/sorting-pagination-aggregation", ["排序、分页与聚合"]) }}。
+
+## 选择结果形态和数据库
+
+JOIN 查询和普通 select 一样支持生成投影、DTO、Map、单行结果方法和显式 `KronosDataSourceWrapper`。
+
+```kotlin group="Join result" name="wrapper" icon="kotlin"
+val rows = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.id, order.status] }
+        .db(order to "archive")
+}.toMapList(customWrapper)
 ```
 
-## {{ $.title("select") }}指定查询字段
-
-在Kronos中，我们可以使用`select`方法指定查询字段，多个字段使用`[]`书写。
-
-可以使用`alias`为字段指定别名，如```select { [user.id, user.name.alias("userName"), userInfo.age] }```。
-
-如需要查询某张表的所有字段，可以使用`select { user }`、`select { [user, userInfo, userTeam.teamId] }`。
-
-不指定查询字段时，默认查询所有字段，我们会对不同表相同字段进行重新命名，以避免字段冲突。
-
-可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".alias("count") }```。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```text name="result shape"
-rows.first().id
-rows.first().name
-rows.first().age
-```
-
-### 查询全部字段、排除部分列
-
-可以传入`KPojo`查询全部列，使用`-`排除列，并使用`[]`组合最终查询字段列表。
-
-```kotlin name="kotlin" icon="kotlin" {6}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user - user.id, userInfo.age] }
-    }
-        .toList()
-```
-
-## {{ $.title("by") }}指定查询条件
-
-在Kronos中，我们可以使用`by`方法指定查询字段，多个字段使用`[]`书写。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        by { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-## {{ $.title("where") }}指定查询条件
-
-在Kronos中，我们可以使用`where`方法指定查询{{ $.keyword("query/conditions", ["Criteria条件语句"]) }}。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        where { user.id == 1 }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="where sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-WHERE `user`.`id` = :id
-```
-
-在显式`where`块中，可以使用`.eq`将当前 KPojo 对象的字段值展开为等值条件，并继续组合其他条件表达式：
-
-```kotlin name="kotlin" icon="kotlin" {6}
-val users: List<User> =
-    User(1, "Kronos").join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        where { user.eq }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-Kronos提供了减号运算符`-`，用于在显式`.eq`展开时排除指定字段。
-
-```kotlin name="kotlin" icon="kotlin" {6}
-val users: List<User> =
-    User(1, "Kronos").join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        where { (user - user.id).eq }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-## {{ $.title("patch") }}为自定义查询条件添加参数
-
-在Kronos中，我们可以使用`patch`方法为自定义查询条件添加参数。
-
-```kotlin name="demo" icon="kotlin" {2-7}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-        where { "user.id = :id".asSql() }
-        patch("id" to 1)
-    }.toList()
-```
-
-## {{ $.title("groupBy") }}、{{ $.title("having") }}设置分组和聚合条件
-
-在Kronos中，我们可以使用`groupBy`方法指定分组字段。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        groupBy { [user.id, userInfo.age] }
-        having { userInfo.age > 18 }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="group sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-GROUP BY `user`.`id`, `user_info`.`age`
-HAVING `user_info`.`age` > :age
-```
-
-## {{ $.title("orderBy") }}设置排序条件
-
-在Kronos中，我们可以使用`orderBy`方法指定排序字段。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        orderBy { [user.id.asc(), userInfo.age.desc()] }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="order sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-ORDER BY `user`.`id` ASC, `user_info`.`age` DESC
-```
-
-## {{ $.title("limit") }}指定查询数量
-
-在Kronos中，我们可以使用`limit`方法指定查询数量。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        limit(10)
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="limit sql" icon="mysql"
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-LIMIT 10
-```
-
-## {{ $.title("distinct") }}指定查询去重
-
-在Kronos中，我们可以使用`distinct`方法指定查询去重。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        distinct()
-        select { [user.id, user.name, userInfo.age] }
-    }.toList()
-```
-
-```sql name="distinct sql" icon="mysql"
-SELECT DISTINCT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-```
-
-## {{ $.title("page") }}、{{ $.title("withTotal") }}指定分页查询
-
-`page`方法用于设置分页查询，请注意，`page`方法的参数从1开始。
-
-在不同的数据库中，分页查询的语法有所不同，Kronos会根据不同的数据库生成相应的分页查询语句。
-
-`withTotal`方法用于查询带有总记录数的分页查询。
-
-> **Warning**
-> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请务必使用`withTotal`方法。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val (total, list) =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        page(1, 10)
-        select { [user.id, user.name, userInfo.age] }
-    }.withTotal().toMapList()
-```
-
-```sql name="page sql" icon="mysql"
-SELECT COUNT(*) FROM (
-    SELECT 1
-    FROM `user`
-    LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-) AS total_count
-
-SELECT `user`.`id`, `user`.`name`, `user_info`.`age`
-FROM `user`
-LEFT JOIN `user_info` ON `user`.`id` = `user_info`.`user_id`
-LIMIT 10
-OFFSET 0
-```
-
-## 结果方法
-
-Join 查询使用和 select 查询相同的终端结果方法。
-
-```kotlin name="Result methods" icon="kotlin"
-val mapRows: List<Map<String, Any?>> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toMapList()
-
-val typedRows: List<UserInfoRow> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList<UserInfoRow>()
-```
-
-结果形态、单行方法、分页总数和自定义 wrapper 见 {{ $.keyword("query/result-methods", ["结果方法"]) }}。
-
-## 使用指定的数据源
-
-本次 join 查询需要使用指定数据库连接时，把 `KronosDataSourceWrapper` 传给终端结果方法。
-
-```kotlin name="demo" icon="kotlin" {1}
-val customWrapper = CustomWrapper()
-
-val users: List<User> =
-    User().join(UserInfo()) { user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { [user.id, user.name, userInfo.age] }
-    }.toList(customWrapper)
-```
+终端方法行为见 {{ $.keyword("query/result-methods", ["结果方法"]) }}。

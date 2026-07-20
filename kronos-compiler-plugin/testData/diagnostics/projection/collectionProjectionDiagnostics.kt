@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies projection diagnostics also inspect listOf/arrayOf projection forms.
+// Verifies duplicate-name opt-in diagnostics inspect listOf/arrayOf projection forms.
 
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
@@ -29,7 +29,7 @@ data class ProjectionCollectionDiagUser(
 
 fun invalidDuplicateInListProjection() {
     ProjectionCollectionDiagUser()
-        .select { listOf(it.id, <!KRONOS_DUPLICATE_PROJECTION_FIELD!>it.id<!>) }
+        .select { listOf(it.id, it.<!OPT_IN_USAGE_ERROR!>id<!>) }
 }
 
 fun invalidFunctionWithoutAliasInArrayProjection() {
@@ -39,5 +39,5 @@ fun invalidFunctionWithoutAliasInArrayProjection() {
 
 fun invalidAliasConflictInListProjection() {
     ProjectionCollectionDiagUser()
-        .select { listOf(it.id, <!KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE!>f.length(it.username).alias("username")<!>) }
+        .select { listOf(it.id, f.length(it.username).alias("username")) }
 }

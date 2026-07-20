@@ -362,23 +362,26 @@ val users = User()
     .toList()
 // 结果：List<{ id: Long?, username: String? }>
 
-// 分页
-val (total, list, totalPages) = User()
+// 使用命名 PageResult 分页
+val page = User()
     .select { [it.id, it.username] }
     .where { it.id < 10 && it.username like "a%" }
-    .withTotal()
     .page(1, 10)
+    .withTotal()
     .toList()
-// total: Int；list: List<{ id: Long?, username: String? }>；totalPages: Int
+val total = page.total
+val list = page.records
+val totalPages = page.totalPages
 
 // 联表查询
 val usersWithRoles = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    on { user.id == relation.userId && user.id == role.userId }
-    select {
-        [user.id, user.username, relation.id.alias("relationId"),
-                role.role, f.count(1).alias("count")]
-    }
-    where { user.id < 10 }
+    leftJoin { user.id == relation.userId }
+        .leftJoin { user.id == role.userId }
+        .select {
+            [user.id, user.username, relation.id.alias("relationId"),
+                    role.role, f.count(1).alias("count")]
+        }
+        .where { user.id < 10 }
 }.toList()
 // 结果：List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
 

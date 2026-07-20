@@ -338,19 +338,21 @@ ORDER BY `nameLength` DESC
 
 ## 对派生来源分页
 
-`withTotal().page(pageIndex, pageSize)` 可以在 selectable source 进入下一层查询后继续使用。
+`page(pageIndex, pageSize).withTotal()` 可以在 selectable source 进入下一层查询后继续使用。
 
 ```kotlin group="Paged source" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val (total, rows, totalPages) = nameLengths
+val page = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
     .orderBy { it.nameLength.desc() }
-    .withTotal()
     .page(1, 10)
+    .withTotal()
     .toList()
+
+val rows = page.records
 ```
 
 ```sql group="Paged source" name="Mysql" icon="mysql"
@@ -425,8 +427,8 @@ val paidOrders = Order()
     .where { it.status == 1 }
 
 val users = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 

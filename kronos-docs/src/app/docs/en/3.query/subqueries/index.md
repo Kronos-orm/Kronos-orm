@@ -338,19 +338,21 @@ ORDER BY `nameLength` DESC
 
 ## Page a derived source
 
-`withTotal().page(pageIndex, pageSize)` can be used after a selectable source enters the next query layer.
+`page(pageIndex, pageSize).withTotal()` can be used after a selectable source enters the next query layer.
 
 ```kotlin group="Paged source" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val (total, rows, totalPages) = nameLengths
+val page = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
     .orderBy { it.nameLength.desc() }
-    .withTotal()
     .page(1, 10)
+    .withTotal()
     .toList()
+
+val rows = page.records
 ```
 
 ```sql group="Paged source" name="Mysql" icon="mysql"
@@ -425,8 +427,8 @@ val paidOrders = Order()
     .where { it.status == 1 }
 
 val users = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 

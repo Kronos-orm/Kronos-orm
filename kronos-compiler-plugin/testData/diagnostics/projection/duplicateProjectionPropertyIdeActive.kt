@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies projection diagnostics still run when the FIR bridge uses IDEA-active projection lookup tags.
+// Verifies duplicate-name opt-in diagnostics still run through the IDEA-active FIR bridge.
 
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.interfaces.KPojo
@@ -28,5 +28,5 @@ data class ProjectionDiagIdeUser(
 
 fun invalidDuplicateProjectionIdeActive() {
     ProjectionDiagIdeUser()
-        .select { [it.id, <!KRONOS_DUPLICATE_PROJECTION_FIELD!>it.id<!>] }
+        .select { [it.id, it.<!OPT_IN_USAGE_ERROR!>id<!>] }
 }

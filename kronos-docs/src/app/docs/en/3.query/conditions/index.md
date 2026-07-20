@@ -617,12 +617,12 @@ HAVING COUNT(1) > :countMin
 
 ## Use conditions in {{ $.title("on") }}
 
-`on`, `leftJoin`, `rightJoin`, `innerJoin`, `crossJoin`, and `fullJoin` use the same condition DSL for join predicates.
+`leftJoin`, `rightJoin`, `innerJoin`, and `fullJoin` use the same condition DSL for join predicates. `crossJoin()` is conditionless.
 
 ```kotlin group="On" name="kotlin" icon="kotlin"
 val rows = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId && order.status == 1 }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId && order.status == 1 }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 

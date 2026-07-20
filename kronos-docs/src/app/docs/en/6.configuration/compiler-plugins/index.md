@@ -290,12 +290,27 @@ Use the diagnostic code to find the DSL shape that needs to change.
 | `KRONOS_GENERIC_KPOJO_NOT_SUPPORTED` | A KPojo class declares class-level type parameters | Remove the KPojo type parameters and use concrete property types |
 | `KRONOS_SELECT_ITEM_REQUIRES_ALIAS` | Function, aggregate, scalar subquery, window function, or raw SQL in `select { ... }` | Add `.alias("resultName")` |
 | `KRONOS_DUPLICATE_PROJECTION_FIELD` | Two selected items produce the same result property | Remove one field or give one item a different alias |
-| `KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE` | A selected alias has the same name as an input field | Choose an alias that does not collide with the source `KPojo` |
+| `OPT_IN_USAGE_ERROR` | A selected alias replaces a still-present source field with the same logical name | Rename the alias, remove the source field first, or explicitly acknowledge it with `@OptIn(UnsafeProjectionOverride::class)` |
 | `KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT` | A scalar subquery can return more than one row | Add `.limit(1)` before using it as a value |
 | `KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN` | A scalar subquery selects multiple fields | Select one field or split the expression |
 | `KRONOS_PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH` | `field in query`, `ANY`, `SOME`, `ALL`, or row-value `IN` has mismatched arity | Make the left expression and right query return the same column count |
 | `KRONOS_ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS` | A single-field tuple such as `[it.id] in query` was used | Write `it.id in query` |
 | `KRONOS_INSERT_SELECT_VALUE_COUNT_MISMATCH` | `insert<Target> { ... }` value count differs from target fields | Select the same number of values as insertable target columns |
 | `KRONOS_INSERT_SELECT_VALUE_TYPE_MISMATCH` | Insert-select values do not match target field types | Reorder values or cast the scalar expression to the expected Kotlin type |
+
+An explicit projection alias normally must not replace a source field with the same logical name. If the replacement is intentional, opt in with the standard Kotlin mechanism. The marker is `com.kotlinorm.annotations.UnsafeProjectionOverride` and has error severity; its message warns that the selected value and Kotlin type may change.
+
+```kotlin
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val query = User().select { [it.id, f.length(it.name).alias("name")] }
+```
+
+Removing a field first makes the replacement intentional without opt-in:
+
+```kotlin
+val query = User().select { [it - it.name, f.length(it.name).alias("name")] }
+```
 
 For build setup, start from {{ $.keyword("getting-started/quick-start", ["Quick Start"]) }}. For database execution and SQL logging, see {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }} and {{ $.keyword("configuration/logging", ["Logging"]) }}. For IDE inspection behavior, see {{ $.keyword("resources/idea-plugin", ["IntelliJ IDEA Plugin"]) }}.

@@ -101,8 +101,8 @@ abstract class EdgeCaseIntegrationSuite(
         val (total, rows) = EdgeAccount()
             .select()
             .orderBy { it.id.asc() }
+            .page(pageIndex = 2, pageSize = 2)
             .withTotal()
-            .page(pi = 2, ps = 2)
             .toList<EdgeAccount>()
 
         assertEquals(5, total)

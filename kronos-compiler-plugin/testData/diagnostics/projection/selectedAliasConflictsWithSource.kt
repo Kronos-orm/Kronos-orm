@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-// Verifies new selected aliases cannot conflict with source field names used by orderBy Context.
+// Verifies a selected alias may shadow a Source name until the conflicting Context field is used.
 
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.UnsafeProjectionOverride
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.select.select
 
 @Table("tb_projection_diag_user")
@@ -27,7 +29,68 @@ data class ProjectionDiagUser(
     var username: String? = null,
 ) : KPojo
 
+@Table("tb_projection_diag_order")
+data class ProjectionDiagOrder(
+    var id: Int? = null,
+    var userId: Int? = null,
+    var username: String? = null,
+) : KPojo
+
 fun invalidContextConflict() {
     ProjectionDiagUser()
-        .select { [it.id, <!KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE!>f.length(it.username).alias("username")<!>] }
+        .select { [it.id, f.length(it.username).alias("username")] }
+        .orderBy { it.<!OPT_IN_USAGE_ERROR!>username<!>.desc() }
+}
+
+fun harmlessSelectedShadow() {
+    ProjectionDiagUser()
+        .select { [it.id, f.length(it.username).alias("username")] }
+        .where { it.username == "source-value" }
+        .groupBy { it.username }
+        .having { it.username != null }
+}
+
+fun unshadowedContextReadDoesNotRequireOptIn() {
+    ProjectionDiagUser()
+        .select { [it.id, f.length(it.username).alias("usernameLength")] }
+        .orderBy { [it.username.asc(), it.usernameLength.desc()] }
+}
+
+@OptIn(UnsafeProjectionOverride::class)
+fun optedInContextConflict() {
+    ProjectionDiagUser()
+        .select { [it.id, f.length(it.username).alias("username")] }
+        .orderBy { it.username.desc() }
+}
+
+fun expressionOptedInContextConflict() {
+    @Suppress("UNUSED_VARIABLE")
+    val query = @OptIn(UnsafeProjectionOverride::class) ProjectionDiagUser()
+        .select { [it.id, f.length(it.username).alias("username")] }
+        .orderBy { it.username.desc() }
+}
+
+fun invalidJoinContextConflict() {
+    ProjectionDiagUser().join(ProjectionDiagOrder()) { user, order ->
+        innerJoin { user.id == order.userId }
+            .select { [user.id, f.length(order.username).alias("username")] }
+            .orderBy { [it.id.asc(), it.<!OPT_IN_USAGE_ERROR!>username<!>.desc()] }
+    }
+}
+
+@OptIn(UnsafeProjectionOverride::class)
+fun optedInJoinContextConflict() {
+    ProjectionDiagUser().join(ProjectionDiagOrder()) { user, order ->
+        innerJoin { user.id == order.userId }
+            .select { [user.id, f.length(order.username).alias("username")] }
+            .orderBy { [it.id.asc(), it.username.desc()] }
+    }
+}
+
+fun unshadowedJoinContextReadDoesNotRequireOptIn() {
+    ProjectionDiagUser().join(ProjectionDiagOrder()) { user, order ->
+        innerJoin { user.id == order.userId }
+            .select { [user.id, f.length(order.username).alias("usernameLength")] }
+            .orderBy { [it.username.asc(), it.usernameLength.desc()] }
+    }
 }

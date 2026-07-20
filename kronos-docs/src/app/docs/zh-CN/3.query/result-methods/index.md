@@ -5,7 +5,7 @@
 
 `select` 和 `join` 查询使用同一组终端方法。根据需要接收的结果形态选择方法。
 
-投影字段和 alias 见 {{ $.keyword("query/projection", ["投影"]) }}。分页 Pair 结果见 {{ $.keyword("query/sorting-pagination-aggregation", ["排序、分页与聚合"]) }}。
+投影字段和 alias 见 {{ $.keyword("query/projection", ["投影"]) }}。命名分页结果见 {{ $.keyword("query/sorting-pagination-aggregation", ["排序、分页与聚合"]) }}。
 
 ## {{ $.title("toMapList") }} 返回 Map 列表
 
@@ -189,8 +189,8 @@ Join 查询使用和 `select` 相同的结果方法。
 
 ```kotlin group="Join result" name="kotlin" icon="kotlin"
 val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList<UserOrderRow>()
 ```
 
@@ -203,19 +203,32 @@ ON `user`.`id` = `order`.`user_id`
 
 ## 在分页后使用结果方法
 
-分页结果需要包含总行数时，使用 `withTotal().page(pageIndex, pageSize)`。返回值是 `(total, rows, totalPages)`。
+`page(pageIndex, pageSize).toList()` 直接返回当前页记录。需要总数时，在 `page(...)` 后调用 `withTotal()`，得到包含命名元数据的 `PageResult<T>`。
 
 ```kotlin group="Page query" name="kotlin" icon="kotlin"
-val (total, rows, totalPages): Triple<Int, List<Map<String, Any?>>, Int> = User()
+val mapPage: PageResult<Map<String, Any?>> = User()
     .select { [it.id, it.name] }
-    .withTotal()
     .page(1, 20)
+    .withTotal()
     .toMapList()
 
-val (typedTotal, users, typedTotalPages): Triple<Int, List<User>, Int> = User()
+val typedPage: PageResult<User> = User()
     .select()
-    .withTotal()
     .page(1, 20)
+    .withTotal()
+    .toList()
+
+val users = typedPage.records
+val total = typedPage.total
+```
+
+游标执行返回 `CursorResult<T>`，包含 `hasNext`、`nextCursor` 和 `records`。
+
+```kotlin group="Cursor query" name="kotlin" icon="kotlin"
+val cursorPage: CursorResult<User> = User()
+    .select()
+    .orderBy { it.id.asc() }
+    .cursor(pageSize = 20)
     .toList()
 ```
 

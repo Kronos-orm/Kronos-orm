@@ -48,6 +48,8 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
         pojo = pojo,
         kClass = metadata.kClass,
         tableName = metadata.tableName,
+        declaredTableName = metadata.allColumns.firstOrNull { it.tableName.isNotBlank() }?.tableName
+            ?: metadata.tableName,
         operationType = KOperationType.DELETE,
         fields = metadata.allColumns,
         allFields = metadata.allFields.toList(),
@@ -118,7 +120,7 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
     fun where(deleteCondition: ToFilter<T, Boolean?> = null): DeleteClause<T> {
         if (deleteCondition == null) return this
         // 如果指定了删除条件，执行条件函数，并设置条件
-        context.pojo.afterFilter filter@ { filterTable ->
+        context.pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->
             with(context) {
                 this@filter.sourceValues = sourceValues.toMutableMap()
                 this@filter.operationType = operationType

@@ -10,6 +10,7 @@ package com.kotlinorm.orm.statement
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
+import com.kotlinorm.beans.dsl.SourceBinding
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.task.jdbcNullType
 import com.kotlinorm.enums.KOperationType
@@ -30,6 +31,7 @@ internal class OrmContext<T : KPojo>(
     val pojo: T,
     val kClass: KClass<out KPojo>,
     val tableName: String,
+    val declaredTableName: String = tableName,
     val operationType: KOperationType,
     val fields: List<Field>,
     val allFields: List<Field> = fields,
@@ -41,6 +43,13 @@ internal class OrmContext<T : KPojo>(
     val sourceValues: Map<String, Any?> = pojo.toDataMap(),
     val parameterBindings: MutableMap<String, ParameterBinding> = linkedMapOf()
 ) {
+    val sourceBinding = SourceBinding(
+        tableName = tableName,
+        dynamicTableNames = setOf(declaredTableName).filterTo(linkedSetOf()) {
+            it.isNotBlank() && it != tableName
+        },
+        sourceColumnNames = fields.asSequence().filter { it.isColumn }.map { it.columnName }.toSet()
+    )
     var cascadeEnabled: Boolean = true
     var cascadeAllowed: Set<Field>? = null
     var logicEnabled: Boolean? = null

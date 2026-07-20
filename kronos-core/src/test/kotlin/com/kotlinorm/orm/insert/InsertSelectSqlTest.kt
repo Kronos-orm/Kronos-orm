@@ -163,15 +163,13 @@ class InsertSelectSqlTest : MysqlTestBase() {
     @Test
     fun `join source renders insert select`() {
         val joinQuery = SubqueryUser().join(SubqueryOrder()) { user, order ->
-            leftJoin(order) { user.id == order.userId }
-            select {
+            leftJoin { user.id == order.userId }.select {
                 [
                     user.id,
                     order.userId,
                     order.status
                 ]
-            }
-            where { user.id == 33 }
+            }.where { user.id == 33 }
         }
 
         val (sql, params) = joinQuery

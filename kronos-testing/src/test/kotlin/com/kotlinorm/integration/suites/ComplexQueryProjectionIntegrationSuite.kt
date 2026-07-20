@@ -183,13 +183,12 @@ abstract class ComplexQueryProjectionIntegrationSuite(
                 .select { [it.id, it.score] }
                 .where { it.archived == 0 }
                 .orderBy { it.score.asc() }
-                .withCursor()
-                .cursor(cursor, offset = 2)
+                .cursor(pageSize = 2, after = cursor)
                 .toList<ComplexCustomerRow>()
 
-            hasNext = page.first
-            cursor = page.second
-            seenIds += page.third.map { it.id }
+            hasNext = page.hasNext
+            cursor = page.nextCursor
+            seenIds += page.records.map { it.id }
         } while (hasNext)
 
         assertEquals(expectedIds, seenIds)
@@ -218,13 +217,12 @@ abstract class ComplexQueryProjectionIntegrationSuite(
                 .select { it.score }
                 .where { it.archived == 0 }
                 .orderBy { it.score.asc() }
-                .withCursor()
-                .cursor(cursor, offset = 2)
+                .cursor(pageSize = 2, after = cursor)
                 .toMapList()
 
-            hasNext = page.first
-            cursor = page.second
-            rows += page.third
+            hasNext = page.hasNext
+            cursor = page.nextCursor
+            rows += page.records
         } while (hasNext)
 
         assertEquals(expectedCount, rows.size)
@@ -235,14 +233,15 @@ abstract class ComplexQueryProjectionIntegrationSuite(
     fun pageWithoutOrderByShouldHandleDialectRequirementsAgainstRealDatabase() {
         recreateComplexTables()
 
-        val (total, rows) = ComplexCustomer()
+        val page = ComplexCustomer()
             .select { [it.id, it.name] }
+            .page(pageIndex = 1, pageSize = 2)
             .withTotal()
-            .page(pi = 1, ps = 2)
             .toList<ComplexCustomerRow>()
 
-        assertEquals(7, total)
-        assertEquals(2, rows.size)
+        assertEquals(7, page.total)
+        assertEquals(4, page.totalPages)
+        assertEquals(2, page.records.size)
     }
 
     @Test
@@ -321,17 +320,18 @@ abstract class ComplexQueryProjectionIntegrationSuite(
             .where { it.archived == 0 }
 
         val optionalRegion: String? = null
-        val (total, rows) = projectedCustomers
+        val page = projectedCustomers
             .select { [it.customerId, it.displayName, it.tier, it.region, it.score] }
             .where { it.score >= 70 }
             .where { (it.region == optionalRegion).takeIf(optionalRegion != null) }
             .where { it.tier !in listOf("bronze") }
             .orderBy { [it.score.desc(), it.customerId.asc()] }
+            .page(pageIndex = 2, pageSize = 2)
             .withTotal()
-            .page(pi = 2, ps = 2)
             .toList<ComplexCustomerSearchRow>()
 
-        assertEquals(3, total)
+        assertEquals(3, page.total)
+        assertEquals(2, page.totalPages)
         assertEquals(
             listOf(
                 ComplexCustomerSearchRow(
@@ -342,7 +342,7 @@ abstract class ComplexQueryProjectionIntegrationSuite(
                     score = 76,
                 ),
             ),
-            rows,
+            page.records,
         )
     }
 
@@ -356,36 +356,36 @@ abstract class ComplexQueryProjectionIntegrationSuite(
 
         val rows = ComplexCustomer()
             .join(ComplexInvoice()) { customer, invoice ->
-                innerJoin(invoice) { customer.id == invoice.customerId }
-                select {
-                    [
-                        customer.id.alias("customerId"),
-                        customer.name.alias("customerName"),
-                        invoice.amount.alias("openAmount"),
-                        ComplexInvoice()
-                            .select { paid -> paid.amount }
-                            .where { paid -> paid.customerId == customer.id && paid.status == COMPLEX_PAID_STATUS }
-                            .limit(1)
-                            .alias("paidAmount"),
-                        invoice.channel,
-                        invoice.status,
-                    ]
-                }
-                where { customer.archived == 0 }
-                where { invoice.status == COMPLEX_OPEN_STATUS && invoice.note.notNull }
-                where { customer.id in customersWithLargePaidInvoices }
-                where {
-                    exists(
-                        ComplexInvoice()
-                            .select()
-                            .where { paid ->
-                                paid.customerId == customer.id &&
-                                    paid.status == COMPLEX_PAID_STATUS &&
-                                    paid.amount > invoice.amount
-                            }
-                    )
-                }
-                orderBy { [customer.id.asc(), invoice.amount.desc()] }
+                innerJoin { customer.id == invoice.customerId }
+                    .select {
+                        [
+                            customer.id.alias("customerId"),
+                            customer.name.alias("customerName"),
+                            invoice.amount.alias("openAmount"),
+                            ComplexInvoice()
+                                .select { paid -> paid.amount }
+                                .where { paid -> paid.customerId == customer.id && paid.status == COMPLEX_PAID_STATUS }
+                                .limit(1)
+                                .alias("paidAmount"),
+                            invoice.channel,
+                            invoice.status,
+                        ]
+                    }
+                    .where { customer.archived == 0 }
+                    .where { invoice.status == COMPLEX_OPEN_STATUS && invoice.note.notNull }
+                    .where { customer.id in customersWithLargePaidInvoices }
+                    .where {
+                        exists(
+                            ComplexInvoice()
+                                .select()
+                                .where { paid ->
+                                    paid.customerId == customer.id &&
+                                        paid.status == COMPLEX_PAID_STATUS &&
+                                        paid.amount > invoice.amount
+                                }
+                        )
+                    }
+                    .orderBy { [customer.id.asc(), invoice.amount.desc()] }
             }
             .toList<ComplexJoinSubqueryRow>()
 

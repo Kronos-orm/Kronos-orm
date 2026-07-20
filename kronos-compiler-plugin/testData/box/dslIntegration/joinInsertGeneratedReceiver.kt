@@ -59,9 +59,9 @@ fun box(): String {
 
     val source = JoinInsertUser()
         .join(JoinInsertOrder()) { user, order ->
-            leftJoin(order) { user.id == order.userId }
+            leftJoin { user.id == order.userId }
+                .select { [user.id, user.name.alias("userName")] }
         }
-        .select { [it.id, it.name.alias("userName")] }
 
     val insert = source.insert<JoinInsertTarget> {
         val userName: String? = it.userName

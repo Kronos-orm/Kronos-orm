@@ -26,13 +26,25 @@ internal object KronosIdeaSafe {
     fun <T> guard(operation: String, fallback: T, block: () -> T): T {
         return try {
             block()
-        } catch (e: ProcessCanceledException) {
-            throw e
-        } catch (e: CancellationException) {
-            throw e
         } catch (e: Throwable) {
+            e.rethrowControlFlowException()
             LOG.warn("Kronos IDEA plugin skipped $operation", e)
             fallback
         }
     }
 }
+
+internal fun Throwable.rethrowControlFlowException() {
+    when (this) {
+        is ProcessCanceledException -> throw this
+        is CancellationException -> throw this
+    }
+}
+
+internal fun <T> runCatchingPreservingCancellation(block: () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (e: Throwable) {
+        e.rethrowControlFlowException()
+        Result.failure(e)
+    }

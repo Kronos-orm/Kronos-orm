@@ -131,7 +131,7 @@ fun expectedCapturedNonKPojoFunction(value: String): CapturedNonKPojoCondition =
                 args = listOf(SqlExpr.StringLiteral(value)),
             ),
             SqlBinaryOperator.Equal,
-            SqlExpr.Column("tb_captured_non_kpojo_user", "name"),
+            SqlExpr.Column("tb_captured_non_kpojo_user", "score"),
         ),
         emptyMap(),
     )
@@ -189,27 +189,27 @@ fun box(): String {
     )
     val functionCases = listOf(
         "plain class" to (
-            captureNonKPojoCondition(user) { it.name == f.length(context.name) } to
+            captureNonKPojoCondition(user) { it.score == f.length(context.name) } to
                 expectedCapturedNonKPojoFunction("Plain")
             ),
         "data class" to (
-            captureNonKPojoCondition(user) { it.name == f.length(dataContext.name) } to
+            captureNonKPojoCondition(user) { it.score == f.length(dataContext.name) } to
                 expectedCapturedNonKPojoFunction("Data")
             ),
         "object" to (
-            captureNonKPojoCondition(user) { it.name == f.length(CapturedObjectContext.name) } to
+            captureNonKPojoCondition(user) { it.score == f.length(CapturedObjectContext.name) } to
                 expectedCapturedNonKPojoFunction("Object")
             ),
         "companion" to (
-            captureNonKPojoCondition(user) { it.name == f.length(CapturedStaticContext.companionName) } to
+            captureNonKPojoCondition(user) { it.score == f.length(CapturedStaticContext.companionName) } to
                 expectedCapturedNonKPojoFunction("Companion")
             ),
         "jvm static" to (
-            captureNonKPojoCondition(user) { it.name == f.length(CapturedStaticContext.staticName) } to
+            captureNonKPojoCondition(user) { it.score == f.length(CapturedStaticContext.staticName) } to
                 expectedCapturedNonKPojoFunction("Static")
             ),
         "top level" to (
-            captureNonKPojoCondition(user) { it.name == f.length(capturedTopLevelName) } to
+            captureNonKPojoCondition(user) { it.score == f.length(capturedTopLevelName) } to
                 expectedCapturedNonKPojoFunction("TopLevel")
             ),
     )
@@ -223,8 +223,8 @@ fun box(): String {
         .build(CompilerTestDataSourceWrapper)
         .atomicTask.paramMap
     val joinParams = user.join(CapturedNonKPojoOrder()) { source, order ->
-        leftJoin(order) { source.id == context.ownerId }
-        select { source.id }
+        leftJoin { source.id == context.ownerId }
+            .select { source.id }
     }.build(CompilerTestDataSourceWrapper).atomicTask.paramMap
     val (_, updateParams) = user.update()
         .set { it.status = 2 }

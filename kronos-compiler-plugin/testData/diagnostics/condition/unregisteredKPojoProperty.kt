@@ -102,10 +102,10 @@ fun invalidJoinConditions() {
     val probe = ConditionDiagnosticUser(id = 9)
 
     ConditionDiagnosticUser().join(ConditionDiagnosticOrder()) { user, order ->
-        on { user.id == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> }
-        leftJoin(order) { user.id == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> }
-        where { order.userId == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> }
-        having { <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> != user.id }
+        leftJoin { user.id == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> }
+            .select { user.id }
+            .where { order.userId == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> }
+            .having { <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> != user.id }
     }
 }
 

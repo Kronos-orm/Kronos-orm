@@ -716,8 +716,8 @@ println(params.toList())  // [ACTIVE, 1]
 User()
     .select { [it.id, it.name] }
     .orderBy { it.id.asc() }
-    .withTotal()
     .page(2, 20)
+    .withTotal()
     .build(wrapper)
 ```
 
@@ -894,13 +894,14 @@ val users: List<User> = User().select().where { it.age > 18 }.toList()
 // 选择特定字段
 val name: String = User().select { it.name }.where { it.id == 1 }.first<String>()
 
-// 排序 + 带总数分页
-val (total, users, totalPages) = User().select()
+// 排序 + 带总数分页；返回 PageResult<User>
+val page = User().select()
     .where { it.age > 18 }
     .orderBy { it.age.desc() }
-    .withTotal()
     .page(1, 10)
+    .withTotal()
     .toList()
+val users = page.records
 
 // 分组 + 聚合
 val result = User().select { [it.age, f.count(it.id)] }
@@ -996,7 +997,20 @@ val compactRows = User()
     .toList()
 ```
 
-`[]` 可以组织多个投影项。`it - it.id - it.age` 可以链式排除字段；`it - [it.id, it.age]` 可以一次排除多个字段，并且可以作为 `[]` 里的一个投影项继续追加 alias。投影输出名必须唯一。
+`[]` 可以组织多个投影项。`it - it.id - it.age` 可以链式排除字段；`it - [it.id, it.age]` 可以一次排除多个字段，并且可以作为 `[]` 里的一个投影项继续追加 alias。重复请求名默认报错；opt-in `UnsafeProjectionOverride` 后保留全部值并分配确定性 `_N` 后缀。
+
+显式 alias 如果替换仍存在的同名源字段，必须先使用 `@OptIn(UnsafeProjectionOverride::class)` 明确确认，因为结果值和生成属性的 Kotlin 类型可能改变。先通过 `it - it.name` 移除源字段，再使用同名 alias 恢复时，不需要 opt-in：
+
+```kotlin
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val replacedName = User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+
+val restoredName = User()
+    .select { [it - it.name, f.length(it.name).alias("name")] }
+```
 
 ```kotlin
 val nameLengths = User()
@@ -1074,44 +1088,47 @@ val activeUsers = User()
     .groupBy { [it.id, it.name] }
     .having { f.count(it.id) > 0 }
 
-val (total, rows, totalPages) = activeUsers
+val page = activeUsers
     .orderBy { it.orderCount.desc() }
-    .withTotal()
     .page(1, 20)
+    .withTotal()
     .toList()
+
+val rows = page.records
 ```
 
-排序使用 `orderBy { ... }`，只限制行数使用 `limit(size)`；需要总数分页时使用 `withTotal().page(pageIndex, pageSize)`，返回 `(total, rows, totalPages)`。
+排序使用 `orderBy { ... }`，只限制行数使用 `limit(size)`。`page(pageIndex, pageSize).toList()` 返回当前页记录；需要总数时使用 `page(...).withTotal().toList()`，返回包含 `total`、`records`、`totalPages`、`pageIndex` 和 `pageSize` 的 `PageResult`。
 
 ```kotlin
-val (total, users, totalPages) = User()
+val page = User()
     .select { [it.id, it.name] }
     .where { it.age > 18 }
     .orderBy { it.id.desc() }
-    .withTotal()
     .page(1, 20)
+    .withTotal()
     .toList<User>()
+
+val users = page.records
 ```
 
-游标分页使用 `withCursor().cursor(offset = pageSize)` 获取第一页，下一页把返回的 cursor 传回 `cursor(cursor, offset = pageSize)`。游标分页要求 `orderBy` 使用已选中的字段，返回 `(hasNext, nextCursor, rows)`，不与 `withTotal().page(...)` 混用。
+游标分页使用 `cursor(pageSize, after)`。第一次省略 `after`，下一次把返回的 `nextCursor` 传回。游标分页要求 `orderBy` 使用已选字段，返回包含 `hasNext`、`nextCursor` 和 `records` 的 `CursorResult`。
 
 ```kotlin
-val (hasNext, nextCursor, users) = User()
+val query = User()
     .select { [it.id, it.name] }
     .where { it.age > 18 }
     .orderBy { it.id.asc() }
-    .withCursor()
-    .cursor(offset = 20)
+
+val firstPage = query
+    .cursor(pageSize = 20)
     .toList<User>()
 
-val nextPage = User()
-    .select { [it.id, it.name] }
-    .where { it.age > 18 }
-    .orderBy { it.id.asc() }
-    .withCursor()
-    .cursor(nextCursor, offset = 20)
+val nextPage = query
+    .cursor(pageSize = 20, after = firstPage.nextCursor)
     .toList<User>()
 ```
+
+`OffsetPageQuery` 仍是有限的 `KSelectable`，可以继续 `select`、join、union 或作为子查询。`TotalPageQuery` 和 `CursorPageQuery` 是执行阶段，不能再进入关系组合。创建 page/cursor view 不会修改基础查询。
 
 标量子查询可以作为 select 字段或 where 比较值使用。
 
@@ -1154,8 +1171,8 @@ val paidOrders = Order()
     .where { it.status == 1 }
 
 val users = User().join(paidOrders) { user, order ->
-    leftJoin(order) { user.id == order.userId }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 
@@ -1477,36 +1494,38 @@ where {
 
 ## Join
 
+JOIN block 的 source 参数只声明一次。每个右侧 source 需要一个明确的关系方法；`innerJoin`、`leftJoin`、`rightJoin`、`fullJoin` 接收条件，`crossJoin()` 不接收条件。关系方法返回 `JoinSource`，调用 `select` 后才得到可执行、可派生的 `JoinedSelectQuery`。
+
 ```kotlin
 // 内连接
 val result = User().join(Order()) { user, order ->
-    on { user.id == order.userId }
-    select { [user.name, order.amount] }
-    where { user.age > 18 }
+    innerJoin { user.id == order.userId }
+        .select { [user.name, order.amount] }
+        .where { user.age > 18 }
 }.toList()
 
 // 左连接
-User().leftJoin(Order()) { user, order ->
-    on { user.id == order.userId }
-    select { [user.name, order.amount] }
+User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.name, order.amount] }
 }.toList()
-
-// 右连接
-User().rightJoin(Order()) { ... }.toList()
 
 // 多表连接
 User().join(Order(), Product()) { user, order, product ->
-    on { user.id == order.userId }
-    on { order.productId == product.id }
-    select { [user.name, product.name, order.amount] }
+    innerJoin { user.id == order.userId }
+        .leftJoin { order.productId == product.id }
+        .select { [user.name, product.name, order.amount] }
 }.toList()
 
-// 跨数据库连接
-User().join(Order()) { user, order ->
-    on { user.id == order.userId }
-    select { [user.name, order.amount] }
-}.withTotal().page(1, 20).toList()  // 返回 total、数据和 totalPages
+// 分页：select 后进入分页阶段
+val query = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId }
+        .select { [user.name, order.amount] }
+}
+val page = query.page(1, 20).withTotal().toList()
 ```
+
+内层 block 只返回关系方法时会保留原始 `JoinSource`，可用于 `A JOIN (B JOIN C)`。JOIN `select` 返回 `KSelectable<Selected>`，可继续作为派生 source、join source 或 union operand。重复输出名和 Context 遮蔽遵循 `UnsafeProjectionOverride` 规则；不同业务含义优先使用显式 alias。
 
 ---
 

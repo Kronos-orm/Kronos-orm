@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-// Verifies selected projection property names must be unique.
+// Verifies duplicate Selected names use the standard Kotlin opt-in diagnostic.
 
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 
@@ -28,5 +30,27 @@ data class ProjectionDiagUser(
 
 fun invalidDuplicateProjection() {
     ProjectionDiagUser()
-        .select { [it.id, <!KRONOS_DUPLICATE_PROJECTION_FIELD!>it.id<!>] }
+        .select { [it.id, it.<!OPT_IN_USAGE_ERROR!>id<!>] }
+}
+
+fun invalidExpandedDuplicateProjection() {
+    ProjectionDiagUser()
+        .select { [it, it.<!OPT_IN_USAGE_ERROR!>id<!>] }
+}
+
+fun invalidDuplicateAliasProjection() {
+    ProjectionDiagUser()
+        .select { [it.id, f.length(it.username).<!OPT_IN_USAGE_ERROR!>alias<!>("id")] }
+}
+
+@OptIn(UnsafeProjectionOverride::class)
+fun optedInDuplicateProjection() {
+    ProjectionDiagUser()
+        .select {
+            [
+                it.id,
+                f.length(it.username).alias("id"),
+                it.username.alias("id_1"),
+            ]
+        }
 }

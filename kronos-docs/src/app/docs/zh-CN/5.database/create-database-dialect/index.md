@@ -302,8 +302,8 @@ check(sql == """SELECT "id", "name" FROM "user"""")
 val (_, pageTask) = User()
     .select()
     .orderBy { it.id.asc() }
-    .withTotal()
     .page(2, 20)
+    .withTotal()
     .build(wrapper)
 
 val (sql, _) = pageTask

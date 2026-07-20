@@ -168,15 +168,13 @@ class CreateTableAsSelectSqlTest : MysqlTestBase() {
     @Test
     fun `join source renders create table as select`() {
         val joinQuery = SubqueryUser().join(SubqueryOrder()) { user, order ->
-            leftJoin(order) { user.id == order.userId }
-            select {
+            leftJoin { user.id == order.userId }.select {
                 [
                     user.id,
                     order.userId,
                     order.status
                 ]
-            }
-            where { user.id == 30 }
+            }.where { user.id == 30 }
         }
 
         val (sql, params) = Kronos.dataSource.table

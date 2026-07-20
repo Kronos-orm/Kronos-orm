@@ -16,18 +16,26 @@
 
 package com.kotlinorm.orm.union
 
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.testfixtures.entities.TestUser
+import com.kotlinorm.testfixtures.entities.UserRelation
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.unionAll
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.order.SqlOrdering
+import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
+import com.kotlinorm.wrappers.SampleSqlServerJdbcWrapper
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 
 class UnionClauseBehaviorTest : MysqlTestBase() {
 
@@ -71,6 +79,30 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
+    fun `union planning without a datasource keeps the dialect neutral limit`() {
+        val statement = union(
+            UserRelation().select(UserRelation::class) { it.id },
+            UserRelation().select(UserRelation::class) { it.id }
+        ).limit(5, 10).toSqlQuery(NoneDataSourceWrapper)
+
+        val set = assertIs<SqlQuery.Set>(statement)
+        assertEquals(5, set.limit?.fetch?.limit?.numberLiteral())
+        assertEquals(10, set.limit?.offset?.numberLiteral())
+    }
+
+    @Test
+    fun `sql server union limit without ordering remains rejected`() {
+        val error = assertFailsWith<InvalidDataAccessApiUsageException> {
+            baseUnion().limit(5).toSqlQuery(SampleSqlServerJdbcWrapper)
+        }
+
+        assertEquals(
+            "SQL Server union limit() requires orderBy() because OFFSET/FETCH cannot be rendered without ORDER BY.",
+            error.message
+        )
+    }
+
+    @Test
     fun `infix union all initializes and extends all set queries`() {
         val first = TestUser().select(TestUser::class) { it.id }.where { it.id == 1 }
         val second = TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
@@ -102,7 +134,11 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
         assertEquals(scalar, baseUnion().toMapOrNull(wrapper))
         assertEquals(listOf(user), baseUnion().toList<TestUser>(wrapper))
         assertEquals(user, baseUnion().first<TestUser>(wrapper))
+        val defaultOne = baseUnion().first(wrapper)
+        assertEquals(user.id, defaultOne.id)
         assertEquals(user, baseUnion().firstOrNull<TestUser>(wrapper))
+        val defaultOneOrNull = baseUnion().firstOrNull(wrapper)
+        assertEquals(user.id, defaultOneOrNull?.id)
 
         assertEquals(
             listOf<UnionQueryCall>(
@@ -111,6 +147,8 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
                 UnionQueryCall.First(typeOf<Map<String, Any?>?>()),
                 UnionQueryCall.ToList(typeOf<TestUser>()),
                 UnionQueryCall.First(typeOf<TestUser>()),
+                UnionQueryCall.First(typeOf<TestUser>()),
+                UnionQueryCall.First(typeOf<TestUser?>()),
                 UnionQueryCall.First(typeOf<TestUser?>())
             ),
             wrapper.calls
@@ -121,6 +159,8 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
         TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
         TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
     )
+
+    private fun SqlExpr.numberLiteral(): Int? = (this as? SqlExpr.NumberLiteral)?.number?.toIntOrNull()
 }
 
 private class CapturingUnionMysqlWrapper(

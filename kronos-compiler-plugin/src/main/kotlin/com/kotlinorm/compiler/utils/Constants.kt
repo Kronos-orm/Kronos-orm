@@ -21,6 +21,8 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
+private const val MaxJoinSourceArity = 16
+
 /**
  * FQN constants for Kronos classes and interfaces
  */
@@ -65,6 +67,7 @@ val SelectAliasFunctionName = "alias"
 val SelectAliasFunctionNameIdentifier = Name.identifier(SelectAliasFunctionName)
 val SelectLimitFunctionName = Name.identifier("limit")
 val SelectGroupByFunctionName = Name.identifier("groupBy")
+val SelectOrderByFunctionName = Name.identifier("orderBy")
 val SelectGeneratedProjectionFunctionName = Name.identifier("selectGeneratedProjection")
 val SelectFunctionFqName = FqName("com.kotlinorm.orm.select.select")
 val SelectGeneratedProjectionCallableId = CallableId(
@@ -78,7 +81,11 @@ val JoinSelectGeneratedProjectionCallableId = CallableId(
     SelectGeneratedProjectionFunctionName
 )
 val SelectClauseFqName = FqName("com.kotlinorm.orm.select.SelectClause")
-val SelectFromFqName = FqName("com.kotlinorm.orm.join.SelectFrom")
+val JoinSourceFqName = FqName("com.kotlinorm.orm.join.JoinSource")
+val JoinedSelectQueryFqName = FqName("com.kotlinorm.orm.join.JoinedSelectQuery")
+val UnionClauseFqName = FqName("com.kotlinorm.orm.union.UnionClause")
+val OffsetPageQueryFqName = FqName("com.kotlinorm.orm.pagination.OffsetPageQuery")
+val CursorPageQueryFqName = FqName("com.kotlinorm.orm.pagination.CursorPageQuery")
 val GeneratedProjectionPackageFqName = FqName("com.kotlinorm.generated.projection")
 val GeneratedFactoryPackageFqName = FqName("com.kotlinorm.generated.factory")
 val GeneratedProjectionClassPrefix = "KronosSelectResult_"
@@ -118,6 +125,7 @@ val DateTimeFormatAnnotationFqName = FqName("com.kotlinorm.annotations.DateTimeF
 val DefaultValueAnnotationFqName = FqName("com.kotlinorm.annotations.Default")
 val NonNullAnnotationFqName = FqName("com.kotlinorm.annotations.NonNull")
 val SerializeAnnotationFqName = FqName("com.kotlinorm.annotations.Serialize")
+val UnsafeProjectionOverrideAnnotationFqName = FqName("com.kotlinorm.annotations.UnsafeProjectionOverride")
 val KronosCommonStrategyFqName = FqName("com.kotlinorm.beans.config.KronosCommonStrategy")
 val KronosObjectFqName = FqName("com.kotlinorm.Kronos")
 val KPojoFactoryProviderFqName = FqName("com.kotlinorm.utils.KPojoFactoryProvider")
@@ -180,6 +188,7 @@ val CascadeAnnotationClassId = ClassId.topLevel(CascadeAnnotationFqName)
 val IgnoreAnnotationClassId = ClassId.topLevel(IgnoreAnnotationFqName)
 val PrimaryKeyAnnotationClassId = ClassId.topLevel(PrimaryKeyAnnotationFqName)
 val SerializeAnnotationClassId = ClassId.topLevel(SerializeAnnotationFqName)
+val UnsafeProjectionOverrideAnnotationClassId = ClassId.topLevel(UnsafeProjectionOverrideAnnotationFqName)
 
 // Config
 val KronosCommonStrategyClassId = ClassId.topLevel(KronosCommonStrategyFqName)
@@ -187,4 +196,15 @@ val KronosObjectClassId = ClassId.topLevel(KronosObjectFqName)
 
 // Select operation and generated projection support
 val SelectClauseClassId = ClassId.topLevel(SelectClauseFqName)
-val SelectFromClassId = ClassId.topLevel(SelectFromFqName)
+val JoinSourceClassId = ClassId.topLevel(JoinSourceFqName)
+val JoinedSelectQueryClassId = ClassId.topLevel(JoinedSelectQueryFqName)
+val UnionClauseClassId = ClassId.topLevel(UnionClauseFqName)
+val OffsetPageQueryClassId = ClassId.topLevel(OffsetPageQueryFqName)
+val CursorPageQueryClassId = ClassId.topLevel(CursorPageQueryFqName)
+
+fun ClassId.isJoinSourceClassId(): Boolean {
+    if (packageFqName != JoinPackageFqName) return false
+    val name = relativeClassName.asString()
+    return name == "JoinSource" ||
+        name.removePrefix("JoinSource").toIntOrNull()?.let { it in 2..MaxJoinSourceArity } == true
+}

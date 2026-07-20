@@ -163,8 +163,8 @@ class MysqlUnionSqlTest : MysqlTestBase() {
     fun testUnionWithJoin() {
         val query1 = TestUser().select().where { it.id == 1 }
         val query2 = TestUser(2).join(UserRelation(2, "test", 1, 1)) { user, relation ->
-            leftJoin(relation) { user.id == relation.id2 }
-            select { [user.id, user.username, relation.gender] }
+            leftJoin { user.id == relation.id2 }
+                .select { [user.id, user.username, relation.gender] }
         }
 
         println("Query 1 SQL: ${query1.build().atomicTask.sql}")
@@ -196,12 +196,12 @@ class MysqlUnionSqlTest : MysqlTestBase() {
     fun testUnionWithMultipleJoins() {
         val (sql, paramMap) = (
             TestUser(1).join(UserRelation(1, "test1", 1, 1)) { user, relation ->
-                leftJoin(relation) { user.id == relation.id2 }
-                select { [user.id, relation.gender] }
+                leftJoin { user.id == relation.id2 }
+                    .select { [user.id, relation.gender] }
             }
             union TestUser(2).join(UserRelation(2, "test2", 1, 1)) { user, relation ->
-                leftJoin(relation) { user.id == relation.id2 }
-                select { [user.id, relation.gender] }
+                leftJoin { user.id == relation.id2 }
+                    .select { [user.id, relation.gender] }
             }
         ).build()
 
@@ -270,8 +270,8 @@ class MysqlUnionSqlTest : MysqlTestBase() {
         val (sql, paramMap) = union(
             TestUser().select { [it.id, it.username] }.where { it.id == 1 },
             TestUser(2).join(UserRelation(2, "test", 1, 1)) { user, relation ->
-                leftJoin(relation) { user.id == relation.id2 }
-                select { [user.id, user.username] }
+                leftJoin { user.id == relation.id2 }
+                    .select { [user.id, user.username] }
             },
             TestUser().select { [it.id, it.username] }.where { it.id == 3 }
         ).limit(20).build()

@@ -75,6 +75,38 @@ class KronosResultMappingTest {
     }
 
     @Test
+    fun `map rows preserve allocated duplicate projection labels and target types`() {
+        val metaData = mockk<ResultSetMetaData>()
+        every { metaData.columnCount } returns 2
+        every { metaData.getColumnLabel(1) } returns "id"
+        every { metaData.getColumnLabel(2) } returns "id_1"
+        every { metaData.getColumnTypeName(1) } returns "NUMBER"
+        every { metaData.getColumnTypeName(2) } returns "NUMBER"
+
+        val resultSet = mockk<ResultSet>()
+        every { resultSet.metaData } returns metaData
+        every { resultSet.next() } returnsMany listOf(true, false)
+        every { resultSet.getObject(1) } returns BigDecimal("5")
+        every { resultSet.getObject(2) } returns BigDecimal("6")
+
+        val task = KronosAtomicQueryTask(
+            sql = "SELECT id, id AS id_1 FROM kt_integration_user",
+            targetType = typeOf<Map<String, Any?>>(),
+            resultColumnTypes = mapOf(
+                "id" to typeOf<Int?>(),
+                "id_1" to typeOf<Long?>(),
+            )
+        )
+
+        val rows = KronosResultMappers.toList(resultSet, task, oracleContext())
+
+        assertEquals(
+            linkedMapOf<String, Any?>("id" to 5, "id_1" to 6L),
+            rows.single()
+        )
+    }
+
+    @Test
     fun `map rows without query column types preserve jdbc numeric values`() {
         val rawValue = BigDecimal("5")
         val resultSet = numberResultSet(rawValue, "ID")

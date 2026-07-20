@@ -47,8 +47,8 @@ fun configureKronosTenantSource() {
 @RestController
 class UserController {
     @GetMapping("/users")
-    fun getUsers(pi: Int, ps: Int): Triple<Int, List<User>, Int> {
-        return User().select().withTotal().page(pi, ps).toList()
+    fun getUsers(pi: Int, ps: Int): PageResult<User> {
+        return User().select().page(pi, ps).withTotal().toList()
     }
 }
 ```
@@ -61,13 +61,13 @@ class UserController {
 Query and mutation execution APIs accept an optional `KronosDataSourceWrapper`. Use that parameter when the tenant source is already known or when request-local storage is not available.
 
 ```kotlin group="Explicit wrapper" name="kotlin" icon="kotlin"
-fun loadTenantUsers(tenantId: String, pi: Int, ps: Int): Triple<Int, List<User>, Int> {
+fun loadTenantUsers(tenantId: String, pi: Int, ps: Int): PageResult<User> {
     val wrapper = tenantWrapper(tenantId)
 
     return User()
         .select()
-        .withTotal()
         .page(pi, ps)
+        .withTotal()
         .toList(wrapper)
 }
 
@@ -99,8 +99,8 @@ fun main(args: Array<String>) {
 
             User()
                 .select()
-                .withTotal()
                 .page(pi, ps)
+                .withTotal()
                 .toList(wrapper)
         }
     }

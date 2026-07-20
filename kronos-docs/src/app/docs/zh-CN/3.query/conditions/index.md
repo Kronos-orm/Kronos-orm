@@ -617,12 +617,12 @@ HAVING COUNT(1) > :countMin
 
 ## 在 {{ $.title("on") }} 中使用条件
 
-`on`、`leftJoin`、`rightJoin`、`innerJoin`、`crossJoin` 和 `fullJoin` 都使用同一套条件 DSL 生成关联条件。
+`leftJoin`、`rightJoin`、`innerJoin` 和 `fullJoin` 使用同一套条件 DSL 生成关联条件。`crossJoin()` 不接收条件。
 
 ```kotlin group="On" name="kotlin" icon="kotlin"
 val rows = User().join(Order()) { user, order ->
-    leftJoin(order) { user.id == order.userId && order.status == 1 }
-    select { [user.id, user.name, order.status] }
+    leftJoin { user.id == order.userId && order.status == 1 }
+        .select { [user.id, user.name, order.status] }
 }.toList()
 ```
 

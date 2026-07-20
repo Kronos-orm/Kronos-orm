@@ -5,7 +5,7 @@ import com.kotlinorm.functions.FunctionHandler
 @Suppress("unused")
 object StringFunctions {
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.length(x: String?): Any? = null
+    fun FunctionHandler.length(x: String?): Int? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.upper(x: String?): Any? = null

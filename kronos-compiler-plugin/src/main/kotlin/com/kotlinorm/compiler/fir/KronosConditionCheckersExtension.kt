@@ -16,13 +16,13 @@
 
 package com.kotlinorm.compiler.fir
 
-import com.kotlinorm.compiler.utils.JoinPackageFqName
 import com.kotlinorm.compiler.utils.KTableForConditionClassId
 import com.kotlinorm.compiler.utils.KTableForInsertSelectClassId
 import com.kotlinorm.compiler.utils.KTableForReferenceClassId
 import com.kotlinorm.compiler.utils.KTableForSelectClassId
 import com.kotlinorm.compiler.utils.KTableForSetClassId
 import com.kotlinorm.compiler.utils.KTableForSortClassId
+import com.kotlinorm.compiler.utils.isJoinSourceClassId
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.FirElement
@@ -49,7 +49,6 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
-import org.jetbrains.kotlin.fir.types.resolvedType
 import org.jetbrains.kotlin.fir.visitors.FirDefaultVisitorVoid
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
@@ -85,7 +84,7 @@ private object KronosConditionSourceChecker : FirFunctionCallChecker(MppCheckerK
             .filterIsInstance<FirAnonymousFunctionExpression>()
             .map { it.anonymousFunction }
             .filter { it.isConditionLambda() }
-            .forEach { lambda -> checkConditionLambda(expression, lambda) }
+            .forEach { lambda -> checkConditionLambda(lambda) }
     }
 
     private fun FirFunctionCall.isOrmConditionCall(): Boolean {
@@ -97,7 +96,7 @@ private object KronosConditionSourceChecker : FirFunctionCallChecker(MppCheckerK
 
     @OptIn(SymbolInternals::class)
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkConditionLambda(call: FirFunctionCall, lambda: FirAnonymousFunction) {
+    private fun checkConditionLambda(lambda: FirAnonymousFunction) {
         val sourceSymbols = linkedSetOf<FirVariableSymbol<*>>()
         sourceSymbols += lambda.valueParameters.map { it.symbol }
         sourceSymbols += context.containingDeclarations
@@ -108,8 +107,6 @@ private object KronosConditionSourceChecker : FirFunctionCallChecker(MppCheckerK
             .flatMap { it.valueParameters }
             .map { it.symbol }
             .toList()
-        sourceSymbols += call.directJoinSourceSymbols()
-
         lambda.body?.accept(
             ConditionSourceVisitor(context.session, sourceSymbols) { access ->
                 reporter.reportOn(
@@ -125,29 +122,11 @@ private object KronosConditionSourceChecker : FirFunctionCallChecker(MppCheckerK
 
     private fun FirAnonymousFunction.isSourceDslLambda(): Boolean {
         val receiverClassId = receiverClassId() ?: return false
-        return receiverClassId in SourceDslClassIds || receiverClassId.isSelectFromClassId()
+        return receiverClassId in SourceDslClassIds || receiverClassId.isJoinSourceClassId()
     }
 
     private fun FirAnonymousFunction.receiverClassId(): ClassId? =
         ((receiverParameter?.typeRef as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType)?.lookupTag?.classId
-
-    private fun ClassId.isSelectFromClassId(): Boolean =
-        packageFqName == JoinPackageFqName && relativeClassName.asString().startsWith("SelectFrom")
-
-    context(context: CheckerContext)
-    private fun FirFunctionCall.directJoinSourceSymbols(): Set<FirVariableSymbol<*>> {
-        val callableId = ((calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirNamedFunctionSymbol)
-            ?.callableId
-            ?: return emptySet()
-        if (callableId.classId?.isSelectFromClassId() != true || !callableId.callableName.asString().endsWith("Join")) {
-            return emptySet()
-        }
-        return argumentList.arguments
-            .asSequence()
-            .filter { it.safeResolvedType()?.isKPojoLikeType(context.session) == true }
-            .mapNotNull { it.rootVariableSymbol() }
-            .toSet()
-    }
 
     private class ConditionSourceVisitor(
         private val session: FirSession,
@@ -217,8 +196,6 @@ private fun FirExpression.receiverExpression(): FirExpression? = when (this) {
     is FirPropertyAccessExpression -> explicitReceiver ?: extensionReceiver ?: dispatchReceiver
     else -> null
 }
-
-private fun FirExpression.safeResolvedType() = runCatching { resolvedType }.getOrNull()
 
 private fun FirExpression.rootVariableSymbol(): FirVariableSymbol<*>? = when (this) {
     is FirPropertyAccessExpression -> receiverExpression()?.rootVariableSymbol()

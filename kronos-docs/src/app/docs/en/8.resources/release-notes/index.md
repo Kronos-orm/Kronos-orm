@@ -24,8 +24,8 @@
 
 ### 0.2.3
 
-- ✨ Add cursor pagination with `withCursor().cursor(...)`, returning `(hasNext, nextCursor, rows)` while keeping it separate from total-count page pagination.
-- ✨ Return total pages from `withTotal().page(...).toList()` / `toMapList()` as `(total, rows, totalPages)`.
+- ✨ Use typed cursor pagination through `cursor(pageSize, after)`, returning `CursorResult(hasNext, nextCursor, records)` as an execution-only stage.
+- ✨ Use `page(...).withTotal().toList()` / `toMapList()` for named `PageResult(total, records, totalPages, pageIndex, pageSize)` values; offset pages remain selectable.
 - 🐛 Fix derived-source and window-alias projection SQL so logical output names such as `rn`, `userName`, and `createTime` remain available in later query layers.
 - 🧩 Improve the IDEA plugin projection experience, including generated projection completion for `it.` and safer handling of IntelliJ cancellation exceptions.
 - 📚 Refresh README, documentation macros, release snippets, and AI skill guidance for `0.2.3`.

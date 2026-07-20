@@ -392,8 +392,8 @@ User()
     .join(orderTotals) { user, totals ->
         // user: User
         // totals: OrderTotalRow，由 orderTotals 自动生成
-        on { user.id == totals.userId }
-        select { [user.id, user.name, totals.totalAmount] }
+        leftJoin { user.id == totals.userId }
+            .select { [user.id, user.name, totals.totalAmount] }
     }
     .toList()
 ```
@@ -611,19 +611,47 @@ Kronos 无法判断第二个字段应该生成成 `length`、`nameLength` 还是
 User().select { [it.id, f.length(it.name).alias("nameLength")] }
 ```
 
-同一结果类里不能有两个同名属性：
+重复请求输出名需要使用 Kotlin 标准 `UnsafeProjectionOverride` opt-in。没有 opt-in 时，IDEA 会在冲突投影项上报错：
 
 ```kotlin name="duplicate-projection-field" icon="kotlin"
 User().select { [it.id, it.id] }
 ```
 
-显式 alias 也要避开原始输入字段名：
+opt-in 后，Kronos 会保留全部值。第一次出现保留原名，后续值使用 `_1`、`_2` 等后缀；分配后缀前会先保留全部显式请求名。
 
-```kotlin name="source-conflict" icon="kotlin"
-User().select { [it.id, f.length(it.name).alias("name")] }
+```kotlin name="opted-in-duplicate-projection" icon="kotlin"
+import com.kotlinorm.annotations.UnsafeProjectionOverride
+
+@OptIn(UnsafeProjectionOverride::class)
+val rows = User()
+    .select { [it.id, it.id, it.name.alias("id_1")] }
+    .toList()
+
+rows.first().id
+rows.first().id_2
+rows.first().id_1
 ```
 
-为了让 `orderBy { ... }` 生成明确的排序上下文类，alias 需要避开原始输入字段名。如果 `User.name` 和投影 alias `name` 同时存在，`KronosSelectContext_*` 里会出现两个 `name` 属性，编辑器和编译器都无法明确你想访问哪一个。
+请求名 `id`、`id`、`id_1` 会解析为 `id`、`id_2`、`id_1`。IDEA 补全和生成投影文档都使用这些解析后名称。不同值具有不同含义时，优先使用显式 alias。
+
+alias 可以复用输入字段名。alias 本身以及 `where`、`groupBy`、`having` 等 Source 子句不需要 opt-in：
+
+```kotlin name="source-conflict" icon="kotlin"
+User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+    .where { it.name != null }
+```
+
+`orderBy` 读取 select 后的 Context。只有它实际读取被遮蔽的 `name` 时，IDEA 才要求 `UnsafeProjectionOverride`；opt-in 后，该 Context 名称解析为 Selected 值及其 Kotlin 类型。
+
+```kotlin name="opted-in-context-shadow" icon="kotlin"
+@OptIn(UnsafeProjectionOverride::class)
+val ordered = User()
+    .select { [it.id, f.length(it.name).alias("name")] }
+    .orderBy { it.name.desc() }
+```
+
+如果本意就是替换字段，可以先移除 Source 字段再恢复名称。`select { [it - it.name, f.length(it.name).alias("name")] }` 不需要 opt-in。完整分配和 Context 规则见 {{ $.keyword("query/projection", ["投影"]) }}。
 
 ## receiver 速查
 
@@ -649,8 +677,8 @@ IDEA 插件会把这些 Kronos DSL 规则直接显示在编辑器中：
 | 场景 | 为什么会报错 |
 |------|--------------|
 | 非直接字段投影缺少 `.alias("name")` | 结果类字段没有名字 |
-| 同一个查询选择了重复字段名 | 结果类会生成重复属性 |
-| alias 与原始输入字段同名 | 排序上下文类会生成重复属性 |
+| 重复请求输出名但没有 `UnsafeProjectionOverride` | 只有显式 opt-in 后才会保留全部值并分配确定性后缀 |
+| `orderBy` 未 opt-in 就读取被 Selected 值遮蔽的 Source 名称 | opt-in 后，select 后 Context 会把该名称解析为 Selected 值和类型 |
 | 同一个查询的 `where` / `having` 访问当前 select alias | 过滤条件读取输入字段 |
 | 标量子查询返回多列 | 一个属性只能承接一个值 |
 | 标量子查询缺少 `.limit(1)` | 不能保证只返回一个值 |

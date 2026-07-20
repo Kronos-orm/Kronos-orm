@@ -179,16 +179,16 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
     override fun selectPaidOrderJoinRecords(): List<IntegrationJoinRecord> =
         IntegrationUser()
             .join(IntegrationOrder()) { user, order ->
-                innerJoin(order) { user.id == order.userId }
-                select {
-                    [
-                        user.id.alias("userId"),
-                        user.name.alias("userName"),
-                        order.amount
-                    ]
-                }
-                where { order.status == PAID_STATUS }
-                orderBy { user.id.asc() }
+                innerJoin { user.id == order.userId }
+                    .select {
+                        [
+                            user.id.alias("userId"),
+                            user.name.alias("userName"),
+                            order.amount
+                        ]
+                    }
+                    .where { order.status == PAID_STATUS }
+                    .orderBy { user.id.asc() }
             }
             .toList<IntegrationJoinProjection>()
             .map { it.toRecord() }

@@ -166,7 +166,11 @@ open class KTableForSelect<T : KPojo>(
     }
 
     internal sealed class ProjectionItem {
-        data class FieldItem(val field: Field, val expr: SqlExpr.Column? = null) : ProjectionItem()
+        data class FieldItem(
+            val field: Field,
+            val expr: SqlExpr.Column? = null,
+            val outputName: String? = null
+        ) : ProjectionItem()
         data class SelectItemValue(val item: SqlSelectItem) : ProjectionItem()
         data class ScalarSubqueryValue(
             val query: KSelectable<*>,

@@ -17,6 +17,7 @@
 package com.kotlinorm.orm.union
 
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.database.SqlManager.renderStatement
@@ -70,6 +71,11 @@ class UnionClause<Selected : KPojo> internal constructor(
         return this
     }
 
+    @PublishedApi
+    internal override fun prepareFirstResult() {
+        limit(1)
+    }
+
     fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
         return build(wrapper).toMapList(wrapper)
     }
@@ -84,6 +90,8 @@ class UnionClause<Selected : KPojo> internal constructor(
         return build(wrapper).toMapOrNull(wrapper)
     }
 
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+    @kotlin.internal.LowPriorityInOverloadResolution
     inline fun <reified T> toList(
         wrapper: KronosDataSourceWrapper? = null
     ): List<T> {
@@ -94,32 +102,6 @@ class UnionClause<Selected : KPojo> internal constructor(
     @Suppress("UNCHECKED_CAST")
     fun toList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
         return build(wrapper).toList(wrapper, selectedType) as List<Selected>
-    }
-
-    inline fun <reified T> first(
-        wrapper: KronosDataSourceWrapper? = null
-    ): T {
-        limit(1)
-        return build(wrapper).first(wrapper)
-    }
-
-    @JvmName("firstProjection")
-    @Suppress("UNCHECKED_CAST")
-    fun first(wrapper: KronosDataSourceWrapper? = null): Selected {
-        limit(1)
-        return build(wrapper).first(wrapper, selectedType) as Selected
-    }
-
-    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        limit(1)
-        return build(wrapper).firstOrNull(wrapper)
-    }
-
-    @JvmName("firstProjectionOrNull")
-    @Suppress("UNCHECKED_CAST")
-    fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
-        limit(1)
-        return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
     }
 
     internal override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan {
@@ -141,6 +123,7 @@ class UnionClause<Selected : KPojo> internal constructor(
     }
 
     private fun validateSqlServerLimit(dataSource: KronosDataSourceWrapper) {
+        if (dataSource === NoneDataSourceWrapper) return
         if (dataSource.dbType == DBType.Mssql && limitClause != null && orderByItems.isEmpty()) {
             throw InvalidDataAccessApiUsageException(
                 "SQL Server union limit() requires orderBy() because OFFSET/FETCH cannot be rendered without ORDER BY."

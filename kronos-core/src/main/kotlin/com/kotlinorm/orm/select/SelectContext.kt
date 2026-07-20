@@ -13,6 +13,7 @@ import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.SourceBinding
 import com.kotlinorm.beans.dsl.SourceIdentityScope
 import com.kotlinorm.beans.dsl.KTableForSelect
+import com.kotlinorm.beans.dsl.withUniqueOutputNames
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.pagination.CursorSpec
@@ -28,6 +29,7 @@ import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.statement.SqlLock
 import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.toLinkedSet
@@ -46,14 +48,19 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     val fieldMap = metadata.fieldMap
     val primaryKey = metadata.primaryKey
     private val tableIndexes = metadata.tableIndexes
-    private val dynamicSourceTableNames = if (metadata.dynamic) {
-        setOfNotNull(
-            pojo::class.simpleName?.let(tableNamingStrategy::k2db),
-            tableNamingStrategy.k2db("<no name provided>")
-        ) - tableName
-    } else {
-        emptySet()
-    }
+    /**
+     * Fields generated for a statically annotated KPojo keep the declared
+     * table name, while callers may override __tableName for tenant/shard
+     * routing. Keep every known declaration as an input alias so the same
+     * binding works for both dynamic objects and ordinary KPojo instances.
+     */
+    private val dynamicSourceTableNames = buildSet {
+        if (metadata.dynamic) {
+            pojo::class.simpleName?.let(tableNamingStrategy::k2db)?.let(::add)
+            add(tableNamingStrategy.k2db("<no name provided>"))
+        }
+        metadata.allFields.mapTo(this) { it.tableName }
+    } - tableName - ""
     private val sourceColumnNames = allColumns.map { it.columnName }.toSet()
     private val derivedSourceOutputNamesByColumn = allColumns.associate { field ->
         field.columnName to field.name.ifBlank { field.columnName }
@@ -83,6 +90,7 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     var operationType = KOperationType.SELECT
 
     var selectedFields: LinkedHashSet<Field> = []
+    var selectedFieldsByOutputName: Map<String, Field> = emptyMap()
     var cascadeFields: LinkedHashSet<Field> = []
     var projectionItems: List<KTableForSelect.ProjectionItem> = emptyList()
     var selectAll = true
@@ -107,11 +115,47 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     var cursorOnlySelectFields: List<Pair<Field, String>> = emptyList()
         private set
 
+    fun copyStateFrom(source: SelectContext<Source, Selected, Context>) {
+        sourceValues.clear()
+        sourceValues.putAll(source.sourceValues)
+        patchValues.clear()
+        patchValues.putAll(source.patchValues)
+        parameterValues.clear()
+        parameterValues.putAll(source.parameterValues)
+        parameterNameCounter.clear()
+        parameterNameCounter.putAll(source.parameterNameCounter)
+        databaseName = source.databaseName
+        sourceQuery = source.sourceQuery
+        sourceTableAlias = source.sourceTableAlias
+        logicDeleteStrategy = source.logicDeleteStrategy
+        cascadeEnabled = source.cascadeEnabled
+        cascadeAllowed = source.cascadeAllowed?.toSet()
+        cascadeSelectedProps = source.cascadeSelectedProps?.toSet()
+        operationType = source.operationType
+        selectedFields = source.selectedFields.toLinkedSet()
+        selectedFieldsByOutputName = source.selectedFieldsByOutputName.toMap(linkedMapOf())
+        cascadeFields = source.cascadeFields.toLinkedSet()
+        projectionItems = source.projectionItems.toList()
+        selectAll = source.selectAll
+        distinct = source.distinct
+        where = source.where
+        having = source.having
+        groupByItems = source.groupByItems.toList()
+        orderByItems = source.orderByItems.toList()
+        limit = source.limit
+        lock = source.lock
+        cursorSpec = source.cursorSpec?.copy(values = source.cursorSpec?.values.orEmpty().toMap())
+        cursorOnlySelectFields = source.cursorOnlySelectFields.toList()
+    }
+
     fun setSelectedFields(fields: Iterable<Field>) {
         val normalizedFields = fields.map { sourceBinding.bindField(it) }
         selectedFields = normalizedFields.filter { it.isColumn }.toLinkedSet()
         cascadeFields = normalizedFields.filter { !it.isColumn }.toLinkedSet()
-        projectionItems = selectedFields.map { KTableForSelect.ProjectionItem.FieldItem(it) }
+        projectionItems = selectedFields
+            .map { KTableForSelect.ProjectionItem.FieldItem(it) }
+            .withUniqueOutputNames()
+        selectedFieldsByOutputName = projectionItems.fieldItemsByOutputName()
         selectAll = selectedFields.isEmpty()
         distinct = false
     }
@@ -122,8 +166,10 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
         projectionItems = projections
             .qualifyProjectionItems(sourceTableAlias)
             .map { binding.bindProjectionItem(it) }
+            .withUniqueOutputNames()
         selectedFields = fieldsSet.filter { it.isColumn }.toLinkedSet()
         cascadeFields = fieldsSet.filter { !it.isColumn }.toLinkedSet()
+        selectedFieldsByOutputName = projectionItems.fieldItemsByOutputName()
         selectAll = selectedFields.isEmpty() && projections.none {
             it is KTableForSelect.ProjectionItem.SelectItemValue || it is KTableForSelect.ProjectionItem.ScalarSubqueryValue
         }
@@ -147,12 +193,13 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun prepareCursorOrder() {
         require(orderByItems.isNotEmpty()) { "Cursor pagination requires orderBy()." }
+        requireCursorShape()
 
         val orderedFieldItems = orderByItems.map { item ->
             require(item is SelectOrderItem.FieldItem) { "Cursor pagination requires field-based orderBy items." }
             item
         }
-        val keyCandidates = stableCursorKeyCandidates()
+        val keyCandidates = stableSourceKeyCandidates()
         val orderedKeys = orderedFieldItems.map { it.field.cursorColumnKey() }.toSet()
         val stableKey = keyCandidates.firstOrNull { key ->
             key.all { it.cursorColumnKey() in orderedKeys }
@@ -170,18 +217,31 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
             }
         }
 
+        val usedOutputNames = projectionOutputNames().toMutableSet()
         cursorOnlySelectFields = orderByItems
             .filterIsInstance<SelectOrderItem.FieldItem>()
             .map { it.field }
             .distinctBy { it.cursorColumnKey() }
             .filterNot(::isCursorFieldReadableFromRows)
-            .map { field -> field to cursorOnlyAlias(field) }
+            .map { field -> field to allocateCursorOnlyAlias(field, usedOutputNames) }
     }
 
     fun cursorValueLabel(field: Field): String =
         cursorOnlySelectFields.firstOrNull { (cursorField, _) ->
             cursorField.cursorColumnKey() == field.cursorColumnKey()
-        }?.second ?: field.name
+        }?.second
+            ?: selectedFieldsByOutputName.entries.firstOrNull { (_, selected) ->
+                selected.cursorColumnKey() == field.cursorColumnKey()
+            }?.key
+            ?: field.name
+
+    fun outputStableKeyCandidates(): List<List<String>> =
+        stableSourceKeyCandidates().mapNotNull { key ->
+            key.map { field -> outputLabelForStableField(field) }
+                .takeIf { labels -> labels.all { it != null } }
+                ?.filterNotNull()
+                ?.takeIf { labels -> labels.isNotEmpty() }
+        }.distinct()
 
     fun addFieldConditions(fields: Iterable<Field>, values: Map<String, Any?>) {
         val expressions = fields.map { field ->
@@ -281,7 +341,16 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     private fun bindNullableExpr(expr: SqlExpr?): SqlExpr? =
         expr?.let(::bindExpr)
 
-    private fun stableCursorKeyCandidates(): List<List<Field>> {
+    private fun stableSourceKeyCandidates(): List<List<Field>> {
+        sourceQuery?.let { query ->
+            return query.outputStableKeyCandidates().mapNotNull { key ->
+                key.map { outputName -> derivedSourceField(outputName) }
+                    .takeIf { fields -> fields.all { it != null } }
+                    ?.filterNotNull()
+                    ?.takeIf { fields -> fields.isNotEmpty() }
+            }.distinctBy { key -> key.joinToString("|") { it.cursorColumnKey() } }
+        }
+
         val candidates = buildList {
             primaryKey?.let { add(listOf(sourceBinding.bindField(it))) }
             tableIndexes
@@ -292,31 +361,93 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
                         .takeIf { fields -> fields.all { it != null } }
                         ?.filterNotNull()
                         ?.map(sourceBinding::bindField)
-                        ?.takeIf { it.isNotEmpty() }
+                        ?.takeIf { fields -> fields.isNotEmpty() && fields.all { !it.nullable } }
                 }
                 .forEach(::add)
         }
         return candidates.distinctBy { key -> key.joinToString("|") { it.cursorColumnKey() } }
     }
 
+    private fun derivedSourceField(outputName: String): Field? =
+        allColumns.firstOrNull { field -> sourceColumnName(field) == outputName }
+
+    private fun outputLabelForStableField(field: Field): String? {
+        if (selectAll) return field.name.ifBlank { field.columnName }
+        return selectedFieldsByOutputName.entries.firstOrNull { (_, selected) ->
+            selected.cursorColumnKey() == field.cursorColumnKey()
+        }?.key
+    }
+
     private fun List<Field>.fieldByNameOrColumn(name: String): Field? =
         firstOrNull { it.name == name || it.columnName == name }
 
     private fun isCursorFieldReadableFromRows(field: Field): Boolean =
-        selectAll || selectedFields.any { selected ->
-            selected.cursorColumnKey() == field.cursorColumnKey() && selected.name == field.name
+        selectAll || selectedFieldsByOutputName.values.any { selected ->
+            selected.cursorColumnKey() == field.cursorColumnKey()
         }
 
-    private fun cursorOnlyAlias(field: Field): String =
-        "__kronos_cursor_${field.name.ifBlank { field.columnName }}"
+    private fun requireCursorShape() {
+        require(!distinct) { "Cursor pagination does not support DISTINCT queries." }
+        require(groupByItems.isEmpty() && having == null) {
+            "Cursor pagination does not support GROUP BY or HAVING queries."
+        }
+        require(projectionItems.none { it.isAggregateProjection() }) {
+            "Cursor pagination does not support aggregate projections."
+        }
+    }
+
+    private fun projectionOutputNames(): Set<String> {
+        if (selectAll) return allColumns.mapTo(linkedSetOf()) { it.name.ifBlank { it.columnName } }
+        return projectionItems.mapNotNullTo(linkedSetOf()) { item ->
+            when (item) {
+                is KTableForSelect.ProjectionItem.FieldItem ->
+                    item.outputName ?: item.field.name.ifBlank { item.field.columnName }
+                is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> item.alias
+                is KTableForSelect.ProjectionItem.SelectItemValue ->
+                    (item.item as? SqlSelectItem.Expr)?.let { selectItem ->
+                        selectItem.alias ?: selectItem.metadata?.outputName
+                    }
+            }
+        }
+    }
+
+    private fun allocateCursorOnlyAlias(field: Field, usedOutputNames: MutableSet<String>): String {
+        val base = "__kronos_cursor_${field.name.ifBlank { field.columnName }}"
+        var label = base
+        var suffix = 0
+        while (!usedOutputNames.reserveIgnoreCase(label)) {
+            label = "${base}_${++suffix}"
+        }
+        return label
+    }
+
+    private fun MutableSet<String>.reserveIgnoreCase(name: String): Boolean {
+        if (any { existing -> existing.equals(name, ignoreCase = true) }) return false
+        return add(name)
+    }
+
+    private fun KTableForSelect.ProjectionItem.isAggregateProjection(): Boolean =
+        this is KTableForSelect.ProjectionItem.SelectItemValue &&
+            (item as? SqlSelectItem.Expr)?.metadata?.scope == SqlSelectItemSourceScope.Aggregate
 
     private fun Field.cursorColumnKey(): String =
-        "${tableName.ifBlank { this@SelectContext.tableName }}.$columnName"
+        if (sourceQuery != null) {
+            "${sourceTableAlias ?: "q"}.${sourceColumnName(this)}"
+        } else {
+            "${tableName.ifBlank { this@SelectContext.tableName }}.$columnName"
+        }
 
     private companion object {
         val parameterSuffixRegex = Regex("""^(.+)@(\d+)$""")
     }
 }
+
+private fun List<KTableForSelect.ProjectionItem>.fieldItemsByOutputName(): Map<String, Field> =
+    mapNotNull { item ->
+        val fieldItem = item as? KTableForSelect.ProjectionItem.FieldItem ?: return@mapNotNull null
+        val outputName = fieldItem.outputName ?: fieldItem.field.name.ifBlank { fieldItem.field.columnName }
+        outputName to fieldItem.field
+    }.toMap(linkedMapOf())
 
 internal sealed class SelectOrderItem {
     abstract val ordering: SqlOrdering

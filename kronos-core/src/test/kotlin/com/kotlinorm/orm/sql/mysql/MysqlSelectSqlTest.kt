@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.sql.mysql
 
+import com.kotlinorm.annotations.UnsafeProjectionOverride
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
@@ -24,6 +25,7 @@ import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.reflect.typeOf
 
 class MysqlSelectSqlTest : MysqlTestBase() {
 
@@ -55,6 +57,23 @@ class MysqlSelectSqlTest : MysqlTestBase() {
 
         assertEquals("SELECT `id`, `username`, `gender`, 123 AS `literalValue` FROM `tb_user` WHERE `deleted` = 0", sql)
         assertEquals(emptyMap(), paramMap)
+    }
+
+    @OptIn(UnsafeProjectionOverride::class)
+    @Test
+    fun testDuplicateProjectionNamesReserveExplicitSuffixes() {
+        val task = user
+            .select { [it.id, it.id, it.username.alias("id_1")] }
+            .build()
+            .atomicTask
+
+        assertEquals(
+            "SELECT `id`, `id` AS `id_2`, `username` AS `id_1` FROM `tb_user` WHERE `deleted` = 0",
+            task.sql
+        )
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id_2"])
+        assertEquals(typeOf<String?>(), task.resultColumnTypes["id_1"])
     }
 
     @Test
@@ -91,9 +110,9 @@ class MysqlSelectSqlTest : MysqlTestBase() {
     @Test
     fun testPage() {
 
-        val (total, task) = user.select().withTotal().page(1, 10).build()
-        val (sql, paramMap) = task
-        val (sql2, paramMap2) = total
+        val tasks = user.select().page(1, 10).withTotal().build()
+        val (sql, paramMap) = tasks.recordsTask
+        val (sql2, paramMap2) = tasks.countTask
 
         assertEquals(
             "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `deleted` = 0 LIMIT 10 OFFSET 0",

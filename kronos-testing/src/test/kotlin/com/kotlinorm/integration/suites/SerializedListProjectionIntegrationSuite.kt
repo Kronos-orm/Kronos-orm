@@ -52,8 +52,8 @@ abstract class SerializedListProjectionIntegrationSuite(
             val (total, pageUsers, pageCount) = IntegrationSerializedListProjectionUser()
                 .select()
                 .orderBy { it.id.asc() }
+                .page(pageIndex = 1, pageSize = 10)
                 .withTotal()
-                .page(pi = 1, ps = 10)
                 .toList()
 
             assertEquals(3, total)

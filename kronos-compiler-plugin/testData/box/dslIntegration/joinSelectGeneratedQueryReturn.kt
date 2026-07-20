@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies join select generated projections flow into no-arg toList/first return types.
+// Verifies helper-returned JOIN projections support property reads from every no-arg terminal.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -38,16 +38,19 @@ fun box(): String {
     with(Kronos) {}
 
     if (System.currentTimeMillis() < 0) {
-        val rows = JoinProjectionUser()
-            .join(JoinProjectionOrder()) { user, order ->
-                leftJoin(order) { user.id == order.userId }
-            }
-            .select { [it.id, it.name.alias("userName")] }
-            .toList()
-        val id: Int? = rows.firstOrNull()?.id
-        val userName: String? = rows.firstOrNull()?.userName
-        if (id == -1 || userName == "unreachable") return "Fail: unreachable"
+        val listId: Int? = joinedProjectionQuery().toList().firstOrNull()?.id
+        val firstName: String? = joinedProjectionQuery().first().userName
+        val nullableName: String? = joinedProjectionQuery().firstOrNull()?.userName
+        if (listId == -1 || firstName == "unreachable" || nullableName == "unreachable") {
+            return "Fail: terminals unexpectedly evaluated as $listId/$firstName/$nullableName"
+        }
     }
 
     return "OK"
 }
+
+private fun joinedProjectionQuery() = JoinProjectionUser()
+    .join(JoinProjectionOrder()) { user, order ->
+        leftJoin { user.id == order.userId }
+            .select { [user.id, user.name.alias("userName")] }
+    }

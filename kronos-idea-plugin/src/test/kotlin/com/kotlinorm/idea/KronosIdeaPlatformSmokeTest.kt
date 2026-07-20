@@ -17,6 +17,7 @@
 package com.kotlinorm.idea
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.kotlinorm.compiler.fir.KronosIdeProjectionField
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -46,35 +47,14 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         assertTrue(pluginXml.contains("<b>Kronos IDEA plugin</b> brings Kronos compiler-plugin information into IntelliJ IDEA."))
         assertTrue(pluginXml.contains("href=\"https://www.kotlinorm.com/\""))
         assertTrue(pluginXml.contains("href=\"https://www.kotlinorm.com/#/documentation/en/resources/idea-plugin\""))
-        assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-projection-completion.png"))
-        assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-projection-context-docs.png"))
-        assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-code-generator.png"))
-        assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-projection-docs.png"))
-        assertTrue(pluginXml.contains("kronos-idea-projection-completion.png\" width=\"640\""))
-        assertTrue(pluginXml.contains("kronos-idea-projection-context-docs.png\" width=\"640\""))
-        assertTrue(pluginXml.contains("kronos-idea-projection-docs.png\" width=\"640\""))
-        assertTrue(pluginXml.contains("kronos-idea-code-generator.png\" width=\"640\""))
-        assertFalse(pluginXml.contains("width=\"320\""))
+        assertFalse(pluginXml.contains("<img"))
+        assertFalse(pluginXml.contains("assets/idea-plugin/"))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosBundledFirCompilerPluginProvider\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosFirCompilerPluginConfigurationForIdeProvider\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosProjectionDeclarationViewResolveExtensionProvider\""))
         assertTrue(pluginXml.contains("implementationClass=\"com.kotlinorm.idea.KronosProjectionCompletionContributor\""))
         assertTrue(pluginXml.contains("factoryClass=\"com.kotlinorm.plugin.idea.MainWinFactory\""))
         assertTrue(pluginXml.contains("displayName=\"Kronos ORM Setting\""))
-    }
-
-    /**
-     * Ensures the optional projection probe uses the current IntelliJ startup API.
-     */
-    fun testProjectionProbeUsesProjectActivityApi() {
-        val probeSource = Files.readString(
-            Paths.get("src/main/kotlin/com/kotlinorm/idea/KronosProjectionProbeStartupActivity.kt")
-        )
-
-        assertTrue(probeSource.contains("ProjectActivity"))
-        assertTrue(probeSource.contains("override suspend fun execute(project: Project)"))
-        assertFalse(probeSource.contains("import com.intellij.openapi.startup.StartupActivity"))
-        assertFalse(probeSource.contains("runActivity(project: Project)"))
     }
 
     /**
@@ -98,12 +78,8 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         val provider = Files.readString(
             Paths.get("src/main/kotlin/com/kotlinorm/idea/KronosProjectionDeclarationViewResolveExtensionProvider.kt")
         )
-        assertTrue(provider.contains("data class "))
-        assertTrue(provider.contains("model.name"))
-        assertTrue(provider.contains("model.contextName"))
-        assertTrue(provider.contains("fields"))
-        assertTrue(provider.contains("contextFields"))
-        assertTrue(provider.contains("asNullableProjectionType"))
+        assertTrue(provider.contains("projectionClassDeclarations(models)"))
+        assertTrue(provider.contains("renderProjectionDeclarationFile(models)"))
         assertTrue(provider.contains("createNavigationTargetsProvider"))
         assertTrue(provider.contains("emptyList()"))
 
@@ -113,10 +89,22 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         assertTrue(documentationProvider.contains("DocumentationTargetProvider"))
         assertTrue(documentationProvider.contains("PsiDocumentationTargetProvider"))
         assertTrue(documentationProvider.contains("getReferencedName() != \"it\""))
+        assertTrue(documentationProvider.contains("expressionType?.toKronosProjectionType()"))
+        assertTrue(documentationProvider.contains("findCanonicalFields()"))
+        assertTrue(documentationProvider.contains("canonicalProjectionClassDeclaration(className)"))
+        assertFalse(documentationProvider.contains("firstOrNull { it.name == className || it.contextName == className }"))
         assertTrue(documentationProvider.contains("KronosSelectContext_"))
-        assertTrue(documentationProvider.contains("data class "))
+        assertTrue(documentationProvider.contains("renderProjectionClass(className, fields)"))
         assertTrue(documentationProvider.contains("kronos-projection://"))
         assertFalse(documentationProvider.contains("psi_element://"))
+
+        val rendered = renderProjectionClass(
+            "KronosSelectResult_smoke",
+            listOf(KronosIdeProjectionField("id", "kotlin.Long")),
+        )
+        assertTrue(rendered.startsWith("data class KronosSelectResult_smoke("))
+        assertTrue(rendered.contains("var id: kotlin.Long,"))
+        assertFalse(rendered.contains("kotlin.Long = null"))
     }
 
     /**

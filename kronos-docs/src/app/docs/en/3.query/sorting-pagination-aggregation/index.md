@@ -52,7 +52,7 @@ FROM `user`
 ORDER BY `nameLength` DESC
 ```
 
-Use the next query layer when the alias should also participate in `where`, `groupBy`, or `having`; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
+Use `filter` when a predicate should read the selected alias through a derived query; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
 
 ## Sort by a window alias
 
@@ -84,7 +84,7 @@ FROM `order`
 ORDER BY `rn` ASC
 ```
 
-Filtering a window alias uses the next query layer; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}. The function entry point is covered in {{ $.keyword("query/functions", ["Functions"]) }}.
+Filtering a window alias uses `filter` and a derived query; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}. The function entry point is covered in {{ $.keyword("query/functions", ["Functions"]) }}.
 
 ## Limit rows
 
@@ -266,6 +266,40 @@ listOf(
     mapOf("gender" to 0, "count" to 9, "scoreAvg" to 79.0)
 )
 ```
+
+Use `filter` when the next predicate should read an aggregate alias instead of repeating the aggregate expression in the same-layer `having` clause.
+
+```kotlin group="Aggregate result filter" name="kotlin" icon="kotlin"
+val scoredGroups = User()
+    .select {
+        [
+            it.gender,
+            f.count(1).alias("count"),
+            f.avg(it.score).alias("scoreAvg")
+        ]
+    }
+    .groupBy { it.gender }
+    .having { f.count(1) > 5 }
+
+val rows = scoredGroups
+    .filter { it.scoreAvg > 80 }
+    .toList()
+```
+
+```sql group="Aggregate result filter" name="Mysql" icon="mysql"
+SELECT `q`.`gender`, `q`.`count`, `q`.`scoreAvg`
+FROM (
+    SELECT `gender`,
+           COUNT(1) AS count,
+           AVG(`score`) AS `scoreAvg`
+    FROM `user`
+    GROUP BY `gender`
+    HAVING COUNT(1) > :countMin
+) AS `q`
+WHERE `q`.`scoreAvg` > :scoreAvgMin
+```
+
+`having` filters groups in the inner aggregation layer. `filter` always establishes the outer derived query, and its receiver exposes only `scoredGroups`'s `Selected` fields: `gender`, `count`, and `scoreAvg`. Unlike the query-by-example `where()`, `filter` has no no-argument form; pass a predicate lambda.
 
 Use `[]` for multiple group keys.
 

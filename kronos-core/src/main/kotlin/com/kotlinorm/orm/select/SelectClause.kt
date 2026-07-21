@@ -233,7 +233,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return this
     }
 
-    fun where(selectCondition: ToFilter<Source, Boolean?> = null): SelectClause<Source, Selected, Context> {
+    fun where(selectCondition: ToFilter<Source, Boolean?>? = null): SelectClause<Source, Selected, Context> {
         if (selectCondition == null) {
             context.addSourceValueConditions()
             return this
@@ -254,7 +254,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return this
     }
 
-    fun having(selectCondition: ToFilter<Source, Boolean?> = null): SelectClause<Source, Selected, Context> {
+    fun having(selectCondition: ToFilter<Source, Boolean?>? = null): SelectClause<Source, Selected, Context> {
         selectCondition ?: throw EmptyFieldsException()
         context.withSourceScope {
             pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->

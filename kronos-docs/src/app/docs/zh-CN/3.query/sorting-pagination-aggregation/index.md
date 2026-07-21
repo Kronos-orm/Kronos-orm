@@ -52,7 +52,7 @@ FROM `user`
 ORDER BY `nameLength` DESC
 ```
 
-alias 还需要参与 `where`、`groupBy` 或 `having` 时，使用下一层查询，见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
+谓词需要读取 selected alias 时，使用 `filter` 建立派生查询，见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
 
 ## 按窗口函数 alias 排序
 
@@ -84,7 +84,7 @@ FROM `order`
 ORDER BY `rn` ASC
 ```
 
-过滤窗口 alias 时使用下一层查询，见 {{ $.keyword("query/subqueries", ["子查询"]) }}。函数入口见 {{ $.keyword("query/functions", ["内置函数"]) }}。
+过滤窗口 alias 时使用 `filter` 建立派生查询，见 {{ $.keyword("query/subqueries", ["子查询"]) }}。函数入口见 {{ $.keyword("query/functions", ["内置函数"]) }}。
 
 ## 限制返回行数
 
@@ -266,6 +266,40 @@ listOf(
     mapOf("gender" to 0, "count" to 9, "scoreAvg" to 79.0)
 )
 ```
+
+下一步谓词需要读取聚合 alias，而不是在同层 `having` 中重复聚合表达式时，使用 `filter`。
+
+```kotlin group="Aggregate result filter" name="kotlin" icon="kotlin"
+val scoredGroups = User()
+    .select {
+        [
+            it.gender,
+            f.count(1).alias("count"),
+            f.avg(it.score).alias("scoreAvg")
+        ]
+    }
+    .groupBy { it.gender }
+    .having { f.count(1) > 5 }
+
+val rows = scoredGroups
+    .filter { it.scoreAvg > 80 }
+    .toList()
+```
+
+```sql group="Aggregate result filter" name="Mysql" icon="mysql"
+SELECT `q`.`gender`, `q`.`count`, `q`.`scoreAvg`
+FROM (
+    SELECT `gender`,
+           COUNT(1) AS count,
+           AVG(`score`) AS `scoreAvg`
+    FROM `user`
+    GROUP BY `gender`
+    HAVING COUNT(1) > :countMin
+) AS `q`
+WHERE `q`.`scoreAvg` > :scoreAvgMin
+```
+
+`having` 在内层聚合查询中筛选分组，`filter` 始终建立外层派生查询。它的 receiver 只暴露 `scoredGroups` 的 `Selected` 字段：`gender`、`count` 和 `scoreAvg`。与 query-by-example 的 `where()` 不同，`filter` 没有无参形式，必须传入 predicate lambda。
 
 多个分组键使用 `[]`。
 

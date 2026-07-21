@@ -44,7 +44,7 @@ fun conditionBoundaryWhere(
     var result: CapturedConditionBoundary? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedConditionBoundary(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedConditionBoundary(null, emptyMap())

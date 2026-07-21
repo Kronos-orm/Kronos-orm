@@ -210,7 +210,7 @@ FROM `order`
 ORDER BY `rn` ASC
 ```
 
-Window aliases can be sorted in the same query. When `where`, `groupBy`, or `having` needs a window alias, select it first and filter it in the next query layer; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
+Window aliases can be sorted in the same query. When a predicate needs a window alias, select it first and use `filter` to apply the predicate through a derived query; see {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
 
 ```kotlin group="Window function 2" name="consume result" icon="kotlin"
 val first = rows.first()
@@ -219,8 +219,7 @@ val rowNumber: Int? = first.rn
 
 ```kotlin group="Window function 2" name="filter alias" icon="kotlin"
 val firstPerUser = ranked
-    .select { [it.id, it.userId, it.status, it.rn] }
-    .where { it.rn == 1 }
+    .filter { it.rn == 1 }
     .toList()
 ```
 

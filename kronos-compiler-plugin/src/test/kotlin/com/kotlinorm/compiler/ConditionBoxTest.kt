@@ -249,6 +249,18 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun generatedProjectionWhereFunctionAndOperator() = box("generatedProjectionWhereFunctionAndOperator")
 
     /**
+     * Verifies filter lowers functions and arithmetic operators on generated projection aliases.
+     */
+    @Test
+    fun filterFunctionAndOperatorLowering() = box("filterFunctionAndOperatorLowering")
+
+    /**
+     * Verifies filter lowering for negation, OR, takeIf/takeUnless gates, and selectable subqueries.
+     */
+    @Test
+    fun filterConditionBoundaryMatrix() = box("filterConditionBoundaryMatrix")
+
+    /**
      * Verifies properties captured from ordinary Kotlin objects remain runtime values.
      */
     @Test

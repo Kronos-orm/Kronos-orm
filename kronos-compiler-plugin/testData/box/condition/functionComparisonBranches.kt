@@ -45,7 +45,7 @@ fun functionComparisonWhere(
     var result: CapturedFunctionComparison? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedFunctionComparison(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedFunctionComparison(null, emptyMap())

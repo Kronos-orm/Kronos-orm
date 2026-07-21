@@ -46,7 +46,7 @@ fun advancedWhere(user: AdvancedConditionUser, block: ToFilter<AdvancedCondition
     var result: CapturedAdvancedCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedAdvancedCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedAdvancedCondition(null, emptyMap())

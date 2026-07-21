@@ -324,9 +324,9 @@ FROM `user`
 
 子查询形式、派生查询源和投影可见性规则见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
 
-## 从派生查询源中投影
+## 筛选派生查询结果
 
-已选择的投影可以成为下一层查询源。当 alias 需要继续参与过滤、分组或分页时，可以使用这个入口。
+已选择的投影可以成为下一层查询源。alias 需要在选择后参与筛选，并且输出形态应保持不变时，使用 `filter { ... }`。
 
 ```kotlin group="Derived projection" name="kotlin" icon="kotlin"
 val nameLengths = User()
@@ -339,13 +339,12 @@ val nameLengths = User()
     }
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
 
 ```sql group="Derived projection" name="Mysql" icon="mysql"
-SELECT `q`.`id`, `q`.`nameLength`
+SELECT `q`.`id`, `q`.`name`, `q`.`nameLength`
 FROM (
     SELECT `id`, `name`, LENGTH(`name`) AS `nameLength`
     FROM `user`
@@ -355,4 +354,4 @@ WHERE `q`.`nameLength` > :nameLengthMin
 
 投影需要排序、分页、分组或聚合时，见 {{ $.keyword("query/sorting-pagination-aggregation", ["排序、分页与聚合"]) }}。
 
-第二层 `select { ... }` 的 receiver 是第一层查询生成的投影。它暴露 `id`、`name` 和 `nameLength`，没有被第一层选出的源字段不会出现在这个 receiver 上。
+`filter` 的 receiver 是第一层查询生成的 `Selected` 投影。它暴露 `id`、`name` 和 `nameLength`，没有被第一层选出的 source 字段不会出现在这个 receiver 上。`nameLengths.filter { ... }` 等价于 `nameLengths.select().where { ... }`；外层还需要改变返回字段时，继续使用显式 `select { ... }`。

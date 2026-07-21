@@ -42,7 +42,7 @@ fun blockBodyWhere(user: BlockBodyConditionUser, block: ToFilter<BlockBodyCondit
     var result: CapturedBlockBodyCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedBlockBodyCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedBlockBodyCondition(null, emptyMap())

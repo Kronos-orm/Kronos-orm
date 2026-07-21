@@ -42,9 +42,9 @@ FROM `user`
 
 需要在 Map 结果、生成投影行和命名 DTO 行之间选择时，见 {{ $.keyword("query/projection", ["投影"]) }}。
 
-## 把投影作为下一层查询源
+## 筛选已选择的投影
 
-`KSelectable<Selected>.select { ... }` 会进入下一层查询。上一层的 `Selected` 投影会成为新的 source 类型。
+`KSelectable<Selected>.filter { ... }` 会进入下一层查询，并继续以 `Selected` 作为结果类型。filter receiver 只包含内层查询选出的字段和 alias。
 
 ```kotlin group="Derived source" name="kotlin" icon="kotlin"
 val activeUsers = User()
@@ -52,8 +52,7 @@ val activeUsers = User()
     .select { [it.id, it.name] }
 
 val rows = activeUsers
-    .select { [it.id, it.name] }
-    .where { it.name like "A%" }
+    .filter { it.name like "A%" }
     .toList()
 ```
 
@@ -67,7 +66,7 @@ FROM (
 WHERE `q`.`name` LIKE :name
 ```
 
-当 selected alias 需要参与 `where`、`groupBy` 或 `having` 时，可以使用这个写法。
+selected alias 需要在计算完成后参与筛选时，可以使用这个写法。`activeUsers.filter { ... }` 等价于 `activeUsers.select().where { ... }`；下一层还需要改变结果形态时，使用显式外层 `select { ... }`。
 
 ## 查询标量子查询
 
@@ -338,15 +337,14 @@ ORDER BY `nameLength` DESC
 
 ## 对派生来源分页
 
-`page(pageIndex, pageSize).withTotal()` 可以在 selectable source 进入下一层查询后继续使用。
+`filter` 建立派生查询后，可以继续使用 `page(pageIndex, pageSize).withTotal()`。
 
 ```kotlin group="Paged source" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val page = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .orderBy { it.nameLength.desc() }
     .page(1, 10)
     .withTotal()
@@ -379,9 +377,9 @@ SELECT COUNT(*) FROM (
 ) AS total_count
 ```
 
-## 在下一层过滤窗口函数结果
+## 过滤窗口函数结果
 
-窗口函数 alias 是 selected 字段。`where` 需要过滤窗口 alias 时，可以进入下一层查询。
+窗口函数 alias 是 selected 字段。使用 `filter` 建立派生查询，再对这个 selected 结果应用谓词。
 
 ```kotlin group="Window source" name="kotlin" icon="kotlin"
 val ranked = Order()
@@ -400,13 +398,12 @@ val ranked = Order()
     }
 
 val firstOrders = ranked
-    .select { [it.id, it.userId, it.status] }
-    .where { it.rn == 1 }
+    .filter { it.rn == 1 }
     .toList()
 ```
 
 ```sql group="Window source" name="Mysql" icon="mysql"
-SELECT `q`.`id`, `q`.`userId`, `q`.`status`
+SELECT `q`.`id`, `q`.`userId`, `q`.`status`, `q`.`rn`
 FROM (
     SELECT `id`,
            `user_id` AS `userId`,
@@ -416,6 +413,8 @@ FROM (
 ) AS `q`
 WHERE `q`.`rn` = :rn
 ```
+
+`filter` receiver 暴露 `id`、`userId`、`status` 和 `rn`，与 `ranked` 的 `Selected` 投影完全一致，不能读取未选中的 `Order` 字段。
 
 ## Join 派生查询源
 
@@ -751,19 +750,18 @@ ON CONFLICT ("id") DO UPDATE SET "name" = (
 
 ## 可见性和 alias 规则
 
-`where`、`groupBy`、`having` 读取当前 source 字段。`orderBy` 读取 source 字段和 selected 字段。
+`where`、`groupBy`、`having` 读取当前 source 字段，`orderBy` 读取 source 字段和 selected 字段。`filter` 会建立外层查询，它的 source 恰好是当前 `Selected` 结果。
 
 ```kotlin group="Rules 1" name="next layer" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
 
-下一层会把 `nameLength` 暴露为 source 字段：
+派生层会把 `nameLength` 暴露为 source 字段：
 
 ```sql group="Rules 2" name="next layer sql" icon="mysql"
 SELECT `q`.`id`, `q`.`nameLength`

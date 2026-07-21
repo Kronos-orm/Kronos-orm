@@ -49,7 +49,7 @@ fun parameterizedWhere(
     var result: CapturedParameterizedCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedParameterizedCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedParameterizedCondition(null, emptyMap())

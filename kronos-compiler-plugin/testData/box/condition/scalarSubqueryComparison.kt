@@ -37,7 +37,7 @@ fun scalarCmpWhere(order: ScalarCmpOrder, block: ToFilter<ScalarCmpOrder, Boolea
     var result: SqlExpr? = null
     order.afterFilter {
         sourceValues = order.toDataMap()
-        block!!(it)
+        block(it)
         result = sqlExpr
     }
     return result

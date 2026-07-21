@@ -33,6 +33,7 @@ import com.kotlinorm.syntax.statement.SqlSelectItemSource
 import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.testutils.MysqlTestBase
+import com.kotlinorm.types.ToFilter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -100,6 +101,16 @@ class SelectClauseSyntaxTest : MysqlTestBase() {
             ),
             statement
         )
+    }
+
+    @Test
+    fun `where keeps optional predicates at the api boundary`() {
+        val optionalCondition: ToFilter<TestUser, Boolean?>? = null
+
+        val optionalStatement = TestUser(id = 1).select().where(optionalCondition).toSqlQuery()
+        val omittedStatement = TestUser(id = 1).select().where().toSqlQuery()
+
+        assertEquals(omittedStatement, optionalStatement)
     }
 
     @Test

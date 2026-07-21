@@ -40,7 +40,7 @@ fun noArgComparisonWhere(user: NoArgComparisonUser, block: ToFilter<NoArgCompari
     var result: CapturedNoArgComparison? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedNoArgComparison(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedNoArgComparison(null, emptyMap())

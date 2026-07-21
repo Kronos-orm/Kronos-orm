@@ -44,7 +44,7 @@ fun noArgNegatedWhere(user: NoArgNegatedUser, block: ToFilter<NoArgNegatedUser, 
     var result: CapturedNoArgNegated? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedNoArgNegated(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedNoArgNegated(null, emptyMap())

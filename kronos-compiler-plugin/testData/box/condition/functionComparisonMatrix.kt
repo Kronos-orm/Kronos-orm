@@ -45,7 +45,7 @@ fun functionMatrixWhere(
     var result: CapturedFunctionMatrix? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedFunctionMatrix(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedFunctionMatrix(null, emptyMap())

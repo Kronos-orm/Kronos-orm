@@ -13,6 +13,7 @@ import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.pagination.toCursor
+import com.kotlinorm.orm.select.filter
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.union
 import com.kotlinorm.orm.update.update
@@ -61,6 +62,45 @@ class CoreOrmDialectSqlTest {
                 .select { [it.id, it.username] }
                 .where { it.id == 1 && it.username == "neo" }
                 .limit(10)
+                .build(dialect.wrapper)
+                .atomicTask
+
+            assertTaskEquals(expected.getValue(dialect.dbType), task, dialect.label)
+        }
+    }
+
+    @Test
+    fun `result filter renders derived boundary and colliding parameters for every supported dialect`() {
+        initializeCoreSqlTestDefaults()
+
+        val expected = mapOf(
+            DBType.Mysql to ExpectedTask(
+                "SELECT `q`.`id`, `q`.`username` FROM (SELECT `id`, `username` FROM `tb_user` WHERE `tb_user`.`id` = :id@1 AND `deleted` = 0) AS `q` WHERE `q`.`id` = :id",
+                mapOf("id" to 20, "id@1" to 10)
+            ),
+            DBType.Postgres to ExpectedTask(
+                """SELECT "q"."id", "q"."username" FROM (SELECT "id", "username" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = FALSE) AS "q" WHERE "q"."id" = :id""",
+                mapOf("id" to 20, "id@1" to 10)
+            ),
+            DBType.SQLite to ExpectedTask(
+                """SELECT "q"."id", "q"."username" FROM (SELECT "id", "username" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = 0) AS "q" WHERE "q"."id" = :id""",
+                mapOf("id" to 20, "id@1" to 10)
+            ),
+            DBType.Mssql to ExpectedTask(
+                "SELECT [q].[id], [q].[username] FROM (SELECT [id], [username] FROM [tb_user] WHERE [tb_user].[id] = :id@1 AND [deleted] = 0) AS [q] WHERE [q].[id] = :id",
+                mapOf("id" to 20, "id@1" to 10)
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT "Q"."ID", "Q"."USERNAME" FROM (SELECT "ID", "USERNAME" FROM "TB_USER" WHERE "TB_USER"."ID" = :id@1 AND "DELETED" = 0) "Q" WHERE "Q"."ID" = :id""",
+                mapOf("id" to 20, "id@1" to 10)
+            )
+        )
+
+        coreSqlDialects.forEach { dialect ->
+            val task = DialectUser()
+                .select { [it.id, it.username] }
+                .where { it.id == 10 }
+                .filter { it.id == 20 }
                 .build(dialect.wrapper)
                 .atomicTask
 

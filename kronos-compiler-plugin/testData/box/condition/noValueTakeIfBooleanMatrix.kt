@@ -44,7 +44,7 @@ fun noValueMatrixWhere(
     var result: CapturedNoValueMatrix? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedNoValueMatrix(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedNoValueMatrix(null, emptyMap())

@@ -43,7 +43,7 @@ fun emptyConditionWhere(
     var result: CapturedEmptyCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedEmptyCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedEmptyCondition(null, emptyMap())

@@ -117,7 +117,7 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
      *                        并返回一个 [Boolean?] 类型的值，用于指示是否满足删除条件。如果为 null，则表示删除所有数据。
      * @return [DeleteClause] 类型的实例，用于链式调用其它删除操作。
      */
-    fun where(deleteCondition: ToFilter<T, Boolean?> = null): DeleteClause<T> {
+    fun where(deleteCondition: ToFilter<T, Boolean?>? = null): DeleteClause<T> {
         if (deleteCondition == null) return this
         // 如果指定了删除条件，执行条件函数，并设置条件
         context.pojo.afterFilter(context.sourceBinding) filter@ { filterTable ->

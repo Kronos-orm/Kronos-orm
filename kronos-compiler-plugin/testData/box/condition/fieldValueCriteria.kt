@@ -41,7 +41,7 @@ fun fieldValueWhere(user: FieldValueCriteriaUser, block: ToFilter<FieldValueCrit
     var result: CapturedFieldValueCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedFieldValueCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedFieldValueCondition(null, emptyMap())

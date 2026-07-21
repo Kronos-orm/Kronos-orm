@@ -44,7 +44,7 @@ fun methodWhere(user: MethodCriteriaUser, block: ToFilter<MethodCriteriaUser, Bo
     var result: CapturedMethodCondition? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = CapturedMethodCondition(sqlExpr, parameterValues.toMap())
     }
     return result ?: CapturedMethodCondition(null, emptyMap())

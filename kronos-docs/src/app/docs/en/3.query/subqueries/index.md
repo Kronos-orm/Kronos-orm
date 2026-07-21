@@ -42,9 +42,9 @@ Use `.alias("name")` for non-direct select items such as functions, aggregates, 
 
 Use {{ $.keyword("query/projection", ["Projection"]) }} when choosing between map results, generated projection rows, and named DTO rows.
 
-## Use a projection as the next query source
+## Filter a selected projection
 
-`KSelectable<Selected>.select { ... }` starts the next query layer. That layer's `Selected` projection becomes the new source type.
+`KSelectable<Selected>.filter { ... }` starts the next query layer and keeps `Selected` as its result type. The filter receiver contains only the fields and aliases selected by the inner query.
 
 ```kotlin group="Derived source" name="kotlin" icon="kotlin"
 val activeUsers = User()
@@ -52,8 +52,7 @@ val activeUsers = User()
     .select { [it.id, it.name] }
 
 val rows = activeUsers
-    .select { [it.id, it.name] }
-    .where { it.name like "A%" }
+    .filter { it.name like "A%" }
     .toList()
 ```
 
@@ -67,7 +66,7 @@ FROM (
 WHERE `q`.`name` LIKE :name
 ```
 
-This pattern is useful when a selected alias should be filtered in `where`, `groupBy`, or `having`.
+This pattern is useful when a selected alias should be filtered after it has been computed. `activeUsers.filter { ... }` is equivalent to `activeUsers.select().where { ... }`; use an explicit outer `select { ... }` when the next layer should change the result shape.
 
 ## Select a scalar subquery
 
@@ -338,15 +337,14 @@ ORDER BY `nameLength` DESC
 
 ## Page a derived source
 
-`page(pageIndex, pageSize).withTotal()` can be used after a selectable source enters the next query layer.
+`page(pageIndex, pageSize).withTotal()` can be used after `filter` establishes the derived query.
 
 ```kotlin group="Paged source" name="kotlin" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val page = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .orderBy { it.nameLength.desc() }
     .page(1, 10)
     .withTotal()
@@ -379,9 +377,9 @@ SELECT COUNT(*) FROM (
 ) AS total_count
 ```
 
-## Filter a window result in the next layer
+## Filter a window result
 
-Window function aliases are selected fields. Use the next query layer when `where` needs to filter a window alias.
+Window function aliases are selected fields. Use `filter` to establish a derived query and apply the predicate to that selected result.
 
 ```kotlin group="Window source" name="kotlin" icon="kotlin"
 val ranked = Order()
@@ -400,13 +398,12 @@ val ranked = Order()
     }
 
 val firstOrders = ranked
-    .select { [it.id, it.userId, it.status] }
-    .where { it.rn == 1 }
+    .filter { it.rn == 1 }
     .toList()
 ```
 
 ```sql group="Window source" name="Mysql" icon="mysql"
-SELECT `q`.`id`, `q`.`userId`, `q`.`status`
+SELECT `q`.`id`, `q`.`userId`, `q`.`status`, `q`.`rn`
 FROM (
     SELECT `id`,
            `user_id` AS `userId`,
@@ -416,6 +413,8 @@ FROM (
 ) AS `q`
 WHERE `q`.`rn` = :rn
 ```
+
+The `filter` receiver exposes `id`, `userId`, `status`, and `rn`, exactly matching `ranked`'s `Selected` projection. It cannot read an `Order` field that was not selected.
 
 ## Join a selectable source
 
@@ -751,19 +750,18 @@ ON CONFLICT ("id") DO UPDATE SET "name" = (
 
 ## Visibility and alias rules
 
-`where`, `groupBy`, and `having` read the current source fields. `orderBy` reads the source fields and the selected fields.
+`where`, `groupBy`, and `having` read the current source fields. `orderBy` reads the source fields and the selected fields. `filter` starts an outer layer whose source is exactly the current `Selected` result.
 
 ```kotlin group="Rules 1" name="next layer" icon="kotlin"
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
 
-The next layer exposes `nameLength` as a source field:
+The derived layer exposes `nameLength` as a source field:
 
 ```sql group="Rules 2" name="next layer sql" icon="mysql"
 SELECT `q`.`id`, `q`.`nameLength`

@@ -205,6 +205,18 @@ class ProjectionDiagnosticsTest : AbstractKronosJvmDiagnosticsSuite("projection"
     fun sameLayerWhereSelectedAlias() = diagnostics("sameLayerWhereSelectedAlias")
 
     /**
+     * Verifies filter Selected receivers exclude source fields omitted by the projection.
+     */
+    @Test
+    fun filterExcludesUnselectedSource() = diagnostics("filterExcludesUnselectedSource")
+
+    /**
+     * Verifies the public filter contract rejects a null predicate.
+     */
+    @Test
+    fun filterRejectsNullPredicate() = diagnostics("filterRejectsNullPredicate")
+
+    /**
      * Verifies same-layer where cannot access current window aliases.
      */
     @Test

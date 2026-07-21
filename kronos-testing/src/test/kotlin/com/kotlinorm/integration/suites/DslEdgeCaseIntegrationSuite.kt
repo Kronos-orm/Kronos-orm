@@ -8,6 +8,7 @@ import com.kotlinorm.integration.fixtures.IntegrationAliasMatrixUser
 import com.kotlinorm.integration.fixtures.IntegrationDslEdgeProjection
 import com.kotlinorm.integration.fixtures.IntegrationOrder
 import com.kotlinorm.integration.fixtures.IntegrationUser
+import com.kotlinorm.integration.fixtures.OPEN_STATUS
 import com.kotlinorm.integration.fixtures.PAID_STATUS
 import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
@@ -15,6 +16,7 @@ import com.kotlinorm.integration.support.IntegrationSuiteSupport
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
+import com.kotlinorm.orm.select.filter
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.union
 import com.kotlinorm.syntax.order.SqlOrdering
@@ -269,6 +271,61 @@ abstract class DslEdgeCaseIntegrationSuite(
         assertEquals(listOf(1, 2, 1), unionRows.map { it.userId })
         assertEquals(listOf("Ada", "Grace", "Ada"), unionRows.map { it.userName })
         assertEquals(listOf(20, 40, 50), unionRows.map { it.amount })
+    }
+
+    @Test
+    fun filterUsesProjectedResultAliasesAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        val rows = IntegrationUser()
+            .select {
+                [
+                    it.id.alias("userId"),
+                    it.name.alias("userName"),
+                    it.status,
+                ]
+            }
+            .where { it.status == PAID_STATUS }
+            .filter { it.userId > 1 }
+            .orderBy { it.userId.asc() }
+            .toList<IntegrationDslEdgeProjection>()
+
+        assertEquals(listOf(2), rows.map { it.userId })
+        assertEquals(listOf("Grace"), rows.map { it.userName })
+        assertEquals(listOf(PAID_STATUS), rows.map { it.status })
+    }
+
+    @Test
+    fun filterExecutesWindowAliasWithCollidingInnerAndOuterParametersAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        val rows = IntegrationOrder()
+            .select {
+                [
+                    it.id,
+                    it.userId,
+                    it.status,
+                    it.amount,
+                    f.rowNumber()
+                        .over {
+                            partitionBy(it.userId)
+                            orderBy(it.amount.desc())
+                        }
+                        .alias("rn"),
+                ]
+            }
+            .where { it.status != OPEN_STATUS }
+            .filter { it.rn == 1 && it.status == PAID_STATUS }
+            .orderBy { it.userId.asc() }
+            .toList<IntegrationDslEdgeProjection>()
+
+        assertEquals(listOf(1, 3), rows.map { it.id })
+        assertEquals(listOf(1, 2), rows.map { it.userId })
+        assertEquals(listOf(50, 40), rows.map { it.amount })
+        assertEquals(listOf(PAID_STATUS, PAID_STATUS), rows.map { it.status })
+        assertEquals(listOf(1, 1), rows.map { it.rn })
     }
 
     @Test

@@ -52,7 +52,7 @@ fun nullSafeWhere(
     var result: NullSafeConditionCapture? = null
     movie.afterFilter {
         sourceValues = movie.toDataMap()
-        block!!(it)
+        block(it)
         result = NullSafeConditionCapture(sqlExpr, parameterValues.toMap())
     }
     return result ?: NullSafeConditionCapture(null, emptyMap())

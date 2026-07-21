@@ -2,7 +2,7 @@
 name: kronos-orm-guide
 description: >
   Kronos ORM 使用指南。当用户询问如何使用 Kronos ORM 进行数据库操作时触发此技能，包括：
-  定义数据类(KPojo)、CRUD操作(select/insert/update/delete/upsert)、条件DSL(where/having/on)、
+  定义数据类(KPojo)、CRUD操作(select/insert/update/delete/upsert)、条件DSL(where/having/filter/on)、
   联表查询(join)、表操作(DDL)、事务、级联(cascade)、逻辑删除、乐观锁、内置函数、Codegen等。
   当用户提到 Kronos、KPojo、kronos-core、kronos-orm 或相关数据库操作时，务必使用此技能。
 ---
@@ -903,15 +903,20 @@ val page = User().select()
     .toList()
 val users = page.records
 
-// 分组 + 聚合
-val result = User().select { [it.age, f.count(it.id)] }
+// having 筛选同层聚合；filter 通过派生查询筛选聚合 alias
+val grouped = User().select { [it.age, f.count(it.id).alias("userCount")] }
     .groupBy { it.age }
     .having { f.count(it.id) > 5 }
+
+val result = grouped
+    .filter { it.userCount > 10 }
     .toList()
 
 // 去重
 User().select { it.name }.distinct().toList()
 ```
+
+`having` 的 receiver 使用当前聚合层的 Source 表达式；`filter` 的 receiver 只有 `grouped` 的 `Selected` 字段 `age` 和 `userCount`，并始终建立外层派生查询。`filter` 没有无参 query-by-example 形式，必须传入 predicate lambda。
 
 内置函数通过查询 DSL 中的 `f` 访问。函数表达式用于投影结果时要使用 `.alias("name")`，alias 会成为 `toMapList()` 的 Map key 和生成投影属性名。常用数学函数包括 `f.abs(...)`、`f.ceil(...)`、`f.round(...)`、`f.trunc(...)`；向上取整和截断分别使用 `ceil`、`trunc` 这两个函数名。
 
@@ -941,10 +946,14 @@ val rows = ranked
     .orderBy { it.rn.asc() }
     .toList()
 
+val firstPerUser = ranked
+    .filter { it.rn == 1 }
+    .toList()
+
 val rowNumber: Int? = rows.first().rn
 ```
 
-窗口 alias 可以在同层 `orderBy` 中使用；需要在 `where`、`groupBy` 或 `having` 中使用窗口 alias 时，先生成投影，再进入下一层查询过滤。
+窗口 alias 可以在同层 `orderBy` 中使用。谓词需要读取窗口 alias 时，先生成投影，再使用 `filter` 建立派生查询；`filter` 的 receiver 只有当前 `Selected` 字段。
 
 ### 结果方法
 
@@ -1020,10 +1029,11 @@ val generatedRows = nameLengths.toList()
 val firstLength: Int? = generatedRows.first().nameLength
 
 val rows = nameLengths
-    .select { [it.id, it.nameLength] }
-    .where { it.nameLength > 8 }
+    .filter { it.nameLength > 8 }
     .toList()
 ```
+
+`KSelectable<Selected>.filter { ... }` 始终建立派生查询边界，并保持 `Selected` 作为结果类型。上例的 receiver 只暴露 `id` 和 `nameLength`，不暴露未选中的 `User` 字段；它等价于 `nameLengths.select().where { it.nameLength > 8 }`。外层还需要改变输出字段时，继续使用显式 `select { ... }.where { ... }`。
 
 无参 `toList()` / `first()` 会返回编译器生成的投影类型，运行时类名是内部 `KronosSelectResult_...`，使用时按选中的字段和 alias 访问属性。需要在业务代码中命名结果类型时，定义 DTO 并传给 `select(...)`：
 
@@ -1054,7 +1064,7 @@ val total = rows.first()["total"]
 
 `"count(*)".alias("total")` 会保留 `count(*)` 作为 SQL 表达式，并使用 `total` 作为结果名。需要绑定值时，把参数放在 `where { ... }` 和 `patch(...)` 中。
 
-窗口函数结果也是投影字段。需要过滤窗口排名时，先在第一层 select 中给窗口表达式 alias，再把该查询作为下一层来源：
+窗口函数结果也是投影字段。需要过滤窗口排名时，先在第一层 select 中给窗口表达式 alias，再使用 `filter`：
 
 ```kotlin
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
@@ -1075,8 +1085,7 @@ val ranked = Order()
     }
 
 val firstOrders = ranked
-    .select { [it.id, it.userId, it.status] }
-    .where { it.rn == 1 }
+    .filter { it.rn == 1 }
     .toList()
 ```
 
@@ -1388,7 +1397,26 @@ Product(id = 1, version = 3)
 
 ## 条件DSL
 
-Kronos 使用 Kotlin 原生语法构建条件，支持 `where`、`having`、`on` 子句：
+Kronos 使用 Kotlin 原生语法构建条件，支持 `where`、`having`、`filter`、`on` 子句。`where` 筛选当前 SQL 层的 Source，`having` 筛选分组后的 source 表达式和聚合结果，`filter` 筛选 `KSelectable<Selected>` 的查询结果并建立外层派生查询：
+
+```kotlin
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
+
+val rankedOrders = Order()
+    .select {
+        [
+            it.id,
+            f.rowNumber()
+                .over { orderBy(it.id.asc()) }
+                .alias("rn")
+        ]
+    }
+    .filter { it.rn > 1 }
+```
+
+`filter` receiver 只暴露 `Selected` 中的 `id` 和 `rn`，不使用 `orderBy` 的更宽 Context，也不暴露未选中的 `Order` 字段。该调用等价于在已选查询上显式调用 `select().where { it.rn > 1 }`。
+
+普通 Source 条件继续使用 `where`：
 
 ```kotlin
 // select() 只选择当前表；对象值通过 where()/by 进入条件

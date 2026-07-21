@@ -44,7 +44,7 @@ fun typeOperatorWhere(
     var result: TypeOperatorConditionCapture? = null
     user.afterFilter {
         sourceValues = user.toDataMap()
-        block!!(it)
+        block(it)
         result = TypeOperatorConditionCapture(sqlExpr, parameterValues.toMap())
     }
     return result ?: TypeOperatorConditionCapture(null, emptyMap())

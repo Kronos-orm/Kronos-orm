@@ -136,21 +136,7 @@ object CascadeDeleteClause {
                 val toDeleteRecords = selectClause.toList(wrapper) //先查询出要删除的记录
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
-                // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
-                val restrictCascades =
-                    validCascades.filter { it.kCascade.onDelete == RESTRICT }
-                toDeleteRecords.forEach { record ->
-                    restrictCascades.forEach { cascade ->
-                        val valueOfPojo = record.toDataMap()[cascade.field.name]
-                        if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
-                            throw UnsupportedOperationException(
-                                "The record cannot be deleted because it is restricted by a cascade." +
-                                        "${record.__tableName}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, " +
-                                        "and the value is ${valueOfPojo}."
-                            )
-                        }
-                    }
-                }
+                validateRestrictCascades(toDeleteRecords, validCascades)
 
                 // 生成树结构，后序遍历所有的子节点，将所有的子节点压入list，最后由子到父执行删除操作
                 val forestOfKPojo = toDeleteRecords.map {
@@ -245,6 +231,30 @@ object CascadeDeleteClause {
                             }
                         }
                     }.flatten()) // 生成删除任务
+                }
+            }
+        }
+    }
+
+    /**
+     * Rejects deletion when a record still contains a value governed by a
+     * `RESTRICT` cascade relationship.
+     *
+     * @param records records selected for deletion
+     * @param validCascades cascade relationships applicable to the deletion
+     * @throws UnsupportedOperationException when a restricted relationship has data
+     */
+    private fun validateRestrictCascades(records: List<KPojo>, validCascades: List<ValidCascade>) {
+        val restrictCascades = validCascades.filter { it.kCascade.onDelete == RESTRICT }
+        records.forEach { record ->
+            restrictCascades.forEach { cascade ->
+                val valueOfPojo = record.toDataMap()[cascade.field.name]
+                if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
+                    throw UnsupportedOperationException(
+                        "The record cannot be deleted because it is restricted by a cascade." +
+                            "${record.__tableName}.${cascade.kCascade.properties} is restricted by " +
+                            "${cascade.kCascade.targetProperties}, and the value is $valueOfPojo."
+                    )
                 }
             }
         }

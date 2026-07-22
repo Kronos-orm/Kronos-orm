@@ -106,7 +106,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
                         }
                         task.inputs.property("generatedTypeProviderId", identity.map { it.id })
                         task.inputs.property("generatedTypeProviderFqName", identity.map { it.fqName })
-                        task.outputs.file(outputFile)
+                        task.outputs.dir(generatedDir)
                         task.dependsOn(sourceSet.getCompileTaskName("kotlin"))
                         task.doLast {
                             val file = outputFile.get().asFile
@@ -122,8 +122,8 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
                             file.writeText(identity.get().serviceContent)
                         }
                     }
-                    // Keep the producer on the directory provider so every resource consumer sees the dependency.
-                    sourceSet.resources.srcDir(task.flatMap { generatedDir })
+                    // Passing the producer itself preserves task dependencies for every resource consumer.
+                    sourceSet.resources.srcDir(task)
                 }
         }
     }

@@ -3,7 +3,6 @@ package com.kotlinorm.integration.suites
 import com.kotlinorm.database.SqlExecutor.batchExecute
 import com.kotlinorm.database.SqlExecutor.execute
 import com.kotlinorm.database.SqlExecutor.query
-import com.kotlinorm.database.SqlExecutor.queryList
 import com.kotlinorm.database.SqlExecutor.queryOne
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.integration.fixtures.ParameterBindingCornerCaseRecord
@@ -203,17 +202,6 @@ abstract class ParameterBindingCornerCaseIntegrationSuite(
                 "optionalScore" to optionalScore,
             ),
         )
-
-    private fun selectIdsWhere(whereSql: String, params: Map<String, Any?>): List<Int> =
-        wrapper.queryList<Number>(
-            """
-            SELECT ${quote("id")} AS ${quote("id")}
-            FROM ${table("kt_parameter_binding_case")}
-            WHERE $whereSql
-            ORDER BY ${quote("id")}
-            """.trimIndent(),
-            params,
-        ).map { it.toInt() }
 
     private fun selectParameterRows(): List<ParameterBindingCornerCaseRecord> =
         wrapper.query(

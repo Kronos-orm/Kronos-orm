@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION", "TooManyFunctions")
 
 package com.kotlinorm.compiler.core
 

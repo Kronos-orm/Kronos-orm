@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-private const val MaxJoinSourceArity = 16
+private const val MAX_JOIN_SOURCE_ARITY = 16
 
 /**
  * FQN constants for Kronos classes and interfaces
@@ -209,5 +209,5 @@ fun ClassId.isJoinSourceClassId(): Boolean {
     if (packageFqName != JoinPackageFqName) return false
     val name = relativeClassName.asString()
     return name == "JoinSource" ||
-        name.removePrefix("JoinSource").toIntOrNull()?.let { it in 2..MaxJoinSourceArity } == true
+        name.removePrefix("JoinSource").toIntOrNull()?.let { it in 2..MAX_JOIN_SOURCE_ARITY } == true
 }

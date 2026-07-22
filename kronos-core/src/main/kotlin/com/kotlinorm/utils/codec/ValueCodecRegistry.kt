@@ -279,6 +279,7 @@ internal object ValueCodecRegistry {
      * Preserves contextual mapping failures and wraps arbitrary codec errors
      * with the selected codec and operation without attempting another codec.
      */
+    @Suppress("TooGenericExceptionCaught")
     private inline fun <T> invokeCodec(
         request: ValueConversionRequest,
         codec: RegistryCodec,
@@ -286,8 +287,13 @@ internal object ValueCodecRegistry {
         block: () -> T
     ): T = try {
         block()
+    } catch (cause: CancellationException) {
+        throw cause
+    } catch (cause: ValueMappingException) {
+        throw cause
+    } catch (cause: Error) {
+        throw cause
     } catch (cause: Throwable) {
-        if (cause is Error || cause is CancellationException || cause is ValueMappingException) throw cause
         throw request.failure("${codec.description} failed in $operation", cause)
     }
 

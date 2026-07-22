@@ -91,6 +91,8 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
+private const val GET_SAFE_VALUE_PARAMETER_COUNT = 5
+
 /**
  * Symbol references for Kronos compiler plugin
  *
@@ -635,7 +637,7 @@ context(context: IrPluginContext)
 val getSafeValueSymbol: IrSimpleFunctionSymbol
     get() = context.referenceFunctions(
         CallableId(FqName("com.kotlinorm.utils"), null, Name.identifier("getSafeValue"))
-    ).firstOrNull { it.owner.parameters.valueParameters.size == 5 }
+    ).firstOrNull { it.owner.parameters.valueParameters.size == GET_SAFE_VALUE_PARAMETER_COUNT }
         ?: error("KType getSafeValue overload not found in com.kotlinorm.utils")
 
 // ============================================================================

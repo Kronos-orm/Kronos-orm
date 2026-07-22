@@ -36,8 +36,8 @@ class GradleGeneratedTypeProviderIdentityTest {
     fun compilerOptionsAndServiceUseTheSameIdentity() {
         val identity = gradleGeneratedTypeProviderIdentity("gradle:com.example:sample::main")
 
-        assertEquals(identity.id, identity.compilerOptions[GeneratedProviderIdOptionName])
-        assertEquals(identity.fqName, identity.compilerOptions[GeneratedProviderFqNameOptionName])
+        assertEquals(identity.id, identity.compilerOptions[GENERATED_PROVIDER_ID_OPTION_NAME])
+        assertEquals(identity.fqName, identity.compilerOptions[GENERATED_PROVIDER_FQ_NAME_OPTION_NAME])
         assertEquals("${identity.fqName}\n", identity.serviceContent)
     }
 

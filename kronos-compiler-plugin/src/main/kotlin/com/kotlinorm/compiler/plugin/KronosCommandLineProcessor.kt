@@ -33,13 +33,13 @@ class KronosCommandLineProcessor : CommandLineProcessor {
 
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption(
-            optionName = GeneratedProviderIdOptionName,
+            optionName = GENERATED_PROVIDER_ID_OPTION_NAME,
             valueDescription = "<stable-module-id>",
             description = "Stable id for this compilation's generated type provider",
             required = false
         ),
         CliOption(
-            optionName = GeneratedProviderFqNameOptionName,
+            optionName = GENERATED_PROVIDER_FQ_NAME_OPTION_NAME,
             valueDescription = "<provider-fq-name>",
             description = "Module-unique generated type provider class name",
             required = false
@@ -52,8 +52,8 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         configuration: CompilerConfiguration
     ) {
         when (option.optionName) {
-            GeneratedProviderIdOptionName -> configuration.put(GeneratedProviderIdKey, value)
-            GeneratedProviderFqNameOptionName -> configuration.put(GeneratedProviderFqNameKey, value)
+            GENERATED_PROVIDER_ID_OPTION_NAME -> configuration.put(GeneratedProviderIdKey, value)
+            GENERATED_PROVIDER_FQ_NAME_OPTION_NAME -> configuration.put(GeneratedProviderFqNameKey, value)
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }

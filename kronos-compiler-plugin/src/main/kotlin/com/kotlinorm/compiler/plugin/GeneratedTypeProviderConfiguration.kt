@@ -24,21 +24,21 @@ import org.jetbrains.kotlin.name.FqName
 /**
  * Compiler option carrying the stable module identity for generated metadata.
  */
-internal const val GeneratedProviderIdOptionName = "generated-provider-id"
+internal const val GENERATED_PROVIDER_ID_OPTION_NAME = "generated-provider-id"
 /**
  * Compiler option carrying the generated provider's fully qualified class name.
  */
-internal const val GeneratedProviderFqNameOptionName = "generated-provider-fq-name"
+internal const val GENERATED_PROVIDER_FQ_NAME_OPTION_NAME = "generated-provider-fq-name"
 
 /**
- * Compiler key storing [GeneratedProviderIdOptionName].
+ * Compiler key storing [GENERATED_PROVIDER_ID_OPTION_NAME].
  */
 internal val GeneratedProviderIdKey = CompilerConfigurationKey<String>(
     "stable id of the module-local Kronos generated type provider"
 )
 
 /**
- * Compiler key storing [GeneratedProviderFqNameOptionName].
+ * Compiler key storing [GENERATED_PROVIDER_FQ_NAME_OPTION_NAME].
  */
 internal val GeneratedProviderFqNameKey = CompilerConfigurationKey<String>(
     "fully qualified name of the module-local Kronos generated type provider"
@@ -82,9 +82,9 @@ private val KotlinIdentifier = Regex("[A-Za-z_][A-Za-z0-9_]*")
  */
 internal fun CompilerConfiguration.generatedTypeProviderConfiguration(): GeneratedTypeProviderConfiguration {
     val id = get(GeneratedProviderIdKey)
-        ?: error("Missing compiler option '$GeneratedProviderIdOptionName'")
+        ?: error("Missing compiler option '$GENERATED_PROVIDER_ID_OPTION_NAME'")
     val fqName = get(GeneratedProviderFqNameKey)
-        ?: error("Missing compiler option '$GeneratedProviderFqNameOptionName'")
+        ?: error("Missing compiler option '$GENERATED_PROVIDER_FQ_NAME_OPTION_NAME'")
     return GeneratedTypeProviderConfiguration(id, FqName(fqName))
 }
 
@@ -98,7 +98,7 @@ internal fun CompilerConfiguration.generatedTypeProviderConfigurationOrNull(): G
     val id = get(GeneratedProviderIdKey)
     val fqName = get(GeneratedProviderFqNameKey)
     if (id == null && fqName == null) return null
-    requireNotNull(id) { "Missing compiler option '$GeneratedProviderIdOptionName'" }
-    requireNotNull(fqName) { "Missing compiler option '$GeneratedProviderFqNameOptionName'" }
+    requireNotNull(id) { "Missing compiler option '$GENERATED_PROVIDER_ID_OPTION_NAME'" }
+    requireNotNull(fqName) { "Missing compiler option '$GENERATED_PROVIDER_FQ_NAME_OPTION_NAME'" }
     return GeneratedTypeProviderConfiguration(id, FqName(fqName))
 }

@@ -30,31 +30,6 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
-/**
- * Semantic temporal targets supported by the built-in codec.
- *
- * Target matching is exact: in particular, an arbitrary subclass of
- * [java.util.Date] is not treated as constructible because producing a base
- * `Date` would violate the declared subclass KType. [STRING] and [LONG] are
- * output shapes and only participate when the source or physical target makes
- * the request temporal.
- */
-internal enum class TemporalTargetKind(val temporalType: Boolean = true) {
-    SQL_DATE,
-    SQL_TIME,
-    SQL_TIMESTAMP,
-    UTIL_DATE,
-    LOCAL_DATE_TIME,
-    LOCAL_DATE,
-    LOCAL_TIME,
-    JAVA_INSTANT,
-    ZONED_DATE_TIME,
-    OFFSET_DATE_TIME,
-    KOTLIN_INSTANT,
-    LONG(false),
-    STRING(false)
-}
-
 private data class JdbcTemporalType(
     val nonNull: KType,
     val nullable: KType,

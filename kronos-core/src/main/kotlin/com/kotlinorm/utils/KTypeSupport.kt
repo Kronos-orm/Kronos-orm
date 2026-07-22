@@ -26,7 +26,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeParameter
-import kotlin.reflect.KTypeProjection
 import kotlin.reflect.KVariance
 import kotlin.reflect.full.isSubtypeOf
 
@@ -110,8 +109,8 @@ private fun KType.isKPojoType(visited: MutableSet<KClassifier>): Boolean {
  *
  * Declaration-site and use-site variance, star projections, nested
  * nullability and supertype substitution are delegated to [KType.isSubtypeOf].
- * Narrow fallbacks cover same-class projection containment and equivalent JVM
- * primitive/boxed classifiers when reflection reports a false negative.
+ * The only fallback normalizes equivalent JVM primitive and boxed classifiers,
+ * which can differ when a source type was inferred from a runtime value.
  *
  * @receiver declared or runtime-inferred source type
  * @param target complete declared target type
@@ -119,7 +118,6 @@ private fun KType.isKPojoType(visited: MutableSet<KClassifier>): Boolean {
  */
 internal fun KType.isStructurallyAssignableTo(target: KType): Boolean {
     if (isSubtypeOfSafely(target)) return true
-    if (sameClassifierProjectionFallbackSafely(target)) return true
     return primitiveBoxingFallbackSafely(target)
 }
 
@@ -142,87 +140,6 @@ private fun KType.isSubtypeOfSafely(target: KType): Boolean = try {
     false
 } catch (_: ClassCastException) {
     false
-}
-
-/**
- * Evaluates projection containment for two generic types with the same class.
- *
- * Kotlin reflection can reject valid use-site input projections such as
- * `MutableList<Any>` flowing to `MutableList<in String>`. This fallback keeps
- * the classifier and arity exact, then applies both declaration-site and
- * use-site variance recursively to every argument.
- *
- * @param target complete declared target type
- * @return whether every source projection is contained by its target projection
- */
-private fun KType.sameClassifierProjectionFallbackSafely(target: KType): Boolean {
-    return try {
-        if (isMarkedNullable && !target.isMarkedNullable) return false
-
-        val sourceClass = classifier as? KClass<*> ?: return false
-        if (sourceClass != target.classifier || arguments.isEmpty()) return false
-
-        val typeParameters = sourceClass.typeParameters
-        if (arguments.size != target.arguments.size || arguments.size != typeParameters.size) return false
-
-        arguments.indices.all { index ->
-            arguments[index].isContainedBy(
-                target = target.arguments[index],
-                declarationVariance = typeParameters[index].variance
-            )
-        }
-    } catch (_: LinkageError) {
-        false
-    } catch (_: IllegalArgumentException) {
-        false
-    } catch (_: ClassCastException) {
-        false
-    }
-}
-
-/**
- * Checks whether this source projection fits inside [target].
- *
- * A target star accepts every source projection, while a source star remains
- * conservative for a concrete target. Input and output projections compare
- * their lower and upper bounds in opposite directions; invariant projections
- * require structural equivalence.
- *
- * @param target projection accepted by the declared target type
- * @param declarationVariance variance declared by the shared type parameter
- * @return whether this source projection is safely assignable to [target]
- */
-private fun KTypeProjection.isContainedBy(
-    target: KTypeProjection,
-    declarationVariance: KVariance
-): Boolean {
-    val targetType = target.type ?: return true
-    val sourceType = type ?: return false
-    val sourceVariance = effectiveVariance(declarationVariance) ?: return false
-    val targetVariance = target.effectiveVariance(declarationVariance) ?: return false
-
-    return when (targetVariance) {
-        KVariance.OUT -> sourceVariance != KVariance.IN && sourceType.isStructurallyAssignableTo(targetType)
-        KVariance.IN -> sourceVariance != KVariance.OUT && targetType.isStructurallyAssignableTo(sourceType)
-        KVariance.INVARIANT -> sourceVariance == KVariance.INVARIANT &&
-            sourceType.isStructurallyAssignableTo(targetType) &&
-            targetType.isStructurallyAssignableTo(sourceType)
-    }
-}
-
-/**
- * Combines declaration-site and use-site variance for a concrete projection.
- *
- * @param declarationVariance variance declared by the shared type parameter
- * @return effective variance, or `null` for conflicting projections
- */
-private fun KTypeProjection.effectiveVariance(declarationVariance: KVariance): KVariance? {
-    val useSiteVariance = variance ?: return null
-    return when {
-        declarationVariance == KVariance.INVARIANT -> useSiteVariance
-        useSiteVariance == KVariance.INVARIANT || useSiteVariance == declarationVariance -> declarationVariance
-        else -> null
-    }
 }
 
 /**

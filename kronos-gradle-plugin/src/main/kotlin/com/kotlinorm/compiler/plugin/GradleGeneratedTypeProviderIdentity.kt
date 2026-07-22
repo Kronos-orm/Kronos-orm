@@ -18,30 +18,33 @@ package com.kotlinorm.compiler.plugin
 
 import java.security.MessageDigest
 
+internal const val GENERATED_PROVIDER_ID_OPTION_NAME = "generated-provider-id"
+internal const val GENERATED_PROVIDER_FQ_NAME_OPTION_NAME = "generated-provider-fq-name"
+private const val HASH_BYTE_MASK = 0xff
+private const val HEX_RADIX = 16
+private const val GENERATED_PROVIDER_HASH_LENGTH = 16
+
 internal data class GradleGeneratedTypeProviderIdentity(
     val id: String,
     val fqName: String
 ) {
     val compilerOptions: Map<String, String>
         get() = linkedMapOf(
-            GeneratedProviderIdOptionName to id,
-            GeneratedProviderFqNameOptionName to fqName
+            GENERATED_PROVIDER_ID_OPTION_NAME to id,
+            GENERATED_PROVIDER_FQ_NAME_OPTION_NAME to fqName
         )
 
     val serviceContent: String
         get() = "$fqName\n"
 }
 
-internal const val GeneratedProviderIdOptionName = "generated-provider-id"
-internal const val GeneratedProviderFqNameOptionName = "generated-provider-fq-name"
-
 internal fun gradleGeneratedTypeProviderIdentity(moduleCoordinate: String): GradleGeneratedTypeProviderIdentity {
     val hash = MessageDigest.getInstance("SHA-256")
         .digest(moduleCoordinate.toByteArray(Charsets.UTF_8))
         .joinToString(separator = "") { byte ->
-            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+            (byte.toInt() and HASH_BYTE_MASK).toString(HEX_RADIX).padStart(2, '0')
         }
-        .take(16)
+        .take(GENERATED_PROVIDER_HASH_LENGTH)
     return GradleGeneratedTypeProviderIdentity(
         id = "$moduleCoordinate#$hash",
         fqName = "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_$hash"

@@ -39,8 +39,8 @@ class MavenGeneratedTypeProviderIdentityTest {
     fun compilerOptionsAndServiceUseTheSameIdentity() {
         val identity = mavenGeneratedTypeProviderIdentity("maven:com.example:sample:default-compile")
 
-        assertEquals(identity.id, identity.compilerOptions[GeneratedProviderIdOptionName])
-        assertEquals(identity.fqName, identity.compilerOptions[GeneratedProviderFqNameOptionName])
+        assertEquals(identity.id, identity.compilerOptions[GENERATED_PROVIDER_ID_OPTION_NAME])
+        assertEquals(identity.fqName, identity.compilerOptions[GENERATED_PROVIDER_FQ_NAME_OPTION_NAME])
         assertEquals("${identity.fqName}\n", identity.serviceContent)
     }
 

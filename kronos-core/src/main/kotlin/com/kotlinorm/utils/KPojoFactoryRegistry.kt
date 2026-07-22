@@ -102,6 +102,7 @@ private object KPojoFactories {
         return result.validateFactoryResult(type)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun invokeFactory(type: KType, factory: KPojoFactory): KPojo = try {
         factory.create(type)
     } catch (cause: CancellationException) {

@@ -565,6 +565,14 @@ val orExprMethodSymbol: IrSimpleFunctionSymbol
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
+val iterableAnyConditionExprMethodSymbol: IrSimpleFunctionSymbol
+    get() = kTableForConditionSymbol.requiredFunction(
+        "iterableAnyConditionExpr",
+        "iterableAnyConditionExpr method not found in KTableForCondition"
+    )
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
 val existsExprMethodSymbol: IrSimpleFunctionSymbol
     get() = kTableForConditionSymbol.requiredFunction("existsExpr", "existsExpr method not found in KTableForCondition")
 

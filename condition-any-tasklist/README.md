@@ -22,15 +22,15 @@
 ## 当前判断
 
 - `KTableForCondition` 已能构造 `SqlExpr.Like`、`SqlExpr.Binary(And/Or)` 和命名参数；syntax 模型不需要新增 `LikeAny` 节点。
-- `ConditionAnalysis` 已识别 `contains`、`&&`、`||` 和取反，但方法分发器尚无 Kotlin `Iterable.any(predicate)` 分支。
+- `ConditionAnalysis` 通过 Kotlin stdlib 的已解析 callable、Iterable receiver 和谓词形状识别 `Iterable.any(predicate)`，将子谓词交给同一条 `SqlExpr?` 构造管线。
 - `orExpr(emptyList())` 当前返回 `null`，表示省略条件。此既有语义不能全局改变，而空集合 `any` 必须为 false。
-- 不能只按函数名识别 `any`：Kronos 同时存在量化子查询 `any(query)` 与 PostgreSQL 函数 `f.any(...)`。
+- 同名的量化子查询 `any(query)` 与 PostgreSQL 函数 `f.any(...)` 保持各自的 lowering 路径。
 
 ## 总览
 
 | 进度 | 任务 | 状态 | 说明 |
 |------|------|------|------|
-| 0% | 任务 1：降低非空 Iterable.any 谓词 | 待处理 | 缺少编译器支持，但 syntax 基元已具备。 |
-| 0% | 任务 2：保持逻辑组合与取反 | 待处理 | AST 与 renderer 已支持优先级，动态聚合必须正确进入该路径。 |
+| 100% | 任务 1：降低非空 Iterable.any 谓词 | 已完成 | 已解析 stdlib 调用并生成按迭代顺序聚合的 syntax OR 树。 |
+| 100% | 任务 2：保持逻辑组合与取反 | 已完成 | 集合谓词已进入既有 `SqlExpr?` 逻辑组合与取反路径。 |
 | 0% | 任务 3：定义空集合与无值语义 | 待处理 | 空 `any` 与现有空 `orExpr` 的省略语义不同。 |
-| 0% | 任务 4：文档与回归验证 | 待处理 | 尚无用户文档或 compiler testData 契约。 |
+| 0% | 任务 4：文档与回归验证 | 待处理 | 在任务 3 的语义完成后整理用户文档并扩展回归验证。 |

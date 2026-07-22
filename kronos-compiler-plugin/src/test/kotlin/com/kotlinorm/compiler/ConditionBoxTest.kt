@@ -265,4 +265,22 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
      */
     @Test
     fun capturedNonKPojoValues() = box("capturedNonKPojoValues")
+
+    /**
+     * Verifies Iterable.any string predicates lower to ordered OR syntax expressions.
+     */
+    @Test
+    fun iterableAnyContains() = box("iterableAnyContains")
+
+    /**
+     * Verifies Iterable.any predicates compose with boolean operators and negation.
+     */
+    @Test
+    fun iterableAnyLogicalComposition() = box("iterableAnyLogicalComposition")
+
+    /**
+     * Verifies same-named Kronos function calls remain outside Iterable.any lowering.
+     */
+    @Test
+    fun iterableAnyCallableBoundaries() = box("iterableAnyCallableBoundaries")
 }

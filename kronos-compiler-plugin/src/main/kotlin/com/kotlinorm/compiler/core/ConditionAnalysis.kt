@@ -32,21 +32,25 @@ import com.kotlinorm.compiler.utils.isKronosFunction
 import com.kotlinorm.compiler.utils.valueArguments
 import com.kotlinorm.compiler.backend.transformers.getTableNameExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irBranch
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irElseBranch
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irIfThenElse
 import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irWhen
-import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -60,16 +64,19 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.expressions.IrWhen
+import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * Condition analysis and construction
@@ -133,6 +140,8 @@ private val NoArgComparisonByFunctionName = mapOf(
 )
 
 private val StringMatchFunctionNames = setOf("like", "notLike", "startsWith", "endsWith", "contains", "regexp", "notRegexp")
+private val KotlinCollectionsPackageFqName = FqName("kotlin.collections")
+private val KotlinIterableFqName = FqName("kotlin.collections.Iterable")
 
 private data class ConditionOperand(
     val expression: IrExpression,
@@ -267,6 +276,10 @@ private fun analyzeMethodSqlExpr(
     val extensionReceiver = call.extensionReceiverArgument
     val dispatchReceiver = call.dispatchReceiverArgument
 
+    if (call.isKotlinIterableAnyPredicate()) {
+        return buildIterableAnySqlExpr(irFunction, call, errorReporter, setNot)
+    }
+
     return when (funcName) {
         "run" -> {
             val lambda = call.valueArguments.firstNotNullOfOrNull { it as? IrFunctionExpression } ?: return null
@@ -382,6 +395,54 @@ private fun analyzeMethodSqlExpr(
             null
         }
     }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildIterableAnySqlExpr(
+    irFunction: IrFunction,
+    call: IrCall,
+    errorReporter: ErrorReporter,
+    setNot: Boolean
+): IrExpression? {
+    val values = call.extensionReceiverArgument ?: return null
+    val lambda = call.getValueArgumentSafe(0) as? IrFunctionExpression ?: return null
+    val predicate = lambda.function
+    val parameter = predicate.parameters.singleOrNull { it.kind == IrParameterKind.Regular } ?: return null
+    val sqlExpr = analyzeAndBuildSqlExpr(irFunction, predicate.body ?: return null, errorReporter, setNot) ?: return null
+    val sqlExprType = expressionClassSymbol.defaultType.makeNullable()
+
+    predicate.returnType = sqlExprType
+    predicate.body = context.irBuiltIns.createIrBuilder(predicate.symbol).irBlockBody {
+        +irReturn(sqlExpr)
+    }
+
+    val predicateType = context.irBuiltIns.functionN(1).typeWith(parameter.type, sqlExprType)
+    val sqlPredicate = IrFunctionExpressionImpl(
+        UNDEFINED_OFFSET,
+        UNDEFINED_OFFSET,
+        predicateType,
+        predicate,
+        IrStatementOrigin.LAMBDA
+    )
+    val receiver = irFunction.parameters.extensionReceiver
+        ?: error("KTableForCondition extension receiver not found for Iterable.any generation.")
+    return builder.irCall(iterableAnyConditionExprMethodSymbol).apply {
+        dispatchReceiver = builder.irGet(receiver)
+        typeArguments[0] = parameter.type
+        arguments[1] = values
+        arguments[2] = sqlPredicate
+        arguments[3] = builder.irBoolean(setNot)
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.isKotlinIterableAnyPredicate(): Boolean {
+    val function = symbol.owner
+    return function.name.asString() == "any" &&
+        function.kotlinFqName.parent() == KotlinCollectionsPackageFqName &&
+        function.parameters.extensionReceiver?.type?.classFqName == KotlinIterableFqName &&
+        valueArguments.singleOrNull() is IrFunctionExpression
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)

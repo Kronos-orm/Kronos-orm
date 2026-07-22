@@ -12,7 +12,7 @@
 
 - `KTableForCondition.andExpr` 与 `orExpr` 将 `SqlExpr?` 子节点折叠为 `SqlExpr.Binary` 树；`containsConditionExpr` 构造已转义、已参数化的 `SqlExpr.Like`。
 - `SqlExpr.Binary` 与 `SqlBinaryOperator.And` / `Or` 足以表达所需树结构，`StandardSqlRenderer` 会按谓词优先级补括号。
-- `ConditionAnalysis` 当前会降低逻辑运算和字符串匹配；不支持的方法会报告未识别条件函数，尚不识别 Kotlin 集合 `any`。
+- `ConditionAnalysis` 已降低逻辑运算、字符串匹配和 Kotlin stdlib `Iterable.any(predicate)`；集合元素使用同一条 syntax 构造路径。
 - 空 `orExpr` 返回 `null`，因此直接套用它会错误地移除空集合 `any` 的过滤条件。
 
 ## 公开语法

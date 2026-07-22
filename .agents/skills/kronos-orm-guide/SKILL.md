@@ -54,7 +54,7 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 - 起步：`getting-started/installation`、`getting-started/quick-start`、`getting-started/first-query`。
 - 映射工作流：`mapping/code-first`、`mapping/kpojo`、`mapping/table-and-column`、`mapping/primary-key`、`mapping/indexes`。
 - 查询首页和条件规则：`query/select`、`query/conditions`、`query/subqueries`。
-- 数据库和方言：`database/connect-to-db`、`database/dialect-support`、`database/create-database-dialect`。
+- 数据库和方言：`database/connect-to-db`、`database/dialect-support`、`database/create-database-dialect`、`database/android-sqlite`。
 - 配置：`configuration/global-config`、`configuration/common-strategy`、`configuration/logging`、`configuration/compiler-plugins`。
 - 修改操作：`mutation/insert`、`mutation/update`、`mutation/delete`、`mutation/upsert`、`mutation/logic-delete`、`mutation/optimistic-lock`、`mutation/last-insert-id`。
 - 工具入口：`resources/database-first`、`resources/codegen`、`resources/idea-plugin`、`resources/troubleshooting`。
@@ -101,6 +101,14 @@ dependencies {
 要求：JDK 8+，Kotlin 2.4.0+
 
 技能中的 Kronos 推荐稳定版本直接写 `0.2.4`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+
+---
+
+### Android/JVM SQLite
+
+Android/JVM applications use `kronos-core`, the Gradle plugin, and a `KronosDataSourceWrapper` around Android `SQLiteDatabase`. The dedicated `database/android-sqlite` chapter is the source of truth for setup, the reference wrapper, transaction scope, logging, and the complete Android example.
+
+KPojo models use the same schema, query, and mutation APIs after the application installs its wrapper.
 
 ---
 

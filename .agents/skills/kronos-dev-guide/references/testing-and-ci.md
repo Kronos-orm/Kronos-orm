@@ -201,7 +201,7 @@ class MysqlTest {
                 url = "jdbc:mysql://localhost:3306/kronos_testing"
                 username = System.getenv("MYSQL_USERNAME") ?: "kronos"
                 password = System.getenv("MYSQL_PASSWORD") ?: ""
-            }.let { KronosBasicWrapper(it) }
+            }.let { KronosJdbcWrapper(it) }
         }
 
         @BeforeAll @JvmStatic
@@ -278,7 +278,8 @@ All workflows in `.github/workflows/`:
 | `kronos-compiler-plugin-testing.yml` | push/PR to `main` | `./gradlew :kronos-compiler-plugin:test` (JDK 21) |
 | `kronos-codegen-testing.yml` | push/PR to `main` | `./gradlew :kronos-codegen:test` (JDK 21) |
 | `kronos-testing.yml` | push/PR to `main` | Integration tests with real DBs (MySQL 8.0, PostgreSQL 17, SQL Server 2022 via `ankane/setup-*` actions) |
-| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out `kronos-example-ktor` and `kronos-example-spring-boot`, rewires them to the current Kronos version, and runs backend smoke tests only |
+| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out external examples, rewires their coordinates to the current version, runs backend smoke tests, and builds/lints/tests the Android example on an API 35 emulator |
+| `kronos-docs-testing.yml` | docs/workflow push or PR to `main` | Installs locked pnpm dependencies and builds the Angular/ng-doc documentation site |
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
 | `publish.yml` | push to `main` | Snapshot publishing to Central Snapshots, or formal release publishing to Maven Central, JetBrains Marketplace, and GitHub Releases |

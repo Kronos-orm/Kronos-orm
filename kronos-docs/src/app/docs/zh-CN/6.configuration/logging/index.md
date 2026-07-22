@@ -42,6 +42,10 @@ with(Kronos) {
 logs/kronos/kronos-log-yyyy-MM-dd.log
 ```
 
+## Android 日志
+
+Android/JVM 日志配置说明统一放在 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} 接入章节。
+
 ## 关闭内置日志输出
 
 需要跳过内置日志的控制台和文件输出时，将 `Kronos.logPath` 设置为空数组。

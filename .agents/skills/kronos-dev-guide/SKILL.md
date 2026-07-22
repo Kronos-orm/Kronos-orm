@@ -38,7 +38,7 @@ Use this protocol to preserve discovered project pitfalls and avoid repeating th
 User DSL code (select/insert/update/delete/upsert/join/union)
   ↓ compile time
 Compiler Plugin (kronos-compiler-plugin)
-  → KPojo class augmentation (toDataMap, fromMapData, kronosColumns, get/set, strategies)
+  → KPojo class augmentation (toDataMap, fromMapData, __columns, get/set, strategies)
   → DSL lambda transformation (KTableForCondition/Select/Set/Sort/Reference → Criteria/Field IR)
   ↓ runtime
 ORM Clause classes (SelectClause, InsertClause, etc.)
@@ -46,7 +46,7 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
   → SqlManager routes to dialect-specific SqlRenderer
   → SqlRenderer renders AST → SQL string + named parameters
   → NamedParameterUtils converts :name → ? positional params
-  → KronosDataSourceWrapper executes via JDBC
+  → KronosDataSourceWrapper executes through JDBC or platform-specific wrappers
 ```
 
 ## Module Map
@@ -55,10 +55,10 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
 |--------|------|-----------------|
 | `kronos-core` | Contracts, AST, SQL rendering, ORM ops, strategies, DSL beans | `Kronos.kt`, `ast/`, `database/`, `orm/`, `beans/dsl/` |
 | `kronos-compiler-plugin` | K2 IR transformations | `KronosParserTransformer`, `KronosIrClassTransformer` |
-| `kronos-gradle-plugin` | Gradle build integration | `KronosGradlePlugin.kt` |
+| `kronos-gradle-plugin` | Gradle compiler integration and generated-provider resources for JVM/Android variants | `KronosGradlePlugin.kt`, `GenerateKronosGeneratedTypeService.kt` |
 | `kronos-maven-plugin` | Maven build integration | `KronosMavenPlugin.kt` |
 | `kronos-logging` | Pluggable logging (SLF4J/JUL/Commons/Android) | `KronosLoggerApp.kt` |
-| `kronos-jdbc-wrapper` | Default JDBC DataSource wrapper | `KronosBasicWrapper.kt` |
+| `kronos-jdbc-wrapper` | Default JDBC DataSource wrapper | `KronosJdbcWrapper.kt` |
 | `kronos-codegen` | DB schema → KPojo Kotlin files | `ConfigReader.kt`, `TemplateConfig.kt` |
 | `kronos-testing` | Integration tests (real DBs) | MySQL/Postgres/SQLite/Oracle/MSSQL tests |
 | `kronos-idea-plugin` | IntelliJ plugin UI, Code Generator, Templates, and projection completion | `plugin.xml`, `KronosProjectionCompletionContributor`, `MainPanel` |

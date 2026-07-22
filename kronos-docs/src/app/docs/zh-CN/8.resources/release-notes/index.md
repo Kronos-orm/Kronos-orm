@@ -7,6 +7,12 @@
 
 ## 📝 更新日志
 
+### 0.2.5-SNAPSHOT
+
+- ✨ 新增 Android/JVM SQLite 接入：使用 Gradle 插件、`kronos-core` 和 Android `SQLiteDatabase` wrapper。
+- ✨ 新增 [Android SQLite](/documentation/zh-CN/database/android-sqlite) 指南与 [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) 参考应用，其中包含 `AndroidSQLiteDataSourceWrapper` 实现。
+- 📚 将 Android/JVM 的安装、wrapper、事务和日志入口统一链接到 Android SQLite 独立指南。
+
 ### 0.2.4
 
 - 🐛 修复 identity-source select 的生成投影类型，并在 alias、生成投影、window 派生查询与嵌套投影中保留包括 `@Serialize` 在内的源字段元数据 ([#246](https://github.com/Kronos-orm/Kronos-orm/issues/246))。

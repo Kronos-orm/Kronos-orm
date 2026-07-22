@@ -2,6 +2,10 @@
 
 `KronosDataSourceWrapper`连接Kronos SQL task和数据库执行层。内置JDBC实现是`KronosJdbcWrapper`，自定义wrapper可以把执行委托给Spring JDBC、JDBI、MyBatis或项目中的数据访问层。
 
+## Android SQLite
+
+Android/JVM `SQLiteDatabase` 配置和完整 wrapper 参考实现见{{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}。
+
 ## 成员属性
 
 {{ $.members([

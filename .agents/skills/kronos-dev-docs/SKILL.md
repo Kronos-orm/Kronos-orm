@@ -67,8 +67,8 @@ Use the current repository implementation as the source of truth.
 - Complete database dialects are MySQL, PostgreSQL, SQLite, SQL Server, and Oracle.
 - `Kronos` global configuration is direct property assignment on the `Kronos` object; do not document `Kronos.init { ... }` unless it exists again.
 - `KronosJdbcWrapper` lives in `com.kotlinorm.wrappers`, takes a `DataSource`, optional `DBType`, and `KronosJdbcConfig` block; database type is inferred from JDBC metadata when `databaseType` is not supplied.
-- Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, and implementation pipeline details out of ordinary docs navigation.
-- Multi-platform, KMP, mobile, and Android language may remain in homepage/blog/product direction areas, but runnable tutorials must focus on current working JVM/JDBC usage.
+- Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, service-discovery details, and implementation pipeline details out of ordinary docs navigation.
+- Android/JVM SQLite has a dedicated `database/android-sqlite` chapter. Keep Android setup, wrapper behavior, transactions, logging, and example links there; installation, data-source wrapper, custom-wrapper, transaction, and logging pages retain short Android headings that link to this chapter.
 
 Version upgrade docs checklist:
 

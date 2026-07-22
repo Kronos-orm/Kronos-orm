@@ -10,7 +10,7 @@ Before making compiler plugin architecture changes, adding FIR/frontend extensio
 5. [FieldAnalysis — How Fields Are Parsed](#fieldanalysis)
 6. [ConditionAnalysis — How Conditions Are Parsed](#conditionanalysis)
 7. [TypeParameterFixer](#typeparameterfixer)
-8. [KPojoFactoryGenerator](#kpojofactorygenerator)
+8. [GeneratedTypeProviderGenerator](#generatedtypeprovidergenerator)
 9. [Symbols and Constants](#symbols-and-constants)
 10. [Debugging IR Output](#debugging-ir-output)
 
@@ -29,7 +29,7 @@ KronosCompilerPluginRegistrar (@AutoService(CompilerPluginRegistrar), supportsK2
 KronosIrGenerationExtension.generate(moduleFragment, pluginContext)
   1. Creates KronosParserTransformer, runs moduleFragment.transform(transformer, null)
   2. Materializes generated projection/context classes
-  3. Generates the module-local KPojo factory provider
+  3. Generates the module-local `GeneratedTypeProvider`
   4. Optionally dumps IR to files for debugging
 ```
 
@@ -77,18 +77,17 @@ In `visitCall()`, after standard traversal, `TypeParameterFixer.shouldFix()` che
 | `toDataMap()` | `mutableMapOf("col1" to this.prop1, "col2" to this.prop2, ...)` — respects `@Ignore` |
 | `fromMapData(map)` | Creates new instance, sets each property from map via constructor + copy |
 | `safeFromMapData(map)` | Same but uses `getSafeValue()` for type-safe conversion |
-| `kronosColumns()` | `mutableListOf(Field("col", "prop", type, primaryKey, ...), ...)` for all properties |
+| `__columns` | `mutableListOf(Field("col", "prop", type, primaryKey, ...), ...)` for all properties |
 | `get(name)` | `when(name) { "prop1" -> this.prop1; "prop2" -> this.prop2; ... }` |
 | `set(name, value)` | `when(name) { "prop1" -> this.prop1 = value as Type; ... }` |
 | `__tableName` | From `@Table("name")` annotation or `tableNamingStrategy.k2db(className)` |
 | `__tableComment` | Extracted from KDoc comment on the class |
-| `kronosTableIndex()` | Reads `@TableIndex` annotations → `mutableListOf(KTableIndex(...))` |
-| `kronosPrimaryKey()` | Reads `@PrimaryKey` → `KronosCommonStrategy(enabled, field)` |
-| `kronosCreateTime()` | Reads `@CreateTime` → `KronosCommonStrategy(enabled, field)` |
-| `kronosUpdateTime()` | Reads `@UpdateTime` → `KronosCommonStrategy(enabled, field)` |
-| `kronosLogicDelete()` | Reads `@LogicDelete` → `KronosCommonStrategy(enabled, field)` |
-| `kronosOptimisticLock()` | Reads `@Version` → `KronosCommonStrategy(enabled, field)` |
-| `kClass()` | Returns `this::class` (the actual KClass, not `KPojo::class`) |
+| `__tableIndexes` | Reads `@TableIndex` annotations → `mutableListOf(KTableIndex(...))` |
+| `__createTime` | Reads `@CreateTime` → `KronosCommonStrategy(enabled, field)` |
+| `__updateTime` | Reads `@UpdateTime` → `KronosCommonStrategy(enabled, field)` |
+| `__logicDelete` | Reads `@LogicDelete` → `KronosCommonStrategy(enabled, field)` |
+| `__optimisticLock` | Reads `@Version` → `KronosCommonStrategy(enabled, field)` |
+| `__kType` | Returns the complete KPojo `KType` used by generated metadata and factories |
 
 ### How Annotations Are Read
 `AnnotationUtils.kt` provides:
@@ -201,28 +200,29 @@ This avoids runtime reflection for type checking during result mapping.
 
 ---
 
-## KPojoFactoryGenerator
+## GeneratedTypeProviderGenerator
 
-`KPojoFactoryGenerator` creates a module-local provider class under `com.kotlinorm.generated.factory`. The provider registers a single factory function that maps `KClass<out KPojo>` to direct constructor calls:
+`GeneratedTypeProviderGenerator` creates a module-local provider class under `com.kotlinorm.generated.factory`. The provider contributes exact KPojo types and direct constructor calls to the runtime metadata registry:
 
 ```kotlin
 // Generated code (conceptual):
-class KronosGeneratedKPojoFactoryProvider : KPojoFactoryProvider {
-    override fun register() {
-        registerKPojoFactory { kClass ->
-            when (kClass) {
-                User::class -> User()
-                Order::class -> Order()
-                else -> null
-            }
-        }
+class KronosGeneratedTypeProvider_hash : GeneratedTypeProvider {
+    override val id = "gradle:...#hash"
+
+    override fun contributeTo(registrar: GeneratedTypeRegistrar) {
+        registrar.registerKPojo(
+            type = typeOf<User>(),
+            ownerId = "...",
+            constructorSignature = "User()",
+            factory = KPojoFactory { _ -> User() }
+        )
     }
 }
 ```
 
-The Gradle plugin writes `META-INF/services/com.kotlinorm.utils.KPojoFactoryProvider`, and runtime `createInstance()` loads providers through `ServiceLoader` on first use. This enables generic KPojo instantiation without reflection and without binding the factory map to a user init call site.
+The Gradle plugin passes a stable provider identity and fully qualified class name to each compilation. It then writes the matching `META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider` descriptor after Kotlin output is available, including Android application and library variants. Runtime `Kronos.createKPojo(type)` reads the generated metadata through `GeneratedTypeProvider` discovery on first use.
 
-Generated provider methods must be real instance members. If a function is added with `addFunction`, make sure it has a copied dispatch receiver owned by the function, not the class `thisReceiver` node itself.
+Generated provider methods must be real instance members. If `contributeTo` is added with `addFunction`, make sure it has a copied dispatch receiver owned by the function, not the class `thisReceiver` node itself.
 
 ---
 

@@ -17,7 +17,7 @@ A modern ORM framework designed for Kotlin.
 </h3>
 <div align="center">
 
-Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Built for both server-side and mobile applications.
+Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Built for JVM server applications and Android/JVM SQLite applications.
 
 [![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
@@ -57,7 +57,7 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 - **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server and Oracle.
 - **Full-featured** — Transactions, cascading (1:1 / 1:N / M:N), schema sync, serialization, cross-database joins.
 - **Built-in strategies** — Logical deletion, optimistic lock, create/update timestamps. All configurable.
-- **Framework agnostic** — Spring Boot, Ktor, Vert.x, Solon, Android. Plug in anywhere.
+- **Framework and platform integration** — Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLite.
 - **Coroutine-friendly** — Designed for structured concurrency from the ground up.
 - **Compile-time mappers** — KPojo to/from Map conversion with near-zero overhead.
 - **Compile-time typed projections** — `select`, `join`, and `union` expose generated result types whose fields and aliases are checked by Kotlin.
@@ -159,6 +159,7 @@ val users = union(currentUsers, archivedUsers)
 
 | Kronos version | Supported Kotlin version | Notes |
 |----------------|--------------------------|-------|
+| `0.2.5-SNAPSHOT` | `2.4.0+` | Android/JVM SQLite preview; see the [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) |
 | `0.2.4` | `2.4.0+` | Recommended version; latest stable patch on the Kotlin 2.4.0 line |
 | `0.2.3` | `2.4.0+` | Adds cursor pagination and derived projection fixes |
 | `0.2.0` | `2.4.0+` | Includes breaking query, wrapper, and type-metadata API changes |
@@ -257,6 +258,10 @@ dependencies {
 
 </details>
 
+### Android/JVM and SQLite
+
+Android/JVM support is available in the current `0.2.5-SNAPSHOT` preview. It uses `kronos-core`, the Gradle plugin, and a `KronosDataSourceWrapper` around Android `SQLiteDatabase`. The [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) is the single setup and wrapper reference; the [Android example](https://github.com/Kronos-orm/kronos-example-android) provides the complete application.
+
 ## Supported Databases
 
 MySQL | PostgreSQL | SQLite | SQL Server | Oracle
@@ -277,6 +282,10 @@ Kronos.dataSource = { KronosJdbcWrapper(SomeDataSource()) }
 ```
 
 `KronosJdbcWrapper` can also receive `databaseType = DBType.Mysql` and a configuration block for JDBC statement settings, warning handling, parameter binding, and result mapping. See [Connect to Database](https://kotlinorm.com/#/documentation/en/database/connect-to-db) for dynamic / multiple data sources.
+
+### Android/JVM SQLite
+
+Android applications configure an `SQLiteDatabase` wrapper as their Kronos data source. See the [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) for the complete setup and the [reference wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) for an implementation starting point.
 
 ### Model Definition
 
@@ -497,7 +506,7 @@ All operations are resolved at compile time. No reflection.
 | Ktor | [kronos-example-ktor](https://github.com/Kronos-orm/kronos-example-ktor) |
 | Vert.x | [kronos-example-vertx](https://github.com/Kronos-orm/kronos-example-vertx) |
 | Solon | [kronos-example-solon](https://github.com/Kronos-orm/kronos-example-solon) |
-| Android | [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) |
+| Android/JVM + SQLite | [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) · [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) |
 
 ## AI Coding Assistant Integration
 

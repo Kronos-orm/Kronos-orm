@@ -86,6 +86,9 @@ Kronos.transact(
 
 可用隔离级别包括 `READ_UNCOMMITTED`、`READ_COMMITTED`、`REPEATABLE_READ` 和 `SERIALIZABLE`。
 
+> **Note**
+> Android/JVM SQLite 的事务行为统一见 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}。
+
 ## 保存点
 
 `TransactionScope` 是事务 block 的 receiver。JDBC wrapper 可以把当前事务连接传给 `TransactionScope`，从而使用 `savepoint`、`rollbackToSavepoint` 和 `releaseSavepoint`。

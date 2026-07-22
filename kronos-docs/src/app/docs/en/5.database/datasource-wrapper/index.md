@@ -2,6 +2,10 @@
 
 `KronosDataSourceWrapper` connects Kronos SQL tasks to a database execution engine. The built-in JDBC implementation is `KronosJdbcWrapper`, and custom wrappers can delegate execution to Spring JDBC, JDBI, MyBatis, or another data access layer.
 
+## Android SQLite
+
+For Android/JVM `SQLiteDatabase` setup and a complete wrapper reference, see {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}.
+
 ## Properties
 
 {{ $.members([

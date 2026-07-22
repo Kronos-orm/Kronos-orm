@@ -7,6 +7,12 @@
 
 ## Update Logs
 
+### 0.2.5-SNAPSHOT
+
+- ✨ Add Android/JVM SQLite integration through the Gradle plugin, `kronos-core`, and an Android `SQLiteDatabase` wrapper.
+- ✨ Add the [Android SQLite](/documentation/en/database/android-sqlite) guide and the [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) reference application, including the `AndroidSQLiteDataSourceWrapper` implementation.
+- 📚 Link Android/JVM installation, wrapper, transaction, and logging entry points to the dedicated Android SQLite guide.
+
 ### 0.2.4
 
 - 🐛 Fix generated projection typing for identity-source selections and preserve source metadata, including `@Serialize`, across aliased, generated, window-derived, and nested projections ([#246](https://github.com/Kronos-orm/Kronos-orm/issues/246)).

@@ -42,6 +42,10 @@ The file name follows the bundled logger rule.
 logs/kronos/kronos-log-yyyy-MM-dd.log
 ```
 
+## Android logging
+
+Android/JVM logging guidance is kept with the {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} integration chapter.
+
 ## Disable bundled log output
 
 Set `Kronos.logPath` to an empty array when the bundled logger should skip console and file output.

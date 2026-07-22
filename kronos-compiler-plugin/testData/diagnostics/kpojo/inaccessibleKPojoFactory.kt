@@ -18,24 +18,24 @@
 
 import com.kotlinorm.interfaces.KPojo
 
-private data class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>PrivateTopLevelKPojo<!>(
+private data <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class PrivateTopLevelKPojo<!>(
     var id: Int? = null,
 ) : KPojo
 
-private class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>PrivateImplicitConstructorKPojo<!> : KPojo
+private <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class PrivateImplicitConstructorKPojo<!> : KPojo
 
 private class PrivateRequiredConstructorKPojo(val id: Int) : KPojo
 
 private object PrivateOwner {
-    data class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>PrivateNestedKPojo<!>(
+    data <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class PrivateNestedKPojo<!>(
         var id: Int? = null,
     ) : KPojo
 
-    class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>DefaultConstructorKPojo<!>(
+    <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class DefaultConstructorKPojo<!>(
         var id: Int = 0,
     ) : KPojo
 
-    class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>SecondaryNoArgKPojo<!> private constructor(
+    <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class SecondaryNoArgKPojo<!> private constructor(
         val id: Int,
     ) : KPojo {
         internal constructor() : this(0)
@@ -57,14 +57,14 @@ private object PrivateOwner {
 
     open class ProtectedConstructorKPojo protected constructor() : KPojo
 
-    class <!KRONOS_GENERIC_KPOJO_NOT_SUPPORTED!>GenericKPojo<!><T>(
+    <!KRONOS_GENERIC_KPOJO_NOT_SUPPORTED!>class GenericKPojo<!><T>(
         var value: T? = null,
     ) : KPojo
 }
 
 private class PrivateClassOwner {
     class PublicMiddle {
-        class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>DeeplyNestedKPojo<!> : KPojo
+        <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class DeeplyNestedKPojo<!> : KPojo
     }
 }
 
@@ -73,7 +73,7 @@ class PublicOwner {
 }
 
 internal object InternalOwner {
-    private class <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>PrivateNestedKPojo<!> : KPojo
+    private <!KRONOS_INACCESSIBLE_KPOJO_FACTORY!>class PrivateNestedKPojo<!> : KPojo
 }
 
 internal data class InternalKPojo(var id: Int? = null) : KPojo

@@ -37,8 +37,8 @@ class KTypeSupportTest {
 
     @Test
     fun `assignability honors declaration-site contravariance`() {
-        assertTrue(typeOf<Comparator<Any>>().isStructurallyAssignableTo(typeOf<Comparator<String>>()))
-        assertFalse(typeOf<Comparator<String>>().isStructurallyAssignableTo(typeOf<Comparator<Any>>()))
+        assertTrue(typeOf<Contravariant<Any>>().isStructurallyAssignableTo(typeOf<Contravariant<String>>()))
+        assertFalse(typeOf<Contravariant<String>>().isStructurallyAssignableTo(typeOf<Contravariant<Any>>()))
     }
 
     @Test
@@ -54,6 +54,32 @@ class KTypeSupportTest {
         assertFalse(typeOf<MutableList<CharSequence>>().isStructurallyAssignableTo(typeOf<MutableList<String>>()))
         assertTrue(typeOf<MutableList<Any>>().isStructurallyAssignableTo(contravariantTarget))
         assertFalse(typeOf<MutableList<String>>().isStructurallyAssignableTo(typeOf<MutableList<Any>>()))
+    }
+
+    @Test
+    fun `projection fallback preserves generic structure and nested nullability`() {
+        val contravariantStringTarget = MutableList::class.createType(
+            listOf(KTypeProjection.contravariant(typeOf<String>()))
+        )
+        val covariantAnySource = MutableList::class.createType(
+            listOf(KTypeProjection.covariant(typeOf<Any>()))
+        )
+        val covariantNonNullTarget = MutableList::class.createType(
+            listOf(KTypeProjection.covariant(typeOf<CharSequence>()))
+        )
+        val contravariantNullableTarget = MutableList::class.createType(
+            listOf(KTypeProjection.contravariant(typeOf<String?>()))
+        )
+
+        assertFalse(typeOf<MutableList<*>>().isStructurallyAssignableTo(typeOf<MutableList<String>>()))
+        assertFalse(typeOf<MutableList<*>>().isStructurallyAssignableTo(contravariantStringTarget))
+        assertFalse(covariantAnySource.isStructurallyAssignableTo(contravariantStringTarget))
+        assertFalse(
+            typeOf<MutableList<MutableList<String>>>()
+                .isStructurallyAssignableTo(typeOf<MutableList<MutableList<CharSequence>>>())
+        )
+        assertFalse(typeOf<MutableList<String?>>().isStructurallyAssignableTo(covariantNonNullTarget))
+        assertFalse(typeOf<MutableList<Any>>().isStructurallyAssignableTo(contravariantNullableTarget))
     }
 
     @Test
@@ -160,4 +186,6 @@ class KTypeSupportTest {
         override val isMarkedNullable: Boolean = false
         override val annotations: List<Annotation> = emptyList()
     }
+
+    private interface Contravariant<in T>
 }

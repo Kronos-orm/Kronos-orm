@@ -946,7 +946,10 @@ class ValueCodecRegistryTest {
         assertEquals(42, ValueCodecRegistry.convert(decodeRequest("42", typeOf<Int>())))
         assertEquals(42L, ValueCodecRegistry.convert(decodeRequest(BigDecimal("42.9"), typeOf<Long>())))
         assertEquals(BigDecimal("42.5"), ValueCodecRegistry.convert(decodeRequest(42.5, typeOf<BigDecimal>())))
-        assertEquals(BigInteger("42"), ValueCodecRegistry.convert(decodeRequest(BigDecimal("42.5"), typeOf<BigInteger>())))
+        assertEquals(
+            BigInteger("42"),
+            ValueCodecRegistry.convert(decodeRequest(BigDecimal("42.5"), typeOf<BigInteger>()))
+        )
         assertEquals(true, ValueCodecRegistry.convert(decodeRequest(1, typeOf<Boolean>())))
         assertEquals(false, ValueCodecRegistry.convert(decodeRequest("", typeOf<Boolean>())))
         assertEquals('A', ValueCodecRegistry.convert(decodeRequest(65, typeOf<Char>())))
@@ -966,6 +969,76 @@ class ValueCodecRegistryTest {
 
         assertFailsWith<ValueMappingException> {
             ValueCodecRegistry.convert(decodeRequest("42", typeOf<Int>()).copy(strict = true))
+        }
+    }
+
+    @Test
+    fun `strict database decode normalizes JDBC Number implementations across numeric targets`() {
+        fun databaseNumber(value: Number, targetType: KType): ValueConversionRequest =
+            decodeRequest(value, targetType).copy(origin = DATABASE, strict = true)
+
+        assertEquals(1.toByte(), ValueCodecRegistry.convert(databaseNumber(BigDecimal("1"), typeOf<Byte>())))
+        assertEquals(2.toShort(), ValueCodecRegistry.convert(databaseNumber(BigInteger("2"), typeOf<Short>())))
+        assertEquals(3, ValueCodecRegistry.convert(databaseNumber(BigDecimal("3.000"), typeOf<Int?>())))
+        assertEquals(4L, ValueCodecRegistry.convert(databaseNumber(BigInteger("4"), typeOf<Long>())))
+        assertEquals(5.5F, ValueCodecRegistry.convert(databaseNumber(BigDecimal("5.5"), typeOf<Float>())))
+        assertEquals(6.5, ValueCodecRegistry.convert(databaseNumber(BigDecimal("6.5"), typeOf<Double>())))
+        assertEquals(BigInteger("7"), ValueCodecRegistry.convert(databaseNumber(7L, typeOf<BigInteger>())))
+        assertEquals(BigDecimal("8"), ValueCodecRegistry.convert(databaseNumber(8, typeOf<BigDecimal>())))
+
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(decodeRequest(BigDecimal("9"), typeOf<Int>()).copy(strict = true))
+        }
+    }
+
+    @Test
+    fun `strict database decode normalizes only exact Oracle family BIT values to Boolean`() {
+        fun oracleBit(value: Number, type: KColumnType = KColumnType.BIT): ValueConversionRequest =
+            ValueConversionRequest(
+                value = value,
+                direction = DECODE,
+                origin = DATABASE,
+                targetType = typeOf<Boolean?>(),
+                field = Field("deleted", type = type, kType = typeOf<Boolean?>()),
+                dialect = SqlDialect.Oracle,
+                strict = true
+            )
+
+        assertEquals(false, ValueCodecRegistry.convert(oracleBit(BigDecimal.ZERO)))
+        assertEquals(true, ValueCodecRegistry.convert(oracleBit(BigDecimal("1.000"))))
+
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(oracleBit(BigDecimal.ONE).copy(dialect = SqlDialect.SQLite))
+        }
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(oracleBit(BigDecimal.ONE, KColumnType.INT))
+        }
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(oracleBit(BigDecimal("2")))
+        }
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(oracleBit(BigDecimal("0.5")))
+        }
+    }
+
+    @Test
+    fun `strict database numeric decode rejects fractional integral values and range overflow`() {
+        fun strictDatabaseNumber(value: Number, targetType: KType): ValueConversionRequest =
+            decodeRequest(value, targetType).copy(origin = DATABASE, strict = true)
+
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(strictDatabaseNumber(BigDecimal("1.5"), typeOf<Int>()))
+        }
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(
+                strictDatabaseNumber(
+                    BigInteger.valueOf(Int.MAX_VALUE.toLong()).add(BigInteger.ONE),
+                    typeOf<Int>()
+                )
+            )
+        }
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(strictDatabaseNumber(BigDecimal("1E+10000"), typeOf<Double>()))
         }
     }
 

@@ -122,10 +122,8 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
                             file.writeText(identity.get().serviceContent)
                         }
                     }
-                    sourceSet.resources.srcDir(generatedDir)
-                    target.tasks.named(sourceSet.processResourcesTaskName).configure { processResourcesTask ->
-                        processResourcesTask.dependsOn(task)
-                    }
+                    // Keep the producer on the directory provider so every resource consumer sees the dependency.
+                    sourceSet.resources.srcDir(task.flatMap { generatedDir })
                 }
         }
     }

@@ -779,6 +779,7 @@ style:
     allowedNames: 'ignored|expected'
   UnusedPrivateClass:
     active: true
+    excludes: ['**/testData/diagnostics/**']
   UnusedPrivateMember:
     active: true
     allowedNames: ''

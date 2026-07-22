@@ -2,30 +2,31 @@
 
 ## Store a domain value in one column
 
-Use custom value mapping when a model property uses a small domain class while its database column stores a scalar value. In this example, an invoice uses {{ $.code("Money") }} in Kotlin and stores the amount in a `DECIMAL` column.
+Custom value mapping keeps a domain value in Kotlin while saving one database-friendly value in a column. This example stores {{ $.code("Money") }} as whole cents in a `BIGINT` column.
 
 ## Define the model
 
 ```kotlin name="model" icon="kotlin"
 import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
-import java.math.BigDecimal
 
-data class Money(val amount: BigDecimal)
+data class Money(val cents: Long)
 
 @Table("tb_invoice")
 data class Invoice(
-    var id: Int? = null,
-    @ColumnType(KColumnType.DECIMAL)
+    @PrimaryKey(identity = true)
+    var id: Long? = null,
+    @ColumnType(KColumnType.BIGINT)
     var total: Money? = null,
 ) : KPojo
 ```
 
-## Add the conversion
+## Register the conversion
 
-Add one conversion rule for `Money` that works while saving and reading. Kronos calls this rule a {{ $.code("valueCodec") }}; register it once during application startup. The rule below handles `Money` properties: it saves the amount and rebuilds `Money` when an invoice is read.
+A {{ $.code("valueCodec") }} describes how a value travels between a model and its column. Register this `Money` conversion during application startup. `supports` selects `Money` properties, and `convert` writes cents or rebuilds `Money`. The direction is `ENCODE` while saving and `DECODE` while reading.
 
 ```kotlin name="startup" icon="kotlin"
 import com.kotlinorm.Kronos
@@ -38,20 +39,20 @@ Kronos.registerValueCodec(
             context.targetType.classifier == Money::class &&
                 when (context.direction) {
                     ValueCodecDirection.ENCODE -> value is Money
-                    ValueCodecDirection.DECODE -> value is Number || value is String
+                    ValueCodecDirection.DECODE -> value is Number
                 }
         },
         convert = { value, context ->
             when (context.direction) {
-                ValueCodecDirection.ENCODE -> (value as Money).amount
-                ValueCodecDirection.DECODE -> Money(value.toString().toBigDecimal())
+                ValueCodecDirection.ENCODE -> (value as Money).cents
+                ValueCodecDirection.DECODE -> Money((value as Number).toLong())
             }
         }
     )
 )
 ```
 
-The rule matches model properties declared as `Money`. `ENCODE` runs while saving and `DECODE` runs while reading.
+The type check keeps the conversion on properties declared as `Money`. For example, `Money(1_999)` is stored as `1999`.
 
 ## Use Money normally
 
@@ -61,21 +62,26 @@ After registration, application code creates and queries `Invoice` with `Money` 
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 
-val invoice = Invoice(total = Money("19.99".toBigDecimal()))
-invoice.insert().execute()
+val invoiceId = requireNotNull(
+    Invoice(total = Money(1_999))
+        .insert()
+        .withId()
+        .execute()
+        .lastInsertId
+)
 
 val loaded = Invoice()
     .select()
-    .where { it.id == 1 }
+    .where { it.id == invoiceId }
     .first()
 
-println(loaded.total?.amount)
+println(loaded.total?.cents)
 ```
 
 ## Choose the mapping
 
 | Model value | Database value | Guide |
 |-------------|----------------|-------|
-| `Money` | `DECIMAL` | This page |
+| `Money` | `BIGINT` cents | This page |
 | A settings object or `List<String>` | JSON text | {{ $.keyword("mapping/serialization", ["Serialization"]) }} |
 | `Status` or another enum | Name, position, or business code | {{ $.keyword("mapping/enum-serialization", ["Enum Fields"]) }} |

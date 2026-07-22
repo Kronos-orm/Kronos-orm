@@ -310,23 +310,36 @@ Kronos.registerValueCodec(
 )
 ```
 
-领域值使用自定义映射。例如，`Money` 属性可以保存为 `DECIMAL`：`supports` 选择 `Money?` 属性，`convert` 在写入时取金额、读取时创建 `Money`。普通 enum 默认保存 `Enum.name`；整数列保存枚举位置；数据库使用业务 code 时采用同样的自定义映射。
+领域值可以使用自定义映射。例如，`Money` 属性可以将整数分值保存到 `BIGINT` 列。在模型上标注列类型后，`supports` 选择 `Money` 属性，`convert` 在写入时取分值、读取时创建 `Money`。普通 enum 默认保存 `Enum.name`；整数列保存枚举位置；数据库使用业务 code 时采用同样的自定义映射。
 
 ```kotlin
-private val moneyType = typeOf<Money?>()
+import com.kotlinorm.Kronos
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.valueCodec
+
+data class Money(val cents: Long)
+
+data class Invoice(
+    @ColumnType(KColumnType.BIGINT)
+    var total: Money? = null,
+) : KPojo
 
 Kronos.registerValueCodec(
     valueCodec(
         supports = { value, context ->
-            context.targetType == moneyType && when (context.direction) {
-                ValueCodecDirection.ENCODE -> value is Money
-                ValueCodecDirection.DECODE -> value is Number || value is String
-            }
+            context.targetType.classifier == Money::class &&
+                when (context.direction) {
+                    ValueCodecDirection.ENCODE -> value is Money
+                    ValueCodecDirection.DECODE -> value is Number
+                }
         },
         convert = { value, context ->
             when (context.direction) {
-                ValueCodecDirection.ENCODE -> (value as Money).amount
-                ValueCodecDirection.DECODE -> Money(value.toString().toBigDecimal())
+                ValueCodecDirection.ENCODE -> (value as Money).cents
+                ValueCodecDirection.DECODE -> Money((value as Number).toLong())
             }
         }
     )

@@ -6,7 +6,7 @@ Use this table to choose the global settings to configure first.
 | Level | Configure | Entry |
 |-------|-----------|-------|
 | Required | Default data source wrapper | [Default Data Source Settings](#default-data-source-settings) |
-| Common | Table and column naming, default date format, time zone, logging | [Global Table Name Strategy](#global-table-name-strategy), [Global Column Name Strategy](#global-column-name-strategy), [Default Date Time Format](#default-date-time-format), [Default Time Zone](#default-time-zone), [Log output path and switch](#log-output-path-and-switch) |
+| Common | Table and column naming, default date format, time zone, logging | [Global Table Name Strategy](#global-table-name-strategy), [Global Column Naming Strategy](#global-column-naming-strategy), [Default Date Time Format](#default-date-time-format), [Default Time Zone](#default-time-zone), [Log output path and switch](#log-output-path-and-switch) |
 | Enable by business need | Common field strategies, no-value behavior, JSON serialization, custom value mapping, map value conversion | [Creation Time Strategy](#creation-time-strategy), [Logical Deletion Strategy](#logical-deletion-strategy), [No-value strategy](#no-value-strategy), {{ $.keyword("mapping/serialization", ["Serialization"]) }}, [Custom value mapping](#custom-value-mapping), [Map value conversion](#map-value-conversion) |
 
 Compiler-plugin setup is configured in the build tool. See {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} for source-set and diagnostic checks.
@@ -45,6 +45,8 @@ User(id = 1)
 Return different wrappers from `Kronos.dataSource` when the application chooses a data source at runtime.
 
 ```kotlin group="Data source 3" name="dynamic" icon="kotlin"
+import com.kotlinorm.Kronos
+
 Kronos.dataSource = {
     if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
 }
@@ -63,7 +65,9 @@ Creating a custom table naming strategy `KronosNamingStrategy` is detailed in: {
 This strategy converts kotlin class names to underscore-separated lowercase strings, e.g., `ADataClass` -> `a_data_class`, and database table/column names to camel names, e.g., `user_name` -> `userName`.
 
 ```kotlin group="Naming 1" name="table" icon="kotlin"
-Kronos.tableNamingStrategy = lineHumpNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.tableNamingStrategy = Kronos.lineHumpNamingStrategy
 ```
 
 ```text group="Naming 1" name="result"
@@ -75,7 +79,9 @@ UserProfile -> user_profile
 `NoneNamingStrategy` leaves kotlin class names and database names unchanged. Kronos uses this strategy by default.
 
 ```kotlin group="Naming 2" name="none" icon="kotlin"
-Kronos.tableNamingStrategy = noneNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.tableNamingStrategy = Kronos.noneNamingStrategy
 ```
 
 ```text group="Naming 2" name="none result"
@@ -92,7 +98,9 @@ Similar to the global table naming strategy, the column naming strategy refers t
 Use the same naming strategy for columns when Kotlin property names should map to database column names.
 
 ```kotlin group="Naming 3" name="field" icon="kotlin"
-Kronos.fieldNamingStrategy = lineHumpNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.fieldNamingStrategy = Kronos.lineHumpNamingStrategy
 ```
 
 ```text group="Naming 3" name="field result"
@@ -228,6 +236,8 @@ Used to specify the default date-time formatting pattern. The default value is `
 Kronos uses `yyyy-MM-dd HH:mm:ss` to format the date/time by default, you can change the default format by the following ways:
 
 ```kotlin group="Time 1" name="format" icon="kotlin"
+import com.kotlinorm.Kronos
+
 Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
@@ -244,6 +254,7 @@ Used to specify the default time zone, following the `ISO 8601` standard, for us
 Kronos uses the current system time zone by default. You can change the default time zone by doing the following:
 
 ```kotlin group="Time 2" name="zone" icon="kotlin"
+import com.kotlinorm.Kronos
 import java.time.ZoneId
 
 with(Kronos) {
@@ -305,12 +316,14 @@ Use {{ $.annotation("Serialize") }} with {{ $.keyword("mapping/serialization", [
 Used to set the path and switch for log output under global default conditions.
 
 **Parameters**:
-{{$.params([['logPath', 'Log Output Path', 'List<String>', 'listOf("console")']])}}
+{{$.params([['logPath', 'Log Output Path', 'Array<String>', '["console"]']])}}
 
 Write logs to the console and a file path by setting `logPath`. The {{ $.keyword("configuration/logging", ["Kronos-logging"]) }} page covers output destinations and logger adapters.
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
-Kronos.logPath = listOf("console", "/var/log/kronos")
+import com.kotlinorm.Kronos
+
+Kronos.logPath = ["console", "/var/log/kronos"]
 ```
 
 ## Map value conversion

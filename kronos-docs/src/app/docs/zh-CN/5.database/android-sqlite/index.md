@@ -54,7 +54,7 @@ data class Note(
 
 ## 连接 SQLiteDatabase
 
-在应用中添加一个 {{ $.code("KronosDataSourceWrapper") }} 实现。[Android 参考 wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) 是应用源码，可以复制到项目中，再按应用的数据库名称和版本进行调整。
+在应用中添加一个 {{ $.code("KronosDataSourceWrapper") }} 实现。[Android 参考 wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/f22b19b/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) 是应用源码，可以复制到项目中，再按应用的数据库名称和版本进行调整。
 
 将该源码作为 `AndroidSQLiteDataSourceWrapper` 加入项目后，在应用的 `onCreate` 中创建一次并设置为 Kronos 数据源。
 
@@ -223,4 +223,4 @@ fun createFavoriteNote() {
 
 ## 参考应用
 
-[kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) 提供完整的 Markdown 笔记应用，包含 wrapper 源码、模型、仓储、界面和 instrumentation test。
+[kronos-example-android](https://github.com/Kronos-orm/kronos-example-android/tree/f22b19b) 提供完整的 Markdown 笔记应用，包含 wrapper 源码、模型、仓储、界面和 instrumentation test。

@@ -54,7 +54,7 @@ data class Note(
 
 ## Connect SQLiteDatabase
 
-Add a {{ $.code("KronosDataSourceWrapper") }} implementation to the application. The [Android reference wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) is an application source file that you can copy into the project and adapt for its database name and version.
+Add a {{ $.code("KronosDataSourceWrapper") }} implementation to the application. The [Android reference wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/f22b19b/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) is an application source file that you can copy into the project and adapt for its database name and version.
 
 With that source available as `AndroidSQLiteDataSourceWrapper`, create it once in the application's `onCreate` and make it the Kronos data source.
 
@@ -223,4 +223,4 @@ fun createFavoriteNote() {
 
 ## Reference application
 
-[kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) contains a complete Markdown notebook with the wrapper source, model, repository, UI, and instrumentation tests.
+[kronos-example-android](https://github.com/Kronos-orm/kronos-example-android/tree/f22b19b) contains a complete Markdown notebook with the wrapper source, model, repository, UI, and instrumentation tests.

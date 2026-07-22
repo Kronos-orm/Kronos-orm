@@ -30,12 +30,15 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.toDatabaseParameterValue
+import java.util.Locale
 
 @Table(name = "tb_native_string_case")
 data class NativeStringCaseUser(
     var id: Int? = null,
     var userName: String? = null,
     var initial: Char? = null,
+    var requiredName: String = "",
+    var requiredInitial: Char = 'A',
 ) : KPojo
 
 @Table(name = "tb_native_string_case_lookup")
@@ -49,6 +52,11 @@ data class CapturedNativeStringCase(
     val parameters: Map<String, Any?>,
     val fields: Map<String, Field>,
 )
+
+val nativeStringCaseTopLevelName: String
+    get() = "Ada"
+
+fun nativeStringCaseRuntimeName(): String = "Ada"
 
 fun nativeStringCaseWhere(
     user: NativeStringCaseUser,
@@ -75,13 +83,18 @@ fun nativeStringCaseParameter(actual: CapturedNativeStringCase, expr: SqlExpr?):
     )
 }
 
-fun expectNativeStringCaseFunction(label: String, expectedName: String, expr: SqlExpr?): String? {
+fun expectNativeStringCaseFunction(
+    label: String,
+    expectedName: String,
+    expr: SqlExpr?,
+    expectedColumnName: String = "user_name",
+): String? {
     val function = expr as? SqlExpr.Function
     val column = function?.args?.singleOrNull() as? SqlExpr.Column
     return when {
         function == null -> "Fail: $label expression was $expr"
         function.name.last != expectedName -> "Fail: $label function was ${function.name.last}"
-        column?.columnName != "user_name" -> "Fail: $label field was ${column?.columnName}"
+        column?.columnName != expectedColumnName -> "Fail: $label field was ${column?.columnName}"
         else -> null
     }
 }
@@ -91,9 +104,10 @@ fun expectNativeStringCaseEquality(
     actual: CapturedNativeStringCase,
     functionName: String,
     value: String,
+    expectedColumnName: String = "user_name",
 ): String? {
     val binary = actual.expr as? SqlExpr.Binary ?: return "Fail: $label condition was ${actual.expr}"
-    expectNativeStringCaseFunction(label, functionName, binary.left)?.let { return it }
+    expectNativeStringCaseFunction(label, functionName, binary.left, expectedColumnName)?.let { return it }
     return when {
         binary.operator != SqlBinaryOperator.Equal -> "Fail: $label operator was ${binary.operator}"
         binary.right !is SqlExpr.Parameter -> "Fail: $label value expression was ${binary.right}"
@@ -109,9 +123,10 @@ fun expectNativeStringCaseLike(
     functionName: String,
     value: String,
     escape: SqlExpr?,
+    expectedColumnName: String = "user_name",
 ): String? {
     val like = actual.expr as? SqlExpr.Like ?: return "Fail: $label condition was ${actual.expr}"
-    expectNativeStringCaseFunction(label, functionName, like.expr)?.let { return it }
+    expectNativeStringCaseFunction(label, functionName, like.expr, expectedColumnName)?.let { return it }
     return when {
         like.withNot != false -> "Fail: $label not was ${like.withNot}"
         like.escape != escape -> "Fail: $label escape was ${like.escape}"
@@ -145,9 +160,10 @@ fun expectNativeStringCaseIn(
     actual: CapturedNativeStringCase,
     functionName: String,
     values: List<String>,
+    expectedColumnName: String = "user_name",
 ): String? {
     val condition = actual.expr as? SqlExpr.In ?: return "Fail: $label condition was ${actual.expr}"
-    expectNativeStringCaseFunction(label, functionName, condition.expr)?.let { return it }
+    expectNativeStringCaseFunction(label, functionName, condition.expr, expectedColumnName)?.let { return it }
     val parameter = (condition.`in` as? SqlInRightOperand.Values)?.items?.singleOrNull() as? SqlExpr.Parameter
     return when {
         condition.withNot -> "Fail: $label not was ${condition.withNot}"
@@ -163,9 +179,10 @@ fun expectNativeStringCaseSubqueryIn(
     label: String,
     actual: CapturedNativeStringCase,
     functionName: String,
+    expectedColumnName: String = "user_name",
 ): String? {
     val condition = actual.expr as? SqlExpr.In ?: return "Fail: $label condition was ${actual.expr}"
-    expectNativeStringCaseFunction(label, functionName, condition.expr)?.let { return it }
+    expectNativeStringCaseFunction(label, functionName, condition.expr, expectedColumnName)?.let { return it }
     val subquery = condition.`in` as? SqlInRightOperand.Subquery
     return when {
         condition.withNot -> "Fail: $label not was ${condition.withNot}"
@@ -180,7 +197,7 @@ fun box(): String {
         tableNamingStrategy = lineHumpNamingStrategy
     }
 
-    val user = NativeStringCaseUser(userName = "Ada", initial = 'A')
+    val user = NativeStringCaseUser(userName = "Ada", initial = 'A', requiredName = "Ada")
     val name = "Ada"
     val runtimeName = "Ada"
     val wildcardPattern = "A%_\\"
@@ -246,6 +263,36 @@ fun box(): String {
     val valueAfterUppercase = nativeStringCaseWhere(user) {
         it.userName == it.userName?.uppercase().value
     }
+    val requiredLowercase = nativeStringCaseWhere(user) {
+        it.requiredName.lowercase() == "ada"
+    }
+    val requiredValueLowercase = nativeStringCaseWhere(user) {
+        it.userName == it.requiredName.value.lowercase()
+    }
+    val requiredContains = nativeStringCaseWhere(user) {
+        it.requiredName.lowercase().contains(runtimeName.lowercase())
+    }
+    val requiredLike = nativeStringCaseWhere(user) {
+        it.requiredName.uppercase() like wildcardPattern
+    }
+    val requiredCollectionIn = nativeStringCaseWhere(user) {
+        it.requiredName.lowercase() in lowercaseValues
+    }
+    val requiredSelectableContains = nativeStringCaseWhere(user) {
+        uppercaseSelectable.contains(it.requiredName.uppercase())
+    }
+    val localeUppercase = nativeStringCaseWhere(user) {
+        it.userName == runtimeName.uppercase(Locale.ROOT)
+    }
+    val requiredInitialUppercase = nativeStringCaseWhere(user) {
+        it.userName == it.requiredInitial.uppercase()
+    }
+    val functionValueLowercase = nativeStringCaseWhere(user) {
+        it.userName == nativeStringCaseRuntimeName().lowercase()
+    }
+    val topLevelValueLowercase = nativeStringCaseWhere(user) {
+        it.userName == nativeStringCaseTopLevelName.lowercase()
+    }
 
     val failures = listOfNotNull(
         expectNativeStringCaseEquality("uppercase equality", uppercaseEquality, "UPPER", "ADA"),
@@ -267,6 +314,47 @@ fun box(): String {
         expectNativeStringCaseRuntimeValue("char lowercase", charLowercase, "a"),
         expectNativeStringCaseRuntimeValue("value-before lowercase", valueBeforeLowercase, "ada"),
         expectNativeStringCaseRuntimeValue("value-after uppercase", valueAfterUppercase, "ADA"),
+        expectNativeStringCaseEquality(
+            "required lowercase",
+            requiredLowercase,
+            "LOWER",
+            "ada",
+            expectedColumnName = "required_name",
+        ),
+        expectNativeStringCaseRuntimeValue("required value lowercase", requiredValueLowercase, "ada"),
+        expectNativeStringCaseLike(
+            "required contains",
+            requiredContains,
+            "LOWER",
+            "%ada%",
+            escape,
+            expectedColumnName = "required_name",
+        ),
+        expectNativeStringCaseLike(
+            "required like",
+            requiredLike,
+            "UPPER",
+            wildcardPattern,
+            escape = null,
+            expectedColumnName = "required_name",
+        ),
+        expectNativeStringCaseIn(
+            "required collection in",
+            requiredCollectionIn,
+            "LOWER",
+            lowercaseValues,
+            expectedColumnName = "required_name",
+        ),
+        expectNativeStringCaseSubqueryIn(
+            "required selectable contains",
+            requiredSelectableContains,
+            "UPPER",
+            expectedColumnName = "required_name",
+        ),
+        expectNativeStringCaseRuntimeValue("locale uppercase", localeUppercase, "ADA"),
+        expectNativeStringCaseRuntimeValue("required initial uppercase", requiredInitialUppercase, "A"),
+        expectNativeStringCaseRuntimeValue("function value lowercase", functionValueLowercase, "ada"),
+        expectNativeStringCaseRuntimeValue("top-level value lowercase", topLevelValueLowercase, "ada"),
     )
 
     return failures.firstOrNull() ?: "OK"

@@ -45,6 +45,8 @@ User(id = 1)
 应用需要按运行时上下文选择数据源时，在 `Kronos.dataSource` 函数里返回不同 wrapper。
 
 ```kotlin group="Data source 3" name="dynamic" icon="kotlin"
+import com.kotlinorm.Kronos
+
 Kronos.dataSource = {
     if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
 }
@@ -65,7 +67,9 @@ Kronos.dataSource = {
 ，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
 
 ```kotlin group="Naming 1" name="table" icon="kotlin"
-Kronos.tableNamingStrategy = lineHumpNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.tableNamingStrategy = Kronos.lineHumpNamingStrategy
 ```
 
 ```text group="Naming 1" name="result"
@@ -77,7 +81,9 @@ UserProfile -> user_profile
 `NoneNamingStrategy` 保持 Kotlin 类名和数据库名称原样。Kronos 默认使用该策略。
 
 ```kotlin group="Naming 2" name="none" icon="kotlin"
-Kronos.tableNamingStrategy = noneNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.tableNamingStrategy = Kronos.noneNamingStrategy
 ```
 
 ```text group="Naming 2" name="none result"
@@ -94,7 +100,9 @@ UserProfile -> UserProfile
 Kotlin 属性名需要映射到数据库列名时，给字段设置同样的命名策略。
 
 ```kotlin group="Naming 3" name="field" icon="kotlin"
-Kronos.fieldNamingStrategy = lineHumpNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.fieldNamingStrategy = Kronos.lineHumpNamingStrategy
 ```
 
 ```text group="Naming 3" name="field result"
@@ -232,6 +240,8 @@ Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Fie
 Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
 
 ```kotlin group="Time 1" name="format" icon="kotlin"
+import com.kotlinorm.Kronos
+
 Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
@@ -248,6 +258,7 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
 
 ```kotlin group="Time 2" name="zone" icon="kotlin"
+import com.kotlinorm.Kronos
 import java.time.ZoneId
 
 with(Kronos) {
@@ -309,12 +320,14 @@ JSON 对象和集合使用 {{ $.annotation("Serialize") }}，配置方式见 {{ 
 用于设置全局默认条件下的日志输出位置。
 
 **参数**：
-{{$.params([['logPath', '日志输出路径', 'List<String>', 'listOf("console")']])}}
+{{$.params([['logPath', '日志输出路径', 'Array<String>', '["console"]']])}}
 
 设置 `logPath` 后，Kronos 会向控制台和指定路径输出日志。输出位置和 logger 适配器见 {{ $.keyword("configuration/logging", ["Kronos-logging"]) }}。
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
-Kronos.logPath = listOf("console", "/var/log/kronos")
+import com.kotlinorm.Kronos
+
+Kronos.logPath = ["console", "/var/log/kronos"]
 ```
 
 ## Map 值转换

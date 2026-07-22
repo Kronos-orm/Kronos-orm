@@ -2,7 +2,7 @@
 
 ## Kotlin 类型推断
 
-属性未使用{{ $.keyword("mapping/annotations", ["注解设置", "@ColumnType列类型及长度"]) }}时，Kronos 会为每个持久化的 `KPojo` 属性推断一个 `KColumnType`。推断结果可以从 `__columns` 看到，也会进入表结构 DDL。
+属性未使用 {{ $.keyword("mapping/annotations", ["注解"]) }} 时，Kronos 会根据每个持久化 `KPojo` 属性选择列类型。建表或同步表结构时，当前数据库方言会渲染最终的 DDL 类型。
 
 ```kotlin name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.Table
@@ -16,11 +16,9 @@ data class TypeProfile(
     var payload: ByteArray? = null,
     var createdAt: LocalDateTime? = null,
 ) : KPojo
-
-val types = TypeProfile().__columns.associate { it.name to it.type }
 ```
 
-结果：
+该模型会选择以下列类型：
 
 | 属性 | 推断出的 `KColumnType` |
 |------|------------------------|
@@ -29,7 +27,7 @@ val types = TypeProfile().__columns.associate { it.name to it.type }
 | `payload` | `BLOB` |
 | `createdAt` | `DATETIME` |
 
-MySQL DDL 类型片段：
+MySQL 会将这些列渲染为：
 
 ```sql name="MySQL" icon="mysql"
 `enabled` TINYINT(1)
@@ -40,7 +38,7 @@ MySQL DDL 类型片段：
 
 ## 默认映射
 
-以下表格用于速查自动映射关系。最终 DDL 类型由当前数据库方言渲染；方言示例见{{ $.keyword("mapping/column-type-reference", ["KColumnType"]) }}。
+以下表格用于速查自动映射关系。当前数据库方言会渲染最终 DDL 类型；方言示例见 {{ $.keyword("mapping/column-type-reference", ["列类型参考"]) }}。
 
 | Kotlin 类型 | 推断出的 `KColumnType` |
 |-------------|------------------------|
@@ -63,11 +61,11 @@ MySQL DDL 类型片段：
 | `@Serialize` 属性 | `VARCHAR`，除非由 `@ColumnType` 覆盖 |
 | 其他属性类型 | `VARCHAR` |
 
-标量 enum 在字符串类列中使用 `Enum.name`。显式整数 `@ColumnType` 使用 ordinal，除非用户为该字段注册了更晚的 `ValueCodec` 覆盖。`@Serialize` 把完整逻辑值存为文本，不会逐元素转换集合。完整规则见 {{ $.keyword("mapping/enum-serialization", ["Enum 存储与序列化"]) }}。
+标量 enum 在字符串类列中使用 `Enum.name`。整数 {{ $.annotation("ColumnType") }} 保存枚举位置；数据库保存业务 code 时使用自定义映射。示例见 {{ $.keyword("mapping/enum-serialization", ["枚举字段"]) }}。
 
 ## 使用 {{ $.annotation("ColumnType") }} 覆盖
 
-使用 `@ColumnType` 可以为单个属性指定列类型。注解中的类型会写入 `__columns`，覆盖自动推断结果。
+使用 `@ColumnType` 可以为单个属性选择列类型。
 
 ```kotlin name="kotlin" icon="kotlin" {8,10}
 import com.kotlinorm.annotations.ColumnType
@@ -82,18 +80,16 @@ data class OverrideType(
     @ColumnType(KColumnType.UUID)
     var externalId: String? = null,
 ) : KPojo
-
-val columns = OverrideType().__columns.associate { it.name to it.type }
 ```
 
-结果：
+该模型会选择以下列类型：
 
 | 属性 | `KColumnType` |
 |------|---------------|
 | `bio` | `TEXT` |
 | `externalId` | `UUID` |
 
-PostgreSQL DDL 类型片段：
+PostgreSQL 会将它们渲染为：
 
 ```sql name="PostgreSQL" icon="postgres"
 "bio" TEXT
@@ -130,30 +126,18 @@ DDL 类型片段：
 | SQLServer | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | Oracle | `VARCHAR2(80)` | `NUMBER(12,2)` |
 
-## 搭配 JSON 和序列化
+## 使用原生 JSON 列
 
-`@Serialize` 负责值转换，`@ColumnType(KColumnType.JSON)` 负责 DDL 列类型。注册一个序列化 `ValueCodec`，即可依据每个字段完整的声明 `KType` 编码和解码所有序列化字段。
+按 {{ $.keyword("mapping/serialization", ["序列化"]) }} 配置 Gson 或 Kotlinx Serialization 后，{{ $.annotation("Serialize") }} 属性会编码为 JSON 文本。数据库表需要原生 JSON 列时，使用 {{ $.annotation("ColumnType") }} 指定 `KColumnType.JSON`。
 
-```kotlin name="kotlin" icon="kotlin" {13-16,22,23}
-import com.google.gson.Gson
-import com.kotlinorm.Kronos
+```kotlin name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.serializedValueCodec
-import kotlin.reflect.jvm.javaType
 
 data class AuditPayload(val ip: String, val tags: List<String>)
-
-val gson = Gson()
-val gsonRegistration = Kronos.registerValueCodec(
-    serializedValueCodec(
-        encode = { value, _ -> gson.toJson(value) },
-        decode = { text, type -> gson.fromJson(text, type.javaType) }
-    )
-)
 
 @Table("tb_audit_event")
 data class AuditEvent(
@@ -163,7 +147,7 @@ data class AuditEvent(
 ) : KPojo
 ```
 
-插入 `AuditPayload("127.0.0.1", listOf("login"))` 时的参数结果：
+注册的 JSON 配置保存 `AuditPayload("127.0.0.1", listOf("login"))` 时，插入参数为：
 
 ```text name="result"
 payload -> {"ip":"127.0.0.1","tags":["login"]}
@@ -180,6 +164,4 @@ DDL 类型片段：
 | Oracle | `JSON` |
 
 > **Note**
-> `@Serialize` 使用{{ $.keyword("configuration/value-codec", ["ValueCodec"]) }}中介绍的 codec。`@ColumnType` 控制表操作渲染出的数据库类型。局部覆盖不再需要时调用 `gsonRegistration.close()`；后注册的 codec 优先匹配。
-
-序列化字段的完整映射流程见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。
+> 注册的 JSON 配置会将 `payload` 作为 JSON 字符串通过 JDBC 写入。{{ $.annotation("ColumnType") }} 用于生成表结构中的列类型。保存 JSON 文本的表使用默认 `VARCHAR` 列即可。

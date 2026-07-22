@@ -136,7 +136,7 @@ DDL type fragments:
 
 ## JSON, Binary, Spatial, And XML Types
 
-Use `JSON` with `@Serialize` when the Kotlin value is an object and the database column should use the dialect JSON type. Binary, spatial, and XML values follow the same `@ColumnType` pattern.
+{{ $.annotation("Serialize") }} encodes an object as JSON text. When the database column should use its JSON type, add `@ColumnType(KColumnType.JSON)` to generate that DDL. Binary, spatial, and XML values follow the same `@ColumnType` pattern.
 
 ```kotlin name="kotlin" icon="kotlin" {11,12,15,18,21}
 import com.kotlinorm.annotations.ColumnType

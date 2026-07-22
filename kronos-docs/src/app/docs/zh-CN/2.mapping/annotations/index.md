@@ -181,9 +181,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serialize") }}序列化存储
+## {{ $.annotation("Serialize") }} JSON 字段
 
-用于标记属性采用 serialized storage。`@Serialize` 只选择 `ValueStorage.SERIALIZED`，不会安装序列化器或第二套处理流程。应用按自己的文本格式，通过 `Kronos.registerValueCodec` 注册一次 `serializedValueCodec`；codec 在两个方向都会收到属性的完整 `KType`。
+对象或集合属性需要保存为 JSON 时使用该注解。在应用启动时配置 Gson 或 Kotlinx Serialization，之后仍直接使用属性原本的 Kotlin 类型。
 
 ```kotlin
 data class User(
@@ -191,7 +191,7 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-序列化字段使用和 codec 注册方式见 {{ $.keyword("mapping/serialization", ["序列化存储"]) }}。
+完整配置和示例见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。
 
 ## {{ $.annotation("Cascade") }}级联关系声明
 

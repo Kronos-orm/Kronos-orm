@@ -2,11 +2,11 @@ import {NgDocPage} from '@ng-doc/core';
 import ConfigurationCategory from "../ng-doc.category";
 
 /**
- * Unified value conversion registration, matching, priority, and lifecycle.
- * @status:info NEW
+ * User-facing custom domain value mapping.
+ * @status:info
  */
 const ValueCodecPage: NgDocPage = {
-    title: `Value Codec`,
+    title: `Custom Value Mapping`,
     mdFile: './index.md',
     route: 'value-codec',
     category: ConfigurationCategory,

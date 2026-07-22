@@ -68,13 +68,13 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 ```kotlin
 plugins {
     kotlin("jvm") version "2.4.0"
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.4"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.2.4")
+    implementation("com.kotlinorm:kronos-core:0.3.0")
     // JDBC 包装器（可选，提供开箱即用的数据源支持）
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
     // JDBC Driver 与连接池使用和数据库/JDK 匹配的最新稳定版
     implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
@@ -87,7 +87,7 @@ dependencies {
 <dependency>
     <groupId>com.kotlinorm</groupId>
     <artifactId>kronos-core</artifactId>
-    <version>0.2.4</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -100,15 +100,28 @@ dependencies {
 
 要求：JDK 8+，Kotlin 2.4.0+
 
-技能中的 Kronos 推荐稳定版本直接写 `0.2.4`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+技能中的 Kronos 推荐稳定版本直接写 `0.3.0`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
 
 ---
 
 ### Android/JVM SQLite
 
-Android/JVM applications use `kronos-core`, the Gradle plugin, and a `KronosDataSourceWrapper` around Android `SQLiteDatabase`. The dedicated `database/android-sqlite` chapter is the source of truth for setup, the reference wrapper, transaction scope, logging, and the complete Android example.
+Android/JVM applications use the Gradle plugin, `kronos-core`, and an application-owned `KronosDataSourceWrapper` around Android `SQLiteDatabase`. Add `kronos-logging` when SQL output should appear in Logcat.
 
-KPojo models use the same schema, query, and mutation APIs after the application installs its wrapper.
+```kotlin
+plugins {
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.0" apply false
+}
+
+dependencies {
+    implementation("com.kotlinorm:kronos-core:0.3.0")
+    implementation("com.kotlinorm:kronos-logging:0.3.0") // Logcat SQL output
+}
+```
+
+Start from the reference `AndroidSQLiteDataSourceWrapper` source and assign the wrapper to `Kronos.dataSource` in the app's `Application.onCreate`, then register that `Application` in `AndroidManifest.xml`. When `kronos-logging` is present, call `KronosLoggerApp.detectLoggerImplementation()` in `onCreate` to send Kronos SQL logs to Logcat. Run schema preparation and repository work on an I/O dispatcher or executor. Use `Kronos.transact { ... }` for related writes with the Android SQLite default transaction options.
+
+The dedicated `database/android-sqlite` chapter is the source of truth for setup, the reference wrapper, transaction scope, logging, and the complete Android example.
 
 ---
 
@@ -261,7 +274,6 @@ data class Invoice(
     @ColumnType(KColumnType.DECIMAL, length = 12, scale = 2)
     var amount: java.math.BigDecimal? = null,
     @Serialize
-    @ColumnType(KColumnType.JSON)
     var payload: Map<String, Any?>? = null
 ) : KPojo
 ```
@@ -274,56 +286,54 @@ data class Invoice(
 | `DECIMAL, length = 12, scale = 2` | `DECIMAL(12,2)` | `DECIMAL(12,2)` | `NUMERIC` | `DECIMAL(12,2)` | `NUMBER(12,2)` |
 | `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` |
 
-`@Serialize` 只标记 serialized 文本存储；实际格式由通过 `Kronos.registerValueCodec(serializedValueCodec(...))` 注册的 codec 决定，JSON 只是常见示例。`@ColumnType(KColumnType.JSON)` 只决定表结构中的列类型。编码和解码函数都会收到字段声明上的完整 `KType`，因此同一次注册可以处理对象、`List<String>`、`List<List<String>>`、`List<Profile>` 和 `List<Enum>`。
-
-`ValueCodec` 是唯一公开的值转换扩展。自定义规则通过 `ValueCodecContext` 同时获得完整源类型和目标类型，并可按方向、来源、字段和存储方式细分匹配：
+`@Serialize` 用于需要保存为 JSON 文本的对象和集合属性。应用启动时配置 Gson 或 Kotlinx Serialization 一次后，JSON 文本作为字符串参数写入，插入和查询仍直接使用对象、`List<String>`、嵌套列表或 `List<Enum>`。`@ColumnType(KColumnType.JSON)` 可在建表时选择 JSON 列类型。
 
 ```kotlin
-private val uuidType = typeOf<UUID>()
+data class User(
+    @Serialize
+    var payload: Profile? = null,
+    @Serialize
+    var tags: List<String>? = null
+) : KPojo
+```
 
-val registration = Kronos.registerValueCodec(
+Gson 配置示例：
+
+```kotlin
+val gson = Gson()
+
+Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, type -> gson.toJson(value, type.javaType) },
+        decode = { text, type -> gson.fromJson(text, type.javaType) }
+    )
+)
+```
+
+领域值使用自定义映射。例如，`Money` 属性可以保存为 `DECIMAL`：`supports` 选择 `Money?` 属性，`convert` 在写入时取金额、读取时创建 `Money`。普通 enum 默认保存 `Enum.name`；整数列保存枚举位置；数据库使用业务 code 时采用同样的自定义映射。
+
+```kotlin
+private val moneyType = typeOf<Money?>()
+
+Kronos.registerValueCodec(
     valueCodec(
         supports = { value, context ->
-            context.targetType.withNullability(false) == uuidType &&
-                !(context.direction == ValueCodecDirection.DECODE && value is UUID)
+            context.targetType == moneyType && when (context.direction) {
+                ValueCodecDirection.ENCODE -> value is Money
+                ValueCodecDirection.DECODE -> value is Number || value is String
+            }
         },
         convert = { value, context ->
             when (context.direction) {
-                ValueCodecDirection.ENCODE -> (value as UUID).toString()
-                ValueCodecDirection.DECODE -> UUID.fromString(value.toString())
+                ValueCodecDirection.ENCODE -> (value as Money).amount
+                ValueCodecDirection.DECODE -> Money(value.toString().toBigDecimal())
             }
         }
     )
 )
 ```
 
-后注册的 codec 优先匹配；`registration.close()` 只注销本次注册。普通 enum 的 name 编解码已经内置；需要 code、缩写或其他存储格式时，用同一个 ValueCodec 入口覆盖，不注册第二个 enum 工厂：
-
-```kotlin
-enum class Status(val code: Int) { READY(1), CLOSED(2) }
-
-val statusRegistration = Kronos.registerValueCodec(
-    valueCodec(
-        supports = { value, context ->
-            context.storage == ValueStorage.NONE &&
-                context.targetType.withNullability(false) == typeOf<Status>() &&
-                !(context.direction == ValueCodecDirection.DECODE && value is Status)
-        },
-        convert = { value, context ->
-            when (context.direction) {
-                ValueCodecDirection.ENCODE -> (value as Status).code
-                ValueCodecDirection.DECODE -> Status.entries.first { it.code == value.toString().toInt() }
-            }
-        }
-    )
-)
-```
-
-`@Serialize List<Status>` 仍把完整集合交给 serialized codec，不会逐元素调用这个标量 enum 覆盖。
-
-标量 enum 没有显式 `@ColumnType` 时推断为 `VARCHAR` 并使用 `Enum.name`。显式整数 `@ColumnType` 使用 ordinal；如果业务值是稳定的 `code` 或 `label`，应让更晚注册的 `ValueCodec` 按完整 `KType`、字段名或列名覆盖。`@Serialize` 属性默认也是字符串兼容的 `VARCHAR` 存储，`@ColumnType` 只覆盖 DDL 类型；`List<Enum>` 作为完整值只进入一次 serialized codec。
-
-完整的 Enum name、ordinal、code/label 与 `List<Enum>` 边界见 `kronos-docs` 的 `mapping/enum-serialization` 页面。
+完整的 JSON、领域值和枚举示例分别见 `kronos-docs` 的 `mapping/serialization`、`configuration/value-codec` 和 `mapping/enum-serialization` 页面。
 
 ---
 
@@ -390,20 +400,11 @@ Found rows: 1
 -----------------------
 ```
 
-需要关闭内置日志输出时，将 `logPath` 设为空数组：
-
-```kotlin
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = emptyList()
-}
-```
-
 需要使用 JDK Logger 或 Apache Commons Logging 适配器时，引入 `kronos-logging` 并在应用启动时调用探测入口：
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.4")
+    implementation("com.kotlinorm:kronos-logging:0.3.0")
 }
 ```
 
@@ -421,7 +422,7 @@ Kronos.loggerType = KLoggerType.JDK_LOGGER
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.4")
+    implementation("com.kotlinorm:kronos-logging:0.3.0")
     implementation("commons-logging:commons-logging:<latest-stable>")
 }
 ```
@@ -542,15 +543,15 @@ DataGuardPlugin.disable()
 
 `kronos-codegen` 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.4`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.3.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.4")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.4")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -734,7 +735,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 
 物理 reader 在 `getObject` 前执行，只按 JDBC metadata/vendor 行为判断；处理后的 SQL `NULL` 必须返回 `Handled(null)`，不匹配时返回 `NotHandled`。UUID 等逻辑目标转换通过 `Kronos.registerValueCodec` 注册 `ValueCodec`，不要放进物理 reader。
 
-连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.2.4`。
+连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.3.0`。
 
 生产连接检查要覆盖连接池大小、连接/网络/查询/空闲超时、validation query 或 JDBC validation method、SSL/TLS 与证书配置、secret 来源、时区/编码 URL 参数，以及数据库服务端、JDK、认证和 TLS 能力对应的 driver 稳定分支。
 
@@ -1232,7 +1233,7 @@ val users = User()
     .toList()
 ```
 
-谓词子查询可以用于 `in`、`!in`、`exists`、`!exists`、`any`、`some`、`all` 和 row-value tuple 条件。
+谓词子查询可以用于 `in`、`!in`、`exists`、`!exists` 和 row-value tuple 条件。
 
 ```kotlin
 val users = User()
@@ -1244,6 +1245,25 @@ val users = User()
     }
     .toList()
 ```
+
+### 量化比较
+
+使用 `any<T>(query)`、`some<T>(query)` 或 `all<T>(query)` 包装单列子查询，再与比较运算符组合：
+
+```kotlin
+val orders = Order()
+    .select()
+    .where {
+        it.status > any<Int>(
+            Order()
+                .select { order -> order.status }
+                .where { order -> order.userId == 27 }
+        )
+    }
+    .toList()
+```
+
+`any<T>(query)`、`some<T>(query)` 和 `all<T>(query)` 分别生成 SQL `ANY`、`SOME` 和 `ALL` 比较。
 
 `KSelectable` 可以作为下一层查询源，也可以作为 join source。
 
@@ -1587,9 +1607,78 @@ where {
 }
 ```
 
-`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值。普通 class、data class、object、companion/`@JvmStatic` 和顶层属性在 SQL 比较中都是运行时值，不需要 `.value`。未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较时，使用 `.value` 明确读取 Kotlin 值，例如 `it.id == probe.id.value`。
+`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值。
+
+普通 class、data class、object、companion/`@JvmStatic` 和顶层属性在 SQL 比较中都是运行时值，直接使用即可。当前 source 字段也直接参与条件表达式。
+
+对于当前查询 source 之外的 KPojo 属性，在属性链末端使用 `.value` 读取实际 Kotlin 值，例如 `it.id == probe.id.value`。
 
 `select().where()` 在没有可查询非空字段时保留无条件查询。`update().where()` 和 `delete().where()` 没有可查询字段时进入写入安全检查，建议启用 DataGuard 统一拦截全表写入。逻辑删除字段、级联字段、非数据库列和忽略字段不参与空 `where()` 的 query-by-example 条件。对象属性值为 `null` 时不会由空 `where()` 生成 `IS NULL`；需要 SQL NULL 判断时使用 `where { it.field == null }` 或 `where { it.field.isNull }`。动态变量值为 `null` 时仍走无值策略，例如 `where { it.field == value }`。
+
+### 大小写归一化字符串条件
+
+`f.lower(x)` 和 `f.upper(x)` 返回可空 `String?` 条件表达式。它们可以用于相等比较、`contains`、`like`、`startsWith`、`endsWith` 和集合成员条件：
+
+```kotlin
+import com.kotlinorm.functions.bundled.exts.StringFunctions.lower
+import com.kotlinorm.functions.bundled.exts.StringFunctions.upper
+
+val userName = "ADA"
+val normalizedName = userName.lowercase()
+val allowedNames = listOf("ada", "grace")
+
+User().select().where {
+    f.lower(it.userName) == normalizedName ||
+        f.lower(it.userName).contains(normalizedName) ||
+        normalizedName in f.lower(it.userName) ||
+        f.lower(it.userName) like "ada%" ||
+        f.lower(it.userName).startsWith("a") ||
+        f.lower(it.userName).endsWith("a") ||
+        f.lower(it.userName) in allowedNames
+}
+```
+
+`f.upper(...)` 使用大写值时也支持相同的条件辅助函数。`in` 支持文本包含、集合成员和单列子查询。
+
+source `String` 字段上的无参 `lowercase()` 和 `uppercase()` 会在条件中生成 SQL `LOWER` 和 `UPPER`，并使用同一组条件运算符：
+
+```kotlin
+val normalizedName = "Ada".lowercase()
+
+User().select().where {
+    it.userName?.lowercase() == normalizedName ||
+        it.userName?.uppercase().contains("AD") ||
+        it.userName?.lowercase() like "ada%"
+}
+```
+
+`normalizedName` 等捕获值由 Kotlin 求值后作为参数绑定。
+
+普通变量和当前 source 字段直接使用即可。需要读取 KPojo 属性实际值时，将 `.value` 放在属性链的末端，例如 `probe.userName.value`。
+
+函数与方言示例见 `query/functions`。
+
+### Iterable 集合条件
+
+在条件 lambda 中，Kotlin 标准库 `Iterable.any`、`Iterable.all` 和 `Iterable.none` 会为集合中的每个元素构建条件：
+
+```kotlin
+val keywords = listOf("Ada", "Grace")
+val minimumAges = listOf(18, 21)
+val excludedFragments = listOf("test", "archive")
+
+User().select().where {
+    keywords.any { keyword -> it.name.contains(keyword) } &&
+        minimumAges.all { minimumAge -> it.age >= minimumAge } &&
+        excludedFragments.none { fragment -> it.name.contains(fragment) }
+}
+```
+
+非空集合中，`any` 用 OR 组合子条件，`all` 用 AND 组合子条件，`none` 用 AND 组合每个子条件的否定。
+
+`!any`、`!all` 和 `!none` 分别使用 AND NOT、OR NOT 和 OR 形式。
+
+空集合或所有子条件均无值时，这三种调用和外层 `!` 都生成 `FALSE` 条件。`select`、`update` 和 `delete` 会保留该谓词。
 
 ---
 
@@ -1729,7 +1818,7 @@ val (sql, params, atomicTasks) = truncateTask
 
 ## 故障排查入口
 
-- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.4`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.4` 和数据库 driver 的当前稳定版。
+- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.3.0`、`com.kotlinorm:kronos-jdbc-wrapper:0.3.0` 和数据库 driver 的当前稳定版。
 - 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
 - 检查 KPojo generated members：`__kType`、`__tableName`、`__tableComment`、`__columns`、`__tableIndexes`、`__createTime`、`__updateTime`、`__logicDelete`、`__optimisticLock` 和 `toDataMap()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。

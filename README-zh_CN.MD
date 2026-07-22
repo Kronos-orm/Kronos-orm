@@ -37,7 +37,7 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.2.5--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.3.1--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -108,18 +108,18 @@ val rankedOrders = Order()
                 .alias("rn")
         ]
     }
-// 投影：{ id: Int?, userId: Int?, amount: BigDecimal?, rn: Long? }
+// 投影类型：{ id: Int?, userId: Int?, amount: BigDecimal?, rn: Long? }
 
 val latestOrders = rankedOrders
     .select { [it.id, it.userId, it.amount] }
     .where { it.rn == 1 }
     .toList()
-// 结果：List<{ id: Int?, userId: Int?, amount: BigDecimal? }>
+// 结果类型：List<{ id: Int?, userId: Int?, amount: BigDecimal? }>
 
 val orderCounts = Order()
     .select { [it.userId, f.count(it.id).alias("orderCount")] }
     .groupBy { it.userId }
-// 投影：{ userId: Int?, orderCount: Long? }
+// 投影类型：{ userId: Int?, orderCount: Long? }
 
 orderCounts
     .insert<UserOrderSummary> { [it.userId, it.orderCount] }
@@ -128,20 +128,20 @@ orderCounts
 val activeUsers = User()
     .select { [it.id, it.name, it.status] }
     .where { it.status == ACTIVE }
-// 投影：{ id: Long?, name: String?, status: Int? }
+// 投影类型：{ id: Long?, name: String?, status: Int? }
 
 dataSource.table.createTable(UserArchive(), activeUsers)
 
 val currentUsers = User().select { [it.id, it.name] }.where { it.enabled == true }
-// 投影：{ id: Long?, name: String? }
+// 投影类型：{ id: Long?, name: String? }
 
 val archivedUsers = ArchivedUser().select { [it.id, it.name] }
-// 投影：{ id: Long?, name: String? }
+// 投影类型：{ id: Long?, name: String? }
 
 val users = union(currentUsers, archivedUsers)
     .select { [it.id, it.name] }
     .toList()
-// 结果：List<{ id: Long?, name: String? }>
+// 结果类型：List<{ id: Long?, name: String? }>
 ```
 
 ## 环境要求
@@ -159,10 +159,8 @@ val users = union(currentUsers, archivedUsers)
 
 | Kronos 版本 | 支持的 Kotlin 版本 | 说明 |
 |-------------|--------------------|------|
-| `0.2.5-SNAPSHOT` | `2.4.0+` | Android/JVM SQLite 预览版，见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) |
-| `0.2.4` | `2.4.0+` | 推荐版本，Kotlin 2.4.0 版本线的最新稳定补丁 |
-| `0.2.3` | `2.4.0+` | 新增游标分页并修复派生投影 |
-| `0.2.0` | `2.4.0+` | 包含查询、wrapper 和类型元数据 API 的破坏性变更 |
+| `0.3.0` | `2.4.0+` | 支持 Android/JVM SQLite，见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) |
+| `0.2.0` - `0.2.4` | `2.4.0+` | Kotlin 2.4.0 版本线 |
 | `0.1.2` | `2.4.0+` | 修复表结构同步边缘场景并扩充跨数据库集成测试 |
 | `0.1.1` | `2.4.0+` | 补充投影文档、IDEA 插件文档与发版自动化改进 |
 | `0.1.0` | `2.3.0+` | 基于 Kotlin 2.3.0 的正式发布版本 |
@@ -180,12 +178,12 @@ val users = union(currentUsers, archivedUsers)
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.4"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.2.4")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
+    implementation("com.kotlinorm:kronos-core:0.3.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -197,12 +195,12 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.2.4'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.3.0'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.2.4'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.2.4'
+    implementation 'com.kotlinorm:kronos-core:0.3.0'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.3.0'
     implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
@@ -218,12 +216,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.2.4</version>
+            <version>0.3.0</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.2.4</version>
+            <version>0.3.0</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -247,7 +245,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.2.4</version>
+                        <version>0.3.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -260,7 +258,7 @@ dependencies {
 
 ### Android/JVM 和 SQLite
 
-Android/JVM 支持当前使用 `0.2.5-SNAPSHOT` 预览版。接入由 `kronos-core`、Gradle 插件以及围绕 Android `SQLiteDatabase` 实现的 `KronosDataSourceWrapper` 组成。配置和 wrapper 说明统一见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite)，完整应用见 [Android 示例](https://github.com/Kronos-orm/kronos-example-android)。
+`0.3.0` 支持 Android/JVM。接入由 `kronos-core`、Gradle 插件以及围绕 Android `SQLiteDatabase` 实现的 `KronosDataSourceWrapper` 组成。配置和 wrapper 说明见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite)，完整应用见 [Android 示例](https://github.com/Kronos-orm/kronos-example-android)。
 
 ## 支持的数据库
 
@@ -344,27 +342,6 @@ val serializationRegistration = Kronos.registerValueCodec(
 
 后注册的 codec 优先级更高；`serializationRegistration.close()` 只注销本次注册，主要用于测试或热更新。交给 Kotlinx Serialization 处理的 Kotlin data class 需要添加 `@kotlinx.serialization.Serializable`。完整 Gson 和 Kotlinx 示例见[序列化](https://kotlinorm.com/#/documentation/zh-CN/mapping/serialization)。
 
-### KPojo 工厂覆盖
-
-编译器会自动生成 KPojo factory。集成需要替换构造方式时，注册一个精确的完整 `KType`；factory 只负责创建新对象，不负责字段转换。
-
-```kotlin
-import com.kotlinorm.Kronos
-import com.kotlinorm.utils.KPojoFactory
-import kotlin.reflect.typeOf
-
-val factoryRegistration = Kronos.registerKPojoFactory(
-    typeOf<Movie>(),
-    KPojoFactory { _ -> Movie() }
-)
-
-// 同一 Movie 后注册的 factory 优先。测试或热更新时关闭本次注册，
-// 即可恢复生成的 factory。
-factoryRegistration.close()
-```
-
-注册键是精确的 `KType`，当前版本不支持泛型 KPojo。`close()` 幂等，并会恢复之前的用户 factory 或生成 factory。
-
 ### 表操作
 
 ```kotlin
@@ -409,20 +386,20 @@ val usersWithRoles = User().join(UserRelation(), UserRole()) { user, relation, r
         }
         .where { user.id < 10 }
 }.toList()
-// 结果：List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
+// 结果类型：List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
 
 // Union
 val currentUsers = User()
     .select { [it.id, it.username] }
     .where { it.enabled == true }
-// 投影：{ id: Long?, username: String? }
+// 投影类型：{ id: Long?, username: String? }
 
 val archivedUsers = ArchivedUser()
     .select { [it.id, it.username] }
-// 投影：{ id: Long?, username: String? }
+// 投影类型：{ id: Long?, username: String? }
 
 val allUsers = union(currentUsers, archivedUsers).toList()
-// 结果：List<{ id: Long?, username: String? }>
+// 结果类型：List<{ id: Long?, username: String? }>
 
 // 命名参数原生 SQL
 val result = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
@@ -473,7 +450,7 @@ user.delete()
 
 --------
 
-### KPojo 工具方法
+### KPojo 提供的方法
 
 ```kotlin
 val instance = Movie::class.newInstance()
@@ -515,13 +492,11 @@ Kronos 提供 AI 技能指南，帮助编程助手理解和生成 Kronos 代码�
 | 工具 | 命令 |
 |------|------|
 | **Claude** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
-| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .codex/skills/kronos-orm-guide` |
 | **Cursor** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
 | **默认 / 通用** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 
 如果目标目录已存在，在 `degit` 后添加 `--force`。
-
-Claude Code 从 `.claude/skills/` 读取项目 skill；Codex 从 `.agents/skills/` 读取项目 skill。Windsurf 和其他读取 `.agents/skills/` 的工具使用默认命令。
 
 --------
 

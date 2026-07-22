@@ -18,7 +18,6 @@ package com.kotlinorm.adapter
 
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.formatted
-import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
 import java.lang.reflect.Method
 
@@ -26,9 +25,17 @@ import java.lang.reflect.Method
  * Adapter [KLogger] implementation integrating
  */
 class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
+    private companion object {
+        const val VERBOSE = 2
+        const val DEBUG = 3
+        const val INFO = 4
+        const val WARN = 5
+        const val ERROR = 6
+    }
+
     // Access Android Log API by reflection, because Android SDK is not a JDK 9 module,
     // we are not able to require it in module-info.java.
-    private val logClass = Class.forName("android.utils.Log")
+    private val logClass = Class.forName("android.util.Log")
     private val isLoggableMethod = logClass.getMethod("isLoggable", String::class.java, Int::class.javaPrimitiveType)
     private val methodCache = mutableMapOf<String, Method>()
     private val getLoggerMethod =
@@ -42,7 +49,7 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
         }
 
     override fun isTraceEnabled(): Boolean {
-        return isLoggableMethod.invoke(null, tag, KLogLevel.VERBOSE.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, VERBOSE) as Boolean
     }
 
     override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
@@ -50,7 +57,7 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
     }
 
     override fun isDebugEnabled(): Boolean {
-        return isLoggableMethod.invoke(null, tag, KLogLevel.DEBUG.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, DEBUG) as Boolean
     }
 
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
@@ -58,7 +65,7 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
     }
 
     override fun isInfoEnabled(): Boolean {
-        return isLoggableMethod.invoke(null, tag, KLogLevel.INFO.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, INFO) as Boolean
     }
 
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
@@ -66,7 +73,7 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
     }
 
     override fun isWarnEnabled(): Boolean {
-        return isLoggableMethod.invoke(null, tag, KLogLevel.WARN.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, WARN) as Boolean
     }
 
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
@@ -74,7 +81,7 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
     }
 
     override fun isErrorEnabled(): Boolean {
-        return isLoggableMethod.invoke(null, tag, KLogLevel.ERROR.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, ERROR) as Boolean
     }
 
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {

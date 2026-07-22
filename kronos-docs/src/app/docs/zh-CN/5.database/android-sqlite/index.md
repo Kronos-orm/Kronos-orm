@@ -1,21 +1,27 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-## Android/JVM 和 SQLite
+## 在 Android 上使用 SQLite
 
-Kronos 支持使用 Android `SQLiteDatabase` 的 Android/JVM 应用。当前平台范围为 Android/JVM，Kotlin/Native 和 JS 仍是后续路线目标。参考应用使用 Kotlin `2.4.0`、Android Gradle Plugin `8.13.2`、JDK 17 和 minSdk 26。
+Android 应用使用 {{ $.code("KPojo") }} 模型，并通过应用内的 {{ $.code("KronosDataSourceWrapper") }} 访问 `SQLiteDatabase`。
 
-当前 Android 预览版本使用 `{{ $.kronosSnapshotVersion() }}`；稳定版发布后使用对应的 release 坐标。
+## 添加 Kronos
 
-```kotlin group="Android root setup" name="build.gradle.kts" icon="gradlekts"
-// 根目录 build.gradle.kts
+配置标准的 `google()`、`mavenCentral()` 和 `gradlePluginPortal()` 仓库后，将 Kronos 插件和 core 库加入 Android 项目。
+
+```kotlin name="build.gradle.kts" icon="gradlekts"
 plugins {
     id("com.android.application") version "8.13.2" apply false
     id("org.jetbrains.kotlin.android") version "2.4.0" apply false
-    id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosSnapshotVersion() }}" apply false
+    id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}" apply false
 }
 ```
 
-```kotlin group="Android app setup" name="app/build.gradle.kts" icon="gradlekts"
+> **Note**
+> 本文示例使用 Android Gradle Plugin `8.13.2` 和 Kotlin `2.4.0`。参考应用使用 `minSdk 26` 和 JDK 17。
+
+在每个声明 {{ $.code("KPojo") }} 的 Android application 或 library 模块中应用该插件。
+
+```kotlin name="app/build.gradle.kts" icon="gradlekts"
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -23,44 +29,198 @@ plugins {
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:{{ $.kronosSnapshotVersion() }}")
+    implementation("com.kotlinorm:kronos-core:{{ $.kronosVersion() }}")
 }
 ```
 
-Android SQLite 应用使用 `kronos-core`，并围绕 `SQLiteDatabase` 实现 `KronosDataSourceWrapper`。可从示例中的完整 [Android SQLite wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) 开始。
+## 定义模型
 
-## 应用初始化
+Android 表模型使用与其他 Kotlin 应用相同的模型注解。
 
-KPojo 模型在 Android/JVM 应用中使用与其他平台相同的表操作和 CRUD API。应用启动时安装 wrapper，并初始化应用需要的表结构。
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
 
-## Wrapper 职责
-
-Android wrapper 与服务端 wrapper 使用同一个 `KronosDataSourceWrapper` 接口契约，只是把执行委托给 Android API 而非 JDBC：
-
-- 设置 `dbType = DBType.SQLite`，让 Kronos 选择 SQLite SQL 和 DDL 渲染。
-- 单条 task 用 `task.parsed()`，batch 用 `task.parsedArr()`，将命名参数转换为 SQL 文本和有序参数后再绑定到 `SQLiteProgram`。
-- 使用 task 的结果类型和列类型，把 Cursor 行映射为标量、Map 和 KPojo。参考 wrapper 展示了 KPojo 映射流程。
-- 单条 insert 使用 `executeInsert()`；请求生成 ID 时写入 `task.lastInsertId`。批量写入返回每行 update count。
-- 实现最外层 `beginTransaction()` / `setTransactionSuccessful()` / `endTransaction()`，嵌套 Kronos block 复用当前事务。
-
-参考实现持有 `SQLiteOpenHelper`，调度仍由应用负责。数据库仓储操作应离开 Android 主线程，并将 helper 绑定到 Application 或其他明确的生命周期 owner。
-
-## 表结构和事务
-
-安装 wrapper 后，常规表结构操作会使用 SQLite 方言。
-
-```kotlin group="Android schema" name="kotlin" icon="kotlin"
-val wrapper = AndroidSQLiteDataSourceWrapper(applicationContext)
-Kronos.dataSource = { wrapper }
-wrapper.table.syncTable(MarkdownDocument())
+@Table("notes")
+data class Note(
+    @PrimaryKey(identity = true)
+    var id: Long? = null,
+    var title: String? = null,
+    var content: String? = null,
+    var favorite: Boolean? = false,
+) : KPojo
 ```
 
-Android 参考 wrapper 提供最外层事务提交和回滚，嵌套 Kronos block 会复用该事务。Android SQLite 使用平台事务生命周期；JDBC 集成提供隔离级别、超时和保存点控制。
+## 连接 SQLiteDatabase
 
-## 日志
+在应用中添加一个 {{ $.code("KronosDataSourceWrapper") }} 实现。[Android 参考 wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) 是应用源码，可以复制到项目中，再按应用的数据库名称和版本进行调整。
 
-示例通过 `Kronos.logPath = emptyList()` 将设备日志交由应用决定。需要持久化日志时，使用 Android-aware logger 或应用拥有的存储位置。
+将该源码作为 `AndroidSQLiteDataSourceWrapper` 加入项目后，在应用的 `onCreate` 中创建一次并设置为 Kronos 数据源。
 
-## 参考实现
+```kotlin name="kotlin" icon="kotlin"
+import android.app.Application
+import com.kotlinorm.Kronos
+import com.kotlinorm.orm.ddl.table
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
-完整应用见 [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android)，参考实现见 [AndroidSQLiteDataSourceWrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt)。
+class NotesApplication : Application() {
+    lateinit var database: AndroidSQLiteDataSourceWrapper
+        private set
+    private val schemaExecutor = Executors.newSingleThreadExecutor()
+    private lateinit var schemaReady: Future<*>
+
+    override fun onCreate() {
+        super.onCreate()
+        database = AndroidSQLiteDataSourceWrapper(this)
+        Kronos.dataSource = { database }
+        schemaReady = schemaExecutor.submit {
+            database.table.syncTable<Note>()
+        }
+    }
+
+    fun awaitSchemaReady() {
+        schemaReady.get()
+    }
+}
+```
+
+在 `AndroidManifest.xml` 中注册这个 Application 类。
+
+```xml name="AndroidManifest.xml" icon="android"
+<application
+    android:name=".NotesApplication"
+    android:label="@string/app_name"
+    android:theme="@style/Theme.App">
+    ...
+</application>
+```
+
+已有 `Application` 类的应用可以把数据源设置放入现有类中。
+
+## 将 SQL 日志写入 Logcat
+
+应用需要将 Kronos SQL 日志写入 Logcat 时，加入 {{ $.title("kronos-logging") }}。
+
+```kotlin name="app/build.gradle.kts" icon="gradlekts"
+dependencies {
+    implementation("com.kotlinorm:kronos-logging:{{ $.kronosVersion() }}")
+}
+```
+
+在 `NotesApplication.onCreate` 中调用初始化函数。
+
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.KronosLoggerApp
+
+KronosLoggerApp.detectLoggerImplementation()
+```
+
+## 在表结构就绪后执行 CRUD
+
+`NotesApplication` 会启动一次表结构准备。数据库操作在 executor 中执行，并在每次操作前调用 `awaitSchemaReady()`；结果和错误会投递回主线程。
+
+```kotlin name="kotlin" icon="kotlin"
+import android.app.Activity
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import com.kotlinorm.Kronos
+import com.kotlinorm.orm.ddl.table
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
+import java.util.concurrent.Executors
+
+class NotesActivity : Activity() {
+    private val databaseExecutor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private fun <T> runDatabase(
+        action: () -> T,
+        onSuccess: (T) -> Unit,
+        onError: (Throwable) -> Unit,
+    ) {
+        databaseExecutor.execute {
+            runCatching {
+                (application as NotesApplication).awaitSchemaReady()
+                action()
+            }.onSuccess { result ->
+                mainHandler.post { onSuccess(result) }
+            }.onFailure { error ->
+                mainHandler.post { onError(error) }
+            }
+        }
+    }
+
+    fun createNote() {
+        runDatabase(
+            action = {
+                val id = Note(title = "First note", content = "Hello Android")
+                    .insert()
+                    .withId()
+                    .execute()
+                    .lastInsertId
+                    ?: error("SQLite did not return the generated note id")
+
+                Note()
+                    .select()
+                    .where { it.id == id }
+                    .first()
+            },
+            onSuccess = { note ->
+                // 在界面中展示 note。
+            },
+            onError = ::reportDatabaseError,
+        )
+    }
+
+    private fun reportDatabaseError(error: Throwable) {
+        Log.e("Notes", "Database operation failed", error)
+    }
+
+    override fun onDestroy() {
+        databaseExecutor.shutdownNow()
+        super.onDestroy()
+    }
+}
+```
+
+## 在事务中执行关联写入
+
+相关写操作使用 {{ $.title("Kronos.transact") }}。Android SQLite 使用默认事务参数。
+
+在同一个 Activity 中调用上一节的 `runDatabase` 辅助函数。
+
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.update.update
+
+fun createFavoriteNote() {
+    runDatabase(
+        action = {
+            Kronos.transact {
+                val id = Note(title = "Plan", content = "Review Android support")
+                    .insert()
+                    .withId()
+                    .execute()
+                    .lastInsertId
+                    ?: error("SQLite did not return the generated note id")
+
+                Note(id = id)
+                    .update()
+                    .set { it.favorite = true }
+                    .by { it.id }
+                    .execute()
+            }
+        },
+        onSuccess = {},
+        onError = ::reportDatabaseError,
+    )
+}
+```
+
+## 参考应用
+
+[kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) 提供完整的 Markdown 笔记应用，包含 wrapper 源码、模型、仓储、界面和 instrumentation test。

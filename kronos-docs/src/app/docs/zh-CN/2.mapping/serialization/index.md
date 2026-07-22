@@ -1,23 +1,24 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-## 标记序列化存储
+## 保存 JSON 文本
 
-持久化 Kotlin 值需要以文本写入、并在 typed 读取后恢复时，给属性添加 `@Serialize`。该注解只选择 `ValueStorage.SERIALIZED`，不会安装序列化器。应用启动时注册一个 serialized `ValueCodec` 即可。
+需要把设置对象、列表等属性保存为 JSON 文本时，在属性上添加 {{ $.annotation("Serialize") }}。JSON 库会把属性编码为一个字符串，Kronos 将该字符串作为 JDBC 参数写入数据库；查询结果中的文本会恢复为原来的 Kotlin 属性类型。选择与 JSON 库对应的模型标签页，并在应用启动时完成配置。
 
-```kotlin group="Serialized model" name="model" icon="kotlin"
-import com.kotlinorm.annotations.ColumnType
+```kotlin group="JSON 模型" name="Gson" icon="kotlin"
 import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
 
 enum class Status { READY, CLOSED }
-data class ProfileSetting(val theme: String, val shortcuts: List<String>)
+
+data class ProfileSetting(
+    val theme: String,
+    val shortcuts: List<String>
+)
 
 @Table("tb_user_profile")
 data class UserProfile(
     var id: Int? = null,
-    @ColumnType(KColumnType.JSON)
     @Serialize
     var setting: ProfileSetting? = null,
     @Serialize
@@ -25,15 +26,45 @@ data class UserProfile(
 ) : KPojo
 ```
 
-codec 在两个方向都会收到属性的完整 `KType`。因此 `ProfileSetting`、`List<Status>` 和嵌套集合共用一次注册。serialized 集合作为一个字段整体转换，Kronos 不会再逐元素调用 enum codec。
+```kotlin group="JSON 模型" name="Kotlinx Serialization" icon="kotlin"
+import com.kotlinorm.annotations.Serialize
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
+import kotlinx.serialization.Serializable
 
-没有显式指定列类型时，`@Serialize` 字段使用字符串兼容的 `VARCHAR` 列类型。`@ColumnType` 只改变 DDL 类型，`@Serialize` 仍然选择 `SERIALIZED` 存储协议。
+@Serializable
+enum class Status { READY, CLOSED }
 
-## 一次注册 Gson
+@Serializable
+data class ProfileSetting(
+    val theme: String,
+    val shortcuts: List<String>
+)
 
-`serializedValueCodec` 只把两个函数包装为普通 `ValueCodec`。通过唯一转换注册入口 `Kronos.registerValueCodec` 注册返回值。
+@Table("tb_user_profile")
+data class UserProfile(
+    var id: Int? = null,
+    @Serialize
+    var setting: ProfileSetting? = null,
+    @Serialize
+    var statuses: List<Status>? = null
+) : KPojo
+```
 
-```kotlin group="Gson codec" name="startup" icon="kotlin"
+上面的 `setting` 和 `statuses` 默认使用 `VARCHAR` 列。需要为已有表或建表语句指定列类型时，参考 {{ $.keyword("mapping/column-types", ["列类型"]) }}。
+
+## 配置 Gson
+
+先为应用加入 Gson 和 Kotlin reflection，再在启动阶段注册一次 JSON 文本转换。同一份配置可以处理带有 {{ $.annotation("Serialize") }} 的对象、列表和嵌套集合。
+
+```kotlin name="build.gradle.kts" icon="gradlekts"
+dependencies {
+    implementation(kotlin("reflect"))
+    implementation("com.google.code.gson:gson:2.14.0")
+}
+```
+
+```kotlin name="startup" icon="kotlin"
 import com.google.gson.Gson
 import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.serializedValueCodec
@@ -41,7 +72,7 @@ import kotlin.reflect.jvm.javaType
 
 val gson = Gson()
 
-val serializationRegistration = Kronos.registerValueCodec(
+Kronos.registerValueCodec(
     serializedValueCodec(
         encode = { value, type -> gson.toJson(value, type.javaType) },
         decode = { text, type -> gson.fromJson(text, type.javaType) }
@@ -49,19 +80,27 @@ val serializationRegistration = Kronos.registerValueCodec(
 )
 ```
 
-后注册的 codec 优先级更高。关闭 `serializationRegistration` 只注销本次注册，并恢复更早的匹配项。应用通常在整个生命周期保留注册句柄；测试或热更新时才需要关闭。
+将这段注册放在应用启动路径中，例如 Android 的 `Application` 或服务端的启动代码。
 
-没有 codec 接受 serialized storage 时，写入以及 typed 数据库/delegate 读取会抛出 `MissingSerializedCodec`。SQL null 在调用 codec 前处理。safe Map 中已经可赋值给目标类型的值保持不变。
+## 配置 Kotlinx Serialization
 
-## 注册 Kotlinx Serialization
+启用 Kotlinx Serialization 编译器插件，加入 JSON 和 reflection 依赖，并选择上方的 Kotlinx Serialization 模型标签页。
 
-Kotlinx Serialization 使用完全相同的注册方式。它收到完整 `KType`，因此可以保留泛型元素类型。
+```kotlin name="build.gradle.kts" icon="gradlekts"
+plugins {
+    id("org.jetbrains.kotlin.plugin.serialization") version "<你的 Kotlin 版本>"
+}
 
-```kotlin group="Kotlinx codec" name="startup" icon="kotlin"
+dependencies {
+    implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+}
+```
+
+```kotlin name="startup" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.serializedValueCodec
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 
@@ -73,58 +112,33 @@ val json = Json {
 Kronos.registerValueCodec(
     serializedValueCodec(
         encode = { value, type ->
-            json.encodeToString(serializer(type) as KSerializer<Any>, value)
+            @Suppress("UNCHECKED_CAST")
+            val valueSerializer = serializer(type) as KSerializer<Any>
+            json.encodeToString(valueSerializer, value)
         },
         decode = { text, type -> json.decodeFromString(serializer(type), text) }
     )
 )
+```
 
-@Serializable
-data class ProfileSetting(
-    val theme: String,
-    val shortcuts: List<String>
+## 像普通属性一样使用
+
+完成配置后，直接构造、保存和查询带有 JSON 属性的 `UserProfile`。
+
+```kotlin name="kotlin" icon="kotlin"
+val profile = UserProfile(
+    setting = ProfileSetting("dark", listOf("search", "save")),
+    statuses = listOf(Status.READY, Status.CLOSED)
 )
+profile.insert().execute()
+
+val loaded = UserProfile()
+    .select()
+    .where { it.id == 1 }
+    .first()
+
+println(loaded.setting?.theme)
+println(loaded.statuses)
 ```
 
-> **Note**
-> 交给 Kotlinx Serialization 处理的类仍需添加 `@Serializable`。字段为 `List<ProfileSetting>` 时，元素类型也必须可序列化。
-
-## 通过 safe mapping 读取
-
-raw `mapperTo` / `fromMapData` 赋值不会调用 codec。存储文本需要解码时，使用 safe mapping 或 typed JDBC 结果。
-
-```kotlin group="Safe mapping" name="decode" icon="kotlin"
-val profile = UserProfile().safeFromMapData<UserProfile>(
-    mapOf(
-        "id" to 1,
-        "setting" to """{"theme":"dark","shortcuts":["search","save"]}""",
-        "statuses" to """["READY","CLOSED"]"""
-    )
-)
-
-profile.statuses == listOf(Status.READY, Status.CLOSED)
-```
-
-## 使用委托暴露序列化视图
-
-已有字符串列需要保留时，可以保留 `String?` 存储属性，再用 `serialize(::column)` 暴露类型化视图。delegate 在两个方向都使用同一个已注册 codec、完整目标 `KType` 和 `DELEGATE` origin。
-
-```kotlin group="Serialized delegate" name="delegate" icon="kotlin"
-import com.kotlinorm.annotations.Table
-import com.kotlinorm.beans.serialize.serialize
-import com.kotlinorm.interfaces.KPojo
-
-@Table("tb_user_profile")
-data class UserProfileRaw(
-    var id: Int? = null,
-    var settingJson: String? = null
-) : KPojo {
-    var setting: ProfileSetting? by serialize(::settingJson)
-}
-
-val profile = UserProfileRaw()
-profile.setting = ProfileSetting("dark", listOf("search"))
-profile.settingJson == """{"theme":"dark","shortcuts":["search"]}"""
-```
-
-标量 enum 列和 `List<Enum>` 边界见 {{ $.keyword("mapping/enum-serialization", ["Enum 存储与序列化"]) }}；统一注册契约见 {{ $.keyword("configuration/value-codec", ["ValueCodec"]) }}。serialized 列还需要指定 `JSON` 等 DDL 类型时，见 {{ $.keyword("mapping/column-types", ["列类型"]) }}。
+标量枚举字段参考 {{ $.keyword("mapping/enum-serialization", ["枚举字段"]) }}。`Money` 等以标量列保存的领域值参考 {{ $.keyword("configuration/value-codec", ["自定义值映射"]) }}。

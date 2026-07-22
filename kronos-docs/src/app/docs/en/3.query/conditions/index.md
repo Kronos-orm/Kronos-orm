@@ -327,6 +327,39 @@ WHERE `user`.`id` IN (
 
 More subquery predicates, row-value tuples, and quantified comparisons are covered in {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
 
+## Build conditions from an Iterable
+
+Use Kotlin `Iterable.any`, `Iterable.all`, and `Iterable.none` predicate calls inside a condition block. The lambda builds one condition for each iterable element.
+
+```kotlin group="Iterable conditions" name="kotlin" icon="kotlin"
+val keywords = listOf("Ada", "Grace")
+val minimumAges = listOf(18, 21)
+val excludedFragments = listOf("test", "archive")
+
+val users = User()
+    .select()
+    .where {
+        keywords.any { keyword -> it.name.contains(keyword) } &&
+            minimumAges.all { minimumAge -> it.age >= minimumAge } &&
+            excludedFragments.none { fragment -> it.name.contains(fragment) }
+    }
+    .toList()
+```
+
+For a non-empty iterable, Kronos combines the generated conditions in iterable order:
+
+| Kotlin call | Generated condition |
+|-------------|---------------------|
+| `values.any { p(it) }` | `p(v1) OR p(v2) OR ...` |
+| `values.all { p(it) }` | `p(v1) AND p(v2) AND ...` |
+| `values.none { p(it) }` | `NOT p(v1) AND NOT p(v2) AND ...` |
+
+With `!`, `!values.any { p(it) }` combines `NOT p(...)` with `AND`; `!values.all { p(it) }` combines `NOT p(...)` with `OR`; `!values.none { p(it) }` combines `p(...)` with `OR`.
+
+An empty iterable, or an iterable whose generated child conditions all have no value, produces a `FALSE` condition for `any`, `all`, and `none`.
+
+`!` retains the `FALSE` condition. This keeps the predicate present for `select`, `update`, and `delete` operations.
+
 ## Match a range
 
 Use `between` and `notBetween` with Kotlin ranges.
@@ -410,6 +443,52 @@ FROM `user`
 WHERE `user`.`name` REGEXP :namePattern
 ```
 
+## Match normalized text
+
+`f.lower(x)` and `f.upper(x)` return nullable `String?` expressions. Use them with equality, `contains`, `like`, `startsWith`, `endsWith`, and membership conditions.
+
+```kotlin group="Normalized string functions" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.StringFunctions.lower
+import com.kotlinorm.functions.bundled.exts.StringFunctions.upper
+
+val normalizedName = "ADA".lowercase()
+val allowedNames = listOf("ada", "grace")
+
+val users = User()
+    .select()
+    .where {
+        f.lower(it.userName) == normalizedName ||
+            f.lower(it.userName).contains(normalizedName) ||
+            normalizedName in f.lower(it.userName) ||
+            f.lower(it.userName) like "ada%" ||
+            f.lower(it.userName).startsWith("a") ||
+            f.lower(it.userName).endsWith("a") ||
+            f.lower(it.userName) in allowedNames
+    }
+    .toList()
+```
+
+`f.upper(...)` accepts the same condition helpers with uppercase values. `in` supports text containment, collection membership, and single-column subqueries.
+
+### Use native Kotlin case calls
+
+Kronos maps no-argument `lowercase()` and `uppercase()` calls on source `String` fields to SQL `LOWER` and `UPPER` inside a condition. The generated expressions use the same condition operators.
+
+```kotlin group="Native normalized string conditions" name="kotlin" icon="kotlin"
+val normalizedName = "Ada".lowercase()
+
+val users = User()
+    .select()
+    .where {
+        it.userName?.lowercase() == normalizedName ||
+            it.userName?.uppercase().contains("AD") ||
+            it.userName?.lowercase() like "ada%"
+    }
+    .toList()
+```
+
+Captured values such as `normalizedName` are evaluated by Kotlin and bound as condition parameters. {{ $.keyword("query/functions", ["Built-in Functions"]) }} includes function and dialect examples.
+
 ## Read values from the current object
 
 No-argument match helpers read the value from the object that starts the operation.
@@ -482,7 +561,9 @@ FROM `movie`
 WHERE `movie`.`director_id` = `director`.`id`
 ```
 
-Use `.value` when you need the Kotlin property value from another object.
+Use `.value` as the final access when you need the actual Kotlin value of a KPojo property from another object.
+
+Ordinary variables and current source fields use their direct form.
 
 ```kotlin group="Kotlin value" name="kotlin" icon="kotlin"
 val probe = User(otherAge = 40)
@@ -624,7 +705,11 @@ val users = User()
     .toList()
 ```
 
-The Boolean arguments of `takeIf`/`takeUnless` and the conditions of `if`/`when` are ordinary Kotlin control flow. Properties of ordinary Kotlin objects are runtime values in SQL comparisons too, so `it.id == filter.id` does not use `.value`. This includes regular classes, data classes, objects, companion or `@JvmStatic` properties, and top-level properties. A captured KPojo property is field-shaped; when that KPojo is not a source of the current query, use `.value`, for example `it.id == probe.id.value`.
+The Boolean arguments of `takeIf`/`takeUnless` and the conditions of `if`/`when` are ordinary Kotlin control flow.
+
+Properties of ordinary Kotlin objects are runtime values in SQL comparisons, so `it.id == filter.id` uses the direct form. This includes regular classes, data classes, objects, companion or `@JvmStatic` properties, and top-level properties. Current source fields also participate directly in condition expressions.
+
+For a captured KPojo outside the current query source, end the property chain with `.value` to read its actual Kotlin value, for example `it.id == probe.id.value`.
 
 Default no-value handling for `null` values and empty collections is described in {{ $.keyword("configuration/no-value-strategy", ["No Value Strategy"]) }}.
 

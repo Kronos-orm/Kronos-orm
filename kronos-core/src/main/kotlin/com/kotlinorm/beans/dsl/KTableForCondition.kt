@@ -85,9 +85,33 @@ open class KTableForCondition<T : KPojo>(
         values: Iterable<Element>,
         predicate: (Element) -> SqlExpr?,
         negated: Boolean
-    ): SqlExpr? {
-        val children = values.map(predicate)
-        return if (negated) andExpr(children) else orExpr(children)
+    ): SqlExpr =
+        iterableConditionExpr(values, predicate, if (negated) SqlBinaryOperator.And else SqlBinaryOperator.Or)
+
+    @PublishedApi
+    internal fun <Element> iterableAllConditionExpr(
+        values: Iterable<Element>,
+        predicate: (Element) -> SqlExpr?,
+        negated: Boolean
+    ): SqlExpr =
+        iterableConditionExpr(values, predicate, if (negated) SqlBinaryOperator.Or else SqlBinaryOperator.And)
+
+    @PublishedApi
+    internal fun <Element> iterableNoneConditionExpr(
+        values: Iterable<Element>,
+        predicate: (Element) -> SqlExpr?,
+        negated: Boolean
+    ): SqlExpr =
+        iterableConditionExpr(values, predicate, if (negated) SqlBinaryOperator.Or else SqlBinaryOperator.And)
+
+    private fun <Element> iterableConditionExpr(
+        values: Iterable<Element>,
+        predicate: (Element) -> SqlExpr?,
+        operator: SqlBinaryOperator
+    ): SqlExpr {
+        val children = values.map(predicate).filterNotNull()
+        if (children.isEmpty()) return SqlExpr.BooleanLiteral(false)
+        return children.drop(1).fold(children.first()) { left, right -> SqlExpr.Binary(left, operator, right) }
     }
 
     private fun logicalExpr(operator: SqlBinaryOperator, children: List<SqlExpr?>): SqlExpr? {

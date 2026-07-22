@@ -5,7 +5,7 @@ Kronos uses one Kotlin ORM DSL across server-side JVM projects and Android/JVM a
 | Target | Availability | Integration |
 | --- | --- | --- |
 | JVM server applications | Available | JDBC and framework-specific wrappers |
-| Android/JVM | Preview in `0.2.5-SNAPSHOT` | Android `SQLiteDatabase` wrapper |
+| Android/JVM | Available in `0.3.0` | Android `SQLiteDatabase` wrapper |
 | Kotlin/Native and JavaScript | Roadmap | Platform-specific storage integrations |
 
 ## Android/JVM and SQLite

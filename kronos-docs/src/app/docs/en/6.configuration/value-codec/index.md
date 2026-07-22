@@ -1,42 +1,45 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 
-## Register one conversion mechanism
+## Store a domain value in one column
 
-`ValueCodec` is the only public value-conversion extension. Safe Map mapping, typed JDBC results, ORM parameters, and serialized delegates all create a `ValueCodecContext` and select one matching codec.
+Use custom value mapping when a model property uses a small domain class while its database column stores a scalar value. In this example, an invoice uses {{ $.code("Money") }} in Kotlin and stores the amount in a `DECIMAL` column.
 
-| Context value | Meaning |
-|---------------|---------|
-| `direction` | `ENCODE` prepares a logical Kotlin value for JDBC; `DECODE` restores a logical target. |
-| `origin` | `MAP`, `DATABASE`, `DELEGATE`, or `PARAMETER`; use it only when a codec needs a narrower boundary. |
-| `sourceType` | Complete declared source `KType` when known; otherwise a runtime star-projected fallback. |
-| `targetType` | Complete logical Kotlin `KType`, including generic arguments and nullability. |
-| `field` | Optional field metadata such as `dateFormat`. |
-| `storage` | `NONE` for scalar conversion or `SERIALIZED` for serialized text. |
+## Define the model
 
-Registry null handling runs before codecs, so `supports` and `convert` receive non-null values. Later registrations are checked first. Built-in enum, temporal, basic, and identity rules run after user codecs for `storage = NONE`.
-
-## Add a custom type
-
-Use `valueCodec` to define both directions, then register it once. This example stores `Money` as `BigDecimal`.
-
-```kotlin group="Money codec" name="registration" icon="kotlin"
-import com.kotlinorm.Kronos
-import com.kotlinorm.enums.ValueCodecDirection
-import com.kotlinorm.enums.ValueStorage
-import com.kotlinorm.interfaces.valueCodec
+```kotlin name="model" icon="kotlin"
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
 import java.math.BigDecimal
-import kotlin.reflect.full.withNullability
-import kotlin.reflect.typeOf
 
 data class Money(val amount: BigDecimal)
-private val moneyType = typeOf<Money>()
 
-val moneyRegistration = Kronos.registerValueCodec(
+@Table("tb_invoice")
+data class Invoice(
+    var id: Int? = null,
+    @ColumnType(KColumnType.DECIMAL)
+    var total: Money? = null,
+) : KPojo
+```
+
+## Add the conversion
+
+Add one conversion rule for `Money` that works while saving and reading. Kronos calls this rule a {{ $.code("valueCodec") }}; register it once during application startup. The rule below handles `Money` properties: it saves the amount and rebuilds `Money` when an invoice is read.
+
+```kotlin name="startup" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.interfaces.valueCodec
+
+Kronos.registerValueCodec(
     valueCodec(
         supports = { value, context ->
-            context.storage == ValueStorage.NONE &&
-                context.targetType.withNullability(false) == moneyType &&
-                !(context.direction == ValueCodecDirection.DECODE && value is Money)
+            context.targetType.classifier == Money::class &&
+                when (context.direction) {
+                    ValueCodecDirection.ENCODE -> value is Money
+                    ValueCodecDirection.DECODE -> value is Number || value is String
+                }
         },
         convert = { value, context ->
             when (context.direction) {
@@ -48,31 +51,31 @@ val moneyRegistration = Kronos.registerValueCodec(
 )
 ```
 
-Codec exceptions are wrapped as `ValueMappingException` with direction, origin, field/column, target type, and batch index when available. A DECODE result must be assignable to the complete target type; an ENCODE result must be JDBC-bindable.
+The rule matches model properties declared as `Money`. `ENCODE` runs while saving and `DECODE` runs while reading.
 
-## Control priority and lifetime
+## Use Money normally
 
-A later matching registration overrides earlier user and built-in behavior. `close()` is idempotent and removes only its own registration; requests already using a registry snapshot finish with that snapshot.
+After registration, application code creates and queries `Invoice` with `Money` values.
 
-```kotlin group="Codec lifetime" name="close" icon="kotlin"
-val registration = Kronos.registerValueCodec(customCodec)
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
 
-// Tests or hot reload only:
-registration.close()
+val invoice = Invoice(total = Money("19.99".toBigDecimal()))
+invoice.insert().execute()
+
+val loaded = Invoice()
+    .select()
+    .where { it.id == 1 }
+    .first()
+
+println(loaded.total?.amount)
 ```
 
-## Enum storage
+## Choose the mapping
 
-Scalar enums are built in. Without a column override, Kronos infers `VARCHAR` and stores `Enum.name`. An explicitly integer `@ColumnType` uses ordinal values unless a later user `ValueCodec` overrides that field. String code/label mappings also use the normal `Kronos.registerValueCodec` entry point.
-
-`@Serialize List<Status>` is a different protocol: the complete list is passed once to the serialized codec, with its complete `KType`. It never invokes the scalar enum codec for each element.
-
-See {{ $.keyword("mapping/enum-serialization", ["Enum Storage and Serialization"]) }} for the column-type matrix, ordinal behavior, code/label override, and collection boundaries.
-
-## Date and strict-mode behavior
-
-The built-in temporal codec uses an explicit prepared format first, then `Field.dateFormat`, then `Kronos.defaultDateFormat`. `Kronos.timeZone` is used when conversion crosses instant and local date/time semantics. Native JDBC temporal conversions avoid a text round trip.
-
-`Kronos.strictSetValue = true` disables implicit basic and temporal DECODE coercion. It does not disable registered user codecs, serialized storage, enum decoding, or required parameter encoding.
-
-Raw `mapperTo` and `fromMapData` perform direct assignment and do not invoke the registry. Use `safeMapperTo`, `safeFromMapData`, typed queries, or normal ORM parameters when conversion is required.
+| Model value | Database value | Guide |
+|-------------|----------------|-------|
+| `Money` | `DECIMAL` | This page |
+| A settings object or `List<String>` | JSON text | {{ $.keyword("mapping/serialization", ["Serialization"]) }} |
+| `Status` or another enum | Name, position, or business code | {{ $.keyword("mapping/enum-serialization", ["Enum Fields"]) }} |

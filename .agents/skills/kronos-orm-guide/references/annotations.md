@@ -107,7 +107,6 @@ var amount: java.math.BigDecimal? = null
 var description: String? = null
 
 @Serialize
-@ColumnType(KColumnType.JSON)
 var payload: Map<String, Any?>? = null
 ```
 

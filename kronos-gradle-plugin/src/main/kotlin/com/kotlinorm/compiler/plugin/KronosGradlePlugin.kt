@@ -41,7 +41,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         pluginId = "kronos-compiler-plugin"
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
-        version = "0.2.5-SNAPSHOT"
+        version = "0.3.0"
         target.logger.lifecycle("Loaded Gradle plugin ${javaClass.name} version $version")
         target.logger.lifecycle("Loaded Compiler plugin $group.$artifactId version $version")
         configureKotlinIncrementalCompilation(target)

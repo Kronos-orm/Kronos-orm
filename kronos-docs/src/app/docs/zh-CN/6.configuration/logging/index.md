@@ -46,20 +46,9 @@ logs/kronos/kronos-log-yyyy-MM-dd.log
 
 Android/JVM 日志配置说明统一放在 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} 接入章节。
 
-## 关闭内置日志输出
-
-需要跳过内置日志的控制台和文件输出时，将 `Kronos.logPath` 设置为空数组。
-
-```kotlin group="Default Logger 3" name="disabled" icon="kotlin"
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = []
-}
-```
-
 ## 添加{{ $.title("kronos-logging") }}
 
-需要让 Kronos 日志进入 JDK Logger 或 Apache Commons Logging 等适配器时，引入 `kronos-logging`。
+需要让 Kronos 日志进入 Android Log、JDK Logger 或 Apache Commons Logging 等适配器时，引入 `kronos-logging`。
 
 ```kotlin group="kronos-logging" name="gradle(kts)" icon="gradlekts"
 dependencies {

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-// Verifies PostgreSQL FunctionHandler.any remains a SQL function rather than an Iterable.any predicate.
+// Verifies PostgreSQL FunctionHandler calls and no-lambda Iterable overloads stay outside Iterable predicate lowering.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.functions.bundled.exts.PostgresFunctions.all
 import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
@@ -49,17 +50,64 @@ fun box(): String {
         tableNamingStrategy = lineHumpNamingStrategy
     }
 
-    val actual = iterableAnyCallableBoundaryWhere(IterableAnyCallableBoundaryUser(id = 1)) {
+    val user = IterableAnyCallableBoundaryUser(id = 1)
+    val anyActual = iterableAnyCallableBoundaryWhere(user) {
         it.id == f.any(listOf(1, 2))
-    } as? SqlExpr.Binary
-    val operands = listOfNotNull(actual?.left, actual?.right)
-    val column = operands.filterIsInstance<SqlExpr.Column>().singleOrNull()
-    val function = operands.filterIsInstance<SqlExpr.Function>().singleOrNull()
-
-    return when {
-        actual?.operator != SqlBinaryOperator.Equal -> "Fail: operator was ${actual?.operator}"
-        column?.columnName != "id" -> "Fail: field was $operands"
-        function?.name?.last != "ANY" -> "Fail: function was $operands"
-        else -> "OK"
     }
+    val allActual = iterableAnyCallableBoundaryWhere(user) {
+        it.id == f.all(listOf(1, 2))
+    }
+    val noLambdaAny = iterableAnyCallableBoundaryWhere(user) { emptyList<Int>().any() }
+    val noLambdaNone = iterableAnyCallableBoundaryWhere(user) { emptyList<Int>().none() }
+
+    val anyOperands = callableBoundaryOperands(anyActual)
+    val allOperands = callableBoundaryOperands(allActual)
+
+    val failures = listOfNotNull(
+        expectCallableBoundary(anyOperands.operator == SqlBinaryOperator.Equal) {
+            "ANY operator was ${anyOperands.operator}"
+        },
+        expectCallableBoundary(anyOperands.column?.columnName == "id") {
+            "ANY field was ${anyOperands.column}"
+        },
+        expectCallableBoundary(anyOperands.function?.name?.last == "ANY") {
+            "ANY function was ${anyOperands.function}"
+        },
+        expectCallableBoundary(allOperands.operator == SqlBinaryOperator.Equal) {
+            "ALL operator was ${allOperands.operator}"
+        },
+        expectCallableBoundary(allOperands.column?.columnName == "id") {
+            "ALL field was ${allOperands.column}"
+        },
+        expectCallableBoundary(allOperands.function?.name?.last == "ALL") {
+            "ALL function was ${allOperands.function}"
+        },
+        expectCallableBoundary(noLambdaAny == null) {
+            "Iterable.any() without a lambda produced $noLambdaAny"
+        },
+        expectCallableBoundary(noLambdaNone == null) {
+            "Iterable.none() without a lambda produced $noLambdaNone"
+        },
+    )
+
+    return failures.firstOrNull() ?: "OK"
 }
+
+data class CallableBoundaryOperands(
+    val operator: SqlBinaryOperator?,
+    val column: SqlExpr.Column?,
+    val function: SqlExpr.Function?,
+)
+
+fun callableBoundaryOperands(expr: SqlExpr?): CallableBoundaryOperands {
+    val binary = expr as? SqlExpr.Binary
+    val operands = listOfNotNull(binary?.left, binary?.right)
+    return CallableBoundaryOperands(
+        binary?.operator,
+        operands.filterIsInstance<SqlExpr.Column>().singleOrNull(),
+        operands.filterIsInstance<SqlExpr.Function>().singleOrNull(),
+    )
+}
+
+fun expectCallableBoundary(condition: Boolean, message: () -> String): String? =
+    if (condition) null else "Fail: ${message()}"

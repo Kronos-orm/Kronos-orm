@@ -46,20 +46,9 @@ logs/kronos/kronos-log-yyyy-MM-dd.log
 
 Android/JVM logging guidance is kept with the {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} integration chapter.
 
-## Disable bundled log output
-
-Set `Kronos.logPath` to an empty array when the bundled logger should skip console and file output.
-
-```kotlin group="Default Logger 3" name="disabled" icon="kotlin"
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = []
-}
-```
-
 ## Add {{ $.title("kronos-logging") }}
 
-Use `kronos-logging` when the application wants Kronos logs to go through an adapter such as JDK Logger or Apache Commons Logging.
+Use `kronos-logging` when the application wants Kronos logs to go through an adapter such as Android Log, JDK Logger, or Apache Commons Logging.
 
 ```kotlin group="kronos-logging" name="gradle(kts)" icon="gradlekts"
 dependencies {

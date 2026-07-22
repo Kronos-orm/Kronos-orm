@@ -7,7 +7,7 @@
 |------|--------|------|
 | 必须 | 默认数据源 wrapper | [默认数据源设置](#默认数据源设置) |
 | 常用 | 表名/列名策略、默认日期格式、时区、日志 | [全局表名策略](#全局表名策略)、[全局列名策略](#全局列名策略)、[默认日期时间格式](#默认日期时间格式)、[默认时区](#默认时区)、[日志输出路径及开关](#日志输出路径及开关) |
-| 按业务启用 | 通用字段策略、无值行为、序列化、智能值转换 | [创建时间策略](#创建时间策略)、[逻辑删除策略](#逻辑删除策略)、[无值策略](#无值策略)、[值编解码器](#值编解码器)、[智能值转换](#智能值转换) |
+| 按业务启用 | 通用字段策略、无值行为、JSON 序列化、自定义值映射、Map 值转换 | [创建时间策略](#创建时间策略)、[逻辑删除策略](#逻辑删除策略)、[无值策略](#无值策略)、{{ $.keyword("mapping/serialization", ["序列化"]) }}、[自定义值映射](#自定义值映射)、[Map 值转换](#map-值转换) |
 
 编译插件配置在构建工具中完成。source set 和诊断检查见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
 
@@ -120,23 +120,16 @@ userName -> user_name
 > **Warning**
 > 全局设置创建时间后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
-```kotlin group="Common strategies 1" name="create time" icon="kotlin" {6}
+```kotlin group="Common strategies 1" name="create time" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 
 Kronos.createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
-
-data class User(
-    @PrimaryKey(true)
-    var id: Int? = null,
-    var createTime: LocalDateTime? = null
-    // 若没有createTime属性，则创建时间策略不会对该表生效
-) : KPojo
 ```
 
 > **Note**
-> 全局设置创建时间策略后，仍可在`KPojo`类中通过{{ $.keyword("mapping/annotations", ["注解设置","@CreateTime创建时间列"]) }}覆盖全局设置。
+> 在单个模型上配置 `@CreateTime` 可以覆盖全局设置，见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
 
 ## 更新时间策略
 
@@ -157,19 +150,16 @@ data class User(
 > **Warning**
 > 全局设置更新时间后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
-```kotlin group="Common strategies 2" name="update time" icon="kotlin" {2}
-Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
+```kotlin group="Common strategies 2" name="update time" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
 
-data class User(
-    @PrimaryKey(true)
-    var id: Int? = null,
-    var updateTime: LocalDateTime? = null
-    // 若没有updateTime属性，则更新时间策略不会对该表生效
-) : KPojo
+Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
 ```
 
 > **Note**
-> 全局设置更新时间策略后，仍可在`KPojo`类中通过{{ $.keyword("mapping/annotations", ["注解设置","@UpdateTime更新时间列"]) }}覆盖全局设置。
+> 在单个模型上配置 `@UpdateTime` 可以覆盖全局设置，见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
 
 ## 逻辑删除策略
 
@@ -185,16 +175,12 @@ data class User(
 > **Warning**
 > 全局设置逻辑删除后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
-```kotlin group="Common strategies 3" name="logic delete" icon="kotlin" {2}
-Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
+```kotlin group="Common strategies 3" name="logic delete" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
 
-data class User(
-    @PrimaryKey(true)
-    var id: Int? = null,
-    @Default("0") // @Default("false") for Postgres
-    var deleted: Boolean? = null
-    // 若没有deleted属性，则逻辑删除策略不会对该表生效
-) : KPojo
+Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 ```
 
 ```sql group="Common strategies 3" name="logic delete sql" icon="mysql"
@@ -204,7 +190,7 @@ WHERE `user`.`deleted` = 0
 ```
 
 > **Note**
-> 全局设置逻辑删除策略后，仍可在`KPojo`类中通过{{ $.keyword("mapping/annotations", ["注解设置","@LogicDelete逻辑删除列"]) }}覆盖全局设置。
+> 在单个模型上配置 `@LogicDelete` 可以覆盖全局设置，见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
 
 ## 乐观锁（版本）策略
 
@@ -225,19 +211,16 @@ WHERE `user`.`deleted` = 0
 > **Warning**
 > 全局设置乐观锁后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
 
-```kotlin group="Common strategies 4" name="version" icon="kotlin" {2}
-Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
+```kotlin group="Common strategies 4" name="version" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
 
-data class User(
-    @PrimaryKey(true)
-    var id: Int? = null,
-    var version: Int? = null
-    // 若没有version属性，则乐观锁策略不会对该表生效
-) : KPojo
+Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
 ```
 
 > **Note**
-> 全局设置乐观锁策略后，仍可在`KPojo`类中通过{{ $.keyword("mapping/annotations", ["注解设置","@Version乐观锁（版本）列"]) }}覆盖全局设置。
+> 在单个模型上配置 `@Version` 可以覆盖全局设置，见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
 
 ## 默认日期时间格式
 
@@ -253,7 +236,7 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
 > **Note**
-> 全局设置默认日期格式后，仍可在`KPojo`类中通过{{ $.keyword("mapping/annotations", ["注解设置", "@DateTimeFormat日期时间格式"]) }}覆盖全局设置。
+> 在单个模型上配置 `@DateTimeFormat` 可以覆盖全局设置，见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
 
 ## 默认时区
 
@@ -313,13 +296,13 @@ WHERE `user`.`name` IS NULL
 > **Warning**
 > 在 `DELETE` 和 `UPDATE` 操作中请谨慎使用 `NoValueStrategyType.Ignore`，以免造成全表删除或全表更新。
 
-详见：{{ $.keyword("configuration/no-value-strategy", ["概念","无值策略"]) }}。
+详见 {{ $.keyword("configuration/no-value-strategy", ["无值处理"]) }}。
 
-## 值编解码器
+## 自定义值映射
 
-值转换通过 `Kronos.registerValueCodec` 注册，不再使用可变的全局序列化属性。basic、temporal 和 enum 内置行为无需注册。自定义标量规则或一次注册 serialized 文本 codec 的方式见 {{ $.keyword("configuration/value-codec", ["值编解码器"]) }}。
+模型属性使用 `Money` 等领域值、数据库列保存标量值时，在应用启动时注册映射。完整的 `Money` 示例见 {{ $.keyword("configuration/value-codec", ["自定义值映射"]) }}。
 
-`@Serialize` 字段会把完整声明 `KType` 交给已注册的 serialized codec，因此 Gson、Kotlinx Serialization、Jackson、Moshi 等格式都能用一次注册处理对象和泛型集合。完整示例见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。
+JSON 对象和集合使用 {{ $.annotation("Serialize") }}，配置方式见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。
 
 ## 日志输出路径及开关
 
@@ -328,34 +311,38 @@ WHERE `user`.`name` IS NULL
 **参数**：
 {{$.params([['logPath', '日志输出路径', 'List<String>', 'listOf("console")']])}}
 
-设置 `logPath` 后，Kronos 会向控制台和指定路径输出日志。
+设置 `logPath` 后，Kronos 会向控制台和指定路径输出日志。输出位置和 logger 适配器见 {{ $.keyword("configuration/logging", ["Kronos-logging"]) }}。
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
 Kronos.logPath = listOf("console", "/var/log/kronos")
 ```
 
-使用空数组关闭内置日志输出。
+## Map 值转换
 
-```kotlin group="Logging 2" name="off" icon="kotlin"
-Kronos.logPath = emptyList()
-```
+应用输入是 `Map` 时，使用 `safeMapperTo` 创建新模型，使用 `safeFromMapData` 填充已有模型。两个 API 都会将 Map key 与模型属性匹配，并转换兼容的值。完整的 Map 与模型、模型与模型 API 参考见 {{ $.keyword("advanced/mapper-to", ["Map/KPojo类型转换"]) }}。
 
-## 智能值转换
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.Extensions.safeMapperTo
 
-`safeMapperTo`、`safeFromMapData`、typed JDBC 结果和 ORM 参数都通过 ValueCodec registry 执行 basic、temporal、enum、serialized 以及用户自定义转换。匹配与注册方式见 {{ $.keyword("configuration/value-codec", ["值编解码器"]) }}。
+data class User(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-```kotlin
-val mapOfUser = mapOf("id" to 1L, "name" to "Kronos")
+val input = mapOf("id" to 1L, "name" to "Kronos")
 
-val direct = runCatching { mapOfUser.mapperTo<User>() }
-// direct mapping 不会把 Long 转为 Int。
+val created = input.safeMapperTo<User>()
+// User(id = 1, name = "Kronos")
 
-val user = mapOfUser.safeMapperTo<User>()
+val updated = User().safeFromMapData<User>(input)
 // User(id = 1, name = "Kronos")
 ```
 
-设置 `strictSetValue = true` 会关闭隐式 basic/temporal DECODE coercion，但用户 codec、serialized 字段、enum 解码以及参数写入所需的 ENCODE 仍会执行。
+输入边界已经完成值规范化时，设置 `strictSetValue = true`。开启后，内置数值、布尔值和日期时间值在符合模型属性类型时可以直接使用；已注册的自定义映射仍然可用。例如，`User.id: Int?` 接受 `Int` 输入，传入 `Long` 时会报告映射错误。
 
 ```kotlin
+import com.kotlinorm.Kronos
+
 Kronos.strictSetValue = true
 ```

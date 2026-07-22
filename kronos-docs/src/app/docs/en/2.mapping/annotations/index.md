@@ -180,9 +180,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serialize") }}Serialized storage
+## {{ $.annotation("Serialize") }} JSON fields
 
-Marks a property as serialized storage. `@Serialize` only selects `ValueStorage.SERIALIZED`; it does not install a serializer or a second processing pipeline. Register one `serializedValueCodec` through `Kronos.registerValueCodec` for the application's text format. The codec receives the property's complete `KType` in both directions.
+Use this annotation for an object or collection property that the application stores as JSON. Configure Gson or Kotlinx Serialization when the application starts, then use the property with its regular Kotlin type.
 
 ```kotlin
 data class User(
@@ -190,7 +190,7 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-For serialized-field usage and codec registration, see {{ $.keyword("mapping/serialization", ["Serialized storage"]) }}.
+For setup and complete examples, see {{ $.keyword("mapping/serialization", ["Serialization"]) }}.
 
 ## {{ $.annotation("Cascade") }}Cascading Relationship Declaration
 

@@ -12,9 +12,9 @@ Create a script named `example.main.kts` and add the Kronos artifacts, JDBC driv
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -220,4 +220,3 @@ Successful generation logs the written files.
 ```text
 File generated successfully: src/main/kotlin/com/example/entity/User.kt
 ```
-

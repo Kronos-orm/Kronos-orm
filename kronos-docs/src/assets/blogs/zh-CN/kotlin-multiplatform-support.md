@@ -5,7 +5,7 @@ Kronos 在服务端 JVM 项目与 Android/JVM 应用中使用同一套 Kotlin OR
 | 平台 | 可用性 | 接入方式 |
 | --- | --- | --- |
 | JVM 服务端应用 | 已可用 | JDBC 与框架专用 wrapper |
-| Android/JVM | `0.2.5-SNAPSHOT` 预览 | Android `SQLiteDatabase` wrapper |
+| Android/JVM | `0.3.0` 可用 | Android `SQLiteDatabase` wrapper |
 | Kotlin/Native 与 JavaScript | 路线图 | 平台专用存储集成 |
 
 ## Android/JVM 和 SQLite

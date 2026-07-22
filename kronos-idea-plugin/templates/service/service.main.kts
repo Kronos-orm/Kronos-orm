@@ -1,9 +1,8 @@
 #!/usr/bin/env kotlin
 
-@file:Repository("https://central.sonatype.com/repository/maven-snapshots/")
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
 @file:DependsOn("com.mysql:mysql-connector-j:9.2.0")
 @file:DependsOn("com.alibaba:druid:1.2.24")
 

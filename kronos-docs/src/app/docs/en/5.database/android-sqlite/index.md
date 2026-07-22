@@ -1,21 +1,27 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 
-## Android/JVM and SQLite
+## Use SQLite on Android
 
-Kronos supports Android/JVM applications that use Android's `SQLiteDatabase`. The current platform scope is Android/JVM; Kotlin/Native and JS remain roadmap targets. The reference application uses Kotlin `2.4.0`, Android Gradle Plugin `8.13.2`, JDK 17, and minSdk 26.
+An Android application uses {{ $.code("KPojo") }} models with an app-owned {{ $.code("KronosDataSourceWrapper") }} for `SQLiteDatabase`.
 
-Use `{{ $.kronosSnapshotVersion() }}` for the current Android preview. The next stable release will use its corresponding release coordinate.
+## Add Kronos
 
-```kotlin group="Android root setup" name="build.gradle.kts" icon="gradlekts"
-// Root build.gradle.kts
+Configure the standard `google()`, `mavenCentral()`, and `gradlePluginPortal()` repositories, then add the Kronos plugin and core library to the Android project.
+
+```kotlin name="build.gradle.kts" icon="gradlekts"
 plugins {
     id("com.android.application") version "8.13.2" apply false
     id("org.jetbrains.kotlin.android") version "2.4.0" apply false
-    id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosSnapshotVersion() }}" apply false
+    id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}" apply false
 }
 ```
 
-```kotlin group="Android app setup" name="app/build.gradle.kts" icon="gradlekts"
+> **Note**
+> These snippets use Android Gradle Plugin `8.13.2` and Kotlin `2.4.0`. The reference application uses `minSdk 26` and JDK 17.
+
+Apply the plugin to every Android application or library module that declares a {{ $.code("KPojo") }}.
+
+```kotlin name="app/build.gradle.kts" icon="gradlekts"
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -23,44 +29,198 @@ plugins {
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:{{ $.kronosSnapshotVersion() }}")
+    implementation("com.kotlinorm:kronos-core:{{ $.kronosVersion() }}")
 }
 ```
 
-Android SQLite applications use `kronos-core` with a `KronosDataSourceWrapper` around `SQLiteDatabase`. Start from the [complete Android SQLite wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) in the example project.
+## Define a model
 
-## Application setup
+Declare Android tables with the same model annotations used by other Kotlin applications.
 
-KPojo models use the same table and CRUD APIs in Android/JVM applications. Install the wrapper and initialize the schema required by the app during startup.
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
 
-## Wrapper responsibilities
-
-An Android wrapper has the same `KronosDataSourceWrapper` contract as a server-side wrapper, but delegates to Android APIs instead of JDBC:
-
-- Set `dbType = DBType.SQLite` so Kronos selects SQLite SQL and DDL rendering.
-- Call `task.parsed()` for one task or `task.parsedArr()` for a batch to convert named parameters into SQL text and ordered values, then bind them to `SQLiteProgram`.
-- Use the task result type and column types to map cursor rows to scalar values, maps, and KPojo instances. The reference wrapper shows the KPojo mapping flow.
-- Use `executeInsert()` for a single insert and assign `task.lastInsertId` when a generated key was requested. Batch writes return per-row update counts.
-- Implement the outer `beginTransaction()` / `setTransactionSuccessful()` / `endTransaction()` lifecycle and re-use the current transaction for nested Kronos blocks.
-
-The reference wrapper owns an `SQLiteOpenHelper` and leaves scheduling to the application. Run repository work off the Android main thread and scope the helper to the application or another explicit lifecycle owner.
-
-## Schema and transactions
-
-After the wrapper is installed, normal schema operations work with the SQLite dialect.
-
-```kotlin group="Android schema" name="kotlin" icon="kotlin"
-val wrapper = AndroidSQLiteDataSourceWrapper(applicationContext)
-Kronos.dataSource = { wrapper }
-wrapper.table.syncTable(MarkdownDocument())
+@Table("notes")
+data class Note(
+    @PrimaryKey(identity = true)
+    var id: Long? = null,
+    var title: String? = null,
+    var content: String? = null,
+    var favorite: Boolean? = false,
+) : KPojo
 ```
 
-The Android reference wrapper provides outer transaction commit and rollback, and nested Kronos blocks reuse that transaction. Android SQLite uses the platform transaction lifecycle; JDBC integrations provide isolation, timeout, and savepoint controls.
+## Connect SQLiteDatabase
 
-## Logging
+Add a {{ $.code("KronosDataSourceWrapper") }} implementation to the application. The [Android reference wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) is an application source file that you can copy into the project and adapt for its database name and version.
 
-The sample configures `Kronos.logPath = emptyList()` and leaves device logging to the application. Use an Android-aware logger or an application-owned storage location when logs must be persisted.
+With that source available as `AndroidSQLiteDataSourceWrapper`, create it once in the application's `onCreate` and make it the Kronos data source.
 
-## Reference implementation
+```kotlin name="kotlin" icon="kotlin"
+import android.app.Application
+import com.kotlinorm.Kronos
+import com.kotlinorm.orm.ddl.table
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
-See [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) for the complete application and [AndroidSQLiteDataSourceWrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) for the reference implementation.
+class NotesApplication : Application() {
+    lateinit var database: AndroidSQLiteDataSourceWrapper
+        private set
+    private val schemaExecutor = Executors.newSingleThreadExecutor()
+    private lateinit var schemaReady: Future<*>
+
+    override fun onCreate() {
+        super.onCreate()
+        database = AndroidSQLiteDataSourceWrapper(this)
+        Kronos.dataSource = { database }
+        schemaReady = schemaExecutor.submit {
+            database.table.syncTable<Note>()
+        }
+    }
+
+    fun awaitSchemaReady() {
+        schemaReady.get()
+    }
+}
+```
+
+Register the application class in `AndroidManifest.xml`.
+
+```xml name="AndroidManifest.xml" icon="android"
+<application
+    android:name=".NotesApplication"
+    android:label="@string/app_name"
+    android:theme="@style/Theme.App">
+    ...
+</application>
+```
+
+Applications that already have an `Application` class can put the data-source setup there.
+
+## Log SQL to Logcat
+
+Add {{ $.title("kronos-logging") }} when the application should send Kronos SQL logs to Logcat.
+
+```kotlin name="app/build.gradle.kts" icon="gradlekts"
+dependencies {
+    implementation("com.kotlinorm:kronos-logging:{{ $.kronosVersion() }}")
+}
+```
+
+Call the setup function from `NotesApplication.onCreate`.
+
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.KronosLoggerApp
+
+KronosLoggerApp.detectLoggerImplementation()
+```
+
+## Use CRUD after the schema is ready
+
+`NotesApplication` starts schema preparation once. Run database work on an executor and call `awaitSchemaReady()` before each operation. The example posts results and errors to the main thread.
+
+```kotlin name="kotlin" icon="kotlin"
+import android.app.Activity
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import com.kotlinorm.Kronos
+import com.kotlinorm.orm.ddl.table
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
+import java.util.concurrent.Executors
+
+class NotesActivity : Activity() {
+    private val databaseExecutor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private fun <T> runDatabase(
+        action: () -> T,
+        onSuccess: (T) -> Unit,
+        onError: (Throwable) -> Unit,
+    ) {
+        databaseExecutor.execute {
+            runCatching {
+                (application as NotesApplication).awaitSchemaReady()
+                action()
+            }.onSuccess { result ->
+                mainHandler.post { onSuccess(result) }
+            }.onFailure { error ->
+                mainHandler.post { onError(error) }
+            }
+        }
+    }
+
+    fun createNote() {
+        runDatabase(
+            action = {
+                val id = Note(title = "First note", content = "Hello Android")
+                    .insert()
+                    .withId()
+                    .execute()
+                    .lastInsertId
+                    ?: error("SQLite did not return the generated note id")
+
+                Note()
+                    .select()
+                    .where { it.id == id }
+                    .first()
+            },
+            onSuccess = { note ->
+                // Render note in the UI.
+            },
+            onError = ::reportDatabaseError,
+        )
+    }
+
+    private fun reportDatabaseError(error: Throwable) {
+        Log.e("Notes", "Database operation failed", error)
+    }
+
+    override fun onDestroy() {
+        databaseExecutor.shutdownNow()
+        super.onDestroy()
+    }
+}
+```
+
+## Run related writes in a transaction
+
+Use {{ $.title("Kronos.transact") }} for related writes. Android SQLite uses the default transaction settings.
+
+In the same activity, call the `runDatabase` helper from the previous example.
+
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.update.update
+
+fun createFavoriteNote() {
+    runDatabase(
+        action = {
+            Kronos.transact {
+                val id = Note(title = "Plan", content = "Review Android support")
+                    .insert()
+                    .withId()
+                    .execute()
+                    .lastInsertId
+                    ?: error("SQLite did not return the generated note id")
+
+                Note(id = id)
+                    .update()
+                    .set { it.favorite = true }
+                    .by { it.id }
+                    .execute()
+            }
+        },
+        onSuccess = {},
+        onError = ::reportDatabaseError,
+    )
+}
+```
+
+## Reference application
+
+[kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) contains a complete Markdown notebook with the wrapper source, model, repository, UI, and instrumentation tests.

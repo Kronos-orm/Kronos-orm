@@ -152,6 +152,28 @@ val rowNumber: Int? = rows.first().rn
 
 函数 SQL 由当前数据库方言渲染。窗口 alias 可以在同层 `orderBy` 中使用；谓词需要读取窗口 alias 时，先生成投影，再使用 `filter` 建立派生查询。`filter` receiver 只有当前 `Selected` 字段，并保持该投影作为结果类型。
 
+### PostgreSQL 数组比较
+
+PostgreSQL 数组比较使用 `f.any(...)` 和 `f.all(...)`。导入对应函数后，把数组表达式放在比较右侧：
+
+```kotlin
+import com.kotlinorm.functions.bundled.exts.PostgresFunctions.all
+import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
+
+val acceptedIds = intArrayOf(1, 2, 3)
+val blockedIds = intArrayOf(8, 9)
+
+val rows = User()
+    .select()
+    .where {
+        it.id == f.any(acceptedIds) &&
+            it.id != f.all(blockedIds)
+    }
+    .toList()
+```
+
+该条件生成 PostgreSQL `ANY (...)` 和 `ALL (...)` 数组谓词。
+
 ---
 
 ## 逻辑删除
@@ -240,7 +262,11 @@ where {
 }
 ```
 
-`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值。普通 class、data class、object、companion/`@JvmStatic` 和顶层属性在 SQL 比较中都是运行时值，不需要 `.value`。未注册为当前查询 source 的 KPojo 属性直接参与 SQL 比较时，使用 `.value` 明确读取 Kotlin 值，例如 `it.id == probe.id.value`。
+`takeIf`/`takeUnless` 的 Boolean 参数和 `if`/`when` 的条件按普通 Kotlin 求值。
+
+普通 class、data class、object、companion/`@JvmStatic` 和顶层属性在 SQL 比较中都是运行时值，直接使用即可。当前 source 字段也直接参与条件表达式。
+
+对于当前查询 source 之外的 KPojo 属性，在属性链末端使用 `.value` 读取实际 Kotlin 值，例如 `it.id == probe.id.value`。
 
 字面量 `where { it.age == null }` / `where { it.age != null }` 表示 SQL `IS NULL` / `IS NOT NULL`；动态变量为 `null` 时才进入无值策略。
 
@@ -647,20 +673,11 @@ Affected rows: 1
 -----------------------
 ```
 
-关闭内置日志输出：
-
-```kotlin
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = emptyList()
-}
-```
-
 使用 `kronos-logging` 接入 JDK Logger：
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.2.4")
+    implementation("com.kotlinorm:kronos-logging:0.3.0")
 }
 ```
 
@@ -742,15 +759,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.2.4`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.3.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.4")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.4")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```

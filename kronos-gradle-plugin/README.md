@@ -6,7 +6,7 @@ Gradle plugin that wires the Kronos compiler plugin into Kotlin compilation.
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.4"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.0"
 }
 ```
 
@@ -21,4 +21,3 @@ This is an **included build** (not a regular subproject) — configured via `inc
 ## Version Sync
 
 The version in `KronosGradlePlugin.kt` must stay in sync with `publishing.gradle.kts`. Use `.github/scripts/bump-version.sh` to update both.
-

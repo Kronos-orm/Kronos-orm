@@ -327,6 +327,39 @@ WHERE `user`.`id` IN (
 
 更多子查询谓词、行值 tuple 和 quantified comparison 见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
 
+## 用 Iterable 构建条件
+
+在条件块中可以使用 Kotlin `Iterable.any`、`Iterable.all` 和 `Iterable.none` 谓词调用。lambda 会为集合中的每个元素构建一个条件。
+
+```kotlin group="Iterable conditions" name="kotlin" icon="kotlin"
+val keywords = listOf("Ada", "Grace")
+val minimumAges = listOf(18, 21)
+val excludedFragments = listOf("test", "archive")
+
+val users = User()
+    .select()
+    .where {
+        keywords.any { keyword -> it.name.contains(keyword) } &&
+            minimumAges.all { minimumAge -> it.age >= minimumAge } &&
+            excludedFragments.none { fragment -> it.name.contains(fragment) }
+    }
+    .toList()
+```
+
+非空集合会按元素顺序组合生成的条件：
+
+| Kotlin 调用 | 生成的条件 |
+|-------------|------------|
+| `values.any { p(it) }` | `p(v1) OR p(v2) OR ...` |
+| `values.all { p(it) }` | `p(v1) AND p(v2) AND ...` |
+| `values.none { p(it) }` | `NOT p(v1) AND NOT p(v2) AND ...` |
+
+加上 `!` 后，`!values.any { p(it) }` 用 `AND` 组合 `NOT p(...)`；`!values.all { p(it) }` 用 `OR` 组合 `NOT p(...)`；`!values.none { p(it) }` 用 `OR` 组合 `p(...)`。
+
+空集合，或每个子条件都没有值的集合，对 `any`、`all` 和 `none` 都会生成 `FALSE` 条件。
+
+加上 `!` 后仍保留 `FALSE` 条件，因此 `select`、`update` 和 `delete` 都会保留这个谓词。
+
 ## 匹配范围
 
 使用 `between` 和 `notBetween` 匹配 Kotlin range。
@@ -410,6 +443,52 @@ FROM `user`
 WHERE `user`.`name` REGEXP :namePattern
 ```
 
+## 归一化文本匹配
+
+`f.lower(x)` 和 `f.upper(x)` 返回可空 `String?` 表达式，可以用于相等比较、`contains`、`like`、`startsWith`、`endsWith` 和集合成员条件。
+
+```kotlin group="Normalized string functions" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.StringFunctions.lower
+import com.kotlinorm.functions.bundled.exts.StringFunctions.upper
+
+val normalizedName = "ADA".lowercase()
+val allowedNames = listOf("ada", "grace")
+
+val users = User()
+    .select()
+    .where {
+        f.lower(it.userName) == normalizedName ||
+            f.lower(it.userName).contains(normalizedName) ||
+            normalizedName in f.lower(it.userName) ||
+            f.lower(it.userName) like "ada%" ||
+            f.lower(it.userName).startsWith("a") ||
+            f.lower(it.userName).endsWith("a") ||
+            f.lower(it.userName) in allowedNames
+    }
+    .toList()
+```
+
+`f.upper(...)` 使用大写值时也支持同样的条件辅助函数。`in` 支持文本包含、集合成员和单列子查询。
+
+### 使用 Kotlin 原生大小写调用
+
+在条件中，Kronos 会把 source `String` 字段上的无参 `lowercase()` 和 `uppercase()` 映射为 SQL `LOWER` 和 `UPPER`。生成的表达式可以使用同一组条件运算符。
+
+```kotlin group="Native normalized string conditions" name="kotlin" icon="kotlin"
+val normalizedName = "Ada".lowercase()
+
+val users = User()
+    .select()
+    .where {
+        it.userName?.lowercase() == normalizedName ||
+            it.userName?.uppercase().contains("AD") ||
+            it.userName?.lowercase() like "ada%"
+    }
+    .toList()
+```
+
+`normalizedName` 等捕获值由 Kotlin 求值后作为条件参数绑定。函数和方言示例见 {{ $.keyword("query/functions", ["内置函数"]) }}。
+
 ## 读取当前对象的值
 
 无参匹配属性会读取发起操作的对象属性值。
@@ -482,7 +561,9 @@ FROM `movie`
 WHERE `movie`.`director_id` = `director`.`id`
 ```
 
-需要读取另一个对象的 Kotlin 属性值时，使用 `.value`。
+需要读取另一个 KPojo 对象的实际 Kotlin 属性值时，将 `.value` 放在属性访问链的末端。
+
+普通变量和当前 source 字段直接使用即可。
 
 ```kotlin group="Kotlin value" name="kotlin" icon="kotlin"
 val probe = User(otherAge = 40)
@@ -624,7 +705,11 @@ val users = User()
     .toList()
 ```
 
-`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流。普通 Kotlin 对象的属性在 SQL 比较中也按运行时值处理，因此 `it.id == filter.id` 不需要 `.value`；这包括普通 class、data class、object、companion 或 `@JvmStatic` 属性以及顶层属性。捕获的 KPojo 属性具有字段语义；当该 KPojo 不是当前查询 source 时，使用 `.value` 读取其值，例如 `it.id == probe.id.value`。
+`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流。
+
+普通 Kotlin 对象的属性在 SQL 比较中按运行时值处理，因此 `it.id == filter.id` 直接使用即可；这包括普通 class、data class、object、companion 或 `@JvmStatic` 属性以及顶层属性。当前 source 字段也直接参与条件表达式。
+
+对于当前查询 source 之外的捕获 KPojo，在属性链末端使用 `.value` 读取实际 Kotlin 值，例如 `it.id == probe.id.value`。
 
 `null` 和空集合的默认处理规则见 {{ $.keyword("configuration/no-value-strategy", ["无值策略"]) }}。
 

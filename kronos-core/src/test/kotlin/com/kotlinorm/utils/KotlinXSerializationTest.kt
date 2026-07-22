@@ -1,7 +1,9 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.Serialize
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.ValueCodecRegistration
 import com.kotlinorm.interfaces.serializedValueCodec
@@ -51,6 +53,12 @@ class KotlinXSerializationTest {
         var listData: List<Int>? = null,
         @Serialize
         var matrixData: List<List<String>>? = null
+    ) : KPojo
+
+    data class JsonColumnSerializableHolder(
+        @ColumnType(KColumnType.JSON)
+        @Serialize
+        var payload: SerializableEnvelope? = null
     ) : KPojo
 
     private object KotlinXSerializationCodec {
@@ -116,6 +124,7 @@ class KotlinXSerializationTest {
         val matrixDataField = holder.__columns.single { it.name == "matrixData" }
 
         assertTrue(payloadField.serializable)
+        assertEquals(KColumnType.VARCHAR, payloadField.type)
         assertEquals(
             """{"profile":{"name":"Ada","tags":["orm","json"]},"active":false}""",
             toDatabaseValue(SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper, payloadField, payload)
@@ -142,6 +151,29 @@ class KotlinXSerializationTest {
                 matrixDataField,
                 listOf(listOf("read", "write"), listOf("sync"))
             )
+        )
+    }
+
+    @Test
+    fun serializedJsonColumnBindsJsonText() {
+        val payload = SerializableEnvelope(
+            profile = SerializableProfile("Ada", listOf("orm", "json")),
+            active = false
+        )
+        val holder = JsonColumnSerializableHolder(payload = payload)
+        val payloadField = holder.__columns.single { it.name == "payload" }
+        val databaseValue = toDatabaseValue(
+            SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper,
+            payloadField,
+            payload
+        )
+
+        assertTrue(payloadField.serializable)
+        assertEquals(KColumnType.JSON, payloadField.type)
+        assertTrue(databaseValue is String)
+        assertEquals(
+            """{"profile":{"name":"Ada","tags":["orm","json"]},"active":false}""",
+            databaseValue
         )
     }
 

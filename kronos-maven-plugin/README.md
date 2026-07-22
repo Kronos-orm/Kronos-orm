@@ -13,7 +13,7 @@ Add to `kotlin-maven-plugin` configuration:
     <dependency>
         <groupId>com.kotlinorm</groupId>
         <artifactId>kronos-maven-plugin</artifactId>
-        <version>0.2.4</version>
+        <version>0.3.0</version>
     </dependency>
 </dependencies>
 ```
@@ -21,4 +21,3 @@ Add to `kotlin-maven-plugin` configuration:
 ## How It Works
 
 Implements `KotlinMavenPluginExtension`. Bundles the `kronos-compiler-plugin` artifact and copies its `META-INF/services` so Maven discovers the `ComponentRegistrar`.
-

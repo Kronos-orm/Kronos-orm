@@ -279,7 +279,31 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun iterableAnyLogicalComposition() = box("iterableAnyLogicalComposition")
 
     /**
-     * Verifies same-named Kronos function calls remain outside Iterable.any lowering.
+     * Verifies Iterable.any/all/none predicates preserve their SQL tree and leaf-negation semantics.
+     */
+    @Test
+    fun iterablePredicateMatrix() = box("iterablePredicateMatrix")
+
+    /**
+     * Verifies empty and no-value Iterable predicates retain an explicit false criterion.
+     */
+    @Test
+    fun iterablePredicateEmptySafety() = box("iterablePredicateEmptySafety")
+
+    /**
+     * Verifies LOWER and UPPER function expressions support equality and string-match conditions.
+     */
+    @Test
+    fun lowerFunctionStringMatches() = box("lowerFunctionStringMatches")
+
+    /**
+     * Verifies native Kotlin string-case calls lower only for source field receiver chains.
+     */
+    @Test
+    fun nativeStringCaseFunctions() = box("nativeStringCaseFunctions")
+
+    /**
+     * Verifies callable boundaries remain outside Iterable predicate lowering.
      */
     @Test
     fun iterableAnyCallableBoundaries() = box("iterableAnyCallableBoundaries")

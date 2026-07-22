@@ -5,21 +5,27 @@
  * you may not use this file except in compliance with the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.testfixtures.cascade.onetoone.Car
 import com.kotlinorm.testfixtures.cascade.onetoone.CarDetails
 import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.testfixtures.entities.UserRelation
 import com.kotlinorm.testutils.MysqlTestBase
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.KPojoFactory
+import com.kotlinorm.utils.createKPojo
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,8 +44,8 @@ class SelectFromBehaviorTest : MysqlTestBase() {
         val task = query.build().atomicTask
 
         assertEquals(query.toSqlQuery(), task.statement)
-        assertEquals(typeOf<String?>(), task.resultColumnTypes["username"])
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id2"])
+        assertEquals(typeOf<String?>(), task.resultColumns["username"]?.type)
+        assertEquals(typeOf<Int?>(), task.resultColumns["id2"]?.type)
     }
 
     @Test
@@ -52,6 +58,30 @@ class SelectFromBehaviorTest : MysqlTestBase() {
         assertFailsWith<IllegalStateException> { initial.select { it.id } }
         left.select { it.id }
         right.select { it.id }
+    }
+
+    @Test
+    fun `selectable join materialization passes the exact selected KType to a user factory`() {
+        val selectedType = typeOf<TestUser?>()
+        var factoryType: KType? = null
+        val registration = Kronos.registerKPojoFactory(typeOf<TestUser>(), KPojoFactory { requestedType ->
+            factoryType = requestedType
+            TestUser(id = 17)
+        })
+
+        try {
+            val (_, root) = tableSelectableJoinState(
+                UserRelation(),
+                typeOf<UserRelation>(),
+                typeOf<UserRelation?>(),
+                NullableTestUserQuery(selectedType)
+            )
+
+            assertSame(selectedType, factoryType)
+            assertEquals(17, root.id)
+        } finally {
+            registration.close()
+        }
     }
 
     @Test
@@ -96,11 +126,9 @@ class SelectFromBehaviorTest : MysqlTestBase() {
         val user = TestUser(id = 2, username = "typed")
         val row = mapOf<String, Any>("id" to 1, "gender" to 1)
         val scalar = mapOf<String, Any>("total" to 1)
-        @Suppress("UNCHECKED_CAST")
-        val selectedClass = selectedType.classifier as KClass<out KPojo>
-        val selectedRow = selectedClass.createInstance().fromMapData<KPojo>(row)
-        assertNotEquals(TestUser::class, selectedClass)
-        assertEquals(selectedClass, nullableSelectedType.classifier)
+        val selectedRow = createKPojo(selectedType).fromMapData<KPojo>(row)
+        assertNotEquals(typeOf<TestUser>(), selectedType)
+        assertEquals(selectedType.withNullability(true), nullableSelectedType)
         val wrapper = CapturingMysqlWrapper(
             mapRows = listOf(row),
             typedRows = listOf(user),
@@ -115,15 +143,15 @@ class SelectFromBehaviorTest : MysqlTestBase() {
         assertEquals(scalar, joinQuery().toMapOrNull(wrapper))
         assertEquals(listOf(user), joinQuery().toList<TestUser>(wrapper))
         val defaultList = joinQuery().toList(wrapper)
-        assertEquals(selectedClass, defaultList.single()::class)
+        assertEquals(selectedType, defaultList.single().__kType)
         assertSelectedValues(defaultList.single())
         assertEquals(user, joinQuery().first<TestUser>(wrapper))
         val defaultOne = joinQuery().first(wrapper)
-        assertEquals(selectedClass, defaultOne::class)
+        assertEquals(selectedType, defaultOne.__kType)
         assertSelectedValues(defaultOne)
         assertEquals(user, joinQuery().firstOrNull<TestUser>(wrapper))
         val defaultOneOrNull = joinQuery().firstOrNull(wrapper)
-        assertEquals(selectedClass, defaultOneOrNull!!::class)
+        assertEquals(selectedType, defaultOneOrNull!!.__kType)
         assertSelectedValues(defaultOneOrNull)
 
         assertEquals(
@@ -209,9 +237,7 @@ class SelectFromBehaviorTest : MysqlTestBase() {
     fun `default terminal APIs and select all cursor retain their contracts`() {
         val query = joinQuery()
         val selectedType = query.selectedType
-        @Suppress("UNCHECKED_CAST")
-        val selectedClass = selectedType.classifier as KClass<out KPojo>
-        val selectedRow = selectedClass.createInstance().fromMapData<KPojo>(mapOf("id" to 1, "gender" to 1))
+        val selectedRow = createKPojo(selectedType).fromMapData<KPojo>(mapOf("id" to 1, "gender" to 1))
         val mapRow = mapOf<String, Any>("id" to 1, "gender" to 1)
         val user = TestUser(id = 1, username = "typed")
         val wrapper = CapturingMysqlWrapper(
@@ -267,6 +293,18 @@ class SelectFromBehaviorTest : MysqlTestBase() {
         assertEquals(1, row["id"])
         assertEquals(1, row["gender"])
     }
+}
+
+private class NullableTestUserQuery(
+    override val selectedType: KType
+) : KSelectable<TestUser>(TestUser()) {
+    override val nullableSelectedType: KType = selectedType
+
+    override fun build(wrapper: com.kotlinorm.interfaces.KronosDataSourceWrapper?): KronosQueryTask =
+        error("Not used by this factory-path test")
+
+    override fun toSqlQueryPlan(wrapper: com.kotlinorm.interfaces.KronosDataSourceWrapper?): SqlQueryPlan =
+        error("Not used by this factory-path test")
 }
 
 private class CapturingMysqlWrapper(

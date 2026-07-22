@@ -80,7 +80,7 @@ values -> {id=1, name=Ada, age=null}
 
 ## Dynamic object tables
 
-When the table shape is only known at runtime, create an object that implements `KPojo` and set `__kClass` to `KPojo::class`. The object carries metadata properties and ordinary Kotlin properties, so it can be used with the same select DSL. Mark explicit metadata overrides with `@Ignore([IgnoreAction.ALL])` so they are not treated as table columns.
+When the table shape is only known at runtime, create an object that implements `KPojo` and set `__kType` to `typeOf<KPojo>()`. The object carries metadata properties and ordinary Kotlin properties, so it can be used with the same select DSL. Mark explicit metadata overrides with `@Ignore([IgnoreAction.ALL])` so they are not treated as table columns.
 
 ```kotlin group="KPojo Dynamic" name="dynamic table" icon="kotlin"
 import com.kotlinorm.annotations.Ignore
@@ -88,10 +88,12 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 val runtimeUser = object : KPojo {
     @Ignore([IgnoreAction.ALL])
-    override var __kClass: kotlin.reflect.KClass<out KPojo> = KPojo::class
+    override var __kType: KType = typeOf<KPojo>()
     @Ignore([IgnoreAction.ALL])
     override var __tableName = "tb_runtime_user"
     @Ignore([IgnoreAction.ALL])

@@ -21,9 +21,10 @@ import com.kotlinorm.beans.dsl.KCascade
 import com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.createKPojo
+import com.kotlinorm.utils.KTypeKey
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Represents a valid cascade within the context of ORM operations.
@@ -53,7 +54,7 @@ data class ValidCascade(
  * Identifies and constructs a list of valid cascades for ORM operations based on the provided columns and operation type.
  *
  * This function filters through a list of [Field] objects to find those that are not directly mapped to database columns but have associated cascades.
- * It then uses reflection to instantiate the cascaded POJOs. Depending on whether the field has a cascade mapping and is applicable for the specified operation type,
+ * It then resolves each complete relation KType through the registered KPojo factory. Depending on whether the field has a cascade mapping and is applicable for the specified operation type,
  * it either returns the direct cascades or searches through the cascaded POJO's columns for any that have a cascade mapping back to the original table and are applicable for the operation.
  * This process constructs a list of [ValidCascade] objects, each encapsulating a field, its cascades, and the instantiated cascaded POJO, which are essential for operations like cascading deletes.
  *
@@ -62,7 +63,7 @@ data class ValidCascade(
  * 根据提供的列和操作类型识别并构建 ORM 操作的有效引用列表。
  *
  * 此函数通过 [Field] 对象列表进行筛选，以查找未直接映射到数据库列但具有相关引用的对象。
- * 然后，它使用反射来实例化引用的 POJO。根据字段是否具有级联映射以及是否适用于指定的操作类型，
+ * 然后，它通过已注册的 KPojo 工厂按完整 KType 创建引用 POJO。根据字段是否具有级联映射以及是否适用于指定的操作类型，
  * 它要么返回直接引用，要么在引用的 POJO 的列中搜索任何具有级联映射回原始表并适用于该操作的对象。
  * 此过程构造一个 [ValidCascade] 对象列表，每个对象都封装一个字段、其引用和实例化的引用 POJO，这些对象对于级联删除等操作至关重要。
  *
@@ -77,11 +78,11 @@ data class ValidCascade(
  */
 @Suppress("UNCHECKED_CAST")
 fun findValidRefs(
-    kClass: KClass<out KPojo>, columns: Collection<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
+    sourceType: KType, columns: Collection<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
     return columns.asSequence().mapNotNull { col ->
-        val targetKClass = col.elementKType?.classifier as? KClass<*> ?: col.kClass ?: return@mapNotNull null
+        val targetType = col.elementKType ?: col.kType ?: return@mapNotNull null
         if (col.isColumn || (allowed != null && col.name !in allowed && !allowAll)) return@mapNotNull null
         //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
         if (col.ignore?.contains(CASCADE_SELECT) == true && allowAll && operationType == KOperationType.SELECT) {
@@ -91,21 +92,24 @@ fun findValidRefs(
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
         return@mapNotNull if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
             if (operationType == KOperationType.DELETE) return@mapNotNull [] // 插入操作不允许子级向上级级联
-            val ref =
-                (targetKClass as KClass<out KPojo>).createInstance() // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
+            val ref = createKPojo(targetType) // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             [
                 ValidCascade(col, col.cascade, ref, col.tableName)
             ] // 若有级联映射，返回引用
         } else {
-            val ref =
-                (targetKClass as KClass<out KPojo>).createInstance() // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
+            val ref = createKPojo(targetType) // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             val refMetadata = ref.resolveRuntimeMetadata()
             val tableName = refMetadata.tableName // 获取引用所在的表名
             refMetadata.allFields.asSequence().filter {
-                it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.kClass == kClass
+                it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) &&
+                    (it.elementKType ?: it.kType)?.sameDeclaredTypeAs(sourceType) == true
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName, false)
             }.toList() // 若没有级联映射，返回引用的所有关于本表级联映射
         }
     }.toList().flatten()
 }
+
+private fun KType.sameDeclaredTypeAs(other: KType): Boolean =
+    KTypeKey.from(this, ignoreTopLevelNullability = true) ==
+        KTypeKey.from(other, ignoreTopLevelNullability = true)

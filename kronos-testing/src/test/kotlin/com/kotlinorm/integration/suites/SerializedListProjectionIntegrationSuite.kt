@@ -8,16 +8,13 @@ import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
 import com.kotlinorm.integration.support.IntegrationSuiteSupport
 import com.kotlinorm.interfaces.KIdGenerator
-import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.interfaces.serializedValueCodec
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.utils.createInstance
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,12 +27,14 @@ abstract class SerializedListProjectionIntegrationSuite(
     fun serializedListSurvivesWindowDerivedProjectionAgainstRealDatabase() {
         requireDatabaseAvailable()
         configureKronos()
-        val originalProcessor = Kronos.serializeProcessor
         val originalIdGenerator = customIdGenerator
         val table = IntegrationSerializedListProjectionUser()
+        val serializationRegistration = Kronos.registerValueCodec(serializedValueCodec(
+            encode = KotlinxIntegrationFormat::encode,
+            decode = KotlinxIntegrationFormat::decode
+        ))
 
         try {
-            Kronos.serializeProcessor = KotlinxIntegrationSerializeProcessor
             val generatedIds = listOf("user-1", "user-2", "user-3").iterator()
             customIdGenerator = object : KIdGenerator<String> {
                 override fun nextId(): String = generatedIds.next()
@@ -62,7 +61,7 @@ abstract class SerializedListProjectionIntegrationSuite(
                 listOf(listOf("Quinn"), listOf("Frankie"), listOf("Cameron")),
                 pageUsers.map { it.list },
             )
-            KotlinxIntegrationSerializeProcessor.clearTrace()
+            KotlinxIntegrationFormat.clearTrace()
 
             val ranked = IntegrationSerializedListProjectionUser()
                 .select {
@@ -80,16 +79,14 @@ abstract class SerializedListProjectionIntegrationSuite(
                     ]
                 }
 
-            @Suppress("UNCHECKED_CAST")
-            val rankedClass = ranked.build(wrapper).atomicTask.targetType.classifier as KClass<out KPojo>
-            val rankedListField = rankedClass.createInstance().__columns.single { it.name == "list" }
+            val rankedType = ranked.build(wrapper).atomicTask.targetType
+            val rankedListField = Kronos.createKPojo(rankedType).__columns.single { it.name == "list" }
             val derived = ranked
                 .select()
                 .where { it.rn == 1 }
                 .orderBy { it.id.asc() }
-            @Suppress("UNCHECKED_CAST")
-            val derivedClass = derived.build(wrapper).atomicTask.targetType.classifier as KClass<out KPojo>
-            val derivedListField = derivedClass.createInstance().__columns.single { it.name == "list" }
+            val derivedType = derived.build(wrapper).atomicTask.targetType
+            val derivedListField = Kronos.createKPojo(derivedType).__columns.single { it.name == "list" }
             val rankedUsers = derived.toList()
 
             assertEquals(listOf("user-2", "user-3"), rankedUsers.map { it.id })
@@ -98,32 +95,32 @@ abstract class SerializedListProjectionIntegrationSuite(
                 rankedUsers.map { it.list },
                 "first projection serializable=${rankedListField.serializable}, " +
                     "derived projection serializable=${derivedListField.serializable}, " +
-                    "deserialize returned ${KotlinxIntegrationSerializeProcessor.deserializedValues}",
+                    "decode returned ${KotlinxIntegrationFormat.decodedValues}",
             )
         } finally {
-            Kronos.serializeProcessor = originalProcessor
+            serializationRegistration.close()
             customIdGenerator = originalIdGenerator
             wrapper.table.dropTable(table)
         }
     }
 }
 
-private object KotlinxIntegrationSerializeProcessor : KronosSerializeProcessor {
+private object KotlinxIntegrationFormat {
     private val json = Json {
         encodeDefaults = true
         ignoreUnknownKeys = true
     }
-    val deserializedValues = mutableListOf<Any>()
+    val decodedValues = mutableListOf<Any>()
 
-    fun clearTrace() = deserializedValues.clear()
+    fun clearTrace() = decodedValues.clear()
 
-    override fun deserialize(serializedStr: String, kType: KType): Any {
+    fun decode(serializedStr: String, kType: KType): Any {
         return (json.decodeFromString(serializer(kType), serializedStr)
             ?: error("Kotlinx serialization returned null for $kType")
-        ).also(deserializedValues::add)
+        ).also(decodedValues::add)
     }
 
-    override fun serialize(obj: Any, kType: KType): String {
+    fun encode(obj: Any, kType: KType): String {
         @Suppress("UNCHECKED_CAST")
         val valueSerializer = serializer(kType) as KSerializer<Any>
         return json.encodeToString(valueSerializer, obj)

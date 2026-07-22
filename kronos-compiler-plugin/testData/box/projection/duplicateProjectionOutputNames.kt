@@ -34,7 +34,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 @Table("tb_projection_duplicate_names")
 data class DuplicateProjectionUser(
@@ -61,11 +61,12 @@ class DuplicateProjectionWrapper(
     override fun first(task: KAtomicQueryTask): Any? = mapResult(task)
 
     private fun mapResult(task: KAtomicQueryTask): Any {
-        val classifier = task.targetType.classifier
-        if (classifier == Map::class) return row
-        val kClass = classifier as? KClass<*> ?: return row
-        @Suppress("UNCHECKED_CAST")
-        return row.mapperTo(kClass as KClass<out KPojo>)
+        if (task.targetType == typeOf<Map<String, Any?>>() ||
+            task.targetType == typeOf<Map<String, Any?>?>()
+        ) {
+            return row
+        }
+        return row.mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0

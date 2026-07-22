@@ -50,6 +50,7 @@ import org.jetbrains.kotlin.ir.builders.irExprBody
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.builders.irGetObject
+import org.jetbrains.kotlin.ir.builders.irIfThen
 import org.jetbrains.kotlin.ir.builders.irInt
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irReturn
@@ -67,7 +68,6 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.expressions.IrGetEnumValue
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperator
-import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrTypeOperatorCallImpl
@@ -101,7 +101,7 @@ import org.jetbrains.kotlin.name.Name
  * - [createTableComment] — builds the table comment string.
  * - [createTableIndexes] — builds the mutable list of table indexes.
  * - [createKronosSpecialField] — builds the special strategy value.
- * - [createKClassProperty] — builds the `KClass` reference of the class.
+ * - [createKTypeProperty] — builds the concrete `KType` of the class.
  * - [createToDataMap] — serializes all column properties into a `MutableMap`.
  * - [createPropertyGetter] / [createPropertySetter] — dynamic property access by name.
  * - [createFromMapData] — populates the instance from a `Map<String, Any?>`.
@@ -253,23 +253,22 @@ private fun IrBuilderWithScope.buildKronosSpecialField(irClass: IrClass, annotat
 }
 
 /**
- * Generates: var __kClass: KClass<out KPojo> = User::class
+ * Generates the concrete `typeOf<DeclaredClass>()` initializer for `KPojo.__kType`.
+ *
+ * The type argument is the transformed class itself, preserving nullability and generic
+ * arguments known to the compiler. No runtime class lookup or reflection fallback is emitted.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKClassProperty(irClass: IrClass): IrExpressionBody =
-    irExprBody(
-        IrClassReferenceImpl(
-            startOffset,
-            endOffset,
-            context.irBuiltIns.kClassClass.typeWith(irClass.defaultType),
-            irClass.symbol,
-            irClass.defaultType
-        )
-    )
+fun DeclarationIrBuilder.createKTypeProperty(irClass: IrClass): IrExpressionBody =
+    irExprBody(irCall(typeOfFunctionSymbol).apply { typeArguments[0] = irClass.defaultType })
 
 /**
- * Generates: override fun toDataMap() = mutableMapOf("prop" to this.prop, ...)
+ * Generates `toDataMap()` as a mutable map of field names to backing-field values.
+ *
+ * Delegated and `Ignore(ALL)` properties are excluded, as are properties ignored for the
+ * TO_MAP direction. This body does not encode field values; field-level storage policies are
+ * applied by the normal ValueCodec path before persistence.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
@@ -355,7 +354,12 @@ fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFu
     }
 
 /**
- * Generates: override fun fromMapData(map: Map<String, Any?>): KPojo { ... }
+ * Generates the direct `fromMapData` assignment body.
+ *
+ * A property is assigned only when its map key is present. Values are safe-cast to the
+ * declared field type, so a missing key leaves the existing value untouched and an incompatible
+ * value is represented as `null` before the generated assignment semantics apply. Properties
+ * ignored for FROM_MAP are omitted.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
@@ -364,13 +368,15 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
         fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
         fun mapParam() = irGet(irFunction.parameters.valueParameters.first())
         val mapGetSymbol = context.irBuiltIns.mapClass.getSimpleFunction("get")!!
+        val mapContainsKeySymbol = context.irBuiltIns.mapClass.getSimpleFunction("containsKey")!!
 
         irClass.properties
             .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
+                val propertyName = prop.name.asString()
                 val mapGet = irCall(mapGetSymbol).apply {
                     dispatchReceiver = mapParam()
-                    arguments[1] = irString(prop.name.asString())
+                    arguments[1] = irString(propertyName)
                 }
                 val fieldType = prop.backingField!!.type
                 val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
@@ -381,14 +387,26 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
                     castType,
                     mapGet
                 )
-                +irSetField(dispatcher(), prop.backingField!!, cast)
+                val containsKey = irCall(mapContainsKeySymbol).apply {
+                    dispatchReceiver = mapParam()
+                    arguments[1] = irString(propertyName)
+                }
+                +irIfThen(
+                    context.irBuiltIns.unitType,
+                    containsKey,
+                    irSetField(dispatcher(), prop.backingField!!, cast)
+                )
             }
         +irReturn(dispatcher())
     }
 
 /**
- * Generates: override fun safeFromMapData(map: Map<String, Any?>): KPojo { ... }
- * Uses getSafeValue() for type-safe conversion (handles enum, date, etc.)
+ * Generates `safeFromMapData` with one `getSafeValue` call per present field.
+ *
+ * The generated call receives the complete field `KType` and serialization flag, making it
+ * the single ValueCodecRegistry decode boundary for enum, temporal, serialized, and custom
+ * values. Missing keys are not decoded or assigned, and properties ignored for FROM_MAP are
+ * omitted.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
@@ -396,12 +414,13 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
     irBlockBody {
         fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
         fun mapParam() = irGet(irFunction.parameters.valueParameters.first())
+        val mapContainsKeySymbol = context.irBuiltIns.mapClass.getSimpleFunction("containsKey")!!
 
         irClass.properties
             .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
                 val fieldType = prop.backingField!!.type
-                // Build: getSafeValue(this, typeOf<FieldType>(), map, "propName", isSerializable)
+                val propertyName = prop.name.asString()
                 val kTypeExpr = irCall(typeOfFunctionSymbol).apply {
                     typeArguments[0] = fieldType
                 }
@@ -411,19 +430,26 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
                     arguments[0] = dispatcher()
                     arguments[1] = kTypeExpr
                     arguments[2] = mapParam()
-                    arguments[3] = irString(prop.name.asString())
+                    arguments[3] = irString(propertyName)
                     arguments[4] = isSerializable
                 }
 
-                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
                 val cast = IrTypeOperatorCallImpl(
                     startOffset, endOffset,
-                    castType,
-                    IrTypeOperator.SAFE_CAST,
-                    castType,
+                    fieldType,
+                    IrTypeOperator.CAST,
+                    fieldType,
                     safeValueCall
                 )
-                +irSetField(dispatcher(), prop.backingField!!, cast)
+                val containsKey = irCall(mapContainsKeySymbol).apply {
+                    dispatchReceiver = mapParam()
+                    arguments[1] = irString(propertyName)
+                }
+                +irIfThen(
+                    context.irBuiltIns.unitType,
+                    containsKey,
+                    irSetField(dispatcher(), prop.backingField!!, cast)
+                )
             }
         +irReturn(dispatcher())
     }

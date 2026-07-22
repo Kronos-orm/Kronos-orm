@@ -14,21 +14,38 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.annotations.InternalKronosApi
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.exceptions.ConflictingResultColumnLabels
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.syntax.statement.SqlQuery
 import kotlin.reflect.KType
 
 /**
- * Kronos Atomic Query Task
+ * Immutable execution metadata for one query, apart from the mutable SQL text and stash.
  *
- * Atomic execution task for Select
+ * [targetType] is the logical result type consumed by the data-source wrapper. The
+ * [resultColumns] map carries projection metadata to the single decode boundary; its keys
+ * are planned result labels and therefore may not differ only by case. [stash] transports
+ * operation-local binding metadata and is forwarded unchanged to the JDBC statement context.
  *
- * @author OUSC
- * @create 2024/4/18 23:05
+ * [listParameterOccurrences] identifies named-parameter occurrences that may expand to
+ * multiple JDBC positions. It is interpreted together with [paramMap] by [parsed].
+ *
+ * @property sql named-parameter SQL to execute
+ * @property paramMap values keyed by SQL parameter name
+ * @property operationType query operation classification
+ * @property statement optional structured query that produced [sql]
+ * @property targetType complete logical result type, including generic arguments and nullability
+ * @property stash mutable operation-local metadata shared with the data-source wrapper
+ * @property resultColumns exact planned result labels and their logical decode metadata
+ * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
+ * @throws ConflictingResultColumnLabels when distinct metadata keys differ only by case
  */
 data class KronosAtomicQueryTask(
     override var sql: String,
@@ -36,15 +53,23 @@ data class KronosAtomicQueryTask(
     override val operationType: KOperationType = KOperationType.SELECT,
     override val statement: SqlQuery? = null,
     override val targetType: KType,
-    val stash: MutableMap<String, Any?> = mutableMapOf(),
-    override val resultColumnTypes: Map<String, KType> = emptyMap(),
+    override val stash: MutableMap<String, Any?> = mutableMapOf(),
+    @InternalKronosApi
+    override val resultColumns: Map<String, ResultColumnMetadata> = emptyMap(),
     val listParameterOccurrences: Set<Int> = emptySet()
 ) : KAtomicQueryTask {
 
+    init {
+        val labelsByCase = resultColumns.keys.groupBy(String::lowercase)
+        val conflict = labelsByCase.values.firstOrNull { it.size > 1 }
+        if (conflict != null) throw ConflictingResultColumnLabels(conflict)
+    }
+
     /**
-     * Parses the SQL statement and returns a pair of JDBC SQL and a list of JDBC parameter lists.
+     * Materializes named SQL and parameters into the exact JDBC SQL, value order, and
+     * parameter-name order used by binding.
      *
-     * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
+     * @return parsed JDBC statement metadata for this query
      */
     override fun parsed() = parseSqlStatement(sql, paramMap, listParameterOccurrences)
 }

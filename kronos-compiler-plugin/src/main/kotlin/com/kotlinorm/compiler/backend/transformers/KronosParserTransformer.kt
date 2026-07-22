@@ -24,13 +24,14 @@ import com.kotlinorm.compiler.core.kTableForSelectSymbol
 import com.kotlinorm.compiler.core.kTableForSetSymbol
 import com.kotlinorm.compiler.core.kTableForSortSymbol
 import com.kotlinorm.compiler.core.firstTypeArgument
+import com.kotlinorm.compiler.core.isKPojoType
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
-import com.kotlinorm.compiler.utils.KPojoFqName
 import com.kotlinorm.compiler.utils.extensionReceiver
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
@@ -43,13 +44,16 @@ import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrSimpleType
+import org.jetbrains.kotlin.ir.types.IrTypeProjection
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.statements
-import org.jetbrains.kotlin.ir.util.superTypes
 
 /**
  * Kronos Parser Transformer
@@ -73,6 +77,7 @@ class KronosParserTransformer(
 
     private val errorReporter = ErrorReporter(messageCollector)
     val kPojoClasses = mutableSetOf<IrClass>()
+    val enumClasses = mutableSetOf<IrClass>()
     private val transformedKPojoClasses = mutableSetOf<IrClass>()
 
     override fun visitFileNew(declaration: IrFile): IrFile {
@@ -83,7 +88,7 @@ class KronosParserTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitClassNew(declaration: IrClass): IrStatement =
         if (declaration.isGeneratedProjectionClass()) declaration else {
-            if (declaration.superTypes.any { it.classFqName == KPojoFqName }) {
+            if (with(pluginContext) { declaration.defaultType.isKPojoType() }) {
                 processKPojoClass(declaration)
             }
             super.visitClassNew(declaration)
@@ -93,6 +98,12 @@ class KronosParserTransformer(
     override fun visitCall(expression: IrCall): IrExpression {
         for (i in 0 until expression.typeArguments.size) {
             collectKPojoFactoryCandidate(expression.typeArguments[i])
+        }
+        if (expression.isStaticTypedResultCall()) {
+            expression.type.collectConcreteEnumLeaves()
+            for (i in 0 until expression.typeArguments.size) {
+                expression.typeArguments[i]?.collectConcreteEnumLeaves()
+            }
         }
         return super.visitCall(expression) as IrCall
     }
@@ -114,17 +125,19 @@ class KronosParserTransformer(
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun processKPojoClass(irClass: IrClass) {
-        if (irClass.isGeneratedProjectionClass()) {
+        if (irClass.kind == ClassKind.INTERFACE || irClass.isGeneratedProjectionClass()) {
             return
         }
         kPojoClasses.add(irClass)
         collectCascadeTargetKPojoClasses(irClass)
         if (transformedKPojoClasses.add(irClass)) {
+            val classTransformer = KronosIrClassTransformer(pluginContext, irClass, errorReporter)
+            classTransformer.materializeMissingKPojoMembers()
             irClass.properties.forEach { property ->
                 property.isVar = true
                 property.isConst = false
             }
-            irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
+            irClass.transform(classTransformer, null)
         }
     }
 
@@ -147,6 +160,23 @@ class KronosParserTransformer(
         type?.toKPojoFactoryCandidate()?.let { kPojoClasses.add(it) }
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrCall.isStaticTypedResultCall(): Boolean {
+        if (symbol.owner.name.asString() !in StaticTypedResultFunctionNames) return false
+        return symbol.owner.fqNameWhenAvailable?.asString()?.startsWith("com.kotlinorm.") == true
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrType.collectConcreteEnumLeaves() {
+        val simpleType = this as? IrSimpleType ?: return
+        simpleType.classOrNull?.owner
+            ?.takeIf { it.kind == ClassKind.ENUM_CLASS }
+            ?.let(enumClasses::add)
+        simpleType.arguments
+            .filterIsInstance<IrTypeProjection>()
+            .forEach { it.type.collectConcreteEnumLeaves() }
+    }
+
     /**
      * Synthetic projection classes are FIR-backed lazy classes. Expanding their members while
      * visiting a call type argument can ask FIR2IR for property symbols before they are bound.
@@ -162,8 +192,8 @@ class KronosParserTransformer(
     private fun IrType.toKPojoFactoryCandidate(): IrClass? {
         if (isGeneratedProjectionClassType()) return null
         val irClass = getClass() ?: classOrNull?.owner ?: return null
-        if (irClass.isGeneratedProjectionClass()) return null
-        return irClass.takeIf { target -> target.superTypes.any { it.classFqName == KPojoFqName } }
+        if (irClass.kind == ClassKind.INTERFACE || irClass.isGeneratedProjectionClass()) return null
+        return irClass.takeIf { with(pluginContext) { it.defaultType.isKPojoType() } }
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -198,3 +228,12 @@ class KronosParserTransformer(
     }
 
 }
+
+private val StaticTypedResultFunctionNames = setOf(
+    "queryList",
+    "queryOne",
+    "queryOneOrNull",
+    "toList",
+    "first",
+    "firstOrNull"
+)

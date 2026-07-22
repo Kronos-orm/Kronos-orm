@@ -33,7 +33,6 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
 
 @Table("tb_join_cascade_root")
 data class JoinCascadeRoot(
@@ -66,9 +65,7 @@ class JoinNonRootCascadeWrapper : KronosDataSourceWrapper {
     override fun toList(task: KAtomicQueryTask): List<Any?> {
         mainQueryCount++
         mainSql = task.sql
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        @Suppress("UNCHECKED_CAST")
-        return [mapOf("profileId" to 7).mapperTo(kClass as KClass<out KPojo>)]
+        return [mapOf("profileId" to 7).mapperTo(task.targetType)]
     }
 
     override fun first(task: KAtomicQueryTask): Any? {

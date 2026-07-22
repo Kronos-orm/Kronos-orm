@@ -7,7 +7,7 @@
 |------|--------|------|
 | 必须 | 默认数据源 wrapper | [默认数据源设置](#默认数据源设置) |
 | 常用 | 表名/列名策略、默认日期格式、时区、日志 | [全局表名策略](#全局表名策略)、[全局列名策略](#全局列名策略)、[默认日期时间格式](#默认日期时间格式)、[默认时区](#默认时区)、[日志输出路径及开关](#日志输出路径及开关) |
-| 按业务启用 | 通用字段策略、无值行为、序列化、智能值转换 | [创建时间策略](#创建时间策略)、[逻辑删除策略](#逻辑删除策略)、[无值策略](#无值策略)、[序列化反序列化处理器](#序列化反序列化处理器)、[关闭智能值转换](#关闭智能值转换) |
+| 按业务启用 | 通用字段策略、无值行为、序列化、智能值转换 | [创建时间策略](#创建时间策略)、[逻辑删除策略](#逻辑删除策略)、[无值策略](#无值策略)、[值编解码器](#值编解码器)、[智能值转换](#智能值转换) |
 
 编译插件配置在构建工具中完成。source set 和诊断检查见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
 
@@ -315,41 +315,11 @@ WHERE `user`.`name` IS NULL
 
 详见：{{ $.keyword("configuration/no-value-strategy", ["概念","无值策略"]) }}。
 
-## 序列化反序列化处理器
+## 值编解码器
 
-将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
+值转换通过 `Kronos.registerValueCodec` 注册，不再使用可变的全局序列化属性。basic、temporal 和 enum 内置行为无需注册。自定义标量规则或一次注册 serialized 文本 codec 的方式见 {{ $.keyword("configuration/value-codec", ["值编解码器"]) }}。
 
-**参数**：
-{{$.params([['serializeProcessor', '序列化反序列化处理器', 'KronosSerializeProcessor', 'NoneSerializeProcessor']])}}
-
-通过创建`KronosSerializeProcessor`自定义序列化解析器，详见：{{ $.keyword("configuration/serialization-processor", ["自动序列化与反序列化"])}}。
-
-如可以通过引入`GSON`库来实现序列化解析器：
-
-```kotlin group="GsonProcessor" name="Main.kt" icon="kotlin"
-Kronos.serializeProcessor = GsonProcessor
-```
-
-```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
-import com.google.gson.Gson
-import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KType
-import kotlin.reflect.jvm.javaType
-
-object GsonProcessor : KronosSerializeProcessor {
-    // 使用GSON序列化对象
-    override fun serialize(obj: Any, kType: KType): String {
-        return Gson().toJson(obj)
-    }
-    
-    // 使用GSON反序列化对象
-    override fun deserialize(serializedStr: String, kType: KType): Any {
-        return Gson().fromJson(serializedStr, kType.javaType)
-    }
-}
-```
-
-这里使用 `GSON` 库实现序列化反序列化解析器。你也可以使用 `Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson` 等库；处理器会收到字段声明上的 `KType`，因此可以显式处理泛型字段。
+`@Serialize` 字段会把完整声明 `KType` 交给已注册的 serialized codec，因此 Gson、Kotlinx Serialization、Jackson、Moshi 等格式都能用一次注册处理对象和泛型集合。完整示例见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。
 
 ## 日志输出路径及开关
 
@@ -370,33 +340,21 @@ Kronos.logPath = listOf("console", "/var/log/kronos")
 Kronos.logPath = emptyList()
 ```
 
-## 关闭智能值转换
+## 智能值转换
 
-Kronos在进行数据操作时，会自动将预期值与实际值进行智能转换，如`Int`与`Long`、`String`等等，详见：{{ $.keyword("configuration/value-transformer", ["概念", "值转换器"]) }}。
+`safeMapperTo`、`safeFromMapData`、typed JDBC 结果和 ORM 参数都通过 ValueCodec registry 执行 basic、temporal、enum、serialized 以及用户自定义转换。匹配与注册方式见 {{ $.keyword("configuration/value-codec", ["值编解码器"]) }}。
 
-以下是一个简单的例子，展示了智能值转换的功能：
-    
 ```kotlin
-data class User(
-    var id: Int? = null,
-    var name: String? = "",
-    var createTime: kotlinx.datetime.LocalDateTime? = null
-)
+val mapOfUser = mapOf("id" to 1L, "name" to "Kronos")
 
-val mapOfUser = mapOf("id" to 1L, "name" to "Kronos", "createTime" to "2023-10-17T10:00:00")
-
-val strictResult = runCatching {
-    mapOfUser.mapperTo<User>()
-}
-// strictResult.isFailure == true，因为 id 是 Long，User.id 需要 Int
+val direct = runCatching { mapOfUser.mapperTo<User>() }
+// direct mapping 不会把 Long 转为 Int。
 
 val user = mapOfUser.safeMapperTo<User>()
-// User(id = 1, name = "Kronos", createTime = LocalDateTime(...))
+// User(id = 1, name = "Kronos")
 ```
 
-Kronos默认开启`getTypeSafeValue`以及`safeMapperTo`函数进行智能值转换。
-
-当安全赋值需要保留 Map 原始值，并由目标属性赋值过程直接校验类型时，设置 `strictSetValue = true`。
+设置 `strictSetValue = true` 会关闭隐式 basic/temporal DECODE coercion，但用户 codec、serialized 字段、enum 解码以及参数写入所需的 ENCODE 仍会执行。
 
 ```kotlin
 Kronos.strictSetValue = true

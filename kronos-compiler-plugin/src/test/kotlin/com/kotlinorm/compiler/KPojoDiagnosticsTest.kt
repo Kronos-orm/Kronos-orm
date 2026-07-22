@@ -27,4 +27,16 @@ class KPojoDiagnosticsTest : AbstractKronosJvmDiagnosticsSuite("kpojo") {
      */
     @Test
     fun genericKPojoNotSupported() = diagnostics("genericKPojoNotSupported")
+
+    /**
+     * Verifies required enum metadata rejects declarations hidden from the generated provider.
+     */
+    @Test
+    fun inaccessibleEnumMetadata() = diagnostics("inaccessibleEnumMetadata")
+
+    /**
+     * Verifies factory-eligible KPojo declarations hidden from the generated provider fail in FIR.
+     */
+    @Test
+    fun inaccessibleKPojoFactory() = diagnostics("inaccessibleKPojoFactory")
 }

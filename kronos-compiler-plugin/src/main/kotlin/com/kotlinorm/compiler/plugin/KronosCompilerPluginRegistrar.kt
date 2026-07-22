@@ -47,7 +47,10 @@ class KronosCompilerPluginRegistrar : CompilerPluginRegistrar() {
             org.jetbrains.kotlin.cli.common.messages.MessageCollector.NONE
         )
         IrGenerationExtension.registerExtension(
-            KronosIrGenerationExtension(messageCollector)
+            KronosIrGenerationExtension(
+                messageCollector,
+                configuration.generatedTypeProviderConfigurationOrNull()
+            )
         )
     }
 }

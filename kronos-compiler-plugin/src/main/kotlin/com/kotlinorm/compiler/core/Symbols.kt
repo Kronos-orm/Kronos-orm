@@ -22,14 +22,21 @@ import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
 import com.kotlinorm.compiler.utils.FieldClassId
 import com.kotlinorm.compiler.utils.FieldFqName
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+import com.kotlinorm.compiler.utils.EnumFactoryFqName
+import com.kotlinorm.compiler.utils.GeneratedTypeProviderFqName
+import com.kotlinorm.compiler.utils.GeneratedTypeRegistrarFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+import com.kotlinorm.compiler.utils.JoinSourceClassId
+import com.kotlinorm.compiler.utils.JoinSourceFqName
 import com.kotlinorm.compiler.utils.KCascadeClassId
 import com.kotlinorm.compiler.utils.KCascadeFqName
 import com.kotlinorm.compiler.utils.KColumnTypeClassId
 import com.kotlinorm.compiler.utils.KColumnTypeFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
-import com.kotlinorm.compiler.utils.KPojoFactoryProviderFqName
+import com.kotlinorm.compiler.utils.KPojoFactoryFqName
 import com.kotlinorm.compiler.utils.KPojoFqName
+import com.kotlinorm.compiler.utils.KSelectableClassId
+import com.kotlinorm.compiler.utils.KSelectableFqName
 import com.kotlinorm.compiler.utils.KronosCommonStrategyClassId
 import com.kotlinorm.compiler.utils.KronosFunctionExprClassId
 import com.kotlinorm.compiler.utils.KronosFunctionExprFqName
@@ -63,6 +70,7 @@ import com.kotlinorm.compiler.utils.SyntaxSqlExprClassId
 import com.kotlinorm.compiler.utils.valueParameters
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
@@ -119,14 +127,43 @@ context(context: IrPluginContext)
 val kPojoClassSymbol: IrClassSymbol
     get() = requiredClass(KPojoClassId, "KPojo interface not found: ${KPojoFqName.asString()}")
 
+context(context: IrPluginContext)
+val kSelectableClassSymbol: IrClassSymbol
+    get() = requiredClass(KSelectableClassId, "KSelectable class not found: ${KSelectableFqName.asString()}")
+
+context(context: IrPluginContext)
+val joinSourceClassSymbol: IrClassSymbol
+    get() = requiredClass(JoinSourceClassId, "JoinSource class not found: ${JoinSourceFqName.asString()}")
+
 /**
- * KPojoFactoryProvider interface symbol
+ * Generated type provider and registrar symbols.
  */
 context(context: IrPluginContext)
-val kPojoFactoryProviderSymbol: IrClassSymbol
+val generatedTypeProviderSymbol: IrClassSymbol
     get() = requiredClass(
-        ClassId.topLevel(KPojoFactoryProviderFqName),
-        "KPojoFactoryProvider interface not found: ${KPojoFactoryProviderFqName.asString()}"
+        ClassId.topLevel(GeneratedTypeProviderFqName),
+        "GeneratedTypeProvider interface not found: ${GeneratedTypeProviderFqName.asString()}"
+    )
+
+context(context: IrPluginContext)
+val generatedTypeRegistrarSymbol: IrClassSymbol
+    get() = requiredClass(
+        ClassId.topLevel(GeneratedTypeRegistrarFqName),
+        "GeneratedTypeRegistrar interface not found: ${GeneratedTypeRegistrarFqName.asString()}"
+    )
+
+context(context: IrPluginContext)
+val kPojoFactorySymbol: IrClassSymbol
+    get() = requiredClass(
+        ClassId.topLevel(KPojoFactoryFqName),
+        "KPojoFactory interface not found: ${KPojoFactoryFqName.asString()}"
+    )
+
+context(context: IrPluginContext)
+val enumFactorySymbol: IrClassSymbol
+    get() = requiredClass(
+        ClassId.topLevel(EnumFactoryFqName),
+        "EnumFactory interface not found: ${EnumFactoryFqName.asString()}"
     )
 
 /**
@@ -567,13 +604,6 @@ val descMethodSymbol: IrSimpleFunctionSymbol
     get() = kTableForSortSymbol.requiredFunction("desc", "desc method not found in KTableForSort")
 
 /**
- * KClass class symbol (kotlin.reflect.KClass)
- */
-context(context: IrPluginContext)
-val kClassSymbol: IrClassSymbol
-    get() = requiredClass(ClassId.topLevel(FqName("kotlin.reflect.KClass")), "kotlin.reflect.KClass not found in classpath")
-
-/**
  * String class symbol
  */
 context(context: IrPluginContext)
@@ -600,6 +630,7 @@ val stringPlusSymbol: IrSimpleFunctionSymbol
 /**
  * getSafeValue function symbol from com.kotlinorm.utils.CommonUtil
  */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
 val getSafeValueSymbol: IrSimpleFunctionSymbol
     get() = context.referenceFunctions(
@@ -607,18 +638,33 @@ val getSafeValueSymbol: IrSimpleFunctionSymbol
     ).firstOrNull { it.owner.parameters.valueParameters.size == 5 }
         ?: error("KType getSafeValue overload not found in com.kotlinorm.utils")
 
-/**
- * registerKPojoFactory function symbol from com.kotlinorm.utils.KClassFactory
- */
-context(context: IrPluginContext)
-val registerKPojoFactorySymbol: IrSimpleFunctionSymbol
-    get() = context.referenceFunctions(
-        CallableId(FqName("com.kotlinorm.utils"), null, Name.identifier("registerKPojoFactory"))
-    ).firstRequired("registerKPojoFactory function not found in com.kotlinorm.utils")
-
 // ============================================================================
 // Type Judgment Extension Functions
 // ============================================================================
+
+/**
+ * Checks whether this type's classifier graph contains [target].
+ *
+ * The traversal records visited classifier symbols so recursive bounds cannot create a cycle.
+ *
+ * @receiver the IR type whose classifier and supertypes are inspected
+ * @param target the class symbol to find in the type graph
+ * @return true when this type is [target] or reaches it through its supertypes
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+fun IrType.isTypeOrSubtypeOf(target: IrClassSymbol): Boolean {
+    val visited = mutableSetOf<IrClassifierSymbol>()
+
+    fun IrType.matchesInTypeGraph(): Boolean {
+        val classifier = (this as? IrSimpleType)?.classifier ?: return false
+        if (classifier == target) return true
+        if (!visited.add(classifier)) return false
+        return superTypes().any { it.matchesInTypeGraph() }
+    }
+
+    return matchesInTypeGraph()
+}
 
 /**
  * Checks if this type is a KPojo type
@@ -627,7 +673,7 @@ val registerKPojoFactorySymbol: IrSimpleFunctionSymbol
  */
 context(context: IrPluginContext)
 fun IrType.isKPojoType(): Boolean {
-    return classFqName == KPojoFqName || superTypes().any { it.classFqName == KPojoFqName }
+    return isTypeOrSubtypeOf(kPojoClassSymbol)
 }
 
 /** Returns whether properties of this type represent SQL source fields in a DSL lambda. */

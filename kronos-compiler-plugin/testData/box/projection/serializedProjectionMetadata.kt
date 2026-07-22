@@ -28,8 +28,7 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.utils.createInstance
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @Table("tb_serialized_projection_metadata")
 data class SerializedProjectionMetadataUser(
@@ -42,11 +41,11 @@ class SerializedProjectionMetadataWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:serialized-projection-metadata"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<out KPojo>>()
+    val mappedTypes = mutableListOf<KType>()
 
     @Suppress("UNCHECKED_CAST")
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        mappedClasses += task.targetType.classifier as KClass<out KPojo>
+        mappedTypes += task.targetType
         return emptyList()
     }
 
@@ -78,9 +77,9 @@ fun box(): String {
     aliased.toList(wrapper)
     derived.toList(wrapper)
 
-    val projectedField = wrapper.mappedClasses[0].projectionField("tags")
-    val aliasedField = wrapper.mappedClasses[1].projectionField("labels")
-    val derivedField = wrapper.mappedClasses[2].projectionField("tags")
+    val projectedField = wrapper.mappedTypes[0].projectionField("tags")
+    val aliasedField = wrapper.mappedTypes[1].projectionField("labels")
+    val derivedField = wrapper.mappedTypes[2].projectionField("tags")
 
     return when {
         !projectedField.serializable -> "Fail: projected tags serializable was false"
@@ -90,5 +89,5 @@ fun box(): String {
     }
 }
 
-fun KClass<out KPojo>.projectionField(name: String) =
-    createInstance().__columns.single { it.name == name }
+fun KType.projectionField(name: String) =
+    Kronos.createKPojo(this).__columns.single { it.name == name }

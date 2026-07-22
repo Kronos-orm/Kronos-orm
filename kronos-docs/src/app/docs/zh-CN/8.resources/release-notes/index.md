@@ -90,13 +90,13 @@ override fun first(task: KAtomicQueryTask): Any?
 查询任务和类型转换链路改用完整 Kotlin `KType`：
 
 - `KAtomicQueryTask` 新增必需的 `targetType: KType`；直接构造 `KronosAtomicQueryTask` 时需要传入 `typeOf<T>()`。
-- `KronosSerializeProcessor` 改为 `serialize(obj, kType)` 和 `deserialize(serializedStr, kType)`，不再提供无类型参数的序列化方法或接收 `KClass` 的反序列化方法。
-- `ValueTransformer`、`TransformerManager.getValueTransformed`、`getTypeSafeValue`、`getSafeValue` 和 `TransformerSafeValue` 改为接收 `KType`；字符串类型名和 `superTypes` 参数已删除，运行时值类型参数统一命名为 `sourceValueClass`。
-- `Field` 构造参数中的 `cascadeIsCollectionOrArray`、`kClass` 和 `superTypes` 合并为 `kType`；`kClass`、`elementKType` 和 `cascadeIsCollectionOrArray` 现在由声明类型延迟计算。
+- 旧 transformer 与 serialization processor API 被一个双向 `ValueCodec` 注册表取代。通过 `Kronos.registerValueCodec` 注册；匹配和转换从 `ValueCodecContext` 获得完整的源类型与目标类型元数据。
+- `serializedValueCodec` 将一组编码/解码函数适配到所有 `@Serialize` 字段，包括泛型和嵌套集合类型；不再存在独立的序列化注册表。
+- `Field` 构造参数中的 `cascadeIsCollectionOrArray`、`kClass` 和 `superTypes` 合并为 `kType`。现在只有 `kType` 是声明类型身份；`elementKType` 和 `cascadeIsCollectionOrArray` 仍是派生辅助属性，而 `Field.kClass` 已不再属于 API。
 
 #### 功能与修复
 
-- ✨ 在字段、查询任务、序列化处理器和值转换器链路中保留完整 Kotlin `KType`，支持 `List<List<String>>` 等嵌套泛型集合 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- ✨ 在字段、查询任务、序列化字段和 ValueCodec 链路中保留完整 Kotlin `KType`，支持 `List<List<String>>` 等嵌套泛型集合 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 Kotlinx Serialization 对泛型集合和 data class 字段的反序列化，并在 Map 与标量查询结果中保留被选中的 `null` 值 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 `select { it }`、`select { [it] }`、KPojo 排除投影，以及使用 `[]` 混合完整行与 alias 时的生成类型 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 SQLite UNION 渲染、SQLite 表结构同步、字符串默认值及扩展测试发现的其他 ORM 边缘问题 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))

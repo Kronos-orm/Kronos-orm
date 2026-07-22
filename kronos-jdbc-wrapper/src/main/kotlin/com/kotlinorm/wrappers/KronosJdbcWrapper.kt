@@ -30,8 +30,20 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 import javax.sql.DataSource
-import kotlin.reflect.typeOf
 
+/**
+ * JDBC implementation of the Kronos data-source wrapper.
+ *
+ * A wrapper owns immutable database identity and mutable configuration, snapshots that
+ * configuration for each statement handle, binds parsed parameters, and maps result rows
+ * through physical readers followed by the single logical `ValueCodec` decode boundary.
+ * Connections are opened per operation unless [transact] establishes a thread-local
+ * transaction; nested transactions reuse the active connection.
+ *
+ * @param dataSource JDBC data source used to obtain connections
+ * @param databaseType optional explicit dialect; when `null`, the database product and URL are detected
+ * @param configure configuration block applied after automatic database-plugin customization
+ */
 class KronosJdbcWrapper @JvmOverloads constructor(
     val dataSource: DataSource,
     databaseType: DBType? = null,
@@ -67,14 +79,29 @@ class KronosJdbcWrapper @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Executes a query and decodes all rows according to the task's complete target type.
+     *
+     * @return decoded rows in result-set order; an empty list when no rows are returned
+     */
     override fun toList(task: KAtomicQueryTask): List<Any?> =
         query(task) { resultSet, context ->
             KronosResultMappers.toList(resultSet, task, context)
         }
 
+    /**
+     * Executes a query and returns its first decoded row.
+     *
+     * @return first row, or `null` when the result set is empty
+     */
     override fun first(task: KAtomicQueryTask): Any? =
         toList(task).firstOrNull()
 
+    /**
+     * Executes one mutation task and optionally reads generated keys requested by the task.
+     *
+     * @return JDBC-reported affected-row count
+     */
     override fun update(task: KAtomicActionTask): Int {
         val parsed = task.parsed()
         return withHandle { handle ->
@@ -82,7 +109,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
                 originalSql = parsed.originalSql,
                 jdbcSql = parsed.jdbcSql,
                 params = parsed.jdbcParamList,
-                parameterNames = parsed.parameterNames,
+                parameterNames = parsed.jdbcParameterNames,
                 operationType = task.operationType,
                 stash = task.stash
             )
@@ -105,6 +132,11 @@ class KronosJdbcWrapper @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Executes all parameter maps in a batch task using one prepared statement.
+     *
+     * @return one JDBC update count per batch entry; empty when the task has no entries
+     */
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
         val parsedSqls = task.parsedSqlArr()
         val jdbcSql = parsedSqls.firstOrNull()?.jdbcSql
@@ -116,7 +148,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
                 originalSql = task.sql,
                 jdbcSql = sql,
                 params = emptyArray(),
-                parameterNames = parsedSqls.first().parameterNames,
+                parameterNames = parsedSqls.first().jdbcParameterNames,
                 operationType = task.operationType,
                 stash = task.stash
             )
@@ -139,6 +171,18 @@ class KronosJdbcWrapper @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Runs [block] inside a transaction with optional isolation and timeout settings.
+     *
+     * A successful block is committed. Any thrown exception triggers rollback, with rollback
+     * failures attached as suppressed exceptions; the original exception is then rethrown.
+     * Nested calls reuse the active transaction and do not commit independently.
+     *
+     * @param isolation isolation level to apply for the transaction, or `null` to preserve the connection default
+     * @param timeout transaction timeout in seconds, or `null` for no wrapper deadline
+     * @param block transaction-scoped operations
+     * @return the value returned by [block]
+     */
     override fun transact(
         isolation: TransactionIsolation?,
         timeout: Int?,
@@ -179,8 +223,9 @@ class KronosJdbcWrapper @JvmOverloads constructor(
                 originalSql = parsed.originalSql,
                 jdbcSql = parsed.jdbcSql,
                 params = parsed.jdbcParamList,
-                parameterNames = parsed.parameterNames,
-                operationType = task.operationType
+                parameterNames = parsed.jdbcParameterNames,
+                operationType = task.operationType,
+                stash = task.stash
             )
             executeWithTranslation(context) {
                 handle.prepareStatement(context, returnGeneratedKeys = false).use { statement ->
@@ -231,7 +276,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
     ) {
         statement.generatedKeys.use { keys ->
             while (keys.next()) {
-                context.generatedKeys.add(context.config.columnMappers.map(keys, 1, typeOf<Any?>(), context))
+                context.generatedKeys.add(context.config.columnMappers.readJdbcValue(keys, 1, context))
             }
         }
         if (context.generatedKeys.isEmpty()) return

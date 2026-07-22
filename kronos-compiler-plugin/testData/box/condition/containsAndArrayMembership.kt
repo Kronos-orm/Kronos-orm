@@ -18,14 +18,15 @@
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlInRightOperand
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_contains_membership")
 data class ContainsMembershipUser(
@@ -35,7 +36,8 @@ data class ContainsMembershipUser(
 
 data class CapturedContainsMembership(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun containsMembershipWhere(
@@ -46,18 +48,19 @@ fun containsMembershipWhere(
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedContainsMembership(sqlExpr, parameterValues.toMap())
+        result = CapturedContainsMembership(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedContainsMembership(null, emptyMap())
+    return result ?: CapturedContainsMembership(null, emptyMap(), emptyMap())
 }
 
 fun containsParameterValue(actual: CapturedContainsMembership, expr: SqlExpr?): Any? {
-    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
-    return actual.parameters[name]
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun arrayParameterList(actual: CapturedContainsMembership): List<*>? =
-    (actual.parameters["idList"] as? Array<*>)?.toList()
+    toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, "idList", actual.parameters["idList"], expandAsList = true) as? List<*>
 
 fun box(): String {
     with(Kronos) {
@@ -86,13 +89,13 @@ fun box(): String {
         containsColumn?.columnName != "name" -> "Fail: contains field was ${containsColumn?.columnName}"
         containsExpr?.withNot == true -> "Fail: contains should not be negated"
         containsExpr?.escape != SqlExpr.StringLiteral("\\") -> "Fail: contains escape was ${containsExpr?.escape}"
-        containsParameterValue(contains, containsExpr?.pattern) != TransformerSafeValue("%d\\%\\_\\\\%", typeOf<String>()) ->
+        containsParameterValue(contains, containsExpr?.pattern) != "%d\\%\\_\\\\%" ->
             "Fail: contains value was ${containsParameterValue(contains, containsExpr?.pattern)}"
         negatedContainsColumn?.columnName != "name" -> "Fail: negated contains field was ${negatedContainsColumn?.columnName}"
         negatedContainsExpr?.withNot != true -> "Fail: negated contains should be negated"
         negatedContainsExpr?.escape != SqlExpr.StringLiteral("\\") ->
             "Fail: negated contains escape was ${negatedContainsExpr?.escape}"
-        containsParameterValue(negatedContains, negatedContainsExpr?.pattern) != TransformerSafeValue("%d\\%\\_\\\\%", typeOf<String>()) ->
+        containsParameterValue(negatedContains, negatedContainsExpr?.pattern) != "%d\\%\\_\\\\%" ->
             "Fail: negated contains value was ${containsParameterValue(negatedContains, negatedContainsExpr?.pattern)}"
         membershipColumn?.columnName != "id" -> "Fail: membership field was ${membershipColumn?.columnName}"
         membership?.withNot == true -> "Fail: membership should not be negated"

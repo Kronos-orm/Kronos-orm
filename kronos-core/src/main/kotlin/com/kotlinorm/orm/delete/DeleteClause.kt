@@ -46,7 +46,7 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
     private val metadata = pojo.resolveRuntimeMetadata()
     internal val context = OrmContext(
         pojo = pojo,
-        kClass = metadata.kClass,
+        kType = metadata.kType,
         tableName = metadata.tableName,
         declaredTableName = metadata.allColumns.firstOrNull { it.tableName.isNotBlank() }?.tableName
             ?: metadata.tableName,
@@ -128,7 +128,7 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
                 this@filter.sqlExpr?.let { expr ->
                     context.andWhere(expr)
                     this@filter.parameterValues.forEach { (name, value) ->
-                        bind(name, value, null, ParameterSource.Condition)
+                        bind(name, value, this@filter.parameterFields[name], ParameterSource.Condition)
                     }
                 }
             }
@@ -166,7 +166,6 @@ class DeleteClause<T : KPojo>(pojo: T, private val targetType: KType) {
             context.cascadeEnabled,
             context.cascadeAllowed,
             targetType,
-            context.kClass,
             context.pojo,
             where,
             paramMap,

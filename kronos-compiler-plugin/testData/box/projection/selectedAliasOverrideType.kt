@@ -30,7 +30,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
 
 @Table("tb_projection_selected_override_type")
 data class SelectedAliasOverrideUser(
@@ -44,9 +43,7 @@ class SelectedAliasOverrideWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        @Suppress("UNCHECKED_CAST")
-        return listOf(mapOf("id" to 3, "username" to 5).mapperTo(kClass as KClass<out KPojo>))
+        return listOf(mapOf("id" to 3, "username" to 5).mapperTo(task.targetType))
     }
 
     override fun first(task: KAtomicQueryTask): Any? = null

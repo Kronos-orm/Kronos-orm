@@ -16,68 +16,51 @@
 
 package com.kotlinorm.utils
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.KPojo
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 object Extensions {
 
-    fun Map<String, Any?>.safeMapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().safeFromMapData(this)
+    fun Map<String, Any?>.safeMapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).safeFromMapData(this)
     }
 
-    fun Map<String, Any?>.mapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().fromMapData(this)
-    }
-
-    @JvmName("safeMapperToOutKClass")
-    fun Map<String, Any?>.safeMapperTo(kClass: KClass<out KPojo>): Any {
-        return kClass.createInstance().safeFromMapData(this)
-    }
-
-    @JvmName("mapperToOutKClass")
-    fun Map<String, Any?>.mapperTo(kClass: KClass<out KPojo>): Any {
-        return kClass.createInstance().fromMapData(this)
+    fun Map<String, Any?>.mapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).fromMapData(this)
     }
 
     inline fun <reified K : KPojo> Map<String, Any?>.safeMapperTo(): K {
-        return K::class.createInstance().safeFromMapData(this)
+        return safeMapperTo(typeOf<K>()) as K
     }
 
     inline fun <reified K : KPojo> Map<String, Any?>.mapperTo(): K {
-        return K::class.createInstance().fromMapData(this)
+        return mapperTo(typeOf<K>()) as K
     }
 
-    fun KPojo.safeMapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().safeFromMapData(toDataMap())
+    fun KPojo.safeMapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).safeFromMapData(toDataMap())
     }
 
-    fun KPojo.mapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().fromMapData(toDataMap())
+    fun KPojo.mapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).fromMapData(toDataMap())
     }
 
     inline fun <reified K : KPojo> KPojo.safeMapperTo(): K {
-        return K::class.createInstance().safeFromMapData(toDataMap())
+        return safeMapperTo(typeOf<K>()) as K
     }
 
     inline fun <reified K : KPojo> KPojo.mapperTo(): K {
-        return K::class.createInstance().fromMapData(toDataMap())
+        return mapperTo(typeOf<K>()) as K
     }
 
-    fun KPojo.patchTo(kClass: KClass<KPojo>, vararg data: Pair<String, Any?>): KPojo {
+    fun KPojo.patchTo(type: KType, vararg data: Pair<String, Any?>): KPojo {
         return this.toDataMap().apply {
             data.forEach { (k, v) ->
                 try { this[k] = v } catch (_: NoSuchElementException) {}
             }
-        }.mapperTo(kClass) as KPojo
-    }
-
-    @JvmName("mapperPatchToOutKClass")
-    fun KPojo.patchTo(kClass: KClass<out KPojo>, vararg data: Pair<String, Any?>): KPojo {
-        return this.toDataMap().apply {
-            data.forEach { (k, v) ->
-                try { this[k] = v } catch (_: NoSuchElementException) {}
-            }
-        }.mapperTo(kClass) as KPojo
+        }.mapperTo(type) as KPojo
     }
 
     internal fun Any?.isEmptyArrayOrCollection(): Boolean {

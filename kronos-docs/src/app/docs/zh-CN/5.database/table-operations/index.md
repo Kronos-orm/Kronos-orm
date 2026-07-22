@@ -84,10 +84,10 @@ val (ctasSql, ctasParams) = task
 - **函数声明**
     
     ```kotlin
-    inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()): Boolean
+    inline fun <reified T : KPojo> exists(instance: T = createKPojo<T>()): Boolean
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos 如何不使用反射构造，根据 KType 创建 KPojo？"])}}_</small>
 
 - **使用示例**
 
@@ -99,7 +99,7 @@ val (ctasSql, ctasParams) = task
 
 - **接收参数**
 
-    {{ $.params([['instance', '实体对象。当`T`具备无参构造时，泛型重载可以创建默认实例。', 'T', 'T::class.createInstance()']]) }}
+    {{ $.params([['instance', '实体对象。泛型重载使用为 `T` 生成或注册的 factory。', 'T', 'createKPojo<T>()']]) }}
 
 - **返回值**
 
@@ -118,10 +118,10 @@ val (ctasSql, ctasParams) = task
 - **函数声明**
 
     ```kotlin
-    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance())
+    inline fun <reified T : KPojo> createTable(instance: T = createKPojo<T>())
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos 如何不使用反射构造，根据 KType 创建 KPojo？"])}}_</small>
 
 - **使用示例**
 
@@ -133,7 +133,7 @@ val (ctasSql, ctasParams) = task
 
 - **接收参数**
 
-    {{ $.params([['instance', '实体对象。当`T`具备无参构造时，泛型重载可以创建默认实例。', 'T', 'T::class.createInstance()']]) }}
+    {{ $.params([['instance', '实体对象。泛型重载使用为 `T` 生成或注册的 factory。', 'T', 'createKPojo<T>()']]) }}
 
 {{ $.hr() }}
 
@@ -145,12 +145,12 @@ val (ctasSql, ctasParams) = task
 
     ```kotlin
     inline fun <reified T : KPojo> createTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: KSelectable<*>
     )
 
     inline fun <reified T : KPojo> createTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: UnionClause<*>
     )
     ```
@@ -213,12 +213,12 @@ CTAS 使用查询输出决定表形态。需要索引、注释、默认值、主
 
     ```kotlin
     inline fun <reified T : KPojo> truncateTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         restartIdentity: Boolean = true
     )
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos 如何不使用反射构造，根据 KType 创建 KPojo？"])}}_</small>
 
 - **使用示例**
 
@@ -230,7 +230,7 @@ CTAS 使用查询输出决定表形态。需要索引、注释、默认值、主
 
 - **接收参数**
 
-    {{ $.params([['instance', '实体对象。当`T`具备无参构造时，泛型重载可以创建默认实例。', 'T', 'T::class.createInstance()'], ['restartIdentity', '是否重置自动递增值。PostgreSQL 和 SQLite 有明确的重置行为，其他方言保持各自原生 truncate 行为。', 'Boolean', 'true']]) }}
+    {{ $.params([['instance', '实体对象。泛型重载使用为 `T` 生成或注册的 factory。', 'T', 'createKPojo<T>()'], ['restartIdentity', '是否重置自动递增值。PostgreSQL 和 SQLite 有明确的重置行为，其他方言保持各自原生 truncate 行为。', 'Boolean', 'true']]) }}
 
 {{ $.hr() }}
 
@@ -268,10 +268,10 @@ CTAS 使用查询输出决定表形态。需要索引、注释、默认值、主
 - **函数声明**
 
     ```kotlin
-    inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance())
+    inline fun <reified T : KPojo> dropTable(instance: T = createKPojo<T>())
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos 如何不使用反射构造，根据 KType 创建 KPojo？"])}}_</small>
 
 - **使用示例**
 
@@ -283,7 +283,7 @@ CTAS 使用查询输出决定表形态。需要索引、注释、默认值、主
 
 - **接收参数**
 
-    {{ $.params([['instance', '实体对象。当`T`具备无参构造时，泛型重载可以创建默认实例。', 'T', 'T::class.createInstance()']]) }}
+    {{ $.params([['instance', '实体对象。泛型重载使用为 `T` 生成或注册的 factory。', 'T', 'createKPojo<T>()']]) }}
 
 {{ $.hr() }}
 
@@ -296,10 +296,10 @@ CTAS 使用查询输出决定表形态。需要索引、注释、默认值、主
 - **函数声明**
 
     ```kotlin
-    inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean
+    inline fun <reified T : KPojo> syncTable(instance: T = createKPojo<T>()): Boolean
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos 如何不使用反射构造，根据 KType 创建 KPojo？"])}}_</small>
 
 - **使用示例**
     
@@ -311,7 +311,7 @@ CTAS 使用查询输出决定表形态。需要索引、注释、默认值、主
 
 - **接收参数**
 
-    {{ $.params([['instance', '实体对象。当`T`具备无参构造时，泛型重载可以创建默认实例。', 'T', 'T::class.createInstance()']]) }}
+    {{ $.params([['instance', '实体对象。泛型重载使用为 `T` 生成或注册的 factory。', 'T', 'createKPojo<T>()']]) }}
 
 - **返回值**
 

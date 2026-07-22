@@ -19,7 +19,7 @@ package com.kotlinorm.orm.insert
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.union.UnionClause
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.createKPojo
 
 
 fun <T : KPojo> T.insert(): InsertClause<T> {
@@ -29,5 +29,5 @@ fun <T : KPojo> T.insert(): InsertClause<T> {
 inline fun <reified Target : KPojo> UnionClause<*>.insert(
     noinline values: ((List<Field>) -> List<Any?>)? = null
 ): InsertClause<Target> {
-    return InsertClause(Target::class.createInstance()).fromSource(this, values)
+    return InsertClause(createKPojo<Target>()).fromSource(this, values)
 }

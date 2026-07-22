@@ -9,7 +9,7 @@ const CascadeMappingPage: NgDocPage = {
     mdFile: './index.md',
     route: 'cascade-mapping',
     category: MappingCategory,
-    order: 10
+    order: 11
 };
 
 export default CascadeMappingPage;

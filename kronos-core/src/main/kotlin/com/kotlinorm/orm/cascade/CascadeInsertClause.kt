@@ -25,7 +25,10 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.utils.getTypeSafeValue
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.enums.ValueCodecOrigin
+import com.kotlinorm.utils.codec.ValueCodecRegistry
+import com.kotlinorm.utils.codec.ValueConversionRequest
 import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.resolvePrimaryKey
 
@@ -87,7 +90,7 @@ object CascadeInsertClause {
         pojo.toTreeNode(NodeInfo(true), cascadeAllowed, KOperationType.INSERT) {
             val metadata = kPojo.resolveRuntimeMetadata()
             if(insertIgnore) return@toTreeNode // 若有子节点提升到本节点的父节点，在此层级不需要执行插入操作，而是在insertIgnore为true的子节点的下一层级执行插入操作
-            val primaryKey = metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns)
+            val primaryKey = metadata.primaryKey ?: resolvePrimaryKey(metadata.kType, metadata.allColumns)
             val nodeOperationResult = if (kPojo != pojo) { // 判断当前进行的插入操作是否为最外层的插入操作
                 kPojo.insert().cascade(enabled = false).withId().execute(wrapper)
             } else {
@@ -97,11 +100,14 @@ object CascadeInsertClause {
                 val lastInsertId = nodeOperationResult.lastInsertId
                 val propName = primaryKey.name
                 if (lastInsertId != null && lastInsertId != 0L && dataMap[propName] == null) { // 若自增主键值不为空且未被赋值
-                    val typeSafeId =
-                        getTypeSafeValue(
-                            primaryKey.kType!!,
-                            lastInsertId
-                        ) // 获取自增主键值的类型安全值，如将Long转为Int/Short等
+                    val typeSafeId = ValueCodecRegistry.convert(
+                        ValueConversionRequest(
+                            value = lastInsertId,
+                            direction = ValueCodecDirection.DECODE,
+                            origin = ValueCodecOrigin.MAP,
+                            targetType = primaryKey.kType!!
+                        )
+                    ) // 获取自增主键值的类型安全值，如将Long转为Int/Short等
                     dataMap[propName] = typeSafeId // 将自增主键值赋给当前插入任务的数据映射
                     kPojo[propName] = typeSafeId // 将自增主键值赋给当前插入任务的POJO
                 }
@@ -112,7 +118,7 @@ object CascadeInsertClause {
 
     private fun KPojo.identityGeneratedKeyRequest(): GeneratedKeyRequest? {
         val metadata = resolveRuntimeMetadata()
-        val identity = metadata.primaryKey ?: resolvePrimaryKey(metadata.kClass, metadata.allColumns)
+        val identity = metadata.primaryKey ?: resolvePrimaryKey(metadata.kType, metadata.allColumns)
         if (identity.primaryKey != PrimaryKeyType.IDENTITY) return null
         if (identity.defaultValue != null) return null
         if (toDataMap()[identity.name] != null) return null
@@ -128,7 +134,7 @@ object CascadeInsertClause {
             ?.map { it.name }
             ?.toSet()
         return findValidRefs(
-            metadata.kClass,
+            metadata.kType,
             metadata.allFields,
             KOperationType.INSERT,
             allowed,

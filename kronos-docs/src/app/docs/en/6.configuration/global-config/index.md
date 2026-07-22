@@ -7,7 +7,7 @@ Use this table to choose the global settings to configure first.
 |-------|-----------|-------|
 | Required | Default data source wrapper | [Default Data Source Settings](#default-data-source-settings) |
 | Common | Table and column naming, default date format, time zone, logging | [Global Table Name Strategy](#global-table-name-strategy), [Global Column Naming Strategy](#global-column-naming-strategy), [Default Date Time Format](#default-date-time-format), [Default Time Zone](#default-time-zone), [Log output path and switch](#log-output-path-and-switch) |
-| Enable by business need | Common field strategies, no-value behavior, serialization, smart value conversion | [Creation Time Strategy](#creation-time-strategy), [Logical Deletion Strategy](#logical-deletion-strategy), [No-value strategy](#no-value-strategy), [Serialization Deserialization Processor](#serialization-deserialization-processor), [Smart Value Conversion](#smart-value-conversion) |
+| Enable by business need | Common field strategies, no-value behavior, serialization, smart value conversion | [Creation Time Strategy](#creation-time-strategy), [Logical Deletion Strategy](#logical-deletion-strategy), [No-value strategy](#no-value-strategy), [Value codecs](#value-codecs), [Smart Value Conversion](#smart-value-conversion) |
 
 Compiler-plugin setup is configured in the build tool. See {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} for source-set and diagnostic checks.
 
@@ -274,41 +274,11 @@ WHERE `user`.`name` IS NULL
 
 For details, see: {{ $.keyword("configuration/no-value-strategy", ["concept", "No Value Strategy"]) }}.
 
-## Serialization Deserialization Processor
+## Value codecs
 
-Deserialize strings in the database to objects at query time, and automatically serialize objects when inserting into the database.
+Value conversion is registered through `Kronos.registerValueCodec`; it is not a mutable global serializer property. Built-in basic, temporal, and enum behavior is available without registration. Register custom scalar rules or one serialized text codec as described in {{ $.keyword("configuration/value-codec", ["Value Codec"]) }}.
 
-**Parameters**:
-{{$.params([['serializeProcessor', 'Serialization Deserialization Processor', 'KronosSerializeProcessor', 'NoneSerializeProcessor']])}}
-
-By creating a `KronosSerializeProcessor` custom serialization processor, see: {{ $.keyword("configuration/serialization-processor", ["Automatic Serialization and Deserialization"])}}.
-
-For example, serialization parsers can be implemented by introducing the `GSON` library:
-
-```kotlin group="GsonProcessor" name="Main.kt" icon="kotlin"
-Kronos.serializeProcessor = GsonProcessor
-```
-
-```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
-import com.google.gson.Gson
-import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KType
-import kotlin.reflect.jvm.javaType
-
-object GsonProcessor : KronosSerializeProcessor {
-    // Use GSON to serialize objects
-    override fun serialize(obj: Any, kType: KType): String {
-        return Gson().toJson(obj)
-    }
-    
-    // Use GSON to deserialize strings
-    override fun deserialize(serializedStr: String, kType: KType): Any {
-        return Gson().fromJson(serializedStr, kType.javaType)
-    }
-}
-```
-
-Here we are using `GSON` library to implement serialization deserialization parser. You can also use libraries such as `Kotlinx.serialization`, `Jackson`, `Moshi`, or `FastJson`; processors receive the field declaration `KType` so generic fields can be handled explicitly.
+`@Serialize` fields pass their complete declaration `KType` to the registered serialized codec. Gson, Kotlinx Serialization, Jackson, Moshi, and other formats can therefore handle objects and generic collections with one registration. See {{ $.keyword("mapping/serialization", ["Serialization"]) }} for complete examples.
 
 ## Log output path and switch
 
@@ -331,31 +301,19 @@ Kronos.logPath = emptyList()
 
 ## Smart Value Conversion
 
-Kronos automatically performs intelligent conversions of expected values to actual values when performing data manipulation, such as `Int` to `Long`, `String`, and so on, as detailed in: {{ $.keyword("configuration/value-transformer", ["Concepts", "Value Transformer"]) }}.
+`safeMapperTo`, `safeFromMapData`, typed JDBC results, and ORM parameters use the ValueCodec registry for basic, temporal, enum, serialized, and user-defined conversion. See {{ $.keyword("configuration/value-codec", ["Value Codec"]) }} for matching and registration.
 
-The following is a simple example that demonstrates the functionality of smart value conversion:
-    
 ```kotlin
-data class User(
-    var id: Int? = null,
-    var name: String? = "",
-    var createTime: kotlinx.datetime.LocalDateTime? = null
-)
+val mapOfUser = mapOf("id" to 1L, "name" to "Kronos")
 
-val mapOfUser = mapOf("id" to 1L, "name" to "Kronos", "createTime" to "2023-10-17T10:00:00")
-
-val strictResult = runCatching {
-    mapOfUser.mapperTo<User>()
-}
-// strictResult.isFailure == true, because id is Long and User.id expects Int
+val direct = runCatching { mapOfUser.mapperTo<User>() }
+// Direct mapping does not convert Long to Int.
 
 val user = mapOfUser.safeMapperTo<User>()
-// User(id = 1, name = "Kronos", createTime = LocalDateTime(...))
+// User(id = 1, name = "Kronos")
 ```
 
-Kronos enables the `getTypeSafeValue` and `safeMapperTo` functions for smart value conversion by default.
-
-Set `strictSetValue = true` when safe assignment should keep raw map values and let the target property assignment validate the type directly.
+Set `strictSetValue = true` to disable implicit basic and temporal DECODE coercion. Registered user codecs, serialized fields, enum decoding, and required parameter encoding still run.
 
 ```kotlin
 Kronos.strictSetValue = true

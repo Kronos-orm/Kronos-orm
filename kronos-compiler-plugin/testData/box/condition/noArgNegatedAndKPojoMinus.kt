@@ -18,14 +18,15 @@
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_condition_no_arg_negated")
 data class NoArgNegatedUser(
@@ -37,7 +38,8 @@ data class NoArgNegatedUser(
 
 data class CapturedNoArgNegated(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun noArgNegatedWhere(user: NoArgNegatedUser, block: ToFilter<NoArgNegatedUser, Boolean?>): CapturedNoArgNegated {
@@ -45,9 +47,9 @@ fun noArgNegatedWhere(user: NoArgNegatedUser, block: ToFilter<NoArgNegatedUser, 
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedNoArgNegated(sqlExpr, parameterValues.toMap())
+        result = CapturedNoArgNegated(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedNoArgNegated(null, emptyMap())
+    return result ?: CapturedNoArgNegated(null, emptyMap(), emptyMap())
 }
 
 fun noArgNegatedLeaves(expr: SqlExpr?): List<SqlExpr.Binary> {
@@ -60,8 +62,9 @@ fun noArgNegatedLeaves(expr: SqlExpr?): List<SqlExpr.Binary> {
 }
 
 fun noArgNegatedParameter(actual: CapturedNoArgNegated, expr: SqlExpr?): Any? {
-    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
-    return actual.parameters[name]
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun expectNoArg(condition: Boolean, message: () -> String): String? =
@@ -111,7 +114,7 @@ fun box(): String {
         expectNoArg(minusValues == mapOf("id" to 1, "name" to "Ada")) { "minus values were $minusValues" },
         expectNoArg(containsColumn?.columnName == "name") { "contains field was ${containsColumn?.columnName}" },
         expectNoArg(contains?.withNot == true) { "contains not was ${contains?.withNot}" },
-        expectNoArg(noArgNegatedParameter(negatedContains, contains?.pattern) == TransformerSafeValue("%Ada%", typeOf<String>())) {
+        expectNoArg(noArgNegatedParameter(negatedContains, contains?.pattern) == "%Ada%") {
             "contains value was ${noArgNegatedParameter(negatedContains, contains?.pattern)}"
         },
     )

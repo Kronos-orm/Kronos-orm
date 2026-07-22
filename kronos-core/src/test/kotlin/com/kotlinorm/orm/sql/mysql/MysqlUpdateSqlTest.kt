@@ -10,8 +10,6 @@ import com.kotlinorm.orm.union.unionAll
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.upsert.upsert
 
-import com.kotlinorm.GsonProcessor
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper.transact
 import com.kotlinorm.testfixtures.entities.Movie
 import com.kotlinorm.testfixtures.entities.TestUser
@@ -30,11 +28,6 @@ import kotlin.test.assertEquals
 import kotlin.to
 
 class MysqlUpdateSqlTest : MysqlTestBase() {
-    init {
-        Kronos.serializeProcessor = GsonProcessor
-    }
-
-
     private val user = TestUser(1)
     private val testUser = TestUser(1, "test")
     private val testUser1 = TestUser(1, "test", 1)

@@ -17,13 +17,21 @@
 package com.kotlinorm.interfaces
 
 /**
- * Kronos Batch Task
+ * Parameter contract for executing one SQL shape with multiple value maps.
  *
- * Interface for batch task
- *
- * @author OUSC
+ * [paramMap] exists for compatibility with atomic task APIs and is not the batch payload.
+ * Implementations expose ordered batch entries through [paramMapArr]; `null` means no entries.
  */
 interface KBatchTask {
+    /**
+     * Compatibility view for single-task APIs.
+     * Batch implementations may expose an empty map because [paramMapArr] is authoritative.
+     */
     val paramMap: Map<String, Any?>
+
+    /**
+     * Parameter maps in batch execution order, or `null` for an empty batch.
+     * Every entry is materialized independently against the batch's shared SQL.
+     */
     val paramMapArr: Array<Map<String, Any?>>?
 }

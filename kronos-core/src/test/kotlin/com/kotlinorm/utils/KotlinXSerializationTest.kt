@@ -2,9 +2,9 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Serialize
-import com.kotlinorm.beans.serialize.NoneSerializeProcessor
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.interfaces.ValueCodecRegistration
+import com.kotlinorm.interfaces.serializedValueCodec
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -53,41 +53,50 @@ class KotlinXSerializationTest {
         var matrixData: List<List<String>>? = null
     ) : KPojo
 
-    private object KotlinXSerializeProcessor : KronosSerializeProcessor {
+    private object KotlinXSerializationCodec {
         private val json = Json {
             encodeDefaults = true
             ignoreUnknownKeys = true
         }
 
-        override fun deserialize(serializedStr: String, kType: KType): Any {
+        fun decode(serializedStr: String, kType: KType): Any {
             return json.decodeFromString(serializer(kType), serializedStr)
                 ?: error("Kotlinx serialization returned null for $kType")
         }
 
-        override fun serialize(obj: Any, kType: KType): String {
+        fun encode(obj: Any, kType: KType): String {
             @Suppress("UNCHECKED_CAST")
             val valueSerializer = serializer(kType) as KSerializer<Any>
             return json.encodeToString(valueSerializer, obj)
         }
     }
 
-    inline fun <reified T: KPojo> createInstance(): T {
-        return T::class.createInstance()
+    private lateinit var codecRegistration: ValueCodecRegistration
+
+    inline fun <reified T : KPojo> newKPojo(): T {
+        return createKPojo<T>()
     }
 
     @BeforeTest
-    fun installKotlinXSerializeProcessor() {
-        Kronos.serializeProcessor = KotlinXSerializeProcessor
+    fun installKotlinXSerializationCodec() {
+        codecRegistration = Kronos.registerValueCodec(
+            serializedValueCodec(
+                encode = KotlinXSerializationCodec::encode,
+                decode = KotlinXSerializationCodec::decode
+            )
+        )
     }
 
     @AfterTest
-    fun resetSerializeProcessor() {
-        Kronos.serializeProcessor = NoneSerializeProcessor
+    fun resetSerializationCodec() {
+        if (::codecRegistration.isInitialized) {
+            codecRegistration.close()
+        }
     }
 
     @Test
     fun testKotlinXSerialization() {
-        val testPojo = createInstance<TestPojo>()
+        val testPojo = newKPojo<TestPojo>()
         assertEquals(JsonNull, testPojo.id)
         assertEquals("test", testPojo.name)
         assertEquals(104, testPojo.age)

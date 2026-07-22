@@ -19,7 +19,8 @@ package com.kotlinorm.compiler.backend
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.backend.transformers.KronosProjectionIrTransformer
 import com.kotlinorm.compiler.backend.transformers.KronosParserTransformer
-import com.kotlinorm.compiler.backend.transformers.KPojoFactoryGenerator
+import com.kotlinorm.compiler.backend.transformers.GeneratedTypeProviderGenerator
+import com.kotlinorm.compiler.plugin.GeneratedTypeProviderConfiguration
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
@@ -30,24 +31,30 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
  *
  * This is the main entry point for IR transformations
  */
-class KronosIrGenerationExtension(
-    private val messageCollector: MessageCollector
+internal class KronosIrGenerationExtension(
+    private val messageCollector: MessageCollector,
+    private val generatedTypeProvider: GeneratedTypeProviderConfiguration?
 ) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         println("[Kronos] Kronos compiler plugin K2 initialized")
 
         val errorReporter = ErrorReporter(messageCollector)
+        val provider = requireNotNull(generatedTypeProvider) {
+            "Kronos generated type provider options were not supplied by the build plugin"
+        }
 
         // Apply transformations
         val transformer = KronosParserTransformer(pluginContext, messageCollector)
         moduleFragment.transform(transformer, null)
         val projectionTransformer = KronosProjectionIrTransformer(pluginContext, errorReporter)
         moduleFragment.transform(projectionTransformer, null)
-        KPojoFactoryGenerator.generate(
+        GeneratedTypeProviderGenerator.generate(
             pluginContext,
             moduleFragment,
             transformer.kPojoClasses + projectionTransformer.projectionClasses,
+            transformer.enumClasses,
+            provider,
             errorReporter
         )
     }

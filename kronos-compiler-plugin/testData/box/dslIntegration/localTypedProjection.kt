@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 // Verifies function-local projection DTOs can be used by select(...).toList() mapping.
 
 import com.kotlinorm.Kronos
@@ -27,8 +29,14 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.utils.GeneratedTypeProvider
+import com.kotlinorm.utils.GeneratedTypeRegistrar
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.EnumFactory
+import com.kotlinorm.utils.KPojoFactory
+import java.util.ServiceLoader
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table("tb_local_projection_source")
 data class LocalProjectionSource(
@@ -41,12 +49,11 @@ class LocalProjectionWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:local-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    var mappedClass: KClass<*>? = null
+    var mappedType: KType? = null
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as KClass<*>
-        mappedClass = kClass
-        return [mapOf("id" to 11, "name" to "Local").mapperTo(kClass as KClass<out KPojo>)]
+        mappedType = task.targetType
+        return [mapOf("id" to 11, "name" to "Local").mapperTo(task.targetType)]
     }
 
     override fun first(task: KAtomicQueryTask): Any? = null
@@ -68,6 +75,12 @@ fun box(): String {
         var name: String? = null,
     ) : KPojo
 
+    val capturedMarker = "captured"
+    data class CapturedProjectionRow(
+        var id: Int? = null,
+        var marker: String = capturedMarker,
+    ) : KPojo
+
     val wrapper = LocalProjectionWrapper()
 
     with(Kronos) {
@@ -77,15 +90,41 @@ fun box(): String {
     }
 
     val rows = LocalProjectionSource()
-        .select(LocalProjectionRow::class) { [it.id, it.name] }
+        .select<LocalProjectionSource, LocalProjectionRow>(typeOf<LocalProjectionRow>()) { [it.id, it.name] }
         .toList(wrapper)
     val row = rows.singleOrNull()
 
+    val contributedOwnerIds = linkedSetOf<String>()
+    ServiceLoader.load(GeneratedTypeProvider::class.java).forEach { provider ->
+        provider.contributeTo(object : GeneratedTypeRegistrar {
+            override fun registerKPojo(
+                type: KType,
+                ownerId: String,
+                constructorSignature: String,
+                factory: KPojoFactory,
+            ) {
+                contributedOwnerIds += ownerId
+            }
+
+            override fun registerEnum(
+                type: KType,
+                entryNames: List<String>,
+                factory: EnumFactory,
+            ) = Unit
+        })
+    }
+
     val failures = listOfNotNull(
-        expect(wrapper.mappedClass == LocalProjectionRow::class) { "mapped class was ${wrapper.mappedClass}" },
+        expect(wrapper.mappedType == typeOf<LocalProjectionRow>()) { "mapped type was ${wrapper.mappedType}" },
         expect(row is LocalProjectionRow) { "row type was ${row?.let { it::class }}" },
         expect(row?.id == 11) { "row id was ${row?.id}" },
         expect(row?.name == "Local") { "row name was ${row?.name}" },
+        expect(contributedOwnerIds.any { it.endsWith(".LocalProjectionRow") }) {
+            "zero-capture local owner was not contributed: $contributedOwnerIds"
+        },
+        expect(contributedOwnerIds.none { it.endsWith(".CapturedProjectionRow") }) {
+            "captured local owner was contributed: $contributedOwnerIds"
+        },
     )
 
     return failures.firstOrNull() ?: "OK"

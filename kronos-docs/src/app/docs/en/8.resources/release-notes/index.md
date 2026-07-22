@@ -90,13 +90,13 @@ override fun first(task: KAtomicQueryTask): Any?
 Query tasks and the conversion pipeline now carry complete Kotlin `KType` metadata:
 
 - `KAtomicQueryTask` requires `targetType: KType`; direct `KronosAtomicQueryTask` construction must provide `typeOf<T>()`.
-- `KronosSerializeProcessor` now defines `serialize(obj, kType)` and `deserialize(serializedStr, kType)`. The untyped serializer and the `KClass` deserializer have been removed.
-- `ValueTransformer`, `TransformerManager.getValueTransformed`, `getTypeSafeValue`, `getSafeValue`, and `TransformerSafeValue` now accept `KType`. String type names and `superTypes` have been removed, and the runtime value class parameter is consistently named `sourceValueClass`.
-- The `Field` constructor replaces `cascadeIsCollectionOrArray`, `kClass`, and `superTypes` parameters with `kType`; `kClass`, `elementKType`, and `cascadeIsCollectionOrArray` are now derived lazily from the declaration type.
+- The legacy transformer and serialization-processor APIs have been replaced by one bidirectional `ValueCodec` registry. Register codecs with `Kronos.registerValueCodec`; matching and conversion receive complete source and target type metadata through `ValueCodecContext`.
+- `serializedValueCodec` adapts one pair of encode/decode functions to all `@Serialize` fields, including generic and nested collection types. There is no separate serializer registry.
+- The `Field` constructor replaces `cascadeIsCollectionOrArray`, `kClass`, and `superTypes` parameters with `kType`. `kType` is now the only declaration type identity; `elementKType` and `cascadeIsCollectionOrArray` remain derived helpers, while `Field.kClass` is no longer part of the API.
 
 #### Features and fixes
 
-- ✨ Preserve complete Kotlin `KType` metadata across fields, query tasks, serializers, and value transformers, including nested generic collections such as `List<List<String>>` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- ✨ Preserve complete Kotlin `KType` metadata across fields, query tasks, serialized fields, and value codecs, including nested generic collections such as `List<List<String>>` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix Kotlinx Serialization deserialization for generic collection and data-class fields, and preserve selected `null` values in map and scalar query results ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix generated projection types for `select { it }`, `select { [it] }`, KPojo-minus projections, and mixed full-row plus alias projections using `[]` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix SQLite UNION rendering, SQLite schema synchronization, default string values, and other ORM edge cases found by expanded compiler, core, and integration tests ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))

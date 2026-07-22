@@ -54,29 +54,31 @@ internal class JoinedSelectPlanner(
 
     private fun plan(dataSource: KronosDataSourceWrapper, totalCount: Boolean): SqlQueryPlan {
         val parameters = linkedMapOf<String, Any?>()
+        parameters.putAll(context.parameterValues)
+        parameters.putAll(context.patchValues)
+        val parameterFields = linkedMapOf<String, Field>()
+        parameterFields.putAll(context.parameterFields)
         val parameterCounter = mutableMapOf<String, Int>()
         val crossJoinFilters = mutableListOf<SqlExpr>()
-        val selectItems = selectItems(dataSource, parameters, parameterCounter, totalCount)
+        val selectItems = selectItems(dataSource, parameters, parameterCounter, parameterFields, totalCount)
         val from = fromSource(
             context.state.current,
             dataSource,
             parameters,
             parameterCounter,
+            parameterFields,
             crossJoinFilters
         )
-        val contextParameterRenames = bindParameters(context.parameterValues, parameters)
-        val where = where(dataSource, parameters, crossJoinFilters, contextParameterRenames)
+        val where = where(dataSource, parameters, parameterFields, crossJoinFilters)
         val having = context.having
-            ?.renameNamedParameters(contextParameterRenames)
             ?.rewriteRuntimeQualifiers()
         val limit = context.limit.takeUnless { totalCount }
         val orderBy = if (totalCount) {
             emptyList()
         } else {
             sqlServerPageOrderItems(dataSource, limit)
-                ?: orderItems(selectItems, dataSource, parameters, parameterCounter)
+                ?: orderItems(selectItems, dataSource, parameters, parameterCounter, parameterFields)
         }
-        parameters.putAll(context.patchValues)
         val query = SqlQuery.Select(
             quantifier = if (context.distinct) SqlQuantifier.Distinct else null,
             select = selectItems,
@@ -91,16 +93,21 @@ internal class JoinedSelectPlanner(
             lock = context.lock.takeUnless { totalCount }
         )
         val orderedParameters = linkedMapOf<String, Any?>()
+        val orderedParameterFields = linkedMapOf<String, Field>()
         SqlParameterCollector.collectNamedParameters(query).forEach { name ->
-            if (name in parameters) orderedParameters.putIfAbsent(name, parameters.getValue(name))
+            if (name in parameters) {
+                orderedParameters.putIfAbsent(name, parameters.getValue(name))
+                parameterFields[name]?.let { orderedParameterFields.putIfAbsent(name, it) }
+            }
         }
-        return SqlQueryPlan(query, orderedParameters)
+        return SqlQueryPlan(query, orderedParameters, orderedParameterFields)
     }
 
     private fun selectItems(
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
         parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>,
         totalCount: Boolean
     ): List<SqlSelectItem> {
         if (
@@ -128,7 +135,12 @@ internal class JoinedSelectPlanner(
                     is KTableForSelect.ProjectionItem.SelectItemValue ->
                         projection.item.rewriteRuntimeQualifiers()
                     is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> {
-                        val query = projection.query.materializeSqlQuery(parameters, parameterCounter, dataSource)
+                        val query = projection.query.materializeSqlQuery(
+                            parameters,
+                            parameterCounter,
+                            dataSource,
+                            parameterFields
+                        )
                         val expr = SqlExpr.Subquery(query)
                         SqlSelectItem.Expr(
                             expr = expr,
@@ -154,20 +166,35 @@ internal class JoinedSelectPlanner(
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
         parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>,
         crossJoinFilters: MutableList<SqlExpr>
     ): SqlTable = when (node) {
-        is FromSourceNode.Leaf -> leafTable(node.source, dataSource, parameters, parameterCounter)
+        is FromSourceNode.Leaf -> leafTable(node.source, dataSource, parameters, parameterCounter, parameterFields)
         is FromSourceNode.Join -> {
             val rightRoot = node.right.rootLeaf()
             val rightLogicDelete = logicDeleteExpression(rightRoot, dataSource)
-            val condition = node.condition?.let { bindJoinCondition(it, parameters) }
+            val condition = node.condition?.let { bindJoinCondition(it, parameters, parameterFields) }
             if (node.joinType == SqlJoinType.Cross && rightLogicDelete != null) {
                 crossJoinFilters += rightLogicDelete
             }
             SqlTable.Join(
-                left = fromSource(node.left, dataSource, parameters, parameterCounter, crossJoinFilters),
+                left = fromSource(
+                    node.left,
+                    dataSource,
+                    parameters,
+                    parameterCounter,
+                    parameterFields,
+                    crossJoinFilters
+                ),
                 joinType = node.joinType,
-                right = fromSource(node.right, dataSource, parameters, parameterCounter, crossJoinFilters),
+                right = fromSource(
+                    node.right,
+                    dataSource,
+                    parameters,
+                    parameterCounter,
+                    parameterFields,
+                    crossJoinFilters
+                ),
                 condition = if (node.joinType == SqlJoinType.Cross) {
                     null
                 } else {
@@ -181,11 +208,12 @@ internal class JoinedSelectPlanner(
         leaf: FromSourceLeaf,
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
-        parameterCounter: MutableMap<String, Int>
+        parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>
     ): SqlTable {
         leaf.query?.let { query ->
             return SqlTable.Subquery(
-                query = query.materializeSqlQuery(parameters, parameterCounter, dataSource),
+                query = query.materializeSqlQuery(parameters, parameterCounter, dataSource, parameterFields),
                 alias = SqlTableAlias(requireNotNull(context.derivedAliasFor(leaf.pojo)))
             )
         }
@@ -201,11 +229,10 @@ internal class JoinedSelectPlanner(
     private fun where(
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
-        crossJoinFilters: List<SqlExpr>,
-        contextParameterRenames: Map<String, String>
+        parameterFields: MutableMap<String, Field>,
+        crossJoinFilters: List<SqlExpr>
     ): SqlExpr? {
         var result = context.where
-            ?.renameNamedParameters(contextParameterRenames)
             ?.rewriteRuntimeQualifiers()
         if (result == null) {
             val rootValues = context.root.toDataMap()
@@ -213,6 +240,7 @@ internal class JoinedSelectPlanner(
                 val value = rootValues[field.name] ?: return@mapNotNull null
                 val parameterName = uniqueParameterName(field.name, parameters)
                 parameters[parameterName] = value
+                parameterFields[parameterName] = field
                 field.toSqlParameterEq(parameterName, useTableAlias = true).rewriteRuntimeQualifiers()
             }
             result = context.andAll(expressions)
@@ -221,7 +249,7 @@ internal class JoinedSelectPlanner(
             result = context.and(result, logicDeleteExpression(context.state.current.rootLeaf(), dataSource, field))
         }
         crossJoinFilters.forEach { filter -> result = context.and(result, filter) }
-        return context.and(result, cursorCondition(parameters))
+        return context.and(result, cursorCondition(parameters, parameterFields))
     }
 
     private fun logicDeleteExpression(
@@ -249,12 +277,14 @@ internal class JoinedSelectPlanner(
 
     private fun bindJoinCondition(
         snapshot: JoinConditionSnapshot,
-        parameters: MutableMap<String, Any?>
+        parameters: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>
     ): SqlExpr {
         val renames = linkedMapOf<String, String>()
         snapshot.parameters.forEach { (name, value) ->
             val uniqueName = uniqueParameterName(name, parameters)
             parameters[uniqueName] = value
+            snapshot.parameterFields[name]?.let { parameterFields[uniqueName] = it }
             if (uniqueName != name) renames[name] = uniqueName
         }
         return context.conditionExpression(snapshot)
@@ -262,22 +292,12 @@ internal class JoinedSelectPlanner(
             .qualifyUnqualifiedDerivedColumns()
     }
 
-    private fun bindParameters(
-        values: Map<String, Any?>,
-        parameters: MutableMap<String, Any?>
-    ): Map<String, String> = buildMap {
-        values.forEach { (name, value) ->
-            val uniqueName = uniqueParameterName(name, parameters)
-            parameters[uniqueName] = value
-            if (uniqueName != name) put(name, uniqueName)
-        }
-    }
-
     private fun orderItems(
         selectItems: List<SqlSelectItem>,
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
-        parameterCounter: MutableMap<String, Int>
+        parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>
     ): List<SqlOrderingItem> = context.orderByItems.map { item ->
         SqlOrderingItem(
             expr = when (item) {
@@ -287,13 +307,18 @@ internal class JoinedSelectPlanner(
                         ?: item.field.toSyntaxExpr()
                 is KTableForSort.SortItem.ExpressionItem -> item.expression.rewriteRuntimeQualifiers()
                 is KTableForSort.SortItem.SelectableItem ->
-                    SqlExpr.Subquery(item.query.materializeSqlQuery(parameters, parameterCounter, dataSource))
+                    SqlExpr.Subquery(
+                        item.query.materializeSqlQuery(parameters, parameterCounter, dataSource, parameterFields)
+                    )
             },
             ordering = item.ordering
         )
     }
 
-    private fun cursorCondition(parameters: MutableMap<String, Any?>): SqlExpr? {
+    private fun cursorCondition(
+        parameters: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>
+    ): SqlExpr? {
         val spec = context.cursorSpec ?: return null
         if (spec.cursor == null) return null
         val fields = context.orderByItems.map { item ->
@@ -311,6 +336,7 @@ internal class JoinedSelectPlanner(
                 ?: error("Cursor token contains null for orderBy field '${item.field.name}', which is not supported.")
             val parameterName = uniqueParameterName(cursorParameterName(key), parameters)
             parameters[parameterName] = value
+            parameterFields[parameterName] = item.field
             val comparison = SqlExpr.Binary(
                 item.expr?.rewriteRuntimeQualifiers() ?: item.field.toSyntaxExpr(),
                 if (item.ordering == SqlOrdering.Desc) SqlBinaryOperator.LessThan else SqlBinaryOperator.GreaterThan,
@@ -322,6 +348,7 @@ internal class JoinedSelectPlanner(
                     ?: error("Cursor token contains null for orderBy field '${previous.field.name}', which is not supported.")
                 val previousParameter = uniqueParameterName(cursorParameterName(previousKey), parameters)
                 parameters[previousParameter] = previousValue
+                parameterFields[previousParameter] = previous.field
                 SqlExpr.Binary(
                     SqlExpr.Binary(
                         previous.expr?.rewriteRuntimeQualifiers() ?: previous.field.toSyntaxExpr(),

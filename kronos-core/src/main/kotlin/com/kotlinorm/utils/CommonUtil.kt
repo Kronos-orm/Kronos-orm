@@ -16,34 +16,31 @@
 
 package com.kotlinorm.utils
 
-import com.kotlinorm.Kronos.serializeProcessor
-import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.Kronos.timeZone
+import com.kotlinorm.annotations.InternalKronosApi
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.NamedParameterUtils
-import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
+import com.kotlinorm.beans.task.ResultColumnMetadata
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.enums.ValueCodecOrigin
+import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.render.SqlDialect
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
+import com.kotlinorm.utils.codec.ValueCodecRegistry
+import com.kotlinorm.utils.codec.ValueConversionRequest
+import com.kotlinorm.utils.codec.isTemporalRuntimeValue
 import java.time.Clock
 import java.time.LocalDateTime
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
 
-
-/**
- *@program: kronos-orm
- *@author: Jieyao Lu
- *@description:
- *@create: 2024/5/7 16:01
- **/
-
-internal data class CurrentTemporalValue(
-    val value: LocalDateTime
-)
 
 fun KronosCommonStrategy.execute(
     timeStrategy: Boolean = false,
@@ -53,7 +50,11 @@ fun KronosCommonStrategy.execute(
     afterExecute(
         field,
         if (timeStrategy) {
-            CurrentTemporalValue(LocalDateTime.now(Clock.system(timeZone)))
+            PreparedValue(
+                value = LocalDateTime.now(Clock.system(timeZone)),
+                sourceType = typeOf<LocalDateTime>(),
+                kind = PreparedValueKind.STRATEGY_TEMPORAL
+            )
         } else {
             defaultValue
         }
@@ -62,27 +63,6 @@ fun KronosCommonStrategy.execute(
 
 fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = LinkedHashSet(this)
 
-
-/**
- * Converts a given value to a type-safe value based on the provided Kotlin type.
- *
- * @param kotlinType The target Kotlin type to convert the value to.
- * @param value The value to be converted.
- * @param dateTimeFormat An optional date-time format to use for date-time conversions.
- * @param sourceValueClass The runtime KClass of the value.
- * @return The converted value, or null if the conversion is not possible.
- */
-fun getTypeSafeValue(
-    kotlinType: KType,
-    value: Any,
-    dateTimeFormat: String? = null,
-    sourceValueClass: KClass<*> = value::class
-): Any = getValueTransformed(
-    kotlinType,
-    value,
-    dateTimeFormat,
-    sourceValueClass
-)
 
 /**
  * getSafeValue
@@ -109,21 +89,50 @@ fun getSafeValue(
     key: String,
     serializable: Boolean
 ): Any? {
-    if (strictSetValue) {
-        return map[key]
-    }
     val column = kPojo.resolveRuntimeMetadata().allFields.find { it.name == key }
-    return map[key]?.let { value ->
-        val targetClass = kType.classifier as? KClass<*> ?: return@let value
-        if (targetClass == value::class) {
-            value
-        } else if (serializable) {
-            serializeProcessor.deserialize(value.toString(), kType)
-        } else {
-            getTypeSafeValue(kType, value, column?.dateFormat, value::class)
-        }
+    val storage = if (column?.serializable == true || (column == null && serializable)) {
+        ValueStorage.SERIALIZED
+    } else {
+        ValueStorage.NONE
     }
+    return ValueCodecRegistry.convert(
+        ValueConversionRequest(
+            value = map[key],
+            direction = ValueCodecDirection.DECODE,
+            origin = ValueCodecOrigin.MAP,
+            targetType = kType,
+            field = column,
+            storage = storage,
+            valueName = key
+        )
+    )
 }
+
+/**
+ * The single semantic decode boundary for a physical database value.
+ *
+ * JDBC readers must pass their raw or vendor-normalized value here exactly once
+ * for typed results. Untyped `Any`/`Map<String, Any?>` results without metadata
+ * deliberately bypass this function and retain the physical JDBC value.
+ */
+@InternalKronosApi
+fun decodeDatabaseValue(
+    value: Any?,
+    metadata: ResultColumnMetadata,
+    dialect: SqlDialect? = null,
+    valueName: String? = metadata.columnLabel
+): Any? = ValueCodecRegistry.convert(
+    ValueConversionRequest(
+        value = value,
+        direction = ValueCodecDirection.DECODE,
+        origin = ValueCodecOrigin.DATABASE,
+        targetType = metadata.type,
+        field = metadata.field,
+        storage = metadata.storage,
+        dialect = dialect,
+        valueName = valueName
+    )
+)
 
 fun String.trimWhitespace(): String {
     return replace("\\s+".toRegex(), " ").trim()
@@ -156,11 +165,23 @@ fun extractNumberInParentheses(input: String): Pair<Int, Int> {
 fun referencedParameterNames(sql: String): Set<String> =
     NamedParameterUtils.parseSqlStatement(sql).parameterNames.toSet()
 
-fun Map<String, Field>.fieldForParameter(parameterName: String): Field? =
-    this[parameterName] ?: parameterName
-        .substringBefore('@')
-        .takeIf { it != parameterName }
-        ?.let { this[it] }
+fun Map<String, Field>.fieldForParameter(parameterName: String): Field? {
+    this[parameterName]?.let { return it }
+    val normalizedName = parameterName.substringBefore('@')
+    this[normalizedName]?.let { return it }
+    conditionParameterSuffixes.forEach { suffix ->
+        if (normalizedName.endsWith(suffix)) {
+            this[normalizedName.removeSuffix(suffix)]?.let { return it }
+        }
+    }
+    if (normalizedName.startsWith(CURSOR_PARAMETER_PREFIX)) {
+        this[normalizedName.removePrefix(CURSOR_PARAMETER_PREFIX)]?.let { return it }
+    }
+    return null
+}
+
+private val conditionParameterSuffixes = listOf("List", "Min", "Max")
+private const val CURSOR_PARAMETER_PREFIX = "cursor_"
 
 const val DEFAULT_LIKE_ESCAPE: Char = '\\'
 
@@ -174,30 +195,39 @@ fun escapeLikeLiteral(value: String, escape: Char = DEFAULT_LIKE_ESCAPE): String
         }
     }
 
-data class TransformerSafeValue(
-    val value: Any?,
-    val kotlinType: KType,
-    val dateTimeFormat: String? = null
-)
-
-private fun TransformerSafeValue.toTypeSafeValue(): Any? =
-    value?.let { getTypeSafeValue(kotlinType, it, dateTimeFormat) }
-
 fun toDatabaseParameterValue(
     wrapper: KronosDataSourceWrapper,
     fieldsMap: Map<String, Field>,
     parameterName: String,
     value: Any?,
-    explicitParameterFields: Map<String, Field> = emptyMap()
+    explicitParameterFields: Map<String, Field> = emptyMap(),
+    expandAsList: Boolean = false,
+    batchIndex: Int? = null
 ): Any? {
-    if (value is TransformerSafeValue) {
-        return value.toTypeSafeValue()
-    }
     val field = explicitParameterFields[parameterName] ?: fieldsMap.fieldForParameter(parameterName)
-    return if (field != null && value != null) {
-        toDatabaseValue(wrapper, field, value)
+    if (expandAsList) {
+        return value.asDatabaseListParameter().mapIndexed { elementIndex, element ->
+            if (field == null) {
+                prepareRawSqlParameterValue(
+                    element,
+                    "$parameterName[$elementIndex]",
+                    batchIndex
+                )
+            } else {
+                prepareDatabaseValue(
+                    wrapper,
+                    field,
+                    element,
+                    "$parameterName[$elementIndex]",
+                    batchIndex
+                )
+            }
+        }
+    }
+    return if (field != null) {
+        prepareDatabaseValue(wrapper, field, value, parameterName, batchIndex)
     } else {
-        value
+        prepareRawSqlParameterValue(value, parameterName, batchIndex)
     }
 }
 
@@ -205,38 +235,146 @@ fun toDatabaseValue(
     wrapper: KronosDataSourceWrapper,
     field: Field,
     value: Any?
+): Any? = prepareDatabaseValue(wrapper, field, value, field.name.ifBlank { field.columnName }, null)
+
+private fun prepareDatabaseValue(
+    wrapper: KronosDataSourceWrapper,
+    field: Field,
+    value: Any?,
+    valueName: String,
+    batchIndex: Int?
 ): Any? {
-    if (value == null) return null
-    if (value is TransformerSafeValue) return value.toTypeSafeValue()
-    if (value is CurrentTemporalValue) return value.toDatabaseValue(wrapper, field)
-    if (field.serializable) {
-        val kType = field.kType
-            ?: error("Serializable field '${field.name}' requires KType metadata for serialization")
-        return serializeProcessor.serialize(value, kType)
+    val preparedValue = value as? PreparedValue
+    val actualValue = if (preparedValue == null) value else preparedValue.value
+    val targetType = field.kType
+        ?: if (preparedValue?.kind == PreparedValueKind.STRATEGY_TEMPORAL) {
+            field.currentTemporalTargetKType(wrapper)
+        } else if (actualValue == null) {
+            return null
+        } else {
+            actualValue::class.starProjectedType
+        }
+    if (preparedValue?.kind == PreparedValueKind.READY_DATABASE_VALUE) {
+        return ValueCodecRegistry.acceptPrepared(
+            ValueConversionRequest(
+                value = actualValue,
+                direction = ValueCodecDirection.ENCODE,
+                origin = ValueCodecOrigin.PARAMETER,
+                targetType = targetType,
+                sourceType = preparedValue.sourceType,
+                field = field,
+                dialect = wrapper.sqlDialect,
+                dateFormat = preparedValue.dateFormat,
+                batchIndex = batchIndex,
+                valueName = valueName
+            )
+        )
     }
-    if (value is Boolean && !field.acceptsNativeBoolean(wrapper) && field.storesBooleanValue()) {
-        return toDatabaseBooleanValue(wrapper, field, value)
-    }
-    if (value is Number && !field.acceptsNativeBoolean(wrapper) && field.storesBooleanValue()) {
-        return value
-    }
+    val physicalTargetType = field.databaseTargetKType(wrapper, actualValue)
+        .takeUnless {
+            preparedValue?.kind == PreparedValueKind.STRATEGY_TEMPORAL && field.storesTextValue()
+        }
 
-    val targetKotlinType = field.databaseTargetKType(wrapper)
-
-    return targetKotlinType
-        ?.let { getTypeSafeValue(it, value, field.dateFormat) }
-        ?: field.kType?.let { getTypeSafeValue(it, value, field.dateFormat) }
-        ?: value
+    return ValueCodecRegistry.convert(
+        ValueConversionRequest(
+            value = actualValue,
+            direction = ValueCodecDirection.ENCODE,
+            origin = ValueCodecOrigin.PARAMETER,
+            targetType = targetType,
+            sourceType = preparedValue?.sourceType ?: field.kType,
+            field = field,
+            physicalTargetType = physicalTargetType,
+            dialect = wrapper.sqlDialect,
+            dateFormat = preparedValue?.dateFormat,
+            batchIndex = batchIndex,
+            valueName = valueName
+        )
+    )
 }
 
-private fun CurrentTemporalValue.toDatabaseValue(
-    wrapper: KronosDataSourceWrapper,
-    field: Field
-): Any = getTypeSafeValue(
-    field.currentTemporalTargetKType(wrapper),
-    value,
-    field.dateFormat
-)
+@PublishedApi
+internal fun prepareRawSqlParameters(
+    parameters: Map<String, Any?>,
+    batchIndex: Int? = null
+): Map<String, Any?> = parameters.mapValues { (name, value) ->
+    prepareRawSqlParameterValue(value, name, batchIndex)
+}
+
+private fun prepareRawSqlParameterValue(
+    value: Any?,
+    valueName: String,
+    batchIndex: Int?
+): Any? = when (value) {
+    is PreparedValue -> {
+        val actualValue = value.value
+        if (actualValue == null) {
+            null
+        } else if (value.kind == PreparedValueKind.READY_DATABASE_VALUE) {
+            val targetType = value.sourceType ?: actualValue::class.starProjectedType
+            ValueCodecRegistry.acceptPrepared(
+                ValueConversionRequest(
+                    value = actualValue,
+                    direction = ValueCodecDirection.ENCODE,
+                    origin = ValueCodecOrigin.PARAMETER,
+                    targetType = targetType,
+                    sourceType = value.sourceType,
+                    dateFormat = value.dateFormat,
+                    batchIndex = batchIndex,
+                    valueName = valueName
+                )
+            )
+        } else {
+            val targetType = value.sourceType ?: actualValue::class.starProjectedType
+            ValueCodecRegistry.convert(
+                ValueConversionRequest(
+                    value = actualValue,
+                    direction = ValueCodecDirection.ENCODE,
+                    origin = ValueCodecOrigin.PARAMETER,
+                    targetType = targetType,
+                    sourceType = value.sourceType,
+                    dateFormat = value.dateFormat,
+                    batchIndex = batchIndex,
+                    valueName = valueName
+                )
+            )
+        }
+    }
+    is Enum<*> -> {
+        val enumType = value::class.starProjectedType
+        ValueCodecRegistry.convert(
+            ValueConversionRequest(
+                value = value,
+                direction = ValueCodecDirection.ENCODE,
+                origin = ValueCodecOrigin.PARAMETER,
+                targetType = enumType,
+                sourceType = enumType,
+                batchIndex = batchIndex,
+                valueName = valueName
+            )
+        )
+    }
+    is Iterable<*> -> value.mapIndexed { index, element ->
+        prepareRawSqlParameterValue(element, "$valueName[$index]", batchIndex)
+    }
+    is Array<*> -> value.mapIndexed { index, element ->
+        prepareRawSqlParameterValue(element, "$valueName[$index]", batchIndex)
+    }.toTypedArray()
+    else -> value
+}
+
+private fun Any?.asDatabaseListParameter(): List<Any?> = when (this) {
+    is Iterable<*> -> toList()
+    is Array<*> -> toList()
+    is BooleanArray -> toList()
+    is ByteArray -> toList()
+    is CharArray -> toList()
+    is DoubleArray -> toList()
+    is FloatArray -> toList()
+    is IntArray -> toList()
+    is LongArray -> toList()
+    is ShortArray -> toList()
+    else -> error("Expanded SQL parameter requires an iterable or array value")
+}
 
 private fun Field.currentTemporalTargetKType(wrapper: KronosDataSourceWrapper): KType =
     databaseTargetKType(wrapper)
@@ -250,7 +388,7 @@ private fun Field.currentTemporalTargetKType(wrapper: KronosDataSourceWrapper): 
             else -> typeOf<String>()
         }
 
-private fun Field.databaseTargetKType(wrapper: KronosDataSourceWrapper): KType? {
+private fun Field.databaseTargetKType(wrapper: KronosDataSourceWrapper, value: Any? = null): KType? {
     val dialect = wrapper.sqlDialect
     return when {
         type == KColumnType.TIMESTAMP && dialect.timestampParametersAsSqlTimestamp ->
@@ -259,20 +397,38 @@ private fun Field.databaseTargetKType(wrapper: KronosDataSourceWrapper): KType? 
         type == KColumnType.DATETIME && dialect.datetimeParametersAsSqlTimestamp ->
             typeOf<java.sql.Timestamp>()
 
-        acceptsNativeBoolean(wrapper) ->
+        value?.isTemporalRuntimeValue() == true && storesTextValue() ->
+            typeOf<String>()
+
+        value is Boolean && acceptsNativeBoolean(wrapper) ->
             typeOf<Boolean>()
 
-        type == KColumnType.BIT -> null
+        value is Boolean && storesBooleanValue() ->
+            typeOf<Int>()
 
         else -> null
     }
 }
 
+private fun Field.storesTextValue(): Boolean = type in setOf(
+    KColumnType.CHAR,
+    KColumnType.VARCHAR,
+    KColumnType.TEXT,
+    KColumnType.LONGTEXT,
+    KColumnType.CLOB,
+    KColumnType.NVARCHAR,
+    KColumnType.NCHAR,
+    KColumnType.NCLOB,
+    KColumnType.MEDIUMTEXT
+)
+
 private fun Field.acceptsNativeBoolean(wrapper: KronosDataSourceWrapper): Boolean =
     wrapper.sqlDialect.nativeBooleanValues && storesBooleanValue()
 
 private fun Field.storesBooleanValue(): Boolean =
-    type == KColumnType.BIT || kClass?.qualifiedName == "kotlin.Boolean"
+    type == KColumnType.BIT || kType?.let {
+        KTypeKey.from(it, ignoreTopLevelNullability = true) == KTypeKey.from(typeOf<Boolean>())
+    } == true
 
 fun toDatabaseBooleanValue(
     wrapper: KronosDataSourceWrapper,

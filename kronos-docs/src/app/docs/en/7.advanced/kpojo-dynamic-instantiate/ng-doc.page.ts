@@ -3,7 +3,7 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * This chapter will show you how Kronos enables dynamic conversion of KClass to KPojo instances with no reflection and zero overhead.
+ * This chapter shows how Kronos creates KPojo instances from complete KType metadata without reflective construction.
  * @status:info NEW
  */
 const KPojoGenericInstantiatePage: NgDocPage = {

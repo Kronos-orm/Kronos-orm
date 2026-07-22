@@ -18,6 +18,7 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.testfixtures.entities.UserRelation
 import com.kotlinorm.testutils.normalizeSql
 import com.kotlinorm.testutils.MysqlTestBase
+import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.wrappers.SampleSqliteJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,6 +29,16 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SelectFromSourceIdentityTest : MysqlTestBase() {
+    @Test
+    fun `runtime metadata retains the exact generated KType used by its caches`() {
+        val source = SourceIdentityCustomer()
+
+        val metadata = source.resolveRuntimeMetadata()
+
+        assertSame(source.__kType, metadata.kType)
+        assertTrue(metadata.allFields.isNotEmpty())
+    }
+
     @Test
     fun `resolver falls back when receiver or active frames do not identify the source`() {
         val source = SourceIdentityCustomer()

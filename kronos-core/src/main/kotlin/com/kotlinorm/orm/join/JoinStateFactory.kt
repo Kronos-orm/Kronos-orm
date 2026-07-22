@@ -10,23 +10,23 @@ package com.kotlinorm.orm.join
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
-import com.kotlinorm.utils.createInstance
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.createKPojo
 import kotlin.reflect.KType
+import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 @PublishedApi
-internal inline fun <T1 : KPojo, reified R : KPojo, C : KPojo> JoinSource<T1, *>.selectGeneratedProjection(
-    @Suppress("UNUSED_PARAMETER") projectionClass: KClass<R>,
-    contextClass: KClass<C>,
+internal inline fun <T1 : KPojo, reified R : KPojo, reified C : KPojo> JoinSource<T1, *>.selectGeneratedProjection(
     noinline fields: ToSelect<T1, Any?> = null
-): JoinedSelectQuery<T1, R, C> =
-    createJoinedSelectQuery(
-        projectionType = typeOf<R>(),
-        nullableProjectionType = typeOf<R?>(),
-        contextPojo = contextClass.createInstance(),
+): JoinedSelectQuery<T1, R, C> {
+    val projectionType = typeOf<R>()
+    return createJoinedSelectQuery(
+        projectionType = projectionType,
+        nullableProjectionType = projectionType.withNullability(true),
+        contextPojo = createKPojo<C>(),
         fields = fields
     )
+}
 
 @PublishedApi
 internal inline fun <reified T1 : KPojo> tableJoinState(
@@ -74,8 +74,7 @@ private fun tableOperand(source: KPojo): JoinOperand =
 
 @Suppress("UNCHECKED_CAST")
 private fun <T : KPojo> selectableOperand(query: KSelectable<T>): JoinOperand {
-    val selectedClass = query.selectedType.classifier as KClass<T>
-    val row = selectedClass.createInstance()
+    val row = createKPojo(query.selectedType) as T
     return JoinOperand(FromSourceNode.Leaf(FromSourceLeaf(row, query)), listOf(row))
 }
 

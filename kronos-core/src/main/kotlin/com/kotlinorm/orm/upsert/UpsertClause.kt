@@ -62,11 +62,12 @@ import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import com.kotlinorm.utils.toDatabaseBooleanValue
-import com.kotlinorm.utils.toDatabaseParameterValue
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * Update Clause
@@ -87,7 +88,6 @@ class UpsertClause<T : KPojo>(
     private val metadata = pojo.resolveRuntimeMetadata()
     private var paramMap = pojo.toDataMap()
     private var tableName = metadata.tableName
-    private var kClass = metadata.kClass
     private var createTimeStrategy = metadata.createTimeStrategy
     private var updateTimeStrategy = metadata.updateTimeStrategy
     private var logicDeleteStrategy = metadata.logicDeleteStrategy
@@ -220,12 +220,7 @@ class UpsertClause<T : KPojo>(
             if (!value.requiresUpsertParameter()) {
                 return@forEach
             }
-            val field = fieldMap[key.name]
-            if (field != null && value != null) {
-                paramMap[key.name] = toDatabaseParameterValue(dataSource, fieldMap, key.name, value)
-            } else {
-                paramMap[key.name] = value
-            }
+            paramMap[key.name] = value
         }
 
         val paramMap = (paramMap.filter { it.key in (toUpdateFields + toInsertFields + onFields).map { f -> f.name } }).toMutableMap()
@@ -246,14 +241,18 @@ class UpsertClause<T : KPojo>(
             logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
                 toInsertFields += field
                 toUpdateFields += field
-                paramMap[field.name] = toDatabaseBooleanValue(dataSource, field, false)
+                paramMap[field.name] = false
             }
 
             optimisticStrategy?.execute(defaultValue = 0) { field, value ->
                 toInsertFields += field
                 toUpdateFields += field
                 paramMap[field.name] = value
-                paramMap["${field.name}2PlusNew"] = 1
+                paramMap["${field.name}2PlusNew"] = PreparedValue(
+                    value = 1,
+                    sourceType = typeOf<Int>(),
+                    kind = PreparedValueKind.READY_DATABASE_VALUE
+                )
                 conflictAssignmentValues[field] = SqlExpr.Binary(
                     SqlExpr.Column(tableName = tableName, columnName = field.columnName),
                     SqlBinaryOperator.Plus,
@@ -262,8 +261,15 @@ class UpsertClause<T : KPojo>(
             }
 
             val conflictFields = inferConflictFields(paramMap)
-            val statement = toSqlUpsertStatement(paramMap, dataSource, conflictFields, requireConflictTarget = true)
-            val rendered = renderStatement(dataSource, statement, paramMap, fieldMap)
+            val parameterFields = linkedMapOf<String, Field>()
+            val statement = toSqlUpsertStatement(
+                paramMap,
+                parameterFields,
+                dataSource,
+                conflictFields,
+                requireConflictTarget = true
+            )
+            val rendered = renderStatement(dataSource, statement, paramMap, fieldMap + parameterFields)
             val jdbcTypeHints = (toInsertFields + toUpdateFields + onFields).jdbcNullParameterTypeHints(rendered.parameters)
             return KronosAtomicActionTask(
                 rendered.sql,
@@ -275,7 +281,13 @@ class UpsertClause<T : KPojo>(
             ).toKronosActionTask()
         } else {
             val tasks: List<KronosAtomicActionTask> = []
-            val fallbackStatement = toSqlUpsertStatement(paramMap, dataSource, onFields.toList(), requireConflictTarget = false)
+            val fallbackStatement = toSqlUpsertStatement(
+                paramMap,
+                linkedMapOf(),
+                dataSource,
+                onFields.toList(),
+                requireConflictTarget = false
+            )
             return tasks.toKronosActionTask().doBeforeExecute { dataSource ->
 
                 lock = lock ?: SqlLock.Update().takeIf { optimisticStrategy?.enabled != true }
@@ -366,6 +378,7 @@ class UpsertClause<T : KPojo>(
 
     private fun toSqlUpsertStatement(
         parameterValues: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>,
         dataSource: KronosDataSourceWrapper,
         conflictFields: List<Field>,
         requireConflictTarget: Boolean
@@ -380,7 +393,12 @@ class UpsertClause<T : KPojo>(
         val conflictColumns = conflictFields.map { field -> SqlIdentifier.of(field.columnName) }
         val updatePairs = toUpdateFields.map { field ->
             val targetField = allFields.find { it.name == field.name } ?: field
-            val value = conflictAssignmentValues[field]?.toUpsertAssignmentExpr(targetField, parameterValues, dataSource)
+            val value = conflictAssignmentValues[field]?.toUpsertAssignmentExpr(
+                targetField,
+                parameterValues,
+                parameterFields,
+                dataSource
+            )
                 ?: SqlExpr.Parameter(SqlParameter.Named(targetField.name))
             SqlUpdateSetPair(
                 SqlAssignmentTarget.Column(SqlIdentifier.of(targetField.columnName)),
@@ -428,6 +446,7 @@ class UpsertClause<T : KPojo>(
     private fun Any?.toUpsertAssignmentExpr(
         targetField: Field,
         parameterValues: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>,
         dataSource: KronosDataSourceWrapper
     ): SqlExpr =
         when (this) {
@@ -437,7 +456,9 @@ class UpsertClause<T : KPojo>(
                 tableName = tableName.takeIf { it.isNotBlank() },
                 columnName = columnName
             )
-            is KSelectable<*> -> SqlExpr.Subquery(materializeSqlQuery(parameterValues, mutableMapOf(), dataSource))
+            is KSelectable<*> -> SqlExpr.Subquery(
+                materializeSqlQuery(parameterValues, mutableMapOf(), dataSource, parameterFields)
+            )
             else -> SqlExpr.Parameter(SqlParameter.Named(targetField.name))
         }
 

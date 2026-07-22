@@ -22,12 +22,25 @@ import java.sql.ResultSet
 import java.sql.SQLWarning
 import java.sql.Statement
 
+/**
+ * Per-operation connection handle backed by a snapshot of wrapper configuration.
+ *
+ * The handle closes its connection only when it owns that connection; transaction-bound
+ * handles leave the shared connection open. Statement timeout is the smaller of the configured
+ * query timeout and the remaining transaction deadline.
+ */
 internal class KronosJdbcHandle(
     val connection: Connection,
     val config: KronosJdbcConfig,
     private val shouldClose: Boolean,
     private val transactionDeadlineMillis: Long?
 ) : AutoCloseable {
+    /**
+     * Creates the statement context shared by binding, execution hooks, and result reading.
+     *
+     * [params] and [parameterNames] must have the same positional order. [stash] is retained
+     * by reference so operation-local metadata is visible at the JDBC boundary.
+     */
     fun context(
         originalSql: String,
         jdbcSql: String,
@@ -49,6 +62,12 @@ internal class KronosJdbcHandle(
             transactionDeadlineMillis = transactionDeadlineMillis
         )
 
+    /**
+     * Prepares and configures one statement for [context].
+     *
+     * Generated-key statements use JDBC's generated-key overload; other statements honor the
+     * configured result-set type, concurrency, and optional holdability.
+     */
     fun prepareStatement(context: KronosStatementContext, returnGeneratedKeys: Boolean): PreparedStatement {
         val statement = if (returnGeneratedKeys) {
             connection.prepareStatement(context.jdbcSql, Statement.RETURN_GENERATED_KEYS)
@@ -73,6 +92,11 @@ internal class KronosJdbcHandle(
         return statement
     }
 
+    /**
+     * Appends an entire JDBC warning chain and enforces the configured warning policy.
+     *
+     * @throws KronosSqlWarningException when warning policy is `THROW` and any warning exists
+     */
     fun collectWarnings(context: KronosStatementContext, warning: SQLWarning?) {
         var current = warning
         while (current != null) {

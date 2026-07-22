@@ -68,9 +68,10 @@ class SpringJdbcKronosWrapper(
 `KAtomicQueryTask.sql` uses named parameters, `paramMap` contains the values, and `targetType` is the complete requested `KType`. A custom wrapper implements one list method and one first-row method for maps, scalar values, KPojo classes, and DTOs.
 
 ```kotlin group="Spring wrapper 2" name="query mapping" icon="kotlin"
+import kotlin.reflect.jvm.jvmErasure
+
 private fun rowMapper(targetType: KType): RowMapper<Any?> {
-    val targetClass = targetType.classifier as? KClass<*>
-        ?: error("Unsupported target type: $targetType")
+    val targetClass = targetType.jvmErasure
 
     return when {
         targetClass == Map::class -> ColumnMapRowMapper()

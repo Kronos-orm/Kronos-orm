@@ -5,6 +5,8 @@
  * you may not use this file except in compliance with the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.dsl.KSelectable
@@ -78,7 +80,12 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
     internal override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = planner.planTotalCount(dataSource)
-        val rendered = renderStatement(dataSource, plan.query, plan.parameters, context.fieldsMap())
+        val rendered = renderStatement(
+            dataSource,
+            plan.query,
+            plan.parameters,
+            context.fieldsMap() + plan.parameterFields
+        )
         return KronosQueryTask(
             KronosAtomicQueryTask(
                 sql = rendered.sql,
@@ -204,7 +211,7 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
                 fields.invoke(this@afterSelect, pojo)
                 if (this.fields.isEmpty()) throw EmptyFieldsException()
                 val expressions = this.fields.map { field ->
-                    val parameterName = context.bindParameter(field.name, context.sourceValue(field))
+                    val parameterName = context.bindParameter(field.name, context.sourceValue(field), field)
                     field.toSqlParameterEq(parameterName, useTableAlias = true)
                 }
                 context.andWhere(context.andAll(expressions))
@@ -220,7 +227,7 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
                 sourceValues = context.sourceValues
                 operationType = context.operationType
                 withQualifiedFieldArgs { condition.invoke(this@afterFilter, pojo) }
-                context.andWhere(sqlExpr, parameterValues)
+                context.andWhere(sqlExpr, parameterValues, parameterFields)
             }
         }
         return this
@@ -233,7 +240,7 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
                 sourceValues = context.sourceValues
                 operationType = context.operationType
                 withQualifiedFieldArgs { condition.invoke(this@afterFilter, pojo) }
-                context.andHaving(sqlExpr, parameterValues)
+                context.andHaving(sqlExpr, parameterValues, parameterFields)
             }
         }
         return this
@@ -253,7 +260,12 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = toSqlQueryPlan(dataSource)
-        val rendered = renderStatement(dataSource, plan.query, plan.parameters, context.fieldsMap())
+        val rendered = renderStatement(
+            dataSource,
+            plan.query,
+            plan.parameters,
+            context.fieldsMap() + plan.parameterFields
+        )
         val resultFieldsByLabel = if (context.selectAll) {
             context.allFields.associateBy { it.name }
         } else {
@@ -269,7 +281,7 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
                 targetType = selectedType,
-                resultColumnTypes = resultColumnTypes(resultFieldsByLabel),
+                resultColumns = resultColumns(resultFieldsByLabel),
                 listParameterOccurrences = rendered.listParameterOccurrences
             ),
             context.operationType,

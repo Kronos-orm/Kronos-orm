@@ -26,7 +26,7 @@ import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Defines the logic for building and executing cascade join clauses in the context of ORM operations.
@@ -58,7 +58,7 @@ object CascadeJoinClause {
     fun build(
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
-        listOfPojo: List<Pair<KClass<out KPojo>, KPojo>>,
+        listOfPojo: List<Pair<KType, KPojo>>,
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
         selectFields: MutableMap<String, Field>,
@@ -70,7 +70,7 @@ object CascadeJoinClause {
             listOfPojo.map {
                 val metadata = it.second.resolveRuntimeMetadata()
                 Triple(
-                    metadata.kClass,
+                    metadata.kType,
                     it.second,
                     metadata.allFields.filter { col -> selectFields.values.contains(col) }
                 )
@@ -98,7 +98,7 @@ object CascadeJoinClause {
     private fun generateTask(
         cascadeAllowed: Set<Field>? = null,
         cascadeSelectedProps: Set<Field>,
-        listOfColumns: List<Triple<KClass<out KPojo>, KPojo, List<Field>>>,
+        listOfColumns: List<Triple<KType, KPojo, List<Field>>>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {

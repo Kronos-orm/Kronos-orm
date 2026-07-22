@@ -134,4 +134,12 @@ object ErrorMessages {
     // ========================================================================
     fun kpojoNoNoArgConstructor(fqName: Any?) =
         "KPojo class '$fqName' has no no-arg constructor and will be excluded from generated KPojo factories."
+
+    fun inaccessibleEnumMetadata(fqName: Any?) =
+        "Required enum metadata for '$fqName' cannot be generated because the enum or one of its containing " +
+            "declarations is not public or internal."
+
+    const val INACCESSIBLE_KPOJO_FACTORY =
+        "Kronos cannot generate a factory for a private or otherwise inaccessible KPojo; " +
+            "make the KPojo and its containing declarations public or internal"
 }

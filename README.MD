@@ -307,37 +307,54 @@ data class Movie(
 }
 ```
 
-`@Serialize` fields use the declaration `KType` for both serialization and deserialization. This preserves generic element types for values such as `List<String>`, `List<List<String>>`, and `List<Profile>`.
+`@Serialize` fields use the declaration `KType` for both directions. Register one serialized `ValueCodec` for the application; the same registration handles objects, `List<String>`, nested lists, and `List<Enum>` without per-class rules.
 
 ```kotlin
 import com.kotlinorm.Kronos
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.interfaces.serializedValueCodec
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import kotlin.reflect.KType
 
-object KotlinxSerializeProcessor : KronosSerializeProcessor {
-    private val json = Json {
-        encodeDefaults = true
-        ignoreUnknownKeys = true
-    }
-
-    override fun serialize(obj: Any, kType: KType): String {
-        @Suppress("UNCHECKED_CAST")
-        val valueSerializer = serializer(kType) as KSerializer<Any>
-        return json.encodeToString(valueSerializer, obj)
-    }
-
-    override fun deserialize(serializedStr: String, kType: KType): Any =
-        json.decodeFromString(serializer(kType), serializedStr)
-            ?: error("Kotlinx serialization returned null for $kType")
+val json = Json {
+    encodeDefaults = true
+    ignoreUnknownKeys = true
 }
 
-Kronos.serializeProcessor = KotlinxSerializeProcessor
+val serializationRegistration = Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, type ->
+            @Suppress("UNCHECKED_CAST")
+            val valueSerializer = serializer(type) as KSerializer<Any>
+            json.encodeToString(valueSerializer, value)
+        },
+        decode = { text, type -> json.decodeFromString(serializer(type), text) }
+    )
+)
 ```
 
-Kotlin data classes handled by Kotlinx Serialization must use `@kotlinx.serialization.Serializable`. See [Serialization](https://kotlinorm.com/#/documentation/en/mapping/serialization) for complete Gson and Kotlinx examples.
+Later codec registrations have higher priority. `serializationRegistration.close()` removes only this registration, which is mainly useful in tests or hot reload. Kotlin data classes handled by Kotlinx Serialization must use `@kotlinx.serialization.Serializable`. See [Serialization](https://kotlinorm.com/#/documentation/en/mapping/serialization) for complete Gson and Kotlinx examples.
+
+### KPojo Factory Overrides
+
+Compiler-generated KPojo factories are used automatically. When an integration needs to replace the constructor, register one exact complete `KType`; the factory only creates a fresh object and does not convert field values.
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.utils.KPojoFactory
+import kotlin.reflect.typeOf
+
+val factoryRegistration = Kronos.registerKPojoFactory(
+    typeOf<Movie>(),
+    KPojoFactory { _ -> Movie() }
+)
+
+// Later registrations for Movie take priority. Tests or hot reload can restore
+// the generated factory by closing only this registration.
+factoryRegistration.close()
+```
+
+The registration key is the exact `KType`, and generic KPojo types are not supported in this release. `close()` is idempotent and restores the previous user or generated factory.
 
 ### Table Operations
 

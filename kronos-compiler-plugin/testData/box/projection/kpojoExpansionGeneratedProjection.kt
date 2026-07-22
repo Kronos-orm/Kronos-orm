@@ -37,6 +37,7 @@ import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.LinkedHashSet as KronosLinkedHashSet
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @Table("tb_kpojo_expansion_projection")
 data class KPojoExpansionProjectionUser(
@@ -62,10 +63,10 @@ class KPojoExpansionProjectionWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:kpojo-expansion-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        (task.targetType.classifier as? KClass<*>)?.let(mappedClasses::add)
+        mappedTypes += task.targetType
         return emptyList()
     }
 
@@ -256,11 +257,16 @@ fun box(): String {
         expansionExpectOutput(outputNames, "arithmeticMinus", listOf("previousId")),
         expansionExpectOutput(outputNames, "functionMinus", listOf("shorterLength")),
         expansionExpectOutput(outputNames, "excludedNonColumn", listOf("id", "name", "status", "it", "tags")),
-        expansionExpect(wrapper.mappedClasses.size == projectionClauses.size) {
-            "mapped classes were ${wrapper.mappedClasses}"
+        expansionExpect(wrapper.mappedTypes.size == projectionClauses.size) {
+            "mapped types were ${wrapper.mappedTypes}"
         },
-        expansionExpect(wrapper.mappedClasses.all { it.simpleName?.startsWith("KronosSelectResult_") == true }) {
-            "non-projection mapping target was ${wrapper.mappedClasses}"
+        expansionExpect(wrapper.mappedTypes.all { !it.isMarkedNullable && it.arguments.isEmpty() }) {
+            "mapped types were ${wrapper.mappedTypes}"
+        },
+        expansionExpect(wrapper.mappedTypes.all {
+            (it.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true
+        }) {
+            "non-projection mapping target was ${wrapper.mappedTypes}"
         },
     )
 

@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.union
 
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
@@ -108,9 +111,10 @@ class UnionClause<Selected : KPojo> internal constructor(
         val dataSource = wrapper.orDefault()
         validateSqlServerLimit(dataSource)
         val parameters = linkedMapOf<String, Any?>()
+        val parameterFields = linkedMapOf<String, Field>()
         val parameterCounter = mutableMapOf<String, Int>()
         val queries = selectables.map { selectable ->
-            selectable.materializeSqlQuery(parameters, parameterCounter, dataSource)
+            selectable.materializeSqlQuery(parameters, parameterCounter, dataSource, parameterFields)
         }
         val query = queries.reduce { left, right ->
             SqlQuery.Set(
@@ -119,7 +123,7 @@ class UnionClause<Selected : KPojo> internal constructor(
                 right = right
             )
         }.withUnionTail()
-        return SqlQueryPlan(query, parameters)
+        return SqlQueryPlan(query, parameters, parameterFields)
     }
 
     private fun validateSqlServerLimit(dataSource: KronosDataSourceWrapper) {
@@ -141,7 +145,7 @@ class UnionClause<Selected : KPojo> internal constructor(
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = toSqlQueryPlan(dataSource)
-        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters)
+        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, plan.parameterFields)
         return KronosQueryTask(
             KronosAtomicQueryTask(
                 sql = renderedSql.sql,
@@ -149,7 +153,7 @@ class UnionClause<Selected : KPojo> internal constructor(
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
                 targetType = selectedType,
-                resultColumnTypes = resultColumnTypes(),
+                resultColumns = resultColumns(),
                 listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )

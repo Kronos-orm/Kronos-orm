@@ -86,8 +86,8 @@ class SelectFromPlannerCoverageTest : MysqlTestBase() {
         assertEquals(
             linkedMapOf(
                 "projection_value" to 1,
-                "id" to 3,
-                "id@1" to 4,
+                "id@1" to 3,
+                "id" to 4,
                 "username" to "neo",
                 "order_value" to 5
             ),

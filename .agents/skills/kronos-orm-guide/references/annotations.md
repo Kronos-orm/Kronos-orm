@@ -119,6 +119,8 @@ var payload: Map<String, Any?>? = null
 | `DECIMAL, length = 12, scale = 2` | `DECIMAL(12,2)` | `DECIMAL(12,2)` | `NUMERIC` | `DECIMAL(12,2)` | `NUMBER(12,2)` |
 | `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` |
 
+Enum 属性的默认列类型是 `VARCHAR`，普通标量 enum 使用 `Enum.name`。如果显式指定整数 `@ColumnType`，内置规则使用 ordinal；需要稳定的业务 `code`、`value` 或 `label` 时，使用更晚注册的 `ValueCodec` 按 `targetType` 和字段 metadata 覆盖。`@Serialize List<Enum>` 是完整值的文本存储，默认物理列为 `VARCHAR`，不会逐元素调用标量 enum codec。完整示例见 `kronos-docs` 的 `mapping/enum-serialization` 页面。
+
 ## @Default
 
 指定列的默认值。
@@ -297,7 +299,7 @@ data class User(...) : KPojo
 
 ## @Serialize
 
-标记需要 JSON 序列化存储的复杂类型字段。
+标记需要 serialized 文本存储的复杂类型字段；具体格式由注册的 `ValueCodec` 决定，JSON 只是常见示例。
 
 ```kotlin
 data class User(
@@ -310,7 +312,7 @@ data class User(
 ) : KPojo
 ```
 
-需要通过 `Kronos.serializeProcessor = ...` 配置序列化处理器（如 `GsonProcessor`、`JacksonProcessor`、Kotlinx Serialization 处理器）。处理器会收到字段声明 `KType`，可用于保留集合和嵌套集合的泛型信息。
+通过 `Kronos.registerValueCodec(serializedValueCodec(...))` 注册序列化库的编码/解码函数。两个方向都会收到字段声明的完整 `KType`；一次注册即可处理对象、集合、嵌套集合和 `List<Enum>`。`@Serialize` 只标记存储协议，不会逐类注册处理器；没有匹配 codec 时读写会抛出 `MissingSerializedCodec`。普通 enum 默认使用 `Enum.name`，需要自定义 code 或缩写时通过同一个 `Kronos.registerValueCodec(valueCodec(...))` 覆盖，不增加 enum 专用注册入口。
 
 ## @Ignore
 

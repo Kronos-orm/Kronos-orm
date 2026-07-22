@@ -2,6 +2,10 @@ package com.kotlinorm.integration.suites
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.database.SqlExecutor.queryOne
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.enums.ValueCodecOrigin
+import com.kotlinorm.exceptions.ValueMappingException
 import com.kotlinorm.integration.fixtures.SafetyGuardedRow
 import com.kotlinorm.integration.fixtures.SafetyGuardedRowRecord
 import com.kotlinorm.integration.fixtures.SafetyVersionedAccount
@@ -16,10 +20,12 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.upsert.upsert
 import com.kotlinorm.plugins.DataGuardPlugin
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 abstract class SafetyCornerCaseIntegrationSuite(
     environment: IntegrationDatabaseEnvironment,
@@ -210,15 +216,29 @@ abstract class SafetyCornerCaseIntegrationSuite(
         assertEquals(listOf(restored), selectVisibleVersionedAccounts())
 
         val originalStrictSetValue = Kronos.strictSetValue
-        assertEquals(
-            "forced strict read failure",
-            assertFailsWith<IllegalStateException> {
+        if (wrapper.dbType == DBType.SQLite) {
+            val failure = assertFailsWith<ValueMappingException> {
                 withStrictSetValue(true) {
-                    assertEquals(restored, selectRawVersionedAccount(1))
-                    error("forced strict read failure")
+                    selectRawVersionedAccount(1)
                 }
-            }.message,
-        )
+            }
+            assertEquals(ValueCodecDirection.DECODE, failure.direction)
+            assertEquals(ValueCodecOrigin.DATABASE, failure.origin)
+            assertEquals("deleted", failure.fieldName)
+            assertNull(failure.declaredSourceType)
+            assertEquals(typeOf<Int>(), failure.runtimeSourceType)
+            assertEquals(typeOf<Boolean?>(), failure.targetType)
+        } else {
+            assertEquals(
+                "forced strict read failure",
+                assertFailsWith<IllegalStateException> {
+                    withStrictSetValue(true) {
+                        assertEquals(restored, selectRawVersionedAccount(1))
+                        error("forced strict read failure")
+                    }
+                }.message,
+            )
+        }
         assertEquals(originalStrictSetValue, Kronos.strictSetValue)
 
         withStrictSetValue(false) {

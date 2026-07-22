@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.Kronos.defaultLogger

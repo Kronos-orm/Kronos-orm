@@ -29,7 +29,8 @@ import com.kotlinorm.syntax.expr.SqlInRightOperand
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.expr.SqlQuantifiedComparisonOperator
 import com.kotlinorm.syntax.expr.SqlSubqueryQuantifier
-import com.kotlinorm.utils.TransformerSafeValue
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
 import com.kotlinorm.utils.DEFAULT_LIKE_ESCAPE
 import com.kotlinorm.utils.escapeLikeLiteral
 import kotlin.jvm.JvmName
@@ -49,6 +50,7 @@ open class KTableForCondition<T : KPojo>(
     var operationType: KOperationType = KOperationType.SELECT
     var sqlExpr: SqlExpr? = null
     val parameterValues: MutableMap<String, Any?> = mutableMapOf()
+    val parameterFields: MutableMap<String, Field> = mutableMapOf()
     private val parameterNameCounter: MutableMap<String, Int> = mutableMapOf()
     val f: FunctionHandler = FunctionHandler
 
@@ -68,6 +70,7 @@ open class KTableForCondition<T : KPojo>(
     ): SqlExpr {
         val name = allocateParameterName(baseName)
         parameterValues[name] = value
+        parameterFields[name] = field
         return SqlExpr.Parameter(SqlParameter.Named(name), expandAsList = expandAsList)
     }
 
@@ -458,8 +461,12 @@ open class KTableForCondition<T : KPojo>(
             is SqlExpr -> this
             is KronosFunctionExpr -> expr
             is Field -> column(this)
-            is KSelectable<*> -> SqlExpr.Subquery(materializeSqlQuery(parameterValues))
-            is QuantifiedSubqueryValue -> SqlExpr.Subquery(query.materializeSqlQuery(parameterValues))
+            is KSelectable<*> -> SqlExpr.Subquery(
+                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
+            is QuantifiedSubqueryValue -> SqlExpr.Subquery(
+                query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
             null -> SqlExpr.NullLiteral
             else -> bindParameter(field, this, parameterBaseName)
         }
@@ -469,10 +476,22 @@ open class KTableForCondition<T : KPojo>(
             is SqlExpr -> this
             is KronosFunctionExpr -> expr
             is Field -> column(this)
-            is KSelectable<*> -> SqlExpr.Subquery(materializeSqlQuery(parameterValues))
-            is QuantifiedSubqueryValue -> SqlExpr.Subquery(query.materializeSqlQuery(parameterValues))
+            is KSelectable<*> -> SqlExpr.Subquery(
+                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
+            is QuantifiedSubqueryValue -> SqlExpr.Subquery(
+                query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
             null -> SqlExpr.NullLiteral
-            else -> bindParameter(field, TransformerSafeValue(this, typeOf<String>()), field.parameterBaseName())
+            else -> bindParameter(
+                field,
+                PreparedValue(
+                    value = toString(),
+                    sourceType = typeOf<String>(),
+                    kind = PreparedValueKind.READY_DATABASE_VALUE
+                ),
+                field.parameterBaseName()
+            )
         }
 
     private fun Any?.toLiteralLikeConditionValueExpr(
@@ -484,12 +503,20 @@ open class KTableForCondition<T : KPojo>(
             is SqlExpr -> this
             is KronosFunctionExpr -> expr
             is Field -> column(this)
-            is KSelectable<*> -> SqlExpr.Subquery(materializeSqlQuery(parameterValues))
-            is QuantifiedSubqueryValue -> SqlExpr.Subquery(query.materializeSqlQuery(parameterValues))
+            is KSelectable<*> -> SqlExpr.Subquery(
+                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
+            is QuantifiedSubqueryValue -> SqlExpr.Subquery(
+                query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
             null -> SqlExpr.NullLiteral
             else -> bindParameter(
                 field,
-                TransformerSafeValue(toLiteralLikePattern(prefixWildcard, suffixWildcard), typeOf<String>()),
+                PreparedValue(
+                    value = toLiteralLikePattern(prefixWildcard, suffixWildcard),
+                    sourceType = typeOf<String>(),
+                    kind = PreparedValueKind.READY_DATABASE_VALUE
+                ),
                 field.parameterBaseName()
             )
         }
@@ -503,7 +530,9 @@ open class KTableForCondition<T : KPojo>(
 
     private fun Any?.toInRightOperand(field: Field): SqlInRightOperand =
         when (this) {
-            is KSelectable<*> -> SqlInRightOperand.Subquery(materializeSqlQuery(parameterValues))
+            is KSelectable<*> -> SqlInRightOperand.Subquery(
+                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+            )
             is Iterable<*> -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
             is Array<*> -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
             is BooleanArray -> SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
@@ -547,11 +576,14 @@ open class KTableForCondition<T : KPojo>(
             expr = left,
             operator = operator,
             quantifier = value.quantifier,
-            query = value.query.materializeSqlQuery(parameterValues)
+            query = value.query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
         )
 
     fun existsExpr(query: KSelectable<*>, not: Boolean): SqlExpr =
-        SqlExpr.ExistsPredicate(query.materializeSqlQuery(parameterValues), withNot = not)
+        SqlExpr.ExistsPredicate(
+            query.materializeSqlQuery(parameterValues, parameterFields = parameterFields),
+            withNot = not
+        )
 
     fun tupleExpr(fields: List<Field>): SqlExpr =
         SqlExpr.Tuple(fields.map { column(it) })

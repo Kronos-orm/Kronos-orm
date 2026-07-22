@@ -42,12 +42,15 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         target.logger.lifecycle("Loaded Gradle plugin ${javaClass.name} version $version")
         target.logger.lifecycle("Loaded Compiler plugin $group.$artifactId version $version")
         configureKotlinIncrementalCompilation(target)
-        configureKPojoFactoryProviderService(target)
+        configureGeneratedTypeProviderService(target)
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
-        return kotlinCompilation.target.project.provider {
-            emptyList()
+        val target = kotlinCompilation.target.project
+        val compilationName = kotlinCompilation.defaultSourceSet.name
+        return target.provider {
+            val identity = gradleGeneratedTypeProviderIdentity(target.moduleCoordinate(compilationName))
+            identity.compilerOptions.map { (key, value) -> SubpluginOption(key, value) }
         }
     }
 
@@ -85,31 +88,48 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
             ?.invoke(this, false)
     }
 
-    private fun configureKPojoFactoryProviderService(target: Project) {
+    private fun configureGeneratedTypeProviderService(target: Project) {
         target.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-            val generatedDir = target.layout.buildDirectory.dir("generated/kronos/KPojoFactoryService")
-            val task = target.tasks.register("generateKronosKPojoFactoryService") { task ->
-                val outputFile = generatedDir.map {
-                    it.file("META-INF/services/com.kotlinorm.utils.KPojoFactoryProvider")
-                }
-                task.outputs.file(outputFile)
-                task.doLast {
-                    val file = outputFile.get().asFile
-                    file.parentFile.mkdirs()
-                    file.writeText("com.kotlinorm.generated.factory.KronosGeneratedKPojoFactoryProvider\n")
-                }
-            }
             target.extensions.findByType(SourceSetContainer::class.java)
-                ?.named("main")
-                ?.configure { sourceSet ->
+                ?.configureEach { sourceSet ->
+                    val sourceSetName = sourceSet.name
+                    val generatedDir = target.layout.buildDirectory.dir(
+                        "generated/kronos/generatedTypeService/$sourceSetName"
+                    )
+                    val identity = target.provider {
+                        gradleGeneratedTypeProviderIdentity(target.moduleCoordinate(sourceSetName))
+                    }
+                    val taskName = "generateKronos${sourceSetName.replaceFirstChar { it.uppercaseChar() }}GeneratedTypeService"
+                    val task = target.tasks.register(taskName) { task ->
+                        val outputFile = generatedDir.map {
+                            it.file("META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider")
+                        }
+                        task.inputs.property("generatedTypeProviderId", identity.map { it.id })
+                        task.inputs.property("generatedTypeProviderFqName", identity.map { it.fqName })
+                        task.outputs.file(outputFile)
+                        task.dependsOn(sourceSet.getCompileTaskName("kotlin"))
+                        task.doLast {
+                            val file = outputFile.get().asFile
+                            val providerClassPath = identity.get().fqName.replace('.', '/') + ".class"
+                            val providerExists = sourceSet.output.classesDirs.files.any { classesDir ->
+                                classesDir.resolve(providerClassPath).isFile
+                            }
+                            if (!providerExists) {
+                                file.delete()
+                                return@doLast
+                            }
+                            file.parentFile.mkdirs()
+                            file.writeText(identity.get().serviceContent)
+                        }
+                    }
                     sourceSet.resources.srcDir(generatedDir)
                     target.tasks.named(sourceSet.processResourcesTaskName).configure { processResourcesTask ->
                         processResourcesTask.dependsOn(task)
                     }
                 }
-            target.tasks.matching { it.name == "sourcesJar" }.configureEach { sourcesJar ->
-                sourcesJar.dependsOn(task)
-            }
         }
     }
+
+    private fun Project.moduleCoordinate(compilationName: String): String =
+        "gradle:${this.group}:${name}:${path}:$compilationName"
 }

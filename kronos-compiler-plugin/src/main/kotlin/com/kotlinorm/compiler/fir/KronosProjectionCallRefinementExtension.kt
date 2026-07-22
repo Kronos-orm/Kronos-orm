@@ -141,6 +141,7 @@ class KronosProjectionCallRefinementExtension(
     private fun isBareSelectCall(symbol: FirNamedFunctionSymbol, callInfo: CallInfo): Boolean {
         val callableId = symbol.callableId
         if (callableId.callableName != SelectFunctionName) return false
+        if (callInfo.typeArguments.isNotEmpty()) return false
         if (callInfo.arguments.size != 1) return false
         if (callInfo.arguments.lastOrNull() !is FirAnonymousFunctionExpression) return false
         return callableId.packageName == SelectPackageFqName || callableId.classId?.isJoinSourceClassId() == true

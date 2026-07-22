@@ -688,7 +688,7 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
                 if (irClass.isGeneratedProjectionClass()) {
                     return builder.irString("")
                 }
-                if (irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
+                if (receiver.type.isKPojoType()) {
                     buildSourceScopedTableNameExpr(receiver, irClass)
                 } else null
             }

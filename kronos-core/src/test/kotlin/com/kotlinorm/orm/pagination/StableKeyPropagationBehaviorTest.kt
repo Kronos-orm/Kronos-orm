@@ -149,19 +149,17 @@ class StableKeyPropagationBehaviorTest : MysqlTestBase() {
     fun `stable key aliases propagate across multiple derived layers without changing the paged source`() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val innerPage = TestUser()
-            .select(StableKeyLevelOne::class) { it.id.alias("keyOne") }
+            .select<TestUser, StableKeyLevelOne>(typeOf<StableKeyLevelOne>()) { it.id.alias("keyOne") }
             .orderBy { it.id.asc() }
             .page(2, 2)
         val levelTwo = innerPage
-            .selectGeneratedProjection<StableKeyLevelOne, StableKeyLevelTwo, StableKeyLevelOne>(
-                StableKeyLevelTwo::class,
-                StableKeyLevelOne::class
-            ) { it.keyOne.alias("keyTwo") }
+            .selectGeneratedProjection<StableKeyLevelOne, StableKeyLevelTwo, StableKeyLevelOne> {
+                it.keyOne.alias("keyTwo")
+            }
         val levelThree = levelTwo
-            .selectGeneratedProjection<StableKeyLevelTwo, StableKeyLevelThree, StableKeyLevelTwo>(
-                StableKeyLevelThree::class,
-                StableKeyLevelTwo::class
-            ) { it.keyTwo.alias("keyThree") }
+            .selectGeneratedProjection<StableKeyLevelTwo, StableKeyLevelThree, StableKeyLevelTwo> {
+                it.keyTwo.alias("keyThree")
+            }
         val cursor = levelThree
             .select { it.keyThree }
             .orderBy { it.keyThree.asc() }
@@ -170,6 +168,12 @@ class StableKeyPropagationBehaviorTest : MysqlTestBase() {
         assertEquals(listOf(listOf("keyOne")), innerPage.outputStableKeyCandidates())
         assertEquals(listOf(listOf("keyTwo")), levelTwo.outputStableKeyCandidates())
         assertEquals(listOf(listOf("keyThree")), levelThree.outputStableKeyCandidates())
+        assertEquals(typeOf<StableKeyLevelTwo>(), levelTwo.selectedType)
+        assertEquals(typeOf<StableKeyLevelTwo?>(), levelTwo.nullableSelectedType)
+        assertEquals(typeOf<StableKeyLevelOne>(), levelTwo.context.receiverPojo.__kType)
+        assertEquals(typeOf<StableKeyLevelThree>(), levelThree.selectedType)
+        assertEquals(typeOf<StableKeyLevelThree?>(), levelThree.nullableSelectedType)
+        assertEquals(typeOf<StableKeyLevelTwo>(), levelThree.context.receiverPojo.__kType)
         assertEquals(
             "SELECT `q`.`keyThree` FROM " +
                 "(SELECT `q`.`keyTwo` AS `keyThree` FROM " +

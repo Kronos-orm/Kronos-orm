@@ -51,27 +51,27 @@ Converts an entity object to a Map.
 
 MapperTo contains a total of 4 functions for type conversion, namely:
 
-### 1. {{ $.title("Map<String, Any?>.mapperTo(KClass<out KPojo>)")}}
+### 1. {{ $.title("Map<String, Any?>.mapperTo(KType)")}}
 
 Converted to an entity object via Map. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
 
-The kClass can be a covariant KPojo type or a concrete entity object type.
+Pass the complete target type with `typeOf<T>()`. Generic KPojo construction is reserved for a later release; the current target must be a concrete, non-generic KPojo type.
 
 - **Declaration**
 
     ```kotlin
-    fun Map<String, Any?>.mapperTo(kClass: KClass<out KPojo>): Any
+    fun Map<String, Any?>.mapperTo(type: KType): Any
     ```
 
 - **Example**
 
     ```kotlin
-    val user = mapOf("id" to 1, "name" to "Tom").mapperTo(User::class)
+    val user = mapOf("id" to 1, "name" to "Tom").mapperTo(typeOf<User>())
     ```
 
 - **Parameters**
 
-  {{ $.params([['kClass', 'Entity object', 'KClass<KPojo>']]) }}
+  {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
 
 - **Return**
 
@@ -101,27 +101,27 @@ When converting a Map to an entity object. When the value in the Map does not ma
 
 {{ $.hr() }}
 
-### 3. {{ $.title("KPojo.mapperTo(KClass<out KPojo>)")}}
+### 3. {{ $.title("KPojo.mapperTo(KType)")}}
 
 By converting an entity object to another entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
 
-kClass can be a covariant KPojo type, or a specific entity object type.
+Pass the exact concrete KPojo target with `typeOf<T>()`.
 
 - **Declaration**
 
     ```kotlin
-    fun KPojo.mapperTo(kClass: KClass<out KPojo>): Any
+    fun KPojo.mapperTo(type: KType): Any
     ```
 
 - **Examples**
 
     ```kotlin
-    val student = User(id = 1, name = "Tom").mapperTo(Student::class)
+    val student = User(id = 1, name = "Tom").mapperTo(typeOf<Student>())
     ```
 
 - **Parameters**
 
-  {{ $.params([['kClass', 'Entity object', 'KClass<KPojo>']]) }}
+  {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
 
 - **Return**
 
@@ -155,27 +155,27 @@ By converting an entity object to another entity object. When the value in the M
 
 SafeMapperTo contains 4 functions for type conversion, which are:
 
-### 1. {{ $.title("Map<String, Any?>.safeMapperTo(KClass<out KPojo>)")}}
+### 1. {{ $.title("Map<String, Any?>.safeMapperTo(KType)")}}
 
-Converted to an entity object via Map, when the value in Map does not match the type of the entity object property, a type conversion is attempted, see: {{ $.keyword("configuration/value-transformer", ["Concept", "Value Transformer"]) }}.
+Converted to an entity object via Map. When a value does not match the property type, the unified conversion registry attempts a safe conversion; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
 
-The kClass can be a covariant KPojo type or a concrete entity object type.
+Pass the complete target type with `typeOf<T>()`. Generic KPojo construction is reserved for a later release; the current target must be a concrete, non-generic KPojo type.
 
 - **Declaration**
 
     ```kotlin
-    fun Map<String, Any?>.safeMapperTo(kClass: KClass<out KPojo>): Any
+    fun Map<String, Any?>.safeMapperTo(type: KType): Any
     ```
 
 - **Examples**
 
     ```kotlin
-    val user = mapOf("id" to "1", "name" to "Tom").safeMapperTo(User::class)
+    val user = mapOf("id" to "1", "name" to "Tom").safeMapperTo(typeOf<User>())
     ```
 
 - **Parameters**
 
-    {{ $.params([['kClass', 'Entity object', 'KClass<KPojo>']]) }}
+    {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
 
 - **Return**
 
@@ -185,7 +185,7 @@ The kClass can be a covariant KPojo type or a concrete entity object type.
 
 ### 2. {{ $.title("Map<String, Any?>.safeMapperTo<T: KPojo>()")}}
 
-Converted to an entity object via Map, when the value in the Map does not match the type of the entity object property, a type conversion is attempted, see: {{ $.keyword("configuration/value-transformer", ["Concept", "Value Transformer"]) }}.
+Converted to an entity object via Map. When a value does not match the property type, the unified conversion registry attempts a safe conversion; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
 
 - **Declaration**
 
@@ -205,26 +205,26 @@ Converted to an entity object via Map, when the value in the Map does not match 
 
 {{ $.hr() }}
 
-### 3. {{ $.title("KPojo.safeMapperTo(KClass<out KPojo>)")}}
+### 3. {{ $.title("KPojo.safeMapperTo(KType)")}}
 
-Converting from one entity object to another attempts type conversion when source and target attributes use different types, see: {{ $.keyword("configuration/value-transformer", ["Concept", "Value Transformer"]) }}.
-The kClass can be a covariant KPojo type or a concrete entity object type.
+Converting from one entity object to another attempts safe conversion when source and target properties use different types; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
+Pass the exact concrete KPojo target with `typeOf<T>()`.
 
 - **Declaration**
 
     ```kotlin
-    fun KPojo.safeMapperTo(kClass: KClass<out KPojo>): Any
+    fun KPojo.safeMapperTo(type: KType): Any
     ```
 
 - **Examples**
 
     ```kotlin
-    val student = User(id = 1, name = "Tom").safeMapperTo(Student::class)
+    val student = User(id = 1, name = "Tom").safeMapperTo(typeOf<Student>())
     ```
 
 - **Parameters**
 
-    {{ $.params([['kClass', 'Entity object', 'KClass<KPojo>']]) }}
+    {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
 
 - **Return**
 
@@ -234,7 +234,7 @@ The kClass can be a covariant KPojo type or a concrete entity object type.
 
 ### 4. {{ $.title("KPojo.safeMapperTo<T: KPojo>()")}}
 
-Converting to another entity object via an entity object attempts a type conversion when the type of the entity object property does not match the type of the target entity object property, see: {{ $.keyword("configuration/value-transformer", ["Concept", "Value Transformer"]) }}.
+Converting to another entity object attempts safe conversion when source and target property types differ; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
 
 - **Declaration**
 

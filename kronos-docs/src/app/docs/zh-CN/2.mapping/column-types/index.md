@@ -59,7 +59,11 @@ MySQL DDL 类型片段：
 | `java.time.LocalDateTime`、`kotlinx.datetime.LocalDateTime` | `DATETIME` |
 | `java.sql.Timestamp` | `TIMESTAMP` |
 | `kotlin.ByteArray` | `BLOB` |
+| 标量 enum | `VARCHAR` |
+| `@Serialize` 属性 | `VARCHAR`，除非由 `@ColumnType` 覆盖 |
 | 其他属性类型 | `VARCHAR` |
+
+标量 enum 在字符串类列中使用 `Enum.name`。显式整数 `@ColumnType` 使用 ordinal，除非用户为该字段注册了更晚的 `ValueCodec` 覆盖。`@Serialize` 把完整逻辑值存为文本，不会逐元素转换集合。完整规则见 {{ $.keyword("mapping/enum-serialization", ["Enum 存储与序列化"]) }}。
 
 ## 使用 {{ $.annotation("ColumnType") }} 覆盖
 
@@ -128,9 +132,9 @@ DDL 类型片段：
 
 ## 搭配 JSON 和序列化
 
-`@Serialize` 负责值转换，`@ColumnType(KColumnType.JSON)` 负责 DDL 列类型。`Kronos.serializeProcessor` 提供写入和读取属性时使用的序列化器。
+`@Serialize` 负责值转换，`@ColumnType(KColumnType.JSON)` 负责 DDL 列类型。注册一个序列化 `ValueCodec`，即可依据每个字段完整的声明 `KType` 编码和解码所有序列化字段。
 
-```kotlin name="kotlin" icon="kotlin" {20,24,25}
+```kotlin name="kotlin" icon="kotlin" {13-16,22,23}
 import com.google.gson.Gson
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.ColumnType
@@ -138,20 +142,18 @@ import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KType
+import com.kotlinorm.interfaces.serializedValueCodec
 import kotlin.reflect.jvm.javaType
 
 data class AuditPayload(val ip: String, val tags: List<String>)
 
-object GsonProcessor : KronosSerializeProcessor {
-    private val gson = Gson()
-    override fun serialize(obj: Any, kType: KType): String = gson.toJson(obj)
-    override fun deserialize(serializedStr: String, kType: KType): Any =
-        gson.fromJson(serializedStr, kType.javaType)
-}
-
-Kronos.serializeProcessor = GsonProcessor
+val gson = Gson()
+val gsonRegistration = Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, _ -> gson.toJson(value) },
+        decode = { text, type -> gson.fromJson(text, type.javaType) }
+    )
+)
 
 @Table("tb_audit_event")
 data class AuditEvent(
@@ -178,6 +180,6 @@ DDL 类型片段：
 | Oracle | `JSON` |
 
 > **Note**
-> `@Serialize` 使用{{ $.keyword("configuration/serialization-processor", ["序列化处理器"]) }}中介绍的处理器。`@ColumnType` 控制表操作渲染出的数据库类型。
+> `@Serialize` 使用{{ $.keyword("configuration/value-codec", ["ValueCodec"]) }}中介绍的 codec。`@ColumnType` 控制表操作渲染出的数据库类型。局部覆盖不再需要时调用 `gsonRegistration.close()`；后注册的 codec 优先匹配。
 
 序列化字段的完整映射流程见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。

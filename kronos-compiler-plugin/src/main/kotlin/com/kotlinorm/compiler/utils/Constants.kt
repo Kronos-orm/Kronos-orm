@@ -128,7 +128,10 @@ val SerializeAnnotationFqName = FqName("com.kotlinorm.annotations.Serialize")
 val UnsafeProjectionOverrideAnnotationFqName = FqName("com.kotlinorm.annotations.UnsafeProjectionOverride")
 val KronosCommonStrategyFqName = FqName("com.kotlinorm.beans.config.KronosCommonStrategy")
 val KronosObjectFqName = FqName("com.kotlinorm.Kronos")
-val KPojoFactoryProviderFqName = FqName("com.kotlinorm.utils.KPojoFactoryProvider")
+val GeneratedTypeProviderFqName = FqName("com.kotlinorm.utils.GeneratedTypeProvider")
+val GeneratedTypeRegistrarFqName = FqName("com.kotlinorm.utils.GeneratedTypeRegistrar")
+val KPojoFactoryFqName = FqName("com.kotlinorm.utils.KPojoFactory")
+val EnumFactoryFqName = FqName("com.kotlinorm.utils.EnumFactory")
 
 // Annotation FqNames grouped for class transformer
 object AnnotationFqNames {

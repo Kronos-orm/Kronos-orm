@@ -28,7 +28,8 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table("tb_projection_return_source")
 data class ProjectionReturnSource(
@@ -41,18 +42,16 @@ class ProjectionReturnWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:projection-return"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        mappedClasses += kClass
-        return listOf(rowData(1).mapperTo(kClass as KClass<out KPojo>))
+        mappedTypes += task.targetType
+        return listOf(rowData(1).mapperTo(task.targetType))
     }
 
     override fun first(task: KAtomicQueryTask): Any? {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return null
-        mappedClasses += kClass
-        return rowData(mappedClasses.size).mapperTo(kClass as KClass<out KPojo>)
+        mappedTypes += task.targetType
+        return rowData(mappedTypes.size).mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0
@@ -80,6 +79,9 @@ fun box(): String {
     val one = clause.first(wrapper)
     val oneOrNull = clause.firstOrNull(wrapper)
     val fieldNames = one.__columns.map { it.name }.toSet()
+    val listType = wrapper.mappedTypes.getOrNull(0)
+    val firstType = wrapper.mappedTypes.getOrNull(1)
+    val firstOrNullType = wrapper.mappedTypes.getOrNull(2)
 
     val failures = listOfNotNull(
         expect(listRow?.id == 1) { "toList id was ${listRow?.id}" },
@@ -89,12 +91,22 @@ fun box(): String {
         expect(oneOrNull?.id == 3) { "firstOrNull id was ${oneOrNull?.id}" },
         expect(oneOrNull?.aliasName == "Ada3") { "firstOrNull alias was ${oneOrNull?.aliasName}" },
         expect(fieldNames == setOf("id", "aliasName")) { "field names were $fieldNames" },
-        expect(wrapper.mappedClasses.size == 3) { "mapped classes were ${wrapper.mappedClasses}" },
-        expect(wrapper.mappedClasses.all { it != ProjectionReturnSource::class }) {
-            "mapped source class appeared in ${wrapper.mappedClasses}"
+        expect(wrapper.mappedTypes.size == 3) { "mapped types were ${wrapper.mappedTypes}" },
+        expect(wrapper.mappedTypes.all { it.classifier != typeOf<ProjectionReturnSource>().classifier }) {
+            "mapped source type appeared in ${wrapper.mappedTypes}"
         },
-        expect(wrapper.mappedClasses.map { it.simpleName }.distinct().singleOrNull()?.startsWith("KronosSelectResult_") == true) {
-            "mapped classes were ${wrapper.mappedClasses}"
+        expect(listType != null && !listType.isMarkedNullable && listType.arguments.isEmpty()) {
+            "toList mapped type was $listType"
+        },
+        expect(firstType == listType) { "first mapped type was $firstType, expected $listType" },
+        expect(firstOrNullType?.isMarkedNullable == true) {
+            "firstOrNull mapped type was $firstOrNullType"
+        },
+        expect(firstOrNullType?.classifier == listType?.classifier && firstOrNullType?.arguments == listType?.arguments) {
+            "mapped type structures were ${wrapper.mappedTypes}"
+        },
+        expect(listType?.classifier.toString().substringAfterLast('.').startsWith("KronosSelectResult_") == true) {
+            "mapped types were ${wrapper.mappedTypes}"
         },
     )
 

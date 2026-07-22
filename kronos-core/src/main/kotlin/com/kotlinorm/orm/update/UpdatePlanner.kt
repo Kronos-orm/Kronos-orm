@@ -21,7 +21,9 @@ import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.databaseBooleanLiteral
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.toDatabaseBooleanValue
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
+import kotlin.reflect.typeOf
 
 internal class UpdatePlanner<T : KPojo>(
     private val context: OrmContext<T>
@@ -80,7 +82,7 @@ internal class UpdatePlanner<T : KPojo>(
         } else if (context.restoreLogicDeleteOnUpdate) {
             logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
                 val parameterName = "${field.name}New"
-                context.bind(parameterName, toDatabaseBooleanValue(dataSource, field, false), field, ParameterSource.Strategy)
+                context.bind(parameterName, false, field, ParameterSource.Strategy)
                 context.set(field, SqlExpr.Parameter(SqlParameter.Named(parameterName)))
             }
         }
@@ -91,7 +93,16 @@ internal class UpdatePlanner<T : KPojo>(
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }
             val parameterName = "${field.name}2PlusNew"
-            context.bind(parameterName, 1, field, ParameterSource.Strategy)
+            context.bind(
+                parameterName,
+                PreparedValue(
+                    value = 1,
+                    sourceType = typeOf<Int>(),
+                    kind = PreparedValueKind.READY_DATABASE_VALUE
+                ),
+                field,
+                ParameterSource.Strategy
+            )
             context.set(
                 field,
                 SqlExpr.Binary(

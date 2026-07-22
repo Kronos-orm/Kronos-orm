@@ -15,7 +15,6 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.task.jdbcNullType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.toSqlExpr
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
@@ -24,12 +23,11 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlUpdateSetPair
 import com.kotlinorm.utils.fieldForParameter
-import com.kotlinorm.utils.referencedParameterNames
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 internal class OrmContext<T : KPojo>(
     val pojo: T,
-    val kClass: KClass<out KPojo>,
+    val kType: KType,
     val tableName: String,
     val declaredTableName: String = tableName,
     val operationType: KOperationType,
@@ -67,6 +65,13 @@ internal class OrmContext<T : KPojo>(
             .asSequence()
             .filter { allowed == null || it.source in allowed }
             .associate { it.name to it.value }
+    }
+
+    fun parameterFields(): Map<String, Field> = buildMap {
+        putAll(fieldMap)
+        parameterBindings.values.forEach { binding ->
+            binding.field?.let { put(binding.name, it) }
+        }
     }
 
     fun valueExpression(value: Any?, parameterName: String): SqlExpr =
@@ -125,26 +130,6 @@ internal class OrmContext<T : KPojo>(
                 ?.identifier
                 ?.canonical == canonical
         }
-    }
-
-    fun renderedDatabaseParameters(
-        dataSource: KronosDataSourceWrapper,
-        renderedSql: String,
-        fieldMap: Map<String, Field>,
-        toDatabaseValue: (KronosDataSourceWrapper, Field, Any?) -> Any?
-    ): Map<String, Any?> {
-        val usedParameterNames = referencedParameterNames(renderedSql)
-        val processed = mutableMapOf<String, Any?>()
-        parameterBindings.values.forEach { binding ->
-            if (binding.name !in usedParameterNames) return@forEach
-            val field = binding.field ?: fieldMap.fieldForParameter(binding.name)
-            processed[binding.name] = if (field != null && binding.value != null) {
-                toDatabaseValue(dataSource, field, binding.value)
-            } else {
-                binding.value
-            }
-        }
-        return processed
     }
 
     fun jdbcNullParameterTypeHints(parameterNames: Set<String>): Map<String, Int> =

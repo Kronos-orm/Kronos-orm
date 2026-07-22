@@ -7,7 +7,7 @@ import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -17,7 +17,7 @@ class DynamicObjectTableSelectTest {
     fun `dynamic object table builds select from instance metadata without KClass cache`() {
         val temp = object : KPojo {
             @Ignore([IgnoreAction.ALL])
-            override var __kClass: KClass<out KPojo> = KPojo::class
+            override var __kType = typeOf<KPojo>()
             @Ignore([IgnoreAction.ALL])
             override var __tableName = "tmp_runtime_user"
             @Ignore([IgnoreAction.ALL])

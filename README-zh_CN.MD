@@ -307,37 +307,54 @@ data class Movie(
 }
 ```
 
-`@Serialize` 字段在序列化和反序列化时都会使用属性声明上的 `KType`，因此 `List<String>`、`List<List<String>>`、`List<Profile>` 等类型的泛型元素信息不会丢失。
+`@Serialize` 字段在两个方向都使用属性声明上的完整 `KType`。应用只需注册一个 serialized `ValueCodec`，对象、`List<String>`、嵌套 List 和 `List<Enum>` 都无需逐类配置。
 
 ```kotlin
 import com.kotlinorm.Kronos
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.interfaces.serializedValueCodec
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import kotlin.reflect.KType
 
-object KotlinxSerializeProcessor : KronosSerializeProcessor {
-    private val json = Json {
-        encodeDefaults = true
-        ignoreUnknownKeys = true
-    }
-
-    override fun serialize(obj: Any, kType: KType): String {
-        @Suppress("UNCHECKED_CAST")
-        val valueSerializer = serializer(kType) as KSerializer<Any>
-        return json.encodeToString(valueSerializer, obj)
-    }
-
-    override fun deserialize(serializedStr: String, kType: KType): Any =
-        json.decodeFromString(serializer(kType), serializedStr)
-            ?: error("Kotlinx serialization returned null for $kType")
+val json = Json {
+    encodeDefaults = true
+    ignoreUnknownKeys = true
 }
 
-Kronos.serializeProcessor = KotlinxSerializeProcessor
+val serializationRegistration = Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, type ->
+            @Suppress("UNCHECKED_CAST")
+            val valueSerializer = serializer(type) as KSerializer<Any>
+            json.encodeToString(valueSerializer, value)
+        },
+        decode = { text, type -> json.decodeFromString(serializer(type), text) }
+    )
+)
 ```
 
-交给 Kotlinx Serialization 处理的 Kotlin data class 需要添加 `@kotlinx.serialization.Serializable`。完整 Gson 和 Kotlinx 示例见[序列化](https://kotlinorm.com/#/documentation/zh-CN/mapping/serialization)。
+后注册的 codec 优先级更高；`serializationRegistration.close()` 只注销本次注册，主要用于测试或热更新。交给 Kotlinx Serialization 处理的 Kotlin data class 需要添加 `@kotlinx.serialization.Serializable`。完整 Gson 和 Kotlinx 示例见[序列化](https://kotlinorm.com/#/documentation/zh-CN/mapping/serialization)。
+
+### KPojo 工厂覆盖
+
+编译器会自动生成 KPojo factory。集成需要替换构造方式时，注册一个精确的完整 `KType`；factory 只负责创建新对象，不负责字段转换。
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.utils.KPojoFactory
+import kotlin.reflect.typeOf
+
+val factoryRegistration = Kronos.registerKPojoFactory(
+    typeOf<Movie>(),
+    KPojoFactory { _ -> Movie() }
+)
+
+// 同一 Movie 后注册的 factory 优先。测试或热更新时关闭本次注册，
+// 即可恢复生成的 factory。
+factoryRegistration.close()
+```
+
+注册键是精确的 `KType`，当前版本不支持泛型 KPojo。`close()` 幂等，并会恢复之前的用户 factory 或生成 factory。
 
 ### 表操作
 

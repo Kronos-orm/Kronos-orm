@@ -30,6 +30,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @Table("tb_projection_parent")
 data class ProjectionParent(
@@ -49,12 +50,11 @@ class CascadeProjectionWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:cascade-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        mappedClasses.add(kClass)
-        return [mapOf("id" to 42).mapperTo(kClass as KClass<out KPojo>)]
+        mappedTypes.add(task.targetType)
+        return [mapOf("id" to 42).mapperTo(task.targetType)]
     }
 
     override fun first(task: KAtomicQueryTask): Any? = null
@@ -74,6 +74,7 @@ fun box(): String {
 
     val columns = row?.__columns.orEmpty()
     val fields = row?.toDataMap().orEmpty()
+    val mappedType = wrapper.mappedTypes.singleOrNull()
 
     val failures = listOfNotNull(
         expect(rows.size == 1) { "row count was ${rows.size}" },
@@ -85,8 +86,11 @@ fun box(): String {
         expect(columns.any { it.name == "id" && it.tableName == "tb_projection_parent" }) {
             "hidden id metadata was $columns"
         },
-        expect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
-            "mapped class was ${wrapper.mappedClasses.singleOrNull()}"
+        expect(mappedType != null && !mappedType.isMarkedNullable && mappedType.arguments.isEmpty()) {
+            "mapped type was $mappedType"
+        },
+        expect((mappedType?.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped type was $mappedType"
         },
     )
 

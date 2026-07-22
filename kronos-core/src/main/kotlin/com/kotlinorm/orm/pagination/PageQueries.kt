@@ -5,11 +5,13 @@
  * you may not use this file except in compliance with the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.database.SqlManager.renderStatement
+import com.kotlinorm.database.renderPreparedForCore
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.sql.SqlQueryPlan
@@ -105,7 +107,7 @@ class TotalPageQuery<Selected : KPojo> internal constructor(
                 )
             )
         )
-        val rendered = renderStatement(dataSource, countQuery, countTask.atomicTask.paramMap)
+        val rendered = countQuery.renderPreparedForCore(dataSource, countTask.atomicTask.paramMap)
         val finalCountTask = KronosQueryTask(
             countTask.atomicTask.copy(
                 sql = rendered.sql,

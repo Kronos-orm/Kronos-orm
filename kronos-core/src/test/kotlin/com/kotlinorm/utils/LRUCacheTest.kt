@@ -1,5 +1,8 @@
 package com.kotlinorm.utils
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -90,5 +93,52 @@ class LRUCacheTest {
         cache["a"] = "1"
         val defaultValue = { _: String -> "default" }
         assertEquals("1", cache.get("a", defaultValue))
+    }
+
+    @Test
+    fun `constructor default is invoked once and nullable results are cached`() {
+        val calls = AtomicInteger()
+        val cache = LRUCache<String, String?>(
+            capacity = 2,
+            defaultValue = {
+                calls.incrementAndGet()
+                null
+            }
+        )
+
+        assertNull(cache["a"])
+        assertNull(cache["a"])
+        assertEquals(1, calls.get())
+    }
+
+    @Test
+    fun `concurrent cache miss computes once and linked access remains consistent`() {
+        val calls = AtomicInteger()
+        val cache = LRUCache<String, String>(
+            capacity = 2,
+            keySelector = { it.lowercase() },
+            defaultValue = { key ->
+                calls.incrementAndGet()
+                key.uppercase()
+            }
+        )
+        val start = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(8)
+        try {
+            val futures = (0 until 32).map { index ->
+                executor.submit<String?> {
+                    start.await()
+                    cache[if (index % 2 == 0) "value" else "VALUE"]
+                }
+            }
+            start.countDown()
+
+            assertEquals(List(32) { "VALUE" }, futures.map { it.get() })
+            assertEquals(1, calls.get())
+            cache["other"] = "OTHER"
+            assertEquals("VALUE", cache["VaLuE"])
+        } finally {
+            executor.shutdownNow()
+        }
     }
 }

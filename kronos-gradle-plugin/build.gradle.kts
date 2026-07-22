@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation(libs.kotlin.gradle.plugin.api)
     implementation(libs.kotlin.gradle.plugin)
+    testImplementation(kotlin("test"))
 }
 
 java {

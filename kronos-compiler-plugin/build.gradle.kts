@@ -1,9 +1,9 @@
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val kotlinCompilerTestRuntimeJars = mapOf(
     "org.jetbrains.kotlin.test.kotlin-stdlib" to "kotlin-stdlib",
     "org.jetbrains.kotlin.test.kotlin-test" to "kotlin-test",
+    "org.jetbrains.kotlin.test.kotlin-reflect" to "kotlin-reflect",
     "org.jetbrains.kotlin.test.kotlin-script-runtime" to "kotlin-script-runtime",
     "org.jetbrains.kotlin.test.kotlin-annotations-jvm" to "kotlin-annotations-jvm",
 )
@@ -64,6 +64,7 @@ dependencies {
     testImplementation(libs.kotlin.compiler)
     testImplementation(libs.kotlin.compiler.internal.test.framework)
     testImplementation(project(":kronos-core"))
+    testRuntimeOnly(libs.kotlin.reflect)
     testRuntimeOnly(libs.kotlin.script.runtime)
     testRuntimeOnly(libs.kotlin.annotations.jvm)
 }

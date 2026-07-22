@@ -41,7 +41,7 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     val projectionType: KType
 ) {
     private val metadata = pojo.resolveRuntimeMetadata()
-    val kClass = metadata.kClass
+    val kType = metadata.kType
     val tableName = metadata.tableName
     val allFields = metadata.allFields
     val allColumns = metadata.allColumns
@@ -78,6 +78,7 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
     val sourceValues: MutableMap<String, Any?> = pojo.toDataMap()
     val patchValues: MutableMap<String, Any?> = linkedMapOf()
     val parameterValues: MutableMap<String, Any?> = linkedMapOf()
+    val parameterFields: MutableMap<String, Field> = linkedMapOf()
     private val parameterNameCounter: MutableMap<String, Int> = mutableMapOf()
 
     var databaseName: String? = null
@@ -122,6 +123,8 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
         patchValues.putAll(source.patchValues)
         parameterValues.clear()
         parameterValues.putAll(source.parameterValues)
+        parameterFields.clear()
+        parameterFields.putAll(source.parameterFields)
         parameterNameCounter.clear()
         parameterNameCounter.putAll(source.parameterNameCounter)
         databaseName = source.databaseName
@@ -245,7 +248,7 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
 
     fun addFieldConditions(fields: Iterable<Field>, values: Map<String, Any?>) {
         val expressions = fields.map { field ->
-            val parameterName = bindParameter(field.name, values[field.name])
+            val parameterName = bindParameter(field.name, values[field.name], field)
             SqlExpr.Binary(
                 selectExpr(field),
                 SqlBinaryOperator.Equal,
@@ -262,7 +265,7 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
         val expressions = allColumns.mapNotNull { field ->
             val value = sourceValues[field.name] ?: return@mapNotNull null
             if (field.name == logicDeleteFieldName) return@mapNotNull null
-            val parameterName = bindParameter(field.name, value)
+            val parameterName = bindParameter(field.name, value, field)
             SqlExpr.Binary(
                 selectExpr(field),
                 SqlBinaryOperator.Equal,
@@ -274,12 +277,20 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
         })
     }
 
-    fun andWhere(expr: SqlExpr?, parameters: Map<String, Any?> = emptyMap()) {
-        where = and(where, mergeParameters(bindNullableExpr(expr), parameters))
+    fun andWhere(
+        expr: SqlExpr?,
+        parameters: Map<String, Any?> = emptyMap(),
+        fields: Map<String, Field> = emptyMap()
+    ) {
+        where = and(where, mergeParameters(bindNullableExpr(expr), parameters, fields))
     }
 
-    fun andHaving(expr: SqlExpr?, parameters: Map<String, Any?> = emptyMap()) {
-        having = and(having, mergeParameters(bindNullableExpr(expr), parameters))
+    fun andHaving(
+        expr: SqlExpr?,
+        parameters: Map<String, Any?> = emptyMap(),
+        fields: Map<String, Field> = emptyMap()
+    ) {
+        having = and(having, mergeParameters(bindNullableExpr(expr), parameters, fields))
     }
 
     fun qualifySource(alias: String) {
@@ -297,12 +308,16 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
             else -> SqlExpr.Binary(left, SqlBinaryOperator.And, right)
         }
 
-    private fun mergeParameters(expr: SqlExpr?, parameters: Map<String, Any?>): SqlExpr? {
+    private fun mergeParameters(
+        expr: SqlExpr?,
+        parameters: Map<String, Any?>,
+        fields: Map<String, Field>
+    ): SqlExpr? {
         if (expr == null) return null
         if (parameters.isEmpty()) return expr
         val renames = linkedMapOf<String, String>()
         parameters.forEach { (name, value) ->
-            val uniqueName = bindParameter(name, value)
+            val uniqueName = bindParameter(name, value, fields[name])
             if (uniqueName != name) {
                 renames[name] = uniqueName
             }
@@ -310,9 +325,10 @@ internal class SelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return expr.renameNamedParameters(renames)
     }
 
-    private fun bindParameter(name: String, value: Any?): String {
+    private fun bindParameter(name: String, value: Any?, field: Field? = null): String {
         val uniqueName = uniqueParameterName(name)
         parameterValues[uniqueName] = value
+        field?.let { parameterFields[uniqueName] = it }
         return uniqueName
     }
 

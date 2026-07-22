@@ -1,3 +1,5 @@
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.Kronos
@@ -10,12 +12,17 @@ import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.enums.ValueCodecDirection
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.valueCodec
 import com.kotlinorm.orm.sql.SqlQueryPlan
+import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlInRightOperand
+import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
@@ -26,9 +33,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 
 @Table("paged_clause_stub")
 data class PageQueryStubRow(var id: Int? = null) : KPojo
+
+private enum class PreparedPageStatus { ACTIVE, BLOCKED }
 
 class PageQueriesBehaviorTest {
 
@@ -49,6 +59,43 @@ class PageQueriesBehaviorTest {
         assertNotNull(tasks.recordsTask.afterQuery)
         assertEquals("SELECT id FROM paged_clause_stub", tasks.recordsTask.atomicTask.sql)
         assertEquals(listOf("build", "count"), selectable.calls)
+    }
+
+    @Test
+    fun `count wrapper preserves already prepared scalar and expanded list parameters`() {
+        var codecCalls = 0
+        val selectable = PreparedParameterSelectable()
+        val registration = Kronos.registerValueCodec(
+            valueCodec(
+                supports = { value, context ->
+                    context.direction == ValueCodecDirection.ENCODE && value is PreparedPageStatus
+                },
+                convert = { value, _ ->
+                    codecCalls++
+                    (value as PreparedPageStatus).name
+                }
+            )
+        )
+
+        try {
+            val task = OffsetPageQuery(selectable, pageIndex = 1, pageSize = 2)
+                .withTotal()
+                .build(RecordingWrapper())
+                .countTask
+                .atomicTask
+
+            assertEquals(0, codecCalls)
+            assertSame(selectable.status, task.paramMap["status"])
+            assertSame(selectable.statuses, task.paramMap["statuses"])
+            assertEquals(setOf(1), task.listParameterOccurrences)
+            assertEquals(
+                "SELECT COUNT(*) FROM (SELECT `id` FROM `paged_clause_stub` " +
+                    "WHERE `status` = :status AND `status` IN (:statuses)) AS `total_count`",
+                task.sql
+            )
+        } finally {
+            registration.close()
+        }
     }
 
     @Test
@@ -270,6 +317,53 @@ class PageQueriesBehaviorTest {
             select = listOf(SqlSelectItem.Expr(SqlExpr.Column(columnName = "id"))),
             from = listOf(SqlTable.Ident("paged_clause_stub")),
             limit = SqlLimit.limit(pageSize, 0)
+        )
+    }
+
+    private class PreparedParameterSelectable : KSelectable<PageQueryStubRow>(PageQueryStubRow()) {
+        override val selectedType = typeOf<PageQueryStubRow>()
+        val status = PreparedPageStatus.ACTIVE
+        val statuses = listOf(PreparedPageStatus.ACTIVE, PreparedPageStatus.BLOCKED)
+
+        override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask =
+            KronosQueryTask(
+                KronosAtomicQueryTask(
+                    sql = "SELECT id FROM paged_clause_stub",
+                    targetType = selectedType
+                )
+            )
+
+        override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask =
+            KronosQueryTask(
+                KronosAtomicQueryTask(
+                    sql = "SELECT id FROM paged_clause_stub WHERE status = :status AND status IN (:statuses)",
+                    paramMap = linkedMapOf("status" to status, "statuses" to statuses),
+                    statement = statement(),
+                    targetType = typeOf<Int>(),
+                    listParameterOccurrences = setOf(1)
+                )
+            )
+
+        override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan =
+            SqlQueryPlan(statement(), emptyMap())
+
+        private fun statement(): SqlQuery.Select = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.Column(columnName = "id"))),
+            from = listOf(SqlTable.Ident("paged_clause_stub")),
+            where = SqlExpr.Binary(
+                SqlExpr.Binary(
+                    SqlExpr.Column(columnName = "status"),
+                    SqlBinaryOperator.Equal,
+                    SqlExpr.Parameter(SqlParameter.Named("status"))
+                ),
+                SqlBinaryOperator.And,
+                SqlExpr.In(
+                    SqlExpr.Column(columnName = "status"),
+                    SqlInRightOperand.Values(
+                        listOf(SqlExpr.Parameter(SqlParameter.Named("statuses"), expandAsList = true))
+                    )
+                )
+            )
         )
     }
 

@@ -18,21 +18,44 @@ package com.kotlinorm.wrappers
 
 import com.kotlinorm.enums.DBType
 
+/**
+ * Database-specific JDBC customization applied once while a wrapper is initialized.
+ *
+ * A plugin may adjust statement settings or register physical readers/argument factories.
+ * It must preserve the registry contracts: physical readers return raw values, and logical
+ * target conversion remains the responsibility of `ValueCodec`.
+ */
 interface KronosJdbcPlugin {
+    /** Stable diagnostic name recorded in [KronosJdbcConfig.loadedPlugins]. */
     val name: String
 
+    /** Applies this plugin's defaults and extensions to [config]. */
     fun customize(config: KronosJdbcConfig)
 }
 
+/**
+ * Connection metadata captured at wrapper initialization for diagnostics and plugin selection.
+ */
 data class KronosDatabaseIdentity(
+    /** Detected or explicitly configured Kronos database dialect. */
     val dbType: DBType,
+    /** JDBC product name reported by the driver. */
     val databaseProductName: String,
+    /** JDBC URL reported by the driver. */
     val url: String,
+    /** JDBC user name reported by the driver. */
     val userName: String,
+    /** JDBC driver name reported by the driver. */
     val driverName: String
 )
 
+/** Built-in database detection and automatic plugin selection. */
 object KronosJdbcPlugins {
+    /**
+     * Detects a dialect from the product name first, then from product name and URL markers.
+     *
+     * @return detected dialect, or [DBType.Unknown] when no marker is recognized
+     */
     fun detectDbType(productName: String, url: String): DBType {
         runCatching { DBType.fromName(productName) }.getOrNull()?.let { return it }
         val marker = "$productName $url".lowercase()
@@ -52,6 +75,7 @@ object KronosJdbcPlugins {
         }
     }
 
+    /** Returns the built-in plugin for [dbType], or `null` when no plugin is required. */
     fun autoPlugin(dbType: DBType): KronosJdbcPlugin? =
         when (dbType) {
             DBType.Mysql, DBType.OceanBase -> MysqlJdbcPlugin
@@ -66,6 +90,7 @@ object KronosJdbcPlugins {
         }
 }
 
+/** MySQL/OceanBase defaults: use a fetch size of 1000 when none is configured. */
 object MysqlJdbcPlugin : KronosJdbcPlugin {
     override val name: String = "mysql"
 
@@ -74,6 +99,7 @@ object MysqlJdbcPlugin : KronosJdbcPlugin {
     }
 }
 
+/** PostgreSQL/GaussDB defaults plus `PGobject` vendor-value unwrapping. */
 object PostgresJdbcPlugin : KronosJdbcPlugin {
     override val name: String = "postgres"
 
@@ -88,6 +114,7 @@ object PostgresJdbcPlugin : KronosJdbcPlugin {
     }
 }
 
+/** Oracle/DM8 defaults, Boolean-to-integer binding, and Oracle temporal normalization. */
 object OracleJdbcPlugin : KronosJdbcPlugin {
     override val name: String = "oracle"
 
@@ -101,27 +128,14 @@ object OracleJdbcPlugin : KronosJdbcPlugin {
             }
         })
         config.columnMappers.registerVendorReader(KronosVendorValueReader { resultSet, position, value, _ ->
-            oracleNumberBooleanValue(resultSet, position)
-                ?: when (value.javaClass.name) {
-                    "oracle.sql.TIMESTAMP",
-                    "oracle.sql.TIMESTAMPTZ",
-                    "oracle.sql.TIMESTAMPLTZ" -> resultSet.getTimestamp(position)
+            when (value.javaClass.name) {
+                "oracle.sql.TIMESTAMP",
+                "oracle.sql.TIMESTAMPTZ",
+                "oracle.sql.TIMESTAMPLTZ" -> resultSet.getTimestamp(position)
 
-                    else -> oracleDateValue(resultSet, position, value)
-                }
+                else -> oracleDateValue(resultSet, position, value)
+            }
         })
-    }
-
-    private fun oracleNumberBooleanValue(resultSet: java.sql.ResultSet, position: Int): Any? {
-        val metaData = resultSet.metaData
-        val typeName = runCatching { metaData.getColumnTypeName(position) }.getOrNull()
-        val precision = runCatching { metaData.getPrecision(position) }.getOrNull()
-        val scale = runCatching { metaData.getScale(position) }.getOrNull()
-        return if (typeName.equals("NUMBER", ignoreCase = true) && precision == 1 && scale == 0) {
-            resultSet.getBigDecimal(position)
-        } else {
-            null
-        }
     }
 
     private fun oracleDateValue(resultSet: java.sql.ResultSet, position: Int, value: Any): Any? {
@@ -143,6 +157,7 @@ object OracleJdbcPlugin : KronosJdbcPlugin {
     }
 }
 
+/** SQL Server defaults: use a fetch size of 500 when none is configured. */
 object MssqlJdbcPlugin : KronosJdbcPlugin {
     override val name: String = "mssql"
 
@@ -151,6 +166,7 @@ object MssqlJdbcPlugin : KronosJdbcPlugin {
     }
 }
 
+/** SQLite defaults: use a fetch size of 500 when none is configured. */
 object SqliteJdbcPlugin : KronosJdbcPlugin {
     override val name: String = "sqlite"
 
@@ -159,6 +175,7 @@ object SqliteJdbcPlugin : KronosJdbcPlugin {
     }
 }
 
+/** DB2 defaults: use a fetch size of 500 when none is configured. */
 object Db2JdbcPlugin : KronosJdbcPlugin {
     override val name: String = "db2"
 
@@ -167,12 +184,14 @@ object Db2JdbcPlugin : KronosJdbcPlugin {
     }
 }
 
+/** H2 plugin hook; H2 requires no additional defaults today. */
 object H2JdbcPlugin : KronosJdbcPlugin {
     override val name: String = "h2"
 
     override fun customize(config: KronosJdbcConfig) = Unit
 }
 
+/** Sybase defaults: use a fetch size of 500 when none is configured. */
 object SybaseJdbcPlugin : KronosJdbcPlugin {
     override val name: String = "sybase"
 

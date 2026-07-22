@@ -7,7 +7,7 @@ import MappingCategory from "../ng-doc.category";
 const TableIndexPage: NgDocPage = {
     title: `Indexes`,
     mdFile: './index.md',
-    order: 9,
+    order: 10,
     category: MappingCategory,
     route: 'indexes'
 };

@@ -45,7 +45,7 @@ import com.kotlinorm.syntax.statement.SqlIndexDefinition
 import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.createKPojo
 import com.kotlinorm.utils.resolveRuntimeMetadata
 
 class TableOperation(private val wrapper: KronosDataSourceWrapper) {
@@ -57,7 +57,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      *
      * @param instance Table instance
      */
-    inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()) =
+    inline fun <reified T : KPojo> exists(instance: T = createKPojo<T>()) =
         queryTableExistence(instance.__tableName, dataSource)
 
     /**
@@ -73,7 +73,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      *
      * @param instance Table instance
      */
-    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) {
+    inline fun <reified T : KPojo> createTable(instance: T = createKPojo<T>()) {
         val metadata = instance.resolveRuntimeMetadata()
         val statements = statementsOf(dataSource.dbType).createTable(
             DatabaseCreateTable(
@@ -87,28 +87,28 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     }
 
     inline fun <reified T : KPojo> createTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: KSelectable<*>
     ) {
         buildCreateTableAsSelectTask(instance, query).execute(dataSource)
     }
 
     inline fun <reified T : KPojo> createTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: UnionClause<*>
     ) {
         buildCreateTableAsSelectTask(instance, query).execute(dataSource)
     }
 
     inline fun <reified T : KPojo> buildCreateTableAsSelectTask(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: KSelectable<*>
     ): KronosActionTask {
         return buildCreateTableAsSelectTaskForQuery(instance.__tableName, query)
     }
 
     inline fun <reified T : KPojo> buildCreateTableAsSelectTask(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: UnionClause<*>
     ): KronosActionTask {
         return buildCreateTableAsSelectTaskForQuery(instance.__tableName, query)
@@ -127,7 +127,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         return buildCreateTableAsSelectTaskFromQuery(
             statement,
             plan.parameters,
-            query.pojo.resolveRuntimeMetadata().fieldMap
+            query.pojo.resolveRuntimeMetadata().fieldMap + plan.parameterFields
         )
     }
 
@@ -151,7 +151,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      *
      * @param instance Table instance
      */
-    inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) =
+    inline fun <reified T : KPojo> dropTable(instance: T = createKPojo<T>()) =
         buildDropTableTask(instance.__tableName).execute(dataSource)
 
     /**
@@ -171,7 +171,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
      */
     inline fun <reified T : KPojo> truncateTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         restartIdentity: Boolean = true
     ) = buildTruncateTableTask(instance.__tableName, restartIdentity).execute(dataSource)
 
@@ -192,7 +192,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      * @param instance Table instance
      * @return `true` when the table already existed and was synchronized; `false` when it was created
      */
-    inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
+    inline fun <reified T : KPojo> syncTable(instance: T = createKPojo<T>()): Boolean {
         // 表名
         val metadata = instance.resolveRuntimeMetadata()
         val tableName = metadata.tableName
@@ -297,7 +297,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     }
 
     inline fun <reified T : KPojo> buildCreateTableStatement(
-        instance: T = T::class.createInstance()
+        instance: T = createKPojo<T>()
     ): SqlDdlStatement.CreateTable {
         val metadata = instance.resolveRuntimeMetadata()
         return SqlDdlStatement.CreateTable(
@@ -310,7 +310,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     }
 
     inline fun <reified T : KPojo> buildCreateTableAsSelectStatement(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: KSelectable<*>,
         parameterValues: MutableMap<String, Any?> = mutableMapOf()
     ): SqlDdlStatement.CreateTableAsSelect {
@@ -318,7 +318,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     }
 
     inline fun <reified T : KPojo> buildCreateTableAsSelectStatement(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: UnionClause<*>,
         parameterValues: MutableMap<String, Any?> = mutableMapOf(),
         parameterFields: MutableMap<String, Field> = mutableMapOf()
@@ -330,10 +330,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     internal fun buildCreateTableAsSelectSyntaxStatement(
         tableName: String,
         query: KSelectable<*>,
-        parameterValues: MutableMap<String, Any?>
+        parameterValues: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field> = mutableMapOf()
     ): SqlDdlStatement.CreateTableAsSelect {
         val plan = query.toSqlQueryPlan(dataSource)
         parameterValues.putAll(plan.parameters)
+        parameterFields.putAll(plan.parameterFields)
         return SqlDdlStatement.CreateTableAsSelect(
             tableName = SqlIdentifier.of(tableName),
             query = plan.query
@@ -347,9 +349,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         parameterValues: MutableMap<String, Any?>,
         parameterFields: MutableMap<String, Field>
     ): SqlDdlStatement.CreateTableAsSelect {
-        val statement = buildCreateTableAsSelectSyntaxStatement(tableName, query as KSelectable<*>, parameterValues)
-        parameterFields.putAll(query.pojo.resolveRuntimeMetadata().fieldMap)
-        return statement
+        return buildCreateTableAsSelectSyntaxStatement(
+            tableName,
+            query as KSelectable<*>,
+            parameterValues,
+            parameterFields
+        )
     }
 
     fun buildDropTableStatement(tableName: String, ifExists: Boolean = false): SqlDdlStatement.DropTable =
@@ -359,7 +364,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         )
 
     inline fun <reified T : KPojo> buildDropTableStatement(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         ifExists: Boolean = false
     ): SqlDdlStatement.DropTable =
         buildDropTableStatement(instance.__tableName, ifExists)
@@ -383,7 +388,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         )
 
     inline fun <reified T : KPojo> buildTruncateTableStatement(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         restartIdentity: Boolean = true
     ): SqlDmlStatement.Truncate =
         buildTruncateTableStatement(instance.__tableName, restartIdentity)

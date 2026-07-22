@@ -23,6 +23,9 @@ import com.kotlinorm.syntax.statement.SqlUpdateSetPair
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.databaseBooleanLiteral
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
+import kotlin.reflect.typeOf
 
 internal class DeletePlanner<T : KPojo>(
     private val context: OrmContext<T>
@@ -77,7 +80,16 @@ internal class DeletePlanner<T : KPojo>(
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }
             val parameterName = "${field.name}2PlusNew"
-            context.bind(parameterName, 1, field, ParameterSource.Strategy)
+            context.bind(
+                parameterName,
+                PreparedValue(
+                    value = 1,
+                    sourceType = typeOf<Int>(),
+                    kind = PreparedValueKind.READY_DATABASE_VALUE
+                ),
+                field,
+                ParameterSource.Strategy
+            )
             addSetPair(
                 field,
                 SqlExpr.Binary(

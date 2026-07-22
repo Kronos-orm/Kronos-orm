@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-// Verifies that the generated KPojo factory provider registers direct constructor factories.
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
+// Verifies that the generated KPojo factory provider resolves KType values to direct constructors.
 
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.KPojoFactoryProvider
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.EnumFactory
+import com.kotlinorm.utils.GeneratedTypeProvider
+import com.kotlinorm.utils.GeneratedTypeRegistrar
+import com.kotlinorm.utils.KPojoFactory
+import java.security.MessageDigest
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 data class FactoryProviderUser(
     var id: Int? = null,
@@ -30,16 +37,56 @@ data class FactoryProviderRequiredUser(
 ) : KPojo
 
 fun box(): String {
-    val providerClass = Class.forName("com.kotlinorm.generated.factory.KronosGeneratedKPojoFactoryProvider")
-    val provider = providerClass.getDeclaredConstructor().newInstance() as KPojoFactoryProvider
-    provider.register()
+    val identity = generatedProviderIdentity("kronos-test:main")
+    val providerClass = Class.forName(identity.second)
+    val provider = providerClass.getDeclaredConstructor().newInstance() as GeneratedTypeProvider
+    val contributions = mutableListOf<KPojoContribution>()
+    provider.contributeTo(object : GeneratedTypeRegistrar {
+        override fun registerKPojo(
+            type: KType,
+            ownerId: String,
+            constructorSignature: String,
+            factory: KPojoFactory
+        ) {
+            contributions += KPojoContribution(type, ownerId, constructorSignature, factory)
+        }
 
-    val user = FactoryProviderUser::class.createInstance()
-    val requiredFailure = runCatching { FactoryProviderRequiredUser::class.createInstance() }.exceptionOrNull()
+        override fun registerEnum(type: KType, entryNames: List<String>, factory: EnumFactory) = Unit
+    })
+
+    val contribution = contributions.singleOrNull { it.type == typeOf<FactoryProviderUser>() }
+        ?: return "Fail: factory did not contribute ${typeOf<FactoryProviderUser>()}"
+    val first = contribution.factory.create(typeOf<FactoryProviderUser>()) as? FactoryProviderUser
+    val second = contribution.factory.create(typeOf<FactoryProviderUser>()) as? FactoryProviderUser
     return when {
-        user.id != null -> "Fail: id was ${user.id}"
-        user.name != null -> "Fail: name was ${user.name}"
-        requiredFailure !is NullPointerException -> "Fail: required constructor failure was $requiredFailure"
+        provider.id != identity.first -> "Fail: provider id was ${provider.id}"
+        contributions.any { it.type == typeOf<FactoryProviderRequiredUser>() } -> "Fail: required constructor was contributed"
+        first == null -> "Fail: factory did not match ${typeOf<FactoryProviderUser>()}"
+        contribution.ownerId != "FactoryProviderUser" -> "Fail: owner id was ${contribution.ownerId}"
+        !contribution.constructorSignature.startsWith("FactoryProviderUser(") ->
+            "Fail: constructor signature was ${contribution.constructorSignature}"
+        first.id != null -> "Fail: id was ${first.id}"
+        first.name != null -> "Fail: name was ${first.name}"
+        second == null -> "Fail: second factory result was null"
+        first === second -> "Fail: factory reused an instance"
         else -> "OK"
     }
 }
+
+fun generatedProviderIdentity(moduleCoordinate: String): Pair<String, String> {
+    val hash = MessageDigest.getInstance("SHA-256")
+        .digest(moduleCoordinate.toByteArray(Charsets.UTF_8))
+        .joinToString(separator = "") { byte ->
+            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+        }
+        .take(16)
+    return "$moduleCoordinate#$hash" to
+        "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_$hash"
+}
+
+data class KPojoContribution(
+    val type: KType,
+    val ownerId: String,
+    val constructorSignature: String,
+    val factory: KPojoFactory,
+)

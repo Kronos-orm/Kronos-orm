@@ -27,8 +27,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testParameterNamingWithTwoQueries() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         )
 
         val task = unionClause.build()
@@ -43,9 +43,9 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testParameterNamingWithThreeQueries() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 3 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 3 }
         )
 
         val task = unionClause.build()
@@ -60,8 +60,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testUnionKeywordInSql() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         )
 
         val task = unionClause.build()
@@ -75,8 +75,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testUnionAllKeywordInSql() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         ).all()
 
         val task = unionClause.build()
@@ -89,8 +89,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
 
     @Test
     fun testInfixUnionParameterNaming() {
-        val unionClause = TestUser().select(TestUser::class) { it.id }.where { it.id == 1 }
-            .union(TestUser().select(TestUser::class) { it.id }.where { it.id == 2 })
+        val unionClause = TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 }
+            .union(TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 })
 
         val task = unionClause.build()
 
@@ -103,8 +103,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
 
     @Test
     fun testInfixUnionAllParameterNaming() {
-        val unionClause = TestUser().select(TestUser::class) { it.id }.where { it.id == 1 }
-            .unionAll(TestUser().select(TestUser::class) { it.id }.where { it.id == 2 })
+        val unionClause = TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 }
+            .unionAll(TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 })
 
         val task = unionClause.build()
 
@@ -118,8 +118,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testUnionWithLimit() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         ).limit(10)
 
         val task = unionClause.build()
@@ -133,8 +133,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testUnionWithLimitAndOffset() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         ).limit(10, 5)
 
         val task = unionClause.build()
@@ -148,10 +148,10 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testUnionWithMultipleParametersPerQuery() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { [it.id, it.username] }.where {
+            TestUser().select<TestUser, TestUser> { [it.id, it.username] }.where {
                 it.id == 1 && it.username == "user1"
             },
-            TestUser().select(TestUser::class) { [it.id, it.username] }.where {
+            TestUser().select<TestUser, TestUser> { [it.id, it.username] }.where {
                 it.id == 2 && it.username == "user2"
             }
         )
@@ -171,8 +171,8 @@ class UnionClauseSqlTest : MysqlTestBase() {
     @Test
     fun testSqlParentheses() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         )
 
         val task = unionClause.build()

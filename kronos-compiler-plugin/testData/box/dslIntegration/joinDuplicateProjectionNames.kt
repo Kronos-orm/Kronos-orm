@@ -31,7 +31,7 @@ import com.kotlinorm.orm.join.join
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 @Table("tb_join_duplicate_user")
 data class JoinDuplicateUser(
@@ -60,11 +60,8 @@ class JoinDuplicateWrapper : KronosDataSourceWrapper {
     override fun first(task: KAtomicQueryTask): Any? = mapResult(task)
 
     private fun mapResult(task: KAtomicQueryTask): Any {
-        val classifier = task.targetType.classifier
-        if (classifier == Map::class) return joinDuplicateRow
-        val kClass = classifier as? KClass<*> ?: return joinDuplicateRow
-        @Suppress("UNCHECKED_CAST")
-        return joinDuplicateRow.mapperTo(kClass as KClass<out KPojo>)
+        if (task.targetType == typeOf<Map<String, Any?>>()) return joinDuplicateRow
+        return joinDuplicateRow.mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0

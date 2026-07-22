@@ -181,9 +181,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serialize") }}列序列化反序列化设置
+## {{ $.annotation("Serialize") }}序列化存储
 
-用于声明该列是否需要进行自动序列化、反序列化，使用该注解的字段Kronos将调用序列化反序列化处理器（见{{ $.keyword("configuration/global-config", ["全局设置", "序列化反序列化处理器"]) }}）将该列的值在数据库存入和读取时进行序列化和反序列化操作。
+用于标记属性采用 serialized storage。`@Serialize` 只选择 `ValueStorage.SERIALIZED`，不会安装序列化器或第二套处理流程。应用按自己的文本格式，通过 `Kronos.registerValueCodec` 注册一次 `serializedValueCodec`；codec 在两个方向都会收到属性的完整 `KType`。
 
 ```kotlin
 data class User(
@@ -191,9 +191,7 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-序列化反序列化的功能使用请参考：{{ $.keyword("configuration/serialization-processor", ["自动序列化与反序列化"]) }}。
-
-模型层 `@Serialize` 的完整流程见 {{ $.keyword("mapping/serialization", ["序列化"]) }}。
+序列化字段使用和 codec 注册方式见 {{ $.keyword("mapping/serialization", ["序列化存储"]) }}。
 
 ## {{ $.annotation("Cascade") }}级联关系声明
 

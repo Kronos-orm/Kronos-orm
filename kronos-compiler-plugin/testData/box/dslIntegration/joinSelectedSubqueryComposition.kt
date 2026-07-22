@@ -37,6 +37,7 @@ import com.kotlinorm.syntax.table.SqlJoinCondition
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @Table("tb_join_subquery_user")
 data class JoinSubqueryUser(
@@ -55,19 +56,17 @@ class JoinSelectedSubqueryWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:join-selected-subquery"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> = listOfNotNull(first(task))
 
     override fun first(task: KAtomicQueryTask): Any? {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return null
-        mappedClasses += kClass
-        @Suppress("UNCHECKED_CAST")
+        mappedTypes += task.targetType
         return mapOf(
             "id" to 3,
             "userId" to 17,
             "joinedUserId" to 17,
-        ).mapperTo(kClass as KClass<out KPojo>)
+        ).mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0
@@ -124,9 +123,14 @@ fun box(): String {
     val failures = listOfNotNull(
         expect(joinedValue == 17) { "JOIN Selected value was $joinedValue" },
         expect(scalarValue == 17) { "scalar Selected value was $scalarValue" },
-        expect(wrapper.mappedClasses.size == 2) { "mapped classes were ${wrapper.mappedClasses}" },
-        expect(wrapper.mappedClasses.all { it.simpleName?.startsWith("KronosSelectResult_") == true }) {
-            "mapped classes were ${wrapper.mappedClasses}"
+        expect(wrapper.mappedTypes.size == 2) { "mapped types were ${wrapper.mappedTypes}" },
+        expect(wrapper.mappedTypes.all { !it.isMarkedNullable && it.arguments.isEmpty() }) {
+            "mapped types were ${wrapper.mappedTypes}"
+        },
+        expect(wrapper.mappedTypes.all {
+            (it.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true
+        }) {
+            "mapped types were ${wrapper.mappedTypes}"
         },
         expect(scalarItem?.alias == "joinedUserId") { "scalar item was $scalarItem" },
         expect(scalarSubquery?.outputNames() == listOf("userId")) {

@@ -36,8 +36,15 @@ data class ConditionDiagnosticOrder(
     var amount: Int? = null,
 ) : KPojo
 
+interface IndirectConditionDiagnosticKPojo : KPojo
+
+data class IndirectConditionDiagnosticProbe(
+    var id: Int? = null,
+) : IndirectConditionDiagnosticKPojo
+
 fun invalidSelectWhereAndHaving() {
     val probe = ConditionDiagnosticUser(id = 7)
+    val indirectProbe = IndirectConditionDiagnosticProbe(id = 8)
 
     ConditionDiagnosticUser()
         .select()
@@ -54,6 +61,10 @@ fun invalidSelectWhereAndHaving() {
     ConditionDiagnosticUser()
         .select()
         .having { <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>probe.id<!> <= it.id }
+
+    ConditionDiagnosticUser()
+        .select()
+        .where { it.id == <!KRONOS_UNREGISTERED_CONDITION_SOURCE!>indirectProbe.id<!> }
 
     ConditionDiagnosticUser()
         .select()

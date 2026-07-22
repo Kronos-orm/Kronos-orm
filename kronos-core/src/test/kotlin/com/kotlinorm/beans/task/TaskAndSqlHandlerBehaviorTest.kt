@@ -1,12 +1,21 @@
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.database.SqlExecutor
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.enums.ValueCodecOrigin
+import com.kotlinorm.exceptions.ValueMappingException
+import com.kotlinorm.exceptions.ConflictingResultColumnLabels
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.valueCodec
+import java.time.LocalDateTime
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.test.Test
@@ -15,6 +24,26 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TaskAndSqlExecutorBehaviorTest {
+    private enum class RawStatus {
+        ACTIVE,
+        BLOCKED
+    }
+
+    @Test
+    fun `atomic query rejects result labels that differ only by case`() {
+        val failure = assertFailsWith<ConflictingResultColumnLabels> {
+            KronosAtomicQueryTask(
+                sql = "SELECT first_name AS Name, last_name AS name",
+                targetType = typeOf<Map<String, Any?>>(),
+                resultColumns = mapOf(
+                    "Name" to ResultColumnMetadata(typeOf<String>(), columnLabel = "Name"),
+                    "name" to ResultColumnMetadata(typeOf<String>(), columnLabel = "name")
+                )
+            )
+        }
+
+        assertEquals(listOf("Name", "name"), failure.labels)
+    }
 
     @Test
     fun `query task executes all query variants with hooks and events`() {
@@ -208,6 +237,83 @@ class TaskAndSqlExecutorBehaviorTest {
                 BatchTaskShape(it.sql, it.paramMapArr?.toList().orEmpty(), it.operationType)
             }
         )
+    }
+
+    @Test
+    fun `raw sql encodes runtime enums without guessing temporal values`() {
+        val wrapper = RecordingWrapper(updateResult = 1, batchResult = intArrayOf(1, 1))
+        val unchangedTemporal = LocalDateTime.of(2026, 7, 21, 10, 11, 12)
+
+        with(SqlExecutor) {
+            assertEquals(
+                1,
+                wrapper.execute(
+                    "UPDATE user SET status = :status, changed_at = :changedAt WHERE id = :id",
+                    mapOf("status" to RawStatus.ACTIVE, "changedAt" to unchangedTemporal, "id" to 1)
+                )
+            )
+            assertContentEquals(
+                intArrayOf(1, 1),
+                wrapper.batchExecute(
+                    "UPDATE user SET status = :status WHERE id = :id",
+                    arrayOf(
+                        mapOf("status" to RawStatus.ACTIVE, "id" to 1),
+                        mapOf("status" to RawStatus.BLOCKED, "id" to 2)
+                    )
+                )
+            )
+        }
+
+        assertEquals(
+            mapOf("status" to "ACTIVE", "changedAt" to unchangedTemporal, "id" to 1),
+            wrapper.actions.single().paramMap
+        )
+        assertEquals(
+            listOf(
+                mapOf("status" to "ACTIVE", "id" to 1),
+                mapOf("status" to "BLOCKED", "id" to 2)
+            ),
+            wrapper.batchActions.single().paramMapArr?.toList()
+        )
+    }
+
+    @Test
+    fun `raw sql batch codec failures retain row index and parameter name`() {
+        val wrapper = RecordingWrapper()
+        val registration = Kronos.registerValueCodec(
+            valueCodec(
+                supports = { value, context ->
+                    context.direction == ValueCodecDirection.ENCODE &&
+                        context.origin == ValueCodecOrigin.PARAMETER &&
+                        value is RawStatus
+                },
+                convert = { value, _ ->
+                    val status = value as RawStatus
+                    check(status != RawStatus.BLOCKED) { "blocked status" }
+                    status.name
+                }
+            )
+        )
+
+        try {
+            val failure = assertFailsWith<ValueMappingException> {
+                with(SqlExecutor) {
+                    wrapper.batchExecute(
+                        "UPDATE user SET status = :status WHERE id = :id",
+                        arrayOf(
+                            mapOf("status" to RawStatus.ACTIVE, "id" to 1),
+                            mapOf("status" to RawStatus.BLOCKED, "id" to 2)
+                        )
+                    )
+                }
+            }
+
+            assertEquals(1, failure.batchIndex)
+            assertEquals("status", failure.valueName)
+            assertEquals(typeOf<RawStatus>(), failure.targetType)
+        } finally {
+            registration.close()
+        }
     }
 
     @Test

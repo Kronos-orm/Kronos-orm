@@ -17,7 +17,8 @@ import com.kotlinorm.syntax.expr.SqlSubqueryQuantifier
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
-import com.kotlinorm.utils.TransformerSafeValue
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -80,7 +81,7 @@ class KTableForConditionBehaviorTest {
             table.likeConditionExpr(username, null, not = false, value = "ann")
         )
         assertEquals(
-            linkedMapOf<String, Any?>("username" to TransformerSafeValue("ann", typeOf<String>())),
+            linkedMapOf<String, Any?>("username" to readyDatabaseValue("ann")),
             table.parameterValues
         )
         val wildcardLikeTable = KTableForCondition<KPojo>()
@@ -93,7 +94,7 @@ class KTableForConditionBehaviorTest {
             wildcardLikeTable.likeConditionExpr(username, null, not = true, value = "%_\\")
         )
         assertEquals(
-            linkedMapOf<String, Any?>("username" to TransformerSafeValue("%_\\", typeOf<String>())),
+            linkedMapOf<String, Any?>("username" to readyDatabaseValue("%_\\")),
             wildcardLikeTable.parameterValues
         )
         assertEquals(
@@ -154,7 +155,7 @@ class KTableForConditionBehaviorTest {
             containsTable.containsConditionExpr(username, null, not = false, value = "%_\\")
         )
         assertEquals(
-            mapOf<String, Any?>("username" to TransformerSafeValue("%\\%\\_\\\\%", typeOf<String>())),
+            mapOf<String, Any?>("username" to readyDatabaseValue("%\\%\\_\\\\%")),
             containsTable.parameterValues
         )
 
@@ -168,7 +169,7 @@ class KTableForConditionBehaviorTest {
             startsWithTable.startsWithConditionExpr(username, null, not = false, value = "literal%_\\")
         )
         assertEquals(
-            mapOf<String, Any?>("username" to TransformerSafeValue("literal\\%\\_\\\\%", typeOf<String>())),
+            mapOf<String, Any?>("username" to readyDatabaseValue("literal\\%\\_\\\\%")),
             startsWithTable.parameterValues
         )
 
@@ -183,7 +184,7 @@ class KTableForConditionBehaviorTest {
             endsWithTable.endsWithConditionExpr(username, null, not = true, value = "%_mid\\")
         )
         assertEquals(
-            mapOf<String, Any?>("username" to TransformerSafeValue("%\\%\\_mid\\\\", typeOf<String>())),
+            mapOf<String, Any?>("username" to readyDatabaseValue("%\\%\\_mid\\\\")),
             endsWithTable.parameterValues
         )
     }
@@ -553,6 +554,12 @@ class KTableForConditionBehaviorTest {
             assertNull(buildContainsStr(null))
         }
     }
+
+    private fun readyDatabaseValue(value: String): PreparedValue = PreparedValue(
+        value = value,
+        sourceType = typeOf<String>(),
+        kind = PreparedValueKind.READY_DATABASE_VALUE
+    )
 }
 
 private fun String.toStringBuilder(): StringBuilder = StringBuilder(this)

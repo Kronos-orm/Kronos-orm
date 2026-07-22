@@ -32,7 +32,8 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table("tb_where_sugar_user")
 data class WhereSugarUser(
@@ -44,11 +45,10 @@ class WhereSugarWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:where-sugar"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    var mappedClass: KClass<*>? = null
+    var mappedType: KType? = null
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*>
-        mappedClass = kClass
+        mappedType = task.targetType
         return listOf(WhereSugarUser(id = 7, name = "Ada"))
     }
 
@@ -98,7 +98,7 @@ fun box(): String {
 
     return when {
         statement.select.size != 2 -> "Fail: select size was ${statement.select.size}"
-        wrapper.mappedClass != WhereSugarUser::class -> "Fail: mapped class was ${wrapper.mappedClass}"
+        wrapper.mappedType != typeOf<WhereSugarUser>() -> "Fail: mapped type was ${wrapper.mappedType}"
         row?.name != "Ada" -> "Fail: row was $row"
         inner == null -> "Fail: derived source was ${derived.from}"
         derived.select.mapNotNull { ((it as? SqlSelectItem.Expr)?.expr as? SqlExpr.Column)?.columnName } != listOf("id") ->

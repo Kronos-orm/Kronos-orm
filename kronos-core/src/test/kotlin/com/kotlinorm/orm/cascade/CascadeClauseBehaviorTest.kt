@@ -30,7 +30,6 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.LinkedHashSet
 import java.util.UUID
-import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -800,7 +799,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeDeleteBehaviorParent>(),
-            kClass = CascadeDeleteBehaviorParent::class as KClass<KPojo>,
             pojo = CascadeDeleteBehaviorParent(id = 7),
             where = null,
             paramMap = emptyMap(),
@@ -837,7 +835,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeLogicDeleteParent>(),
-            kClass = CascadeLogicDeleteParent::class as KClass<KPojo>,
             pojo = CascadeLogicDeleteParent(id = 7),
             where = inheritedWhere,
             paramMap = mapOf("id" to 7, "deletedNew" to 1),
@@ -876,7 +873,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascadeAllowed = null,
             pojo = CascadeDeleteBehaviorParent(id = 7),
             targetType = typeOf<CascadeDeleteBehaviorParent>(),
-            kClass = CascadeDeleteBehaviorParent::class as KClass<KPojo>,
             paramMap = mapOf("id" to 7, "idNew" to 8),
             toUpdateFields = LinkedHashSet<Field>().also { it.add(idField) },
             where = null,
@@ -914,7 +910,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascadeAllowed = null,
             pojo = CascadeActionParent(id = 7),
             targetType = typeOf<CascadeActionParent>(),
-            kClass = CascadeActionParent::class as KClass<KPojo>,
             paramMap = mapOf("id" to 7, "id@1" to 8, "idNew" to 9),
             toUpdateFields = LinkedHashSet<Field>().also { it.add(idField) },
             where = inheritedWhere,
@@ -956,7 +951,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascadeAllowed = null,
             pojo = CascadeActionParent(id = 7),
             targetType = typeOf<CascadeActionParent>(),
-            kClass = CascadeActionParent::class as KClass<KPojo>,
             paramMap = mapOf("id" to 7, "idNew" to 8),
             toUpdateFields = LinkedHashSet<Field>().also { it.add(idField) },
             where = null,
@@ -1002,7 +996,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeActionParent>(),
-            kClass = CascadeActionParent::class as KClass<KPojo>,
             pojo = CascadeActionParent(id = 7),
             where = null,
             paramMap = emptyMap(),
@@ -1097,7 +1090,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeSingleSetNullParent>(),
-            kClass = CascadeSingleSetNullParent::class as KClass<KPojo>,
             pojo = CascadeSingleSetNullParent(id = 7),
             where = null,
             paramMap = emptyMap(),
@@ -1154,7 +1146,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeSetNullParent>(),
-            kClass = CascadeSetNullParent::class as KClass<KPojo>,
             pojo = CascadeSetNullParent(id = 7),
             where = null,
             paramMap = emptyMap(),
@@ -1201,7 +1192,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeSetDefaultParent>(),
-            kClass = CascadeSetDefaultParent::class as KClass<KPojo>,
             pojo = CascadeSetDefaultParent(id = 7),
             where = null,
             paramMap = emptyMap(),
@@ -1248,7 +1238,6 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             targetType = typeOf<CascadeRestrictParent>(),
-            kClass = CascadeRestrictParent::class as KClass<KPojo>,
             pojo = CascadeRestrictParent(id = 7),
             where = null,
             paramMap = emptyMap(),

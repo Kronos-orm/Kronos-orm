@@ -36,6 +36,7 @@ import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
 import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 data class MetadataProjectionChild(
     var id: Int? = null,
@@ -170,11 +171,13 @@ fun box(): String {
         expectMetadata(child?.cascadeIsCollectionOrArray == false) {
             "child collection flag was ${child?.cascadeIsCollectionOrArray}"
         },
-        expectMetadata(child?.kClass == MetadataProjectionChild::class) { "child kClass was ${child?.kClass}" },
+        expectMetadata(child?.kType == typeOf<MetadataProjectionChild?>()) { "child kType was ${child?.kType}" },
         expectMetadata(children?.cascadeIsCollectionOrArray == true) {
             "children collection flag was ${children?.cascadeIsCollectionOrArray}"
         },
-        expectMetadata(children?.kClass == List::class) { "children kClass was ${children?.kClass}" },
+        expectMetadata(childrenKType == typeOf<List<MetadataProjectionChild>>()) {
+            "children kType was $childrenKType"
+        },
         expectMetadata(childrenClassifier == List::class) { "children kType classifier was $childrenClassifier" },
         expectMetadata(childrenElementClassifier == MetadataProjectionChild::class) {
             "children kType element was $childrenElementType"

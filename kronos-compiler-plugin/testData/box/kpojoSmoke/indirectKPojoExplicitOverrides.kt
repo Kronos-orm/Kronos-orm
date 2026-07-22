@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies indirect KPojo materialization preserves explicit property and function overrides.
+// Verifies indirect KPojo generation preserves explicit property and function overrides.
 
 import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.typeOf

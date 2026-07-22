@@ -86,13 +86,6 @@ internal object EnumValueCodec : RegistryCodec {
     ): Any {
         if (request.direction == ValueCodecDirection.ENCODE) {
             val enumValue = value as Enum<*>
-            if (request.targetType.isConcreteEnumType() &&
-                !request.targetType.accepts(enumValue, request.sourceType)
-            ) {
-                throw request.failure(
-                    "enum value ${enumValue::class.qualifiedName} is not assignable to ${request.targetType}"
-                )
-            }
             return if (request.usesOrdinalStorage()) enumValue.ordinal else enumValue.name
         }
 
@@ -131,14 +124,26 @@ private fun Number.toEnumOrdinal(): Int? = when (this) {
     is BigDecimal -> toIntOrNull()
     is Float -> toBigDecimalOrNull()?.toIntOrNull()
     is Double -> toBigDecimalOrNull()?.toIntOrNull()
-    else -> runCatching { BigDecimal(toString()).toIntOrNull() }.getOrNull()
+    else -> try {
+        BigDecimal(toString()).toIntOrNull()
+    } catch (_: NumberFormatException) {
+        null
+    }
 }
 
 private fun Long.toIntOrNull(): Int? = takeIf { it in Int.MIN_VALUE..Int.MAX_VALUE }?.toInt()
 
-private fun BigInteger.toIntOrNull(): Int? = runCatching { intValueExact() }.getOrNull()
+private fun BigInteger.toIntOrNull(): Int? = try {
+    intValueExact()
+} catch (_: ArithmeticException) {
+    null
+}
 
-private fun BigDecimal.toIntOrNull(): Int? = runCatching { toBigIntegerExact().intValueExact() }.getOrNull()
+private fun BigDecimal.toIntOrNull(): Int? = try {
+    toBigIntegerExact().intValueExact()
+} catch (_: ArithmeticException) {
+    null
+}
 
 private fun Number.toBigDecimalOrNull(): BigDecimal? = when (this) {
     is Float -> takeIf { it.isFinite() }?.let { BigDecimal.valueOf(it.toDouble()) }

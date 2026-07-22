@@ -36,6 +36,7 @@ import com.kotlinorm.enums.ValueCodecOrigin.PARAMETER
 import com.kotlinorm.enums.ValueStorage.NONE
 import com.kotlinorm.enums.ValueStorage.SERIALIZED
 import com.kotlinorm.exceptions.ConflictingEnumMetadata
+import com.kotlinorm.exceptions.ConflictingGeneratedKPojoFactory
 import com.kotlinorm.exceptions.ConflictingGeneratedProvider
 import com.kotlinorm.exceptions.InvalidEnumOrdinal
 import com.kotlinorm.exceptions.MissingEnumMetadata
@@ -94,6 +95,16 @@ class ValueCodecRegistryTest {
 
     private class CustomSqlTimestamp(millis: Long) : Timestamp(millis)
 
+    private class DriverNumber(private val value: String) : Number() {
+        override fun toByte(): Byte = value.toBigDecimal().toByte()
+        override fun toDouble(): Double = value.toDouble()
+        override fun toFloat(): Float = value.toFloat()
+        override fun toInt(): Int = value.toBigDecimal().toInt()
+        override fun toLong(): Long = value.toBigDecimal().toLong()
+        override fun toShort(): Short = value.toBigDecimal().toShort()
+        override fun toString(): String = value
+    }
+
     private enum class Status {
         READY,
         CLOSED
@@ -108,14 +119,14 @@ class ValueCodecRegistryTest {
     internal data class IndirectEntity(var id: Int? = null) : IndirectKPojo
 
     @Test
-    fun `temporal target resolution uses complete KType and limits name fallback`() {
+    fun `temporal target resolution requires an exact supported KType`() {
         assertEquals(TemporalTargetKind.LOCAL_DATE_TIME, typeOf<LocalDateTime>().temporalTargetKind())
         assertEquals(TemporalTargetKind.LOCAL_DATE_TIME, typeOf<LocalDateTime?>().temporalTargetKind())
+        assertEquals(TemporalTargetKind.SQL_DATE, typeOf<Date?>().temporalTargetKind())
+        assertEquals(TemporalTargetKind.SQL_TIME, typeOf<Time?>().temporalTargetKind())
+        assertEquals(TemporalTargetKind.SQL_TIMESTAMP, typeOf<Timestamp?>().temporalTargetKind())
         assertNull(typeOf<CustomDate>().temporalTargetKind())
-        assertEquals(
-            TemporalTargetKind.LOCAL_DATE_TIME,
-            NameOnlyKType("java.time.LocalDateTime?").temporalTargetKind()
-        )
+        assertNull(NameOnlyKType("java.time.LocalDateTime?").temporalTargetKind())
         assertNull(NameOnlyKType("example.UnknownTemporal").temporalTargetKind())
     }
 
@@ -723,7 +734,22 @@ class ValueCodecRegistryTest {
     @Test
     fun `enum ordinal decoding rejects non-integers negative and out of range values with context`() {
         val field = Field("status_col", "status", type = KColumnType.INT, kType = typeOf<Status>())
-        listOf<Any>(BigDecimal("1.5"), -1, 2, Long.MAX_VALUE, "1").forEach { raw ->
+        listOf<Any>(
+            BigDecimal("1.5"),
+            BigDecimal(Int.MAX_VALUE).add(BigDecimal.ONE),
+            BigInteger.valueOf(Int.MAX_VALUE.toLong()).add(BigInteger.ONE),
+            -1,
+            2,
+            Long.MAX_VALUE,
+            1.5F,
+            Float.NaN,
+            Float.POSITIVE_INFINITY,
+            1.5,
+            Double.NaN,
+            Double.POSITIVE_INFINITY,
+            DriverNumber("not-a-number"),
+            "1"
+        ).forEach { raw ->
             val failure = assertFailsWith<InvalidEnumOrdinal> {
                 ValueCodecRegistry.convert(ValueConversionRequest(
                     raw,
@@ -742,6 +768,64 @@ class ValueCodecRegistryTest {
             assertEquals(raw.toString(), failure.rawValuePreview)
             assertTrue(failure.message.orEmpty().contains("invalid enum ordinal"))
         }
+    }
+
+    @Test
+    fun `enum ordinal decoding accepts every exact Number representation`() {
+        val field = Field("status", type = KColumnType.INT, kType = typeOf<Status>())
+        val values = listOf<Number>(
+            1.toByte(),
+            1.toShort(),
+            1L,
+            BigInteger.ONE,
+            BigDecimal("1.000"),
+            1F,
+            1.0,
+            DriverNumber("1")
+        )
+
+        values.forEach { raw ->
+            assertEquals(
+                Status.CLOSED,
+                ValueCodecRegistry.convert(
+                    ValueConversionRequest(
+                        raw,
+                        DECODE,
+                        DATABASE,
+                        typeOf<Status>(),
+                        sourceType = raw::class.starProjectedType,
+                        field = field
+                    ),
+                    enumMetadata()
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `enum ordinal decoding reports a generated factory that rejects a declared entry`() {
+        val metadata = loadGeneratedTypeMetadata(listOf(enumProvider(
+            "rejecting-factory",
+            typeOf<Status>(),
+            listOf("READY", "CLOSED"),
+            EnumFactory { null }
+        )))
+        val field = Field("status", type = KColumnType.INT, kType = typeOf<Status>())
+
+        val failure = assertFailsWith<UnknownEnumValue> {
+            ValueCodecRegistry.convert(
+                ValueConversionRequest(
+                    1,
+                    DECODE,
+                    DATABASE,
+                    typeOf<Status>(),
+                    field = field
+                ),
+                metadata
+            )
+        }
+
+        assertEquals("CLOSED", failure.rawValuePreview)
     }
 
     @Test
@@ -942,6 +1026,86 @@ class ValueCodecRegistryTest {
     }
 
     @Test
+    fun `generated metadata rejects conflicting KPojo ownership and constructor signatures`() {
+        fun kPojoProvider(
+            providerId: String,
+            ownerId: String,
+            constructorSignature: String
+        ): GeneratedTypeProvider = provider(providerId) { registrar ->
+            registrar.registerKPojo(
+                typeOf<IndirectEntity>(),
+                ownerId,
+                constructorSignature,
+                KPojoFactory { IndirectEntity() }
+            )
+        }
+
+        val baseline = kPojoProvider("baseline", "owner", "IndirectEntity()")
+        assertFailsWith<ConflictingGeneratedKPojoFactory> {
+            loadGeneratedTypeMetadata(listOf(
+                baseline,
+                kPojoProvider("owner-conflict", "other-owner", "IndirectEntity()")
+            ))
+        }
+        assertFailsWith<ConflictingGeneratedKPojoFactory> {
+            loadGeneratedTypeMetadata(listOf(
+                baseline,
+                kPojoProvider("signature-conflict", "owner", "IndirectEntity(Int?)")
+            ))
+        }
+        assertFailsWith<ConflictingGeneratedKPojoFactory> {
+            loadGeneratedTypeMetadata(listOf(provider("same-provider-owner") { registrar ->
+                registrar.registerKPojo(
+                    typeOf<IndirectEntity>(),
+                    "owner",
+                    "IndirectEntity()",
+                    KPojoFactory { IndirectEntity() }
+                )
+                registrar.registerKPojo(
+                    typeOf<IndirectEntity>(),
+                    "other-owner",
+                    "IndirectEntity()",
+                    KPojoFactory { IndirectEntity() }
+                )
+            }))
+        }
+        assertFailsWith<ConflictingGeneratedKPojoFactory> {
+            loadGeneratedTypeMetadata(listOf(provider("same-provider-signature") { registrar ->
+                registrar.registerKPojo(
+                    typeOf<IndirectEntity>(),
+                    "owner",
+                    "IndirectEntity()",
+                    KPojoFactory { IndirectEntity() }
+                )
+                registrar.registerKPojo(
+                    typeOf<IndirectEntity>(),
+                    "owner",
+                    "IndirectEntity(Int?)",
+                    KPojoFactory { IndirectEntity() }
+                )
+            }))
+        }
+    }
+
+    @Test
+    fun `generated metadata rejects duplicate and conflicting enum declarations within a provider`() {
+        assertFailsWith<IllegalArgumentException> {
+            loadGeneratedTypeMetadata(listOf(enumProvider(
+                "duplicate-names",
+                typeOf<Status>(),
+                listOf("READY", "READY"),
+                statusFactory()
+            )))
+        }
+        assertFailsWith<ConflictingEnumMetadata> {
+            loadGeneratedTypeMetadata(listOf(provider("enum-conflict") { registrar ->
+                registrar.registerEnum(typeOf<Status>(), listOf("READY", "CLOSED"), statusFactory())
+                registrar.registerEnum(typeOf<Status>(), listOf("CLOSED", "READY"), statusFactory())
+            }))
+        }
+    }
+
+    @Test
     fun `basic codecs cover numbers booleans chars strings and strict decode`() {
         assertEquals(42, ValueCodecRegistry.convert(decodeRequest("42", typeOf<Int>())))
         assertEquals(42L, ValueCodecRegistry.convert(decodeRequest(BigDecimal("42.9"), typeOf<Long>())))
@@ -992,6 +1156,65 @@ class ValueCodecRegistryTest {
     }
 
     @Test
+    fun `basic codecs normalize Boolean decimal and integer source families`() {
+        val booleanCases = listOf(
+            BigDecimal.ZERO to false,
+            BigDecimal.ONE to true,
+            BigInteger.ZERO to false,
+            BigInteger.ONE to true,
+            0L to false,
+            1.toShort() to true,
+            0F to false,
+            1.0 to true,
+            DriverNumber("0") to false,
+            DriverNumber("1") to true,
+            "0" to false,
+            "1" to true,
+            " true " to true,
+            "not-true" to false
+        )
+        booleanCases.forEach { (value, expected) ->
+            assertEquals(expected, ValueCodecRegistry.convert(decodeRequest(value, typeOf<Boolean>())))
+        }
+
+        assertEquals(BigDecimal("2"), ValueCodecRegistry.convert(decodeRequest(BigInteger("2"), typeOf<BigDecimal>())))
+        assertEquals(BigDecimal.ONE, ValueCodecRegistry.convert(decodeRequest(true, typeOf<BigDecimal>())))
+        assertEquals(BigDecimal("3"), ValueCodecRegistry.convert(decodeRequest(3L, typeOf<BigDecimal>())))
+        assertEquals(BigDecimal("4.5"), ValueCodecRegistry.convert(decodeRequest(4.5F, typeOf<BigDecimal>())))
+        assertEquals(BigDecimal("5.25"), ValueCodecRegistry.convert(decodeRequest("5.25", typeOf<BigDecimal>())))
+
+        assertEquals(BigInteger("6"), ValueCodecRegistry.convert(decodeRequest(BigDecimal("6.9"), typeOf<BigInteger>())))
+        assertEquals(BigInteger.ONE, ValueCodecRegistry.convert(decodeRequest(true, typeOf<BigInteger>())))
+        assertEquals(BigInteger("7"), ValueCodecRegistry.convert(decodeRequest(7L, typeOf<BigInteger>())))
+        assertEquals(BigInteger("8"), ValueCodecRegistry.convert(decodeRequest(DriverNumber("8.9"), typeOf<BigInteger>())))
+        assertEquals(BigInteger("9"), ValueCodecRegistry.convert(decodeRequest("9", typeOf<BigInteger>())))
+        assertEquals('B', ValueCodecRegistry.convert(decodeRequest("Beta", typeOf<Char>())))
+    }
+
+    @Test
+    fun `strict database decode handles floating point and vendor Number boundaries`() {
+        fun databaseNumber(value: Number, targetType: KType): Any? = ValueCodecRegistry.convert(
+            decodeRequest(value, targetType).copy(origin = DATABASE, strict = true)
+        )
+
+        assertEquals(10, databaseNumber(10F, typeOf<Int>()))
+        assertEquals(11L, databaseNumber(11.0, typeOf<Long>()))
+        assertEquals(12, databaseNumber(DriverNumber("12"), typeOf<Int>()))
+        assertEquals(13.5, databaseNumber(DriverNumber("13.5"), typeOf<Double>()))
+        assertEquals(Float.MAX_VALUE.toDouble(), databaseNumber(Float.MAX_VALUE, typeOf<Double>()))
+        assertEquals(Double.POSITIVE_INFINITY, databaseNumber(Float.POSITIVE_INFINITY, typeOf<Double>()))
+        assertEquals(Float.NEGATIVE_INFINITY, databaseNumber(Double.NEGATIVE_INFINITY, typeOf<Float>()))
+
+        assertEquals(BigDecimal("14"), databaseNumber(BigInteger("14"), typeOf<BigDecimal>()))
+        assertEquals(BigDecimal.valueOf(15.5F.toDouble()), databaseNumber(15.5F, typeOf<BigDecimal>()))
+        assertEquals(BigDecimal("16.5"), databaseNumber(DriverNumber("16.5"), typeOf<BigDecimal>()))
+
+        assertFailsWith<ValueMappingException> {
+            databaseNumber(Double.MAX_VALUE, typeOf<Float>())
+        }
+    }
+
+    @Test
     fun `strict database decode normalizes only exact Oracle family BIT values to Boolean`() {
         fun oracleBit(value: Number, type: KColumnType = KColumnType.BIT): ValueConversionRequest =
             ValueConversionRequest(
@@ -1007,6 +1230,13 @@ class ValueCodecRegistryTest {
         assertEquals(false, ValueCodecRegistry.convert(oracleBit(BigDecimal.ZERO)))
         assertEquals(true, ValueCodecRegistry.convert(oracleBit(BigDecimal("1.000"))))
 
+        listOf<Number>(BigInteger.ZERO, 0.toByte(), 0.toShort(), 0, 0L, 0F, 0.0).forEach { value ->
+            assertEquals(false, ValueCodecRegistry.convert(oracleBit(value)))
+        }
+        listOf<Number>(BigInteger.ONE, 1.toByte(), 1.toShort(), 1, 1L, 1F, 1.0).forEach { value ->
+            assertEquals(true, ValueCodecRegistry.convert(oracleBit(value)))
+        }
+
         assertFailsWith<ValueMappingException> {
             ValueCodecRegistry.convert(oracleBit(BigDecimal.ONE).copy(dialect = SqlDialect.SQLite))
         }
@@ -1018,6 +1248,9 @@ class ValueCodecRegistryTest {
         }
         assertFailsWith<ValueMappingException> {
             ValueCodecRegistry.convert(oracleBit(BigDecimal("0.5")))
+        }
+        assertFailsWith<ValueMappingException> {
+            ValueCodecRegistry.convert(oracleBit(DriverNumber("1")))
         }
     }
 

@@ -131,13 +131,11 @@ class KronosParserTransformer(
         kPojoClasses.add(irClass)
         collectCascadeTargetKPojoClasses(irClass)
         if (transformedKPojoClasses.add(irClass)) {
-            val classTransformer = KronosIrClassTransformer(pluginContext, irClass, errorReporter)
-            classTransformer.materializeMissingKPojoMembers()
             irClass.properties.forEach { property ->
                 property.isVar = true
                 property.isConst = false
             }
-            irClass.transform(classTransformer, null)
+            irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
         }
     }
 

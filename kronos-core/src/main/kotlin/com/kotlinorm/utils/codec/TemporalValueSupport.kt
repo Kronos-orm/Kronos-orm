@@ -100,10 +100,9 @@ private enum class TemporalRuntimeKind {
  * Resolves the conversion target from the complete [KType].
  *
  * Known targets are matched directly against complete nullable/non-null KTypes;
- * no classifier extraction drives normal dispatch. Qualified-name matching is
- * only a fallback for unusual KType implementations whose classifier cannot be
- * consumed as a [KClass]. A concrete but unsupported KType is never broadened to
- * one of its supertypes, preserving generic and annotated type distinctions.
+ * no classifier-name extraction drives dispatch. Unsupported or synthetic
+ * KTypes are never broadened to one of their supertypes, preserving generic and
+ * annotated type distinctions.
  *
  * @receiver complete logical or physical target type
  * @return a supported exact target kind, or `null` when the codec cannot create
@@ -125,8 +124,7 @@ internal fun KType.temporalTargetKind(): TemporalTargetKind? {
         jdbcTypes?.date?.matches(this) == true -> TemporalTargetKind.SQL_DATE
         jdbcTypes?.time?.matches(this) == true -> TemporalTargetKind.SQL_TIME
         jdbcTypes?.timestamp?.matches(this) == true -> TemporalTargetKind.SQL_TIMESTAMP
-        classifier is KClass<*> -> null
-        else -> temporalTargetKindByName(classifierName(), jdbcTypes)
+        else -> null
     }
 }
 
@@ -170,26 +168,6 @@ private fun KType.isSubtypeOfSafely(supertype: KType): Boolean =
     } catch (_: IllegalArgumentException) {
         false
     }
-
-private fun temporalTargetKindByName(
-    classifierName: String?,
-    jdbcTypes: JdbcTemporalTypes?
-): TemporalTargetKind? = when (classifierName) {
-    "java.sql.Date" -> jdbcTypes?.let { TemporalTargetKind.SQL_DATE }
-    "java.sql.Time" -> jdbcTypes?.let { TemporalTargetKind.SQL_TIME }
-    "java.sql.Timestamp" -> jdbcTypes?.let { TemporalTargetKind.SQL_TIMESTAMP }
-    "java.util.Date" -> TemporalTargetKind.UTIL_DATE
-    "java.time.LocalDateTime" -> TemporalTargetKind.LOCAL_DATE_TIME
-    "java.time.LocalDate" -> TemporalTargetKind.LOCAL_DATE
-    "java.time.LocalTime" -> TemporalTargetKind.LOCAL_TIME
-    "java.time.Instant" -> TemporalTargetKind.JAVA_INSTANT
-    "java.time.ZonedDateTime" -> TemporalTargetKind.ZONED_DATE_TIME
-    "java.time.OffsetDateTime" -> TemporalTargetKind.OFFSET_DATE_TIME
-    "kotlin.time.Instant" -> TemporalTargetKind.KOTLIN_INSTANT
-    "kotlin.Long" -> TemporalTargetKind.LONG
-    "kotlin.String" -> TemporalTargetKind.STRING
-    else -> null
-}
 
 /**
  * Converts a temporal value to the exact classifier represented by [targetType].

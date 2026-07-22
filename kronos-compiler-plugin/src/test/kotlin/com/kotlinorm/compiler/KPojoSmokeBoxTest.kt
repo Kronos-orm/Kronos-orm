@@ -46,7 +46,13 @@ class KPojoSmokeBoxTest : AbstractKronosJvmBoxSuite("kpojoSmoke") {
     fun indirectKPojoInterface() = box("indirectKPojoInterface")
 
     /**
-     * Verifies indirect KPojo fallback does not replace explicit user implementations.
+     * Verifies KPojo generation across an intermediate interface compiled in a dependency module.
+     */
+    @Test
+    fun binaryIndirectKPojoInterface() = box("binaryIndirectKPojoInterface")
+
+    /**
+     * Verifies indirect KPojo generation does not replace explicit user implementations.
      */
     @Test
     fun indirectKPojoExplicitOverrides() = box("indirectKPojoExplicitOverrides")

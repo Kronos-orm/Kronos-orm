@@ -17,18 +17,23 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.utils.codec.convertTemporalValue
+import com.kotlinorm.utils.codec.isTemporalSource
 import java.sql.Time
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class TemporalValueSupportTest {
     @Test
@@ -98,6 +103,67 @@ class TemporalValueSupportTest {
         assertEquals(
             ZonedDateTime.ofInstant(expectedInstant, zone),
             convertTemporalValue(timestamp, typeOf<ZonedDateTime>(), zone, unusedFormatter)
+        )
+    }
+
+    @Test
+    fun `declared temporal source uses complete KType with a runtime fallback for broad metadata`() {
+        val localDateTime = LocalDateTime.of(2026, 7, 22, 12, 34, 56)
+
+        assertTrue(typeOf<LocalDateTime>().isTemporalSource(localDateTime))
+        assertTrue((null as KType?).isTemporalSource(localDateTime))
+        assertTrue(typeOf<Any>().isTemporalSource(localDateTime))
+        assertTrue(typeOf<String>().isTemporalSource(localDateTime))
+        assertFalse(typeOf<String>().isTemporalSource("2026-07-22T12:34:56"))
+        assertFalse(typeOf<Any>().isTemporalSource("2026-07-22T12:34:56"))
+    }
+
+    @Test
+    fun `native temporal source families preserve instants and apply the target zone`() {
+        val zone = ZoneId.of("Asia/Shanghai")
+        val instant = Instant.ofEpochSecond(1_753_000_000L, 123_000_000)
+        val formatter = lazy<DateTimeFormatter> { error("Native conversion must not read dateFormat") }
+        val sources = listOf<Any>(
+            instant,
+            kotlin.time.Instant.fromEpochSeconds(instant.epochSecond, instant.nano),
+            instant.atZone(ZoneId.of("UTC")),
+            OffsetDateTime.ofInstant(instant, ZoneId.of("Europe/Paris")),
+            java.util.Date.from(instant),
+            instant.toEpochMilli()
+        )
+        val expectedZoned = instant.atZone(zone)
+        val expectedLocal = LocalDateTime.ofInstant(instant, zone)
+
+        sources.forEach { source ->
+            assertEquals(instant, convertTemporalValue(source, typeOf<Instant>(), zone, formatter))
+            assertEquals(expectedZoned, convertTemporalValue(source, typeOf<ZonedDateTime>(), zone, formatter))
+            assertEquals(expectedLocal, convertTemporalValue(source, typeOf<LocalDateTime>(), zone, formatter))
+        }
+    }
+
+    @Test
+    fun `local temporal targets accept native local values and standard text fallbacks`() {
+        val zone = ZoneId.of("UTC")
+        val localDate = LocalDate.of(2026, 7, 22)
+        val localTime = LocalTime.of(12, 34, 56)
+        val localDateTime = LocalDateTime.of(localDate, localTime)
+        val formatter = lazy { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") }
+
+        assertEquals(
+            localDate.atStartOfDay(),
+            convertTemporalValue(localDate, typeOf<LocalDateTime>(), zone, formatter)
+        )
+        assertEquals(
+            LocalDate.ofEpochDay(0).atTime(localTime),
+            convertTemporalValue(localTime, typeOf<LocalDateTime>(), zone, formatter)
+        )
+        assertEquals(localDate, convertTemporalValue(localDateTime, typeOf<LocalDate>(), zone, formatter))
+        assertEquals(localTime, convertTemporalValue(localDateTime, typeOf<LocalTime>(), zone, formatter))
+        assertEquals(localDate, convertTemporalValue("2026-07-22", typeOf<LocalDate>(), zone, formatter))
+        assertEquals(localTime, convertTemporalValue("12:34:56", typeOf<LocalTime>(), zone, formatter))
+        assertEquals(
+            localDateTime.atZone(zone),
+            convertTemporalValue("2026-07-22T12:34:56Z", typeOf<ZonedDateTime>(), zone, formatter)
         )
     }
 }

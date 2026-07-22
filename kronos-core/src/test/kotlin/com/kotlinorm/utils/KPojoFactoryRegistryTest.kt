@@ -148,6 +148,19 @@ class KPojoFactoryRegistryTest {
     }
 
     @Test
+    fun `reified factory registration uses the exact KType and restores generated metadata`() {
+        val registration = registerKPojo { GeneratedUser(12) }
+
+        try {
+            assertEquals(GeneratedUser(12), createKPojo<GeneratedUser>())
+        } finally {
+            registration.close()
+        }
+
+        assertEquals(GeneratedUser(), createKPojo<GeneratedUser>())
+    }
+
+    @Test
     fun `factory registration uses exact KType and receives the requested type`() {
         val registeredType = typeOf<ExactUser>()
         val requestedType = typeOf<ExactUser?>()

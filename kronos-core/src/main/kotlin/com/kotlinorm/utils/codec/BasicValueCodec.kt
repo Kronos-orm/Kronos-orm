@@ -118,7 +118,7 @@ internal object BasicValueCodec : RegistryCodec {
     ): Any {
         val targetType = request.effectiveTargetType()
         val target = KTypeKey.from(targetType, ignoreTopLevelNullability = true)
-        val targetKind = targetKinds[target]
+        val targetKind = targetKinds.getValue(target)
         val strictDatabaseNumber = (value as? Number)
             ?.takeIf { request.isStrictDatabaseNumericNormalization(targetKind) }
         return when (targetKind) {
@@ -139,7 +139,6 @@ internal object BasicValueCodec : RegistryCodec {
             TargetKind.BIG_DECIMAL -> strictDatabaseNumber?.toBigDecimalExact() ?: value.toBigDecimalValue()
             TargetKind.BIG_INTEGER -> strictDatabaseNumber?.toBigIntegerExact() ?: value.toBigIntegerValue()
             TargetKind.STRING -> value.toString()
-            null -> error("Unsupported basic target $targetType")
         }
     }
 

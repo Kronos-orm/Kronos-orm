@@ -126,20 +126,6 @@ internal fun ValueConversionRequest.effectiveTargetType(): KType =
 internal fun KType.accepts(value: Any): Boolean = acceptsRuntimeValue(value)
 
 /**
- * Extracts a qualified classifier name for compatibility-only dispatch.
- *
- * Callers must prefer the concrete [KClass] in [KType.classifier]. The rendered
- * KType fallback exists for synthetic/foreign KType implementations that do not
- * expose a KClass and is intentionally limited to non-generic qualified names.
- */
-internal fun KType.classifierName(): String? {
-    (classifier as? KClass<*>)?.qualifiedName?.let { return it }
-    return toString()
-        .removeSuffix("?")
-        .takeIf { '<' !in it && '.' in it }
-}
-
-/**
  * Combines runtime validation with complete declared source-to-target KType
  * assignability. A missing source type means runtime validation is sufficient.
  *
@@ -184,8 +170,24 @@ private fun KType.acceptsRuntimeValue(value: Any?): Boolean {
  */
 internal fun KType.isConcreteEnumType(): Boolean {
     if (arguments.isNotEmpty()) return false
-    val normalized = runCatching { withNullability(false) }.getOrNull() ?: return false
-    return runCatching { normalized.isSubtypeOf(typeOf<Enum<*>>()) }.getOrDefault(false)
+    val normalized = try {
+        withNullability(false)
+    } catch (_: LinkageError) {
+        return false
+    } catch (_: IllegalArgumentException) {
+        return false
+    } catch (_: ClassCastException) {
+        return false
+    }
+    return try {
+        normalized.isSubtypeOf(typeOf<Enum<*>>())
+    } catch (_: LinkageError) {
+        false
+    } catch (_: IllegalArgumentException) {
+        false
+    } catch (_: ClassCastException) {
+        false
+    }
 }
 
 /**

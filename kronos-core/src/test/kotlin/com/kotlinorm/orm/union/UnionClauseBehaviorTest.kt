@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.union
 
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
@@ -42,14 +44,14 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
     @Test
     fun `build carries set syntax query statement`() {
         val unionClause = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         )
 
         val task = unionClause.build()
 
         assertEquals(unionClause.toSqlQuery(), task.atomicTask.statement)
-        assertEquals(typeOf<Int?>(), task.atomicTask.resultColumnTypes["id"])
+        assertEquals(typeOf<Int?>(), task.atomicTask.resultColumns["id"]?.type)
     }
 
     @Test
@@ -81,8 +83,8 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
     @Test
     fun `union planning without a datasource keeps the dialect neutral limit`() {
         val statement = union(
-            UserRelation().select(UserRelation::class) { it.id },
-            UserRelation().select(UserRelation::class) { it.id }
+            UserRelation().select<UserRelation, UserRelation> { it.id },
+            UserRelation().select<UserRelation, UserRelation> { it.id }
         ).limit(5, 10).toSqlQuery(NoneDataSourceWrapper)
 
         val set = assertIs<SqlQuery.Set>(statement)
@@ -104,9 +106,9 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
 
     @Test
     fun `infix union all initializes and extends all set queries`() {
-        val first = TestUser().select(TestUser::class) { it.id }.where { it.id == 1 }
-        val second = TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
-        val third = TestUser().select(TestUser::class) { it.id }.where { it.id == 3 }
+        val first = TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 }
+        val second = TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
+        val third = TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 3 }
 
         val task = (first unionAll second unionAll third).build()
 
@@ -156,8 +158,8 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
     }
 
     private fun baseUnion() = union(
-        TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-        TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+        TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+        TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
     )
 
     private fun SqlExpr.numberLiteral(): Int? = (this as? SqlExpr.NumberLiteral)?.number?.toIntOrNull()

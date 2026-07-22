@@ -131,7 +131,7 @@ class CreateTableAsSelectSqlTest : MysqlTestBase() {
         val (sql, params) = Kronos.dataSource.table.buildCreateTableAsSelectTaskFromQuery(
             statement,
             mapOf("status@1" to "16"),
-            fieldsMapCache[SubqueryOrder().__kClass as kotlin.reflect.KClass<com.kotlinorm.interfaces.KPojo>]!!
+            fieldsMapCache[SubqueryOrder().__kType]!!
         )
 
         assertEquals(

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.database
 
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.utils.prepareRawSqlParameters
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -76,7 +79,7 @@ object SqlExecutor {
         paramMap: Map<String, Any?> = emptyMap()
     ): List<Map<String, Any?>> {
         return this.toList(
-            KronosAtomicQueryTask(sql, paramMap, targetType = typeOf<Map<String, Any?>>())
+            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = typeOf<Map<String, Any?>>())
         ) as List<Map<String, Any?>>
     }
 
@@ -84,7 +87,7 @@ object SqlExecutor {
     @Throws(NoSuchElementException::class)
     fun KronosDataSourceWrapper.toMap(sql: String, paramMap: Map<String, Any?> = emptyMap()): Map<String, Any?> {
         return this.first(
-            KronosAtomicQueryTask(sql, paramMap, targetType = typeOf<Map<String, Any?>>())
+            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = typeOf<Map<String, Any?>>())
         ) as Map<String, Any?>?
             ?: throw NoSuchElementException("No result found")
     }
@@ -95,7 +98,7 @@ object SqlExecutor {
         paramMap: Map<String, Any?> = emptyMap()
     ): Map<String, Any?>? {
         return this.first(
-            KronosAtomicQueryTask(sql, paramMap, targetType = typeOf<Map<String, Any?>?>())
+            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = typeOf<Map<String, Any?>?>())
         ) as Map<String, Any?>?
     }
 
@@ -105,7 +108,9 @@ object SqlExecutor {
         paramMap: Map<String, Any?> = emptyMap(),
         targetType: KType = typeOf<T>()
     ): List<T> {
-        return this.toList(KronosAtomicQueryTask(sql, paramMap, targetType = targetType)) as List<T>
+        return this.toList(
+            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = targetType)
+        ) as List<T>
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -114,7 +119,9 @@ object SqlExecutor {
         sql: String, paramMap: Map<String, Any?> = emptyMap(),
         targetType: KType = typeOf<T>()
     ): T {
-        val result = this.first(KronosAtomicQueryTask(sql, paramMap, targetType = targetType))
+        val result = this.first(
+            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = targetType)
+        )
         if (result == null && !targetType.isMarkedNullable) {
             throw NoSuchElementException("No result found")
         }
@@ -130,13 +137,16 @@ object SqlExecutor {
     }
 
     fun KronosDataSourceWrapper.execute(sql: String, paramMap: Map<String, Any?> = emptyMap()): Int {
-        return this.update(KronosAtomicActionTask(sql, paramMap))
+        return this.update(KronosAtomicActionTask(sql, prepareRawSqlParameters(paramMap)))
     }
 
     fun KronosDataSourceWrapper.batchExecute(sql: String, paramMapList: Array<Map<String, Any?>>): IntArray {
         return this.batchUpdate(
             KronosAtomicBatchTask(
-                sql, paramMapList
+                sql,
+                paramMapList.mapIndexed { index, parameters ->
+                    prepareRawSqlParameters(parameters, batchIndex = index)
+                }.toTypedArray()
             )
         )
     }

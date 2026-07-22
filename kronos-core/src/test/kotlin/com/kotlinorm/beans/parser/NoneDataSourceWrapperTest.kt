@@ -1,3 +1,5 @@
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.beans.parser
 
 import com.kotlinorm.beans.task.KronosAtomicActionTask

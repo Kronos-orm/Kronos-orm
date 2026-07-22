@@ -9,6 +9,7 @@ import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.testutils.MysqlTestBase
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -65,10 +66,10 @@ class ValidCascadeTest : MysqlTestBase() {
 
     @Test
     fun `should ignore CASCADE_SELECT fields in SELECT operation`() {
-        val ignoreField = kPojoFieldMapCache[CascadeSelectParent::class]!!["cascadeSelectChild"]!!
+        val ignoreField = kPojoFieldMapCache[CascadeSelectParent().__kType]!!["cascadeSelectChild"]!!
 
         val result = findValidRefs(
-            kClass = CascadeSelectParent::class,
+            sourceType = typeOf<CascadeSelectParent>(),
             columns = [ignoreField],
             operationType = KOperationType.SELECT,
             allowed = null,
@@ -80,9 +81,9 @@ class ValidCascadeTest : MysqlTestBase() {
 
     @Test
     fun `should find direct cascades for SELECT operation`() {
-        val field = kPojoFieldMapCache[CascadeSelectChild2::class]!!["parent"]!!
+        val field = kPojoFieldMapCache[CascadeSelectChild2().__kType]!!["parent"]!!
         val result = findValidRefs(
-            kClass = CascadeSelectParent2::class,
+            sourceType = typeOf<CascadeSelectParent2>(),
             columns = [field],
             operationType = KOperationType.SELECT,
             allowed = null,
@@ -99,9 +100,9 @@ class ValidCascadeTest : MysqlTestBase() {
 
     @Test
     fun `should find reverse cascades for DELETE operation`() {
-        val field = kPojoFieldMapCache[CascadeDeleteParent::class]!!["children"]!!
+        val field = kPojoFieldMapCache[CascadeDeleteParent().__kType]!!["children"]!!
         val result = findValidRefs(
-            kClass = CascadeDeleteParent::class,
+            sourceType = typeOf<CascadeDeleteParent>(),
             columns = [field],
             operationType = KOperationType.DELETE,
             allowed = null,
@@ -118,10 +119,10 @@ class ValidCascadeTest : MysqlTestBase() {
 
     @Test
     fun `should filter invalid cascades for DELETE operation`() {
-        val field = kPojoFieldMapCache[CascadeDeleteParent2::class]!!["children"]!!
+        val field = kPojoFieldMapCache[CascadeDeleteParent2().__kType]!!["children"]!!
 
         val result = findValidRefs(
-            kClass = CascadeDeleteChild2::class,
+            sourceType = typeOf<CascadeDeleteChild2>(),
             columns = [field],
             operationType = KOperationType.DELETE,
             allowed = null,

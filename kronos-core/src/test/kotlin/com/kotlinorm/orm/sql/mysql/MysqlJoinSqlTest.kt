@@ -11,8 +11,6 @@ import com.kotlinorm.orm.union.unionAll
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.upsert.upsert
 
-import com.kotlinorm.GsonProcessor
-import com.kotlinorm.Kronos
 import com.kotlinorm.testfixtures.entities.Address
 import com.kotlinorm.testfixtures.entities.Movie
 import com.kotlinorm.testfixtures.entities.UserRelation
@@ -25,10 +23,6 @@ import kotlin.test.assertEquals
 
 @OptIn(UnsafeProjectionOverride::class)
 class MysqlJoinSqlTest : MysqlTestBase() {
-    init {
-        Kronos.serializeProcessor = GsonProcessor
-    }
-
     @Test
     fun testJoinOneTable() {
         val (sql, paramMap) = TestUser(1).join(

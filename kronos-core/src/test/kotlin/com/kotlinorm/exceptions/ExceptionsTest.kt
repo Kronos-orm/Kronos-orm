@@ -58,13 +58,6 @@ class ExceptionsTest {
     }
 
     @Test
-    fun testNoSerializeProcessorException() {
-        val message = "No serialize processor found"
-        val exception = NoSerializeProcessorException(message)
-        assertEquals(message, exception.message)
-    }
-
-    @Test
     fun testUnsupportedDatabaseTypeException() {
         val dbType = DBType.Mysql
         val message = "Unsupported database type"

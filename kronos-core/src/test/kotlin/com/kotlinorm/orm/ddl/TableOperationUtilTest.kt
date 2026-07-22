@@ -26,7 +26,7 @@ import com.kotlinorm.syntax.statement.SqlIndexDefinition
 import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
@@ -37,7 +37,7 @@ class ManualDdlKPojo(
     indexes: MutableList<KTableIndex> = mutableListOf()
 ) : KPojo {
     @Ignore([IgnoreAction.ALL])
-    override var __kClass: KClass<out KPojo> = KPojo::class
+    override var __kType = typeOf<KPojo>()
     @Ignore([IgnoreAction.ALL])
     override var __tableName: String = "manual_ddl"
     @Ignore([IgnoreAction.ALL])
@@ -58,7 +58,7 @@ class ManualDdlKPojo(
 
 class StaticDdlCacheKPojo : KPojo {
     @Ignore([IgnoreAction.ALL])
-    override var __kClass: KClass<out KPojo> = StaticDdlCacheKPojo::class
+    override var __kType = typeOf<StaticDdlCacheKPojo>()
     @Ignore([IgnoreAction.ALL])
     override var __tableName: String = "kt_integration_user"
     @Ignore([IgnoreAction.ALL])

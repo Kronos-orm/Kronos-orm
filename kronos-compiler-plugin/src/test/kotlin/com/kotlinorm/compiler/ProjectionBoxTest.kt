@@ -29,6 +29,25 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun generatedSelectProjection() = box("generatedSelectProjection")
 
     /**
+     * Verifies indirect KSelectable receivers retain projection and scalar-subquery lowering.
+     */
+    @Test
+    fun indirectKSelectableTypeGraph() = box("indirectKSelectableTypeGraph")
+
+    /**
+     * Verifies indirect JoinSource receivers retain generated JOIN projection lowering.
+     */
+    @Test
+    fun indirectJoinSourceTypeGraph() = box("indirectJoinSourceTypeGraph")
+
+    /**
+     * Verifies materialized projections contribute KType-keyed construction and enum metadata
+     * through the module provider, including copied source serialization metadata.
+     */
+    @Test
+    fun generatedProjectionProviderMetadata() = box("generatedProjectionProviderMetadata")
+
+    /**
      * Verifies toList/first/firstOrNull refine to generated projection row types.
      */
     @Test
@@ -63,6 +82,13 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
      */
     @Test
     fun metadataOverridesExcludedFromProjectionFields() = box("metadataOverridesExcludedFromProjectionFields")
+
+    /**
+     * Verifies indirect KPojo properties are excluded from whole-source projection fields.
+     */
+    @Test
+    fun indirectKPojoPropertiesExcludedFromProjectionFields() =
+        box("indirectKPojoPropertiesExcludedFromProjectionFields")
 
     /**
      * Verifies collection literal and listOf projection forms feed generated receivers.

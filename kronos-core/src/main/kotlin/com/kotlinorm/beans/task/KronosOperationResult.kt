@@ -17,16 +17,18 @@
 package com.kotlinorm.beans.task
 
 /**
- * Kronos Operation Result
+ * Aggregated outcome of one or more action tasks.
  *
- * the result of operation
+ * [lastInsertId] is present only when an executing wrapper can express the first generated
+ * key as a `Long`. Other generated-key shapes remain on the originating atomic task.
  *
- * @property affectedRows the number of affected rows
- * @property lastInsertId the generated identity ID returned by an insert that requested it
+ * @property affectedRows total number of affected rows reported by the executed tasks
+ * @property lastInsertId numeric generated identity returned by the final applicable insert
  */
 data class KronosOperationResult(
     val affectedRows: Int = 0,
     val lastInsertId: Long? = null
 ) {
-    val stash = mutableMapOf<String, Any?>() // 存储临时数据的map
+    /** Mutable operation-local output shared with action completion hooks. */
+    val stash = mutableMapOf<String, Any?>()
 }

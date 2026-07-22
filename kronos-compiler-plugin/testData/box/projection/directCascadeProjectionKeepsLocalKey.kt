@@ -30,6 +30,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @Table("tb_direct_cascade_profile")
 data class DirectCascadeProfile(
@@ -49,12 +50,11 @@ class DirectCascadeProjectionWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:direct-cascade-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        mappedClasses += kClass
-        return [mapOf("profileId" to 7).mapperTo(kClass as KClass<out KPojo>)]
+        mappedTypes += task.targetType
+        return [mapOf("profileId" to 7).mapperTo(task.targetType)]
     }
 
     override fun first(task: KAtomicQueryTask): Any? = null
@@ -71,6 +71,7 @@ fun box(): String {
     val row = rows.singleOrNull()
     val columns = row?.__columns.orEmpty()
     val fields = row?.toDataMap().orEmpty()
+    val mappedType = wrapper.mappedTypes.singleOrNull()
 
     val failures = listOfNotNull(
         expect(rows.size == 1) { "row count was ${rows.size}" },
@@ -78,8 +79,11 @@ fun box(): String {
         expect(fields == mapOf("profile" to null, "profileId" to 7)) { "fields were $fields" },
         expect(columns.map { it.name } == listOf("profile", "profileId")) { "column names were ${columns.map { it.name }}" },
         expect(columns.map { it.isColumn } == listOf(false, true)) { "column flags were ${columns.map { it.isColumn }}" },
-        expect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
-            "mapped class was ${wrapper.mappedClasses.singleOrNull()}"
+        expect(mappedType != null && !mappedType.isMarkedNullable && mappedType.arguments.isEmpty()) {
+            "mapped type was $mappedType"
+        },
+        expect((mappedType?.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped type was $mappedType"
         },
     )
 

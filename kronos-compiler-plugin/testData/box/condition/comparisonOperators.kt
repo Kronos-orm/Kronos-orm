@@ -20,13 +20,13 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_condition_user")
 data class ConditionUser(
@@ -41,7 +41,8 @@ data class ConditionUser(
 
 data class CapturedCondition(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun conditionUserWhere(user: ConditionUser, block: ToFilter<ConditionUser, Boolean?>): CapturedCondition {
@@ -49,9 +50,15 @@ fun conditionUserWhere(user: ConditionUser, block: ToFilter<ConditionUser, Boole
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedCondition(sqlExpr, parameterValues.toMap())
+        result = CapturedCondition(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedCondition(null, emptyMap())
+    return result ?: CapturedCondition(null, emptyMap(), emptyMap())
+}
+
+fun conditionParameterValue(actual: CapturedCondition, expr: SqlExpr?): Any? {
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun assertCondition(
@@ -68,7 +75,8 @@ fun assertCondition(
         column?.columnName != fieldName -> "column was ${column?.columnName}"
         binary.operator != operator -> "operator was ${binary.operator}"
         parameter == null -> "right side was ${binary.right}"
-        actual.parameters[parameter.name] != value -> "value was ${actual.parameters[parameter.name]}"
+        conditionParameterValue(actual, binary.right) != value ->
+            "value was ${conditionParameterValue(actual, binary.right)}"
         else -> null
     }
 }
@@ -111,7 +119,7 @@ fun box(): String {
             "notLike",
             conditionUserWhere(user) { it.name notLike "%bot%" },
             "name",
-            TransformerSafeValue("%bot%", typeOf<String>()),
+            "%bot%",
             withNot = true
         ),
     )
@@ -134,7 +142,8 @@ fun assertLike(
         column?.columnName != fieldName -> "column was ${column?.columnName}"
         like.withNot != withNot -> "not was ${like.withNot}"
         parameter == null -> "pattern was ${like.pattern}"
-        actual.parameters[parameter.name] != value -> "value was ${actual.parameters[parameter.name]}"
+        conditionParameterValue(actual, like.pattern) != value ->
+            "value was ${conditionParameterValue(actual, like.pattern)}"
         else -> null
     }
     return if (failure == null) null else "Fail: $label $failure"

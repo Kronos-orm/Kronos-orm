@@ -59,7 +59,11 @@ Use the table as a compact reference for the automatic mapping. The final DDL ty
 | `java.time.LocalDateTime`, `kotlinx.datetime.LocalDateTime` | `DATETIME` |
 | `java.sql.Timestamp` | `TIMESTAMP` |
 | `kotlin.ByteArray` | `BLOB` |
+| Scalar enum | `VARCHAR` |
+| `@Serialize` property | `VARCHAR` unless `@ColumnType` overrides it |
 | Other property types | `VARCHAR` |
+
+Scalar enums use `Enum.name` for string-compatible columns. An explicitly integer `@ColumnType` uses ordinal values unless a later user `ValueCodec` overrides the field. `@Serialize` stores the complete logical value as text; it does not convert a collection element by element. See {{ $.keyword("mapping/enum-serialization", ["Enum Storage and Serialization"]) }} for the complete mapping rules.
 
 ## Override With {{ $.annotation("ColumnType") }}
 
@@ -128,9 +132,9 @@ DDL type fragments:
 
 ## Combine JSON And Serialization
 
-Use `@Serialize` for value conversion and `@ColumnType(KColumnType.JSON)` for the DDL type. `Kronos.serializeProcessor` supplies the serializer used when writing and reading the property.
+Use `@Serialize` for value conversion and `@ColumnType(KColumnType.JSON)` for the DDL type. Register one serialized `ValueCodec` to encode and decode every serialized field from its complete declared `KType`.
 
-```kotlin name="kotlin" icon="kotlin" {20,24,25}
+```kotlin name="kotlin" icon="kotlin" {13-16,22,23}
 import com.google.gson.Gson
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.ColumnType
@@ -138,20 +142,18 @@ import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KType
+import com.kotlinorm.interfaces.serializedValueCodec
 import kotlin.reflect.jvm.javaType
 
 data class AuditPayload(val ip: String, val tags: List<String>)
 
-object GsonProcessor : KronosSerializeProcessor {
-    private val gson = Gson()
-    override fun serialize(obj: Any, kType: KType): String = gson.toJson(obj)
-    override fun deserialize(serializedStr: String, kType: KType): Any =
-        gson.fromJson(serializedStr, kType.javaType)
-}
-
-Kronos.serializeProcessor = GsonProcessor
+val gson = Gson()
+val gsonRegistration = Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, _ -> gson.toJson(value) },
+        decode = { text, type -> gson.fromJson(text, type.javaType) }
+    )
+)
 
 @Table("tb_audit_event")
 data class AuditEvent(
@@ -178,6 +180,6 @@ DDL type fragments:
 | Oracle | `JSON` |
 
 > **Note**
-> `@Serialize` uses the processor described in {{ $.keyword("configuration/serialization-processor", ["Serialize Processor"]) }}. `@ColumnType` controls the database type rendered by table operations.
+> `@Serialize` uses the codec described in {{ $.keyword("configuration/value-codec", ["ValueCodec"]) }}. `@ColumnType` controls the database type rendered by table operations. Call `gsonRegistration.close()` when this scoped override is no longer needed; later registrations are checked first.
 
 For the complete serialized-field mapping flow, see {{ $.keyword("mapping/serialization", ["Serialization"]) }}.

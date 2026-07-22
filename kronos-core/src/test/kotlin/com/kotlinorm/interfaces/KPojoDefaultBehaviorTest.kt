@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.interfaces
 
 import java.lang.reflect.InvocationTargetException
@@ -10,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertSame
+import kotlin.reflect.typeOf
 
 class KPojoDefaultBehaviorTest {
 
@@ -17,13 +34,13 @@ class KPojoDefaultBehaviorTest {
     fun `default KPojo methods return compiler-plugin placeholders`() {
         val pojo = defaultReceiver()
 
-        assertEquals(KPojo::class, invokeDefault("get__kClass", pojo))
+        assertEquals(typeOf<KPojo>(), invokeDefault("get__kType", pojo))
         assertEquals(emptyMap<String, Any?>(), invokeDefault("toDataMap", pojo))
         assertSame(pojo, invokeDefault("safeFromMapData", pojo, mapOf("id" to 1)))
         assertSame(pojo, invokeDefault("fromMapData", pojo, mapOf("id" to 1)))
         assertNull(invokeDefault("get", pojo, "id"))
         invokeDefault("set", pojo, "id", 1)
-        invokeDefault("set__kClass", pojo, KPojo::class)
+        invokeDefault("set__kType", pojo, typeOf<KPojo>())
         invokeDefault("set__tableName", pojo, "ignored")
         invokeDefault("set__tableComment", pojo, "ignored")
         invokeDefault("set__columns", pojo, mutableListOf<Field>())

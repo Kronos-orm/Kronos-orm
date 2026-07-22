@@ -19,14 +19,15 @@
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_condition_advanced")
 data class AdvancedConditionUser(
@@ -39,7 +40,8 @@ data class AdvancedConditionUser(
 
 data class CapturedAdvancedCondition(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun advancedWhere(user: AdvancedConditionUser, block: ToFilter<AdvancedConditionUser, Boolean?>): CapturedAdvancedCondition {
@@ -47,14 +49,15 @@ fun advancedWhere(user: AdvancedConditionUser, block: ToFilter<AdvancedCondition
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedAdvancedCondition(sqlExpr, parameterValues.toMap())
+        result = CapturedAdvancedCondition(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedAdvancedCondition(null, emptyMap())
+    return result ?: CapturedAdvancedCondition(null, emptyMap(), emptyMap())
 }
 
 fun advancedParameterValue(actual: CapturedAdvancedCondition, expr: SqlExpr?): Any? {
-    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
-    return actual.parameters[name]
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun box(): String {
@@ -88,7 +91,7 @@ fun box(): String {
     val startsWithColumn = startsWith?.expr as? SqlExpr.Column
     if (startsWithColumn?.columnName != "user_name") return "Fail: columnName was ${startsWithColumn?.columnName}"
     if (startsWith?.escape != SqlExpr.StringLiteral("\\")) return "Fail: startsWith escape was ${startsWith?.escape}"
-    if (advancedParameterValue(customColumn, startsWith?.pattern) != TransformerSafeValue("A\\%\\_\\\\%", typeOf<String>())) {
+    if (advancedParameterValue(customColumn, startsWith?.pattern) != "A\\%\\_\\\\%") {
         return "Fail: startsWith value was ${advancedParameterValue(customColumn, startsWith?.pattern)}"
     }
 

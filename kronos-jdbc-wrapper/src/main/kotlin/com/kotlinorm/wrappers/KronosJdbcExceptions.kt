@@ -85,10 +85,31 @@ class KronosSqlWarningException(
     warning
 )
 
+/**
+ * Converts a checked JDBC failure into Kronos's unchecked exception hierarchy.
+ *
+ * Translation receives the positional SQL and values actually sent to the driver, so the
+ * resulting exception describes the executed statement rather than the pre-parsed task.
+ */
 fun interface KronosSQLExceptionTranslator {
+    /**
+     * Translates [exception] while retaining execution context.
+     *
+     * @param sql positional SQL, or `null` when unavailable
+     * @param params materialized JDBC values in binding order
+     * @param exception original driver exception
+     * @return unchecked Kronos exception suitable for propagation
+     */
     fun translate(sql: String?, params: List<Any?>, exception: SQLException): KronosJdbcException
 }
 
+/**
+ * Default SQLState/vendor-code translator.
+ *
+ * Duplicate keys are recognized before broad SQLState categories; connection, integrity,
+ * transient/timeout, grammar, and uncategorized failures then map to their corresponding
+ * Kronos exception types.
+ */
 class SqlStateSQLExceptionTranslator : KronosSQLExceptionTranslator {
     override fun translate(sql: String?, params: List<Any?>, exception: SQLException): KronosJdbcException {
         val state = exception.sqlState.orEmpty()

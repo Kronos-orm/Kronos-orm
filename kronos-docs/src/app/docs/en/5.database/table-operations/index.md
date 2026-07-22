@@ -84,10 +84,10 @@ Check if the table exists by KPojo.
 - **Function declaration**
     
     ```kotlin
-    inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()): Boolean
+    inline fun <reified T : KPojo> exists(instance: T = createKPojo<T>()): Boolean
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos implement instantiating KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos create KPojo from KType without reflective construction?"])}}_</small>
 
 - **Usage Example**
 
@@ -99,7 +99,7 @@ Check if the table exists by KPojo.
 
 - **Parameters**
 
-  {{ $.params([['instance', 'Entity object. The generic overload can create the default instance when `T` has a no-argument constructor.', 'T', 'T::class.createInstance()']]) }}
+  {{ $.params([['instance', 'Entity object. The generic overload uses the generated or registered factory for `T`.', 'T', 'createKPojo<T>()']]) }}
 
 - **Return value**
 
@@ -118,10 +118,10 @@ Create a table by KPojo.
 - **Function declaration**
     
     ```kotlin
-    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance())
+    inline fun <reified T : KPojo> createTable(instance: T = createKPojo<T>())
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos implement instantiating KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos create KPojo from KType without reflective construction?"])}}_</small>
 
 - **Usage Example**
 
@@ -133,7 +133,7 @@ Create a table by KPojo.
 
 - **Parameters**
 
-  {{ $.params([['instance', 'Entity object. The generic overload can create the default instance when `T` has a no-argument constructor.', 'T', 'T::class.createInstance()']]) }}
+  {{ $.params([['instance', 'Entity object. The generic overload uses the generated or registered factory for `T`.', 'T', 'createKPojo<T>()']]) }}
 
 {{ $.hr() }}
 
@@ -145,12 +145,12 @@ Create a table from a `KSelectable` or `UnionClause` query by passing the target
 
     ```kotlin
     inline fun <reified T : KPojo> createTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: KSelectable<*>
     )
 
     inline fun <reified T : KPojo> createTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         query: UnionClause<*>
     )
     ```
@@ -213,12 +213,12 @@ Clear the table by KPojo.
 
     ```kotlin
     inline fun <reified T : KPojo> truncateTable(
-        instance: T = T::class.createInstance(),
+        instance: T = createKPojo<T>(),
         restartIdentity: Boolean = true
     )
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos is how to instantiate KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos create KPojo from KType without reflective construction?"])}}_</small>
 
 - **Usage Example**
 
@@ -230,7 +230,7 @@ Clear the table by KPojo.
 
 - **Parameters**
 
-  {{ $.params([['instance', 'Entity object. The generic overload can create the default instance when `T` has a no-argument constructor.', 'T', 'T::class.createInstance()'], ['restartIdentity', 'Whether to reset the auto-increment value. PostgreSQL and SQLite have explicit reset behavior; other dialects keep their native truncate behavior.', 'Boolean', 'true']]) }}
+  {{ $.params([['instance', 'Entity object. The generic overload uses the generated or registered factory for `T`.', 'T', 'createKPojo<T>()'], ['restartIdentity', 'Whether to reset the auto-increment value. PostgreSQL and SQLite have explicit reset behavior; other dialects keep their native truncate behavior.', 'Boolean', 'true']]) }}
 
 {{ $.hr() }}
 
@@ -266,10 +266,10 @@ Delete one or more tables by table name.
 - **Function declaration**
 
     ```kotlin
-    inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance())
+    inline fun <reified T : KPojo> dropTable(instance: T = createKPojo<T>())
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos is how to instantiate KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos create KPojo from KType without reflective construction?"])}}_</small>
 
 - **Usage Example**
 
@@ -281,7 +281,7 @@ Delete one or more tables by table name.
 
 - **Parameters**
   
-  {{ $.params([['instance', 'Entity object. The generic overload can create the default instance when `T` has a no-argument constructor.', 'T', 'T::class.createInstance()']]) }}
+  {{ $.params([['instance', 'Entity object. The generic overload uses the generated or registered factory for `T`.', 'T', 'createKPojo<T>()']]) }}
 
 {{ $.hr() }}
 
@@ -294,10 +294,10 @@ Delete one or more tables by table name.
 - **Function declaration**
     
     ```kotlin
-    inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean
+    inline fun <reified T : KPojo> syncTable(instance: T = createKPojo<T>()): Boolean
     ```
 
-<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["Kronos is how to instantiate KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
+<small>_{{ $.keyword("advanced/kpojo-dynamic-instantiate", ["How does Kronos create KPojo from KType without reflective construction?"])}}_</small>
 
 - **Usage Example**
 
@@ -309,7 +309,7 @@ Delete one or more tables by table name.
 
 - **Parameters**
 
-  {{ $.params([['instance', 'Entity object. The generic overload can create the default instance when `T` has a no-argument constructor.', 'T', 'T::class.createInstance()']]) }}
+  {{ $.params([['instance', 'Entity object. The generic overload uses the generated or registered factory for `T`.', 'T', 'createKPojo<T>()']]) }}
 
 - **Return value**
 

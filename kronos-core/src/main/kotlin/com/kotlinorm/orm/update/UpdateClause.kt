@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.update
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -58,7 +59,7 @@ class UpdateClause<T : KPojo>(
     private val metadata = pojo.resolveRuntimeMetadata()
     internal val context = OrmContext(
         pojo = pojo,
-        kClass = metadata.kClass,
+        kType = metadata.kType,
         tableName = metadata.tableName,
         declaredTableName = metadata.allColumns.firstOrNull { it.tableName.isNotBlank() }?.tableName
             ?: metadata.tableName,
@@ -173,11 +174,11 @@ class UpdateClause<T : KPojo>(
                 this@filter.sourceValues = sourceValues.toMutableMap()
                 this@filter.operationType = operationType
                 updateCondition(filterTable)
-                this@filter.sqlExpr?.let { expr ->
-                    context.andWhere(expr)
-                    this@filter.parameterValues.forEach { (name, value) ->
-                        bind(name, value, null, ParameterSource.Condition)
-                    }
+                    this@filter.sqlExpr?.let { expr ->
+                        context.andWhere(expr)
+                        this@filter.parameterValues.forEach { (name, value) ->
+                            bind(name, value, this@filter.parameterFields[name], ParameterSource.Condition)
+                        }
                 }
             }
         }
@@ -200,10 +201,15 @@ class UpdateClause<T : KPojo>(
         val parameters = linkedMapOf<String, Any?>()
         parameters.putAll(context.parameterValues())
         val existingNames = parameters.keys.toSet()
-        val query = value.materializeSqlQuery(parameters, assignmentParameterCounter)
+        val parameterFields = linkedMapOf<String, Field>()
+        val query = value.materializeSqlQuery(
+            parameters,
+            assignmentParameterCounter,
+            parameterFields = parameterFields
+        )
         parameters.forEach { (name, parameterValue) ->
             if (name !in existingNames) {
-                context.bind(name, parameterValue, null, source)
+                context.bind(name, parameterValue, parameterFields[name], source)
             }
         }
         return SqlExpr.Subquery(query)
@@ -232,7 +238,6 @@ class UpdateClause<T : KPojo>(
             context.cascadeAllowed,
             context.pojo,
             targetType,
-            context.kClass,
             paramMap,
             toUpdateFields,
             context.where,

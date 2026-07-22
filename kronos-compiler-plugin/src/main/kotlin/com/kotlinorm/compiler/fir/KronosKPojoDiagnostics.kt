@@ -16,6 +16,7 @@
 
 package com.kotlinorm.compiler.fir
 
+import com.kotlinorm.compiler.utils.ErrorMessages
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactory0
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactoryToRendererMap
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
@@ -35,6 +36,22 @@ object KronosKPojoDiagnostics : KtDiagnosticsContainer() {
         getRendererFactory()
     )
 
+    val INACCESSIBLE_ENUM_METADATA: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+        "KRONOS_INACCESSIBLE_ENUM_METADATA",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        kronosDiagnosticPsiElementClass(),
+        getRendererFactory()
+    )
+
+    val INACCESSIBLE_KPOJO_FACTORY: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+        "KRONOS_INACCESSIBLE_KPOJO_FACTORY",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DECLARATION_NAME,
+        kronosDiagnosticPsiElementClass(),
+        getRendererFactory()
+    )
+
     override fun getRendererFactory(): BaseDiagnosticRendererFactory = KronosKPojoDiagnosticMessages
 }
 
@@ -46,6 +63,15 @@ object KronosKPojoDiagnosticMessages : BaseDiagnosticRendererFactory() {
         map.put(
             KronosKPojoDiagnostics.GENERIC_KPOJO_NOT_SUPPORTED,
             "Generic KPojo declarations are not supported; use a non-generic KPojo with concrete property types"
+        )
+        map.put(
+            KronosKPojoDiagnostics.INACCESSIBLE_ENUM_METADATA,
+            "Kronos cannot generate required enum metadata for a private or otherwise inaccessible enum; " +
+                "make the enum and its containing declarations public or internal"
+        )
+        map.put(
+            KronosKPojoDiagnostics.INACCESSIBLE_KPOJO_FACTORY,
+            ErrorMessages.INACCESSIBLE_KPOJO_FACTORY
         )
     }
 }

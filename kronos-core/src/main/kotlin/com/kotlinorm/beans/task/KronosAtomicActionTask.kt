@@ -22,11 +22,22 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
- * Kronos Atomic Task
+ * Execution metadata for one insert, update, or delete statement.
  *
- * Atomic execution task for Insert、Update、Delete
+ * [stash] carries operation-local binding hints to the data-source wrapper. Generated-key
+ * output remains raw JDBC data: when [generatedKeyRequest] is non-null for an insert, the
+ * wrapper replaces [generatedKeys] with the returned values and derives [lastInsertId]
+ * from the first numeric key when possible.
  *
- * @author OUSC
+ * @property sql named-parameter SQL to execute
+ * @property paramMap values keyed by SQL parameter name
+ * @property operationType action operation classification
+ * @property statement optional structured statement that produced [sql]
+ * @property stash mutable operation-local metadata shared with the data-source wrapper
+ * @property generatedKeyRequest requested generated-key assignment, or `null` when disabled
+ * @property generatedKeys raw generated values returned by the JDBC driver
+ * @property lastInsertId numeric representation of the first generated key, when available
+ * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
  */
 data class KronosAtomicActionTask(
     override var sql: String,
@@ -41,9 +52,10 @@ data class KronosAtomicActionTask(
 ) : KAtomicActionTask {
 
     /**
-     * Parses the SQL statement and returns a pair of JDBC SQL and a list of JDBC parameter lists.
+     * Materializes named SQL and parameters into the exact JDBC SQL, value order, and
+     * parameter-name order used by binding.
      *
-     * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
+     * @return parsed JDBC statement metadata for this action
      */
     override fun parsed() = parseSqlStatement(sql, paramMap, listParameterOccurrences)
 }

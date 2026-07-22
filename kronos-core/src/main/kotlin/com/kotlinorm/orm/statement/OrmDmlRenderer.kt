@@ -12,7 +12,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.statement.SqlStatement
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.toDatabaseValue
 
 internal object OrmDmlRenderer {
     fun <T : KPojo> render(
@@ -25,18 +24,12 @@ internal object OrmDmlRenderer {
             dataSource = dataSource,
             statement = sqlStatement,
             parameterValues = context.parameterValues(),
-            fieldsMap = context.fieldMap
-        )
-        val parameters = context.renderedDatabaseParameters(
-            dataSource,
-            renderedSql.sql,
-            context.fieldMap,
-            ::toDatabaseValue
+            fieldsMap = context.parameterFields()
         )
         return RenderedOrmDml(
             sql = renderedSql.sql,
-            paramMap = parameters,
-            jdbcTypeHints = context.jdbcNullParameterTypeHints(parameters.keys),
+            paramMap = renderedSql.parameters,
+            jdbcTypeHints = context.jdbcNullParameterTypeHints(renderedSql.parameters.keys),
             listParameterOccurrences = renderedSql.listParameterOccurrences
         )
     }

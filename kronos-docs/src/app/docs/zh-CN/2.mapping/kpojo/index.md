@@ -80,7 +80,7 @@ values -> {id=1, name=Ada, age=null}
 
 ## 动态对象表
 
-表结构只在运行时确定时，可以创建一个手动实现 `KPojo` 的对象，并把 `__kClass` 设为 `KPojo::class`。这个对象同时携带元数据属性和普通 Kotlin 属性，因此可以继续使用 select DSL。显式重载的元数据属性需要标记 `@Ignore([IgnoreAction.ALL])`，避免它们被当作表字段。
+表结构只在运行时确定时，可以创建一个手动实现 `KPojo` 的对象，并把 `__kType` 设为 `typeOf<KPojo>()`。这个对象同时携带元数据属性和普通 Kotlin 属性，因此可以继续使用 select DSL。显式重载的元数据属性需要标记 `@Ignore([IgnoreAction.ALL])`，避免它们被当作表字段。
 
 ```kotlin group="KPojo Dynamic" name="dynamic table" icon="kotlin"
 import com.kotlinorm.annotations.Ignore
@@ -88,10 +88,12 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 val runtimeUser = object : KPojo {
     @Ignore([IgnoreAction.ALL])
-    override var __kClass: kotlin.reflect.KClass<out KPojo> = KPojo::class
+    override var __kType: KType = typeOf<KPojo>()
     @Ignore([IgnoreAction.ALL])
     override var __tableName = "tb_runtime_user"
     @Ignore([IgnoreAction.ALL])

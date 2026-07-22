@@ -18,14 +18,15 @@
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_method_criteria")
 data class MethodCriteriaUser(
@@ -37,7 +38,8 @@ data class MethodCriteriaUser(
 
 data class CapturedMethodCondition(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun methodWhere(user: MethodCriteriaUser, block: ToFilter<MethodCriteriaUser, Boolean?>): CapturedMethodCondition {
@@ -45,14 +47,15 @@ fun methodWhere(user: MethodCriteriaUser, block: ToFilter<MethodCriteriaUser, Bo
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedMethodCondition(sqlExpr, parameterValues.toMap())
+        result = CapturedMethodCondition(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedMethodCondition(null, emptyMap())
+    return result ?: CapturedMethodCondition(null, emptyMap(), emptyMap())
 }
 
 fun methodParameterValue(actual: CapturedMethodCondition, expr: SqlExpr?): Any? {
-    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
-    return actual.parameters[name]
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun expectMethod(condition: Boolean, message: () -> String): String? {
@@ -82,7 +85,7 @@ fun box(): String {
 
     val failures = listOfNotNull(
         expectMethod(likeColumn?.columnName == "name") { "like field was ${likeColumn?.columnName}" },
-        expectMethod(methodParameterValue(like, likeExpr?.pattern) == TransformerSafeValue("A%", typeOf<String>())) {
+        expectMethod(methodParameterValue(like, likeExpr?.pattern) == "A%") {
             "like value was ${methodParameterValue(like, likeExpr?.pattern)}"
         },
         expectMethod(notBetweenColumn?.columnName == "age") { "notBetween field was ${notBetweenColumn?.columnName}" },

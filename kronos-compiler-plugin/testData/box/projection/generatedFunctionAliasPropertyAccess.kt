@@ -30,6 +30,8 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table("tb_projection_function_alias_access")
 data class GeneratedFunctionAliasUser(
@@ -42,14 +44,13 @@ class GeneratedFunctionAliasWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:generated-function-alias"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
     override fun first(task: KAtomicQueryTask): Any? {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return null
-        mappedClasses += kClass
-        return mapOf("id" to 9, "nameLength" to 4).mapperTo(kClass as KClass<out KPojo>)
+        mappedTypes += task.targetType
+        return mapOf("id" to 9, "nameLength" to 4).mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0
@@ -71,16 +72,20 @@ fun box(): String {
         .select { [it.id, f.length(it.username).alias("nameLength")] }
         .first(wrapper)
     val fieldNames = row.__columns.map { it.name }.toSet()
+    val mappedType = wrapper.mappedTypes.singleOrNull()
 
     val failures = listOfNotNull(
         expectGeneratedFunctionAlias(row.id == 9) { "id was ${row.id}" },
         expectGeneratedFunctionAlias(row.nameLength == 4) { "nameLength was ${row.nameLength}" },
         expectGeneratedFunctionAlias(fieldNames == setOf("id", "nameLength")) { "field names were $fieldNames" },
-        expectGeneratedFunctionAlias(wrapper.mappedClasses.singleOrNull() != GeneratedFunctionAliasUser::class) {
-            "mapped source class ${GeneratedFunctionAliasUser::class}"
+        expectGeneratedFunctionAlias(mappedType != typeOf<GeneratedFunctionAliasUser>()) {
+            "mapped source type ${typeOf<GeneratedFunctionAliasUser>()}"
         },
-        expectGeneratedFunctionAlias(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
-            "mapped classes were ${wrapper.mappedClasses}"
+        expectGeneratedFunctionAlias(mappedType != null && !mappedType.isMarkedNullable && mappedType.arguments.isEmpty()) {
+            "mapped type was $mappedType"
+        },
+        expectGeneratedFunctionAlias((mappedType?.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped types were ${wrapper.mappedTypes}"
         },
     )
 

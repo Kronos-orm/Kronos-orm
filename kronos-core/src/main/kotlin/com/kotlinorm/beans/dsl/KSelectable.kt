@@ -16,17 +16,20 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.annotations.InternalKronosApi
+import com.kotlinorm.beans.task.ResultColumnMetadata
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.cache.fieldsMapCache
+import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.InsertClause
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.types.ToInsertSelect
-import com.kotlinorm.utils.createInstance
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.KTypeKey
+import com.kotlinorm.utils.createKPojo
 import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 abstract class KSelectable<Selected : KPojo>(
     internal open val pojo: KPojo
@@ -79,26 +82,29 @@ abstract class KSelectable<Selected : KPojo>(
         return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
     }
 
-    @Suppress("UNCHECKED_CAST")
-    internal fun resultColumnTypes(fieldsByLabel: Map<String, Field> = emptyMap()): Map<String, KType> {
-        val selectedClass = selectedType.classifier as? KClass<*> ?: return emptyMap()
-        val projectionTypes = if (selectedClass == KPojo::class) {
+    @OptIn(InternalKronosApi::class)
+    internal fun resultColumns(fieldsByLabel: Map<String, Field> = emptyMap()): Map<String, ResultColumnMetadata> {
+        val projectionColumns = if (
+            KTypeKey.from(selectedType, ignoreTopLevelNullability = true) == KTypeKey.from(typeOf<KPojo>())
+        ) {
             emptyMap()
         } else {
-            fieldsMapCache[selectedClass as KClass<KPojo>]
-                ?.mapNotNull { (label, field) -> field.kType?.let { label to it } }
+            kPojoAllFieldsCache[selectedType]
+                ?.mapNotNull { field ->
+                    val label = field.name.ifBlank { field.columnName }
+                    field.kType?.let { type ->
+                        label to ResultColumnMetadata(type, field, columnLabel = label)
+                    }
+                }
                 ?.toMap()
                 .orEmpty()
         }
         return buildMap {
-            putAll(projectionTypes)
+            putAll(projectionColumns)
             fieldsByLabel.forEach { (label, field) ->
                 val targetType = field.kType ?: return@forEach
-                listOf(label, field.name, field.columnName).forEach { name ->
-                    put(name, targetType)
-                    put(name.uppercase(), targetType)
-                    put(name.lowercase(), targetType)
-                }
+                val metadata = ResultColumnMetadata(targetType, field, columnLabel = label)
+                put(label, metadata)
             }
         }
     }
@@ -114,6 +120,6 @@ abstract class KSelectable<Selected : KPojo>(
     inline fun <reified Target : KPojo> insert(
         noinline values: ToInsertSelect<Selected, Any?> = null
     ): InsertClause<Target> {
-        return InsertClause(Target::class.createInstance()).fromSource(this, values)
+        return InsertClause(createKPojo<Target>()).fromSource(this, values)
     }
 }

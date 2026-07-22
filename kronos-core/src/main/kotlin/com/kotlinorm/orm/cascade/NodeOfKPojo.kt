@@ -80,7 +80,7 @@ data class NodeOfKPojo(
     internal val validCascades by lazy {
         val tableName = metadata.tableName
         findValidRefs(
-            metadata.kClass,
+            metadata.kType,
             metadata.allFields,
             operationType,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(),

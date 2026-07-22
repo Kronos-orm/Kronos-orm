@@ -35,7 +35,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 @Table("tb_join_page_user")
 data class JoinPageUser(
@@ -64,11 +64,8 @@ class JoinPageWrapper : KronosDataSourceWrapper {
     override fun first(task: KAtomicQueryTask): Any? = mapResult(task)
 
     private fun mapResult(task: KAtomicQueryTask): Any {
-        val classifier = task.targetType.classifier
-        if (classifier == Map::class) return joinPageRow
-        val kClass = classifier as? KClass<*> ?: return joinPageRow
-        @Suppress("UNCHECKED_CAST")
-        return joinPageRow.mapperTo(kClass as KClass<out KPojo>)
+        if (task.targetType == typeOf<Map<String, Any?>>()) return joinPageRow
+        return joinPageRow.mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0

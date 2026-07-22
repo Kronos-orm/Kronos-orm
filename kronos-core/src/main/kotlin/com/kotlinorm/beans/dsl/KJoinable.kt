@@ -19,7 +19,7 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.table.SqlJoinType
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * KJoinable
@@ -29,13 +29,13 @@ import kotlin.reflect.KClass
  * @property tableName The name of the table of the joint table
  * @property joinType The type of the table joint
  * @property condition Conditions for joining tables
- * @property kClass The class of the POJO
+ * @property kType The complete declared type of the POJO
  * @property kPojo The POJO object
  */
 class KJoinable (
     val tableName: String,
     val joinType: SqlJoinType,
-    val kClass: KClass<out KPojo>,
+    val kType: KType,
     val kPojo: KPojo,
     val condition: SqlExpr? = null,
     val tableAliasOverrides: Map<String, String> = emptyMap()

@@ -11,6 +11,7 @@ dependencies {
     api(project(":kronos-compiler-plugin"))
     implementation(libs.kotlin.maven.plugin)
     implementation(libs.maven.core)
+    testImplementation(libs.kotlin.test)
 }
 
 // A bit of a hack to copy over the META-INF services information so that Maven knows about the NullDefaultsComponentRegistrar

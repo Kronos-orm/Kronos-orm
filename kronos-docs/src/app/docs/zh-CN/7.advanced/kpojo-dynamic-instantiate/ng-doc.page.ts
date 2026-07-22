@@ -3,7 +3,7 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将为您介绍Kronos如何实现动态将KClass转换为KPojo实例，且不需要反射，零开销。
+ * 本文介绍 Kronos 如何根据完整 KType 元数据创建 KPojo 实例，而不使用反射构造。
  * @status:info 新
  */
 const KPojoGenericInstantiatePage: NgDocPage = {

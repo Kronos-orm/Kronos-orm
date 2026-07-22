@@ -1,10 +1,19 @@
 package com.kotlinorm.utils
 
+import com.kotlinorm.utils.codec.PreparedValue
+import com.kotlinorm.utils.codec.PreparedValueKind
+import com.kotlinorm.utils.codec.ValueCodecRegistry
+import com.kotlinorm.utils.codec.ValueConversionRequest
+import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransformer
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.enums.ValueCodecOrigin
+import com.kotlinorm.exceptions.ValueMappingException
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.valueCodec
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import com.kotlinorm.wrappers.SamplePostgresJdbcWrapper
@@ -20,31 +29,49 @@ import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class CommonUtilTest {
     @Test
     fun tesSetCommonStrategy() {
         val strategy = KronosCommonStrategy(false, Field("field"))
+        val clock = Clock.system(timeZone)
+
+        fun assertStrategyTemporalValue(
+            target: KronosCommonStrategy,
+            expectedField: Field
+        ) {
+            val before = LocalDateTime.now(clock)
+            lateinit var current: PreparedValue
+
+            target.execute(true) { field, value ->
+                assertEquals(expectedField, field)
+                assertTrue(value is PreparedValue)
+                current = value
+            }
+
+            val after = LocalDateTime.now(clock)
+            assertEquals(PreparedValueKind.STRATEGY_TEMPORAL, current.kind)
+            assertEquals(typeOf<LocalDateTime>(), current.sourceType)
+            assertNull(current.dateFormat)
+            assertTrue((current.value as LocalDateTime) in before..after)
+        }
 
         strategy.execute(defaultValue = 0) { field, value ->
             assertEquals(field, Field("field"))
             assertTrue(value == 0)
         }
 
-        strategy.execute(true) { _, value ->
-            assertTrue(value is CurrentTemporalValue)
-            assertTrue(LocalDateTime.now(Clock.system(timeZone)).isAfter(value.value))
-        }
+        assertStrategyTemporalValue(strategy, Field("field"))
 
         val pattern = "MMM dd, yyyy HH:mm:ss"
         val dateTimeStrategy = KronosCommonStrategy(false, Field("field", dateFormat = pattern))
-        dateTimeStrategy.execute(true) { _, value ->
-            assertTrue(value is CurrentTemporalValue)
-            assertTrue(LocalDateTime.now(Clock.system(timeZone)).isAfter(value.value))
-        }
+        assertStrategyTemporalValue(dateTimeStrategy, Field("field", dateFormat = pattern))
     }
 
     @Test
@@ -63,97 +90,97 @@ class CommonUtilTest {
 
     @OptIn(ExperimentalTime::class)
     @Test
-    fun testGetTypeSafeValue() {
+    fun valueCodecRegistryConvertsBuiltInAndCustomValues() {
         // 测试整数类型
-        assertEquals(42, getTypeSafeValue(typeOf<Int>(), 42))
-        assertEquals(42, getTypeSafeValue(typeOf<Int>(), "42"))
-        assertEquals(42, getTypeSafeValue(typeOf<Int>(), 42.0))
+        assertEquals(42, convert(typeOf<Int>(), 42))
+        assertEquals(42, convert(typeOf<Int>(), "42"))
+        assertEquals(42, convert(typeOf<Int>(), 42.0))
 
         // 测试长整型
-        assertEquals(42L, getTypeSafeValue(typeOf<Long>(), 42))
-        assertEquals(42L, getTypeSafeValue(typeOf<Long>(), "42"))
-        assertEquals(42L, getTypeSafeValue(typeOf<Long>(), 42.0))
+        assertEquals(42L, convert(typeOf<Long>(), 42))
+        assertEquals(42L, convert(typeOf<Long>(), "42"))
+        assertEquals(42L, convert(typeOf<Long>(), 42.0))
 
         // 测试短整型
-        assertEquals(42.toShort(), getTypeSafeValue(typeOf<Short>(), 42))
-        assertEquals(42.toShort(), getTypeSafeValue(typeOf<Short>(), "42"))
+        assertEquals(42.toShort(), convert(typeOf<Short>(), 42))
+        assertEquals(42.toShort(), convert(typeOf<Short>(), "42"))
 
         // 测试浮点型
-        assertEquals(42f, getTypeSafeValue(typeOf<Float>(), 42))
-        assertEquals(42f, getTypeSafeValue(typeOf<Float>(), "42.0"))
+        assertEquals(42f, convert(typeOf<Float>(), 42))
+        assertEquals(42f, convert(typeOf<Float>(), "42.0"))
 
         // 测试双精度浮点型
-        assertEquals(42.0, getTypeSafeValue(typeOf<Double>(), 42))
-        assertEquals(42.0, getTypeSafeValue(typeOf<Double>(), "42.0"))
+        assertEquals(42.0, convert(typeOf<Double>(), 42))
+        assertEquals(42.0, convert(typeOf<Double>(), "42.0"))
 
         // 测试精确数值类型
-        assertEquals(BigDecimal("42.50"), getTypeSafeValue(typeOf<BigDecimal>(), "42.50"))
-        assertEquals(BigDecimal("42.5"), getTypeSafeValue(typeOf<BigDecimal>(), 42.5))
-        assertEquals(BigDecimal("42"), getTypeSafeValue(typeOf<BigDecimal>(), BigInteger("42")))
-        assertEquals(BigInteger("42"), getTypeSafeValue(typeOf<BigInteger>(), "42"))
-        assertEquals(BigInteger("42"), getTypeSafeValue(typeOf<BigInteger>(), BigDecimal("42.50")))
+        assertEquals(BigDecimal("42.50"), convert(typeOf<BigDecimal>(), "42.50"))
+        assertEquals(BigDecimal("42.5"), convert(typeOf<BigDecimal>(), 42.5))
+        assertEquals(BigDecimal("42"), convert(typeOf<BigDecimal>(), BigInteger("42")))
+        assertEquals(BigInteger("42"), convert(typeOf<BigInteger>(), "42"))
+        assertEquals(BigInteger("42"), convert(typeOf<BigInteger>(), BigDecimal("42.50")))
 
         // 测试字节型
-        assertEquals(42.toByte(), getTypeSafeValue(typeOf<Byte>(), 42))
-        assertEquals(42.toByte(), getTypeSafeValue(typeOf<Byte>(), "42"))
+        assertEquals(42.toByte(), convert(typeOf<Byte>(), 42))
+        assertEquals(42.toByte(), convert(typeOf<Byte>(), "42"))
 
         // 测试字符型
-        assertEquals('A', getTypeSafeValue(typeOf<Char>(), 65))
-        assertEquals('A', getTypeSafeValue(typeOf<Char>(), "A"))
+        assertEquals('A', convert(typeOf<Char>(), 65))
+        assertEquals('A', convert(typeOf<Char>(), "A"))
 
         // 测试字符串型
-        assertEquals("42", getTypeSafeValue(typeOf<String>(), 42))
-        assertEquals("Hello", getTypeSafeValue(typeOf<String>(), "Hello"))
+        assertEquals("42", convert(typeOf<String>(), 42))
+        assertEquals("Hello", convert(typeOf<String>(), "Hello"))
 
         // 测试布尔型
-        assertEquals(true, getTypeSafeValue(typeOf<Boolean>(), 1))
-        assertEquals(false, getTypeSafeValue(typeOf<Boolean>(), 0))
-        assertEquals(true, getTypeSafeValue(typeOf<Boolean>(), "true"))
-        assertEquals(false, getTypeSafeValue(typeOf<Boolean>(), "false"))
+        assertEquals(true, convert(typeOf<Boolean>(), 1))
+        assertEquals(false, convert(typeOf<Boolean>(), 0))
+        assertEquals(true, convert(typeOf<Boolean>(), "true"))
+        assertEquals(false, convert(typeOf<Boolean>(), "false"))
 
         // 测试日期时间类型
         val dateTimeString = "2023-10-17T10:00:00"
         assertEquals(
             LocalDateTime.parse(dateTimeString),
-            getTypeSafeValue(typeOf<LocalDateTime>(), dateTimeString)
+            convert(typeOf<LocalDateTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).toLocalDate(),
-            getTypeSafeValue(typeOf<LocalDate>(), dateTimeString)
+            convert(typeOf<LocalDate>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).toLocalTime(),
-            getTypeSafeValue(typeOf<java.time.LocalTime>(), dateTimeString)
+            convert(typeOf<java.time.LocalTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()),
-            getTypeSafeValue(typeOf<java.time.ZonedDateTime>(), dateTimeString)
+            convert(typeOf<java.time.ZonedDateTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toOffsetDateTime(),
-            getTypeSafeValue(typeOf<java.time.OffsetDateTime>(), dateTimeString)
+            convert(typeOf<java.time.OffsetDateTime>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant(),
-            getTypeSafeValue(typeOf<java.time.Instant>(), dateTimeString)
+            convert(typeOf<java.time.Instant>(), dateTimeString)
         )
         assertEquals(
             LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-            getTypeSafeValue(typeOf<Long>(), LocalDateTime.parse(dateTimeString))
+            convert(typeOf<Long>(), LocalDateTime.parse(dateTimeString))
         )
         assertEquals(
             "2023-10-17 10:00:00",
-            getTypeSafeValue(typeOf<String>(), LocalDateTime.parse(dateTimeString))
+            convert(typeOf<String>(), LocalDateTime.parse(dateTimeString))
         )
 
         // 测试Instant类型
         assertEquals(
-            getTypeSafeValue(typeOf<java.time.Instant>(), dateTimeString), LocalDateTime.parse(dateTimeString)
+            convert(typeOf<java.time.Instant>(), dateTimeString), LocalDateTime.parse(dateTimeString)
                 .atZone(timeZone).toInstant()
         )
 
         // 测试java.util.Date类型
-        val date = getTypeSafeValue(typeOf<Date>(), dateTimeString)
+        val date = convert(typeOf<Date>(), dateTimeString)
         assertEquals(
             date,
             Date.from(LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant())
@@ -163,13 +190,12 @@ class CommonUtilTest {
         val dateString = dateTimeString.slice(0..<10)
         assertEquals(
             LocalDate.parse(dateString),
-            getTypeSafeValue(
+            convert(
                 typeOf<LocalDate>(), java.sql.Date.valueOf(dateString)
             )
         )
 
-        // 将 KotlinXDateTimeTransformer 添加到值转换器列表中
-        registerValueTransformer(KotlinXDateTimeTransformer)
+        val kotlinXRegistration = Kronos.registerValueCodec(KotlinXDateTimeCodec)
 
         // 测试kotlinx.datetime类型
         val dateTime = kotlinx.datetime.LocalDateTime.parse(dateTimeString)
@@ -177,47 +203,168 @@ class CommonUtilTest {
         val localDate = dateTime.date
         val localTime = dateTime.time
 
-        assertEquals(dateTime, getTypeSafeValue(typeOf<kotlinx.datetime.LocalDateTime>(), dateTimeString))
-        assertEquals(instant, getTypeSafeValue(typeOf<kotlinx.datetime.Instant>(), dateTimeString))
-        assertEquals(localDate, getTypeSafeValue(typeOf<kotlinx.datetime.LocalDate>(), dateTimeString))
-        assertEquals(localTime, getTypeSafeValue(typeOf<kotlinx.datetime.LocalTime>(), dateTimeString))
-        assertEquals("2023-10-17 10:00:00", getTypeSafeValue(typeOf<String>(), dateTime))
-        assertEquals(instant.toEpochMilliseconds(), getTypeSafeValue(typeOf<Long>(), dateTime))
+        assertEquals(dateTime, convert(typeOf<kotlinx.datetime.LocalDateTime>(), dateTimeString))
+        assertEquals(instant, convert(typeOf<Instant>(), dateTimeString))
+        assertEquals(localDate, convert(typeOf<kotlinx.datetime.LocalDate>(), dateTimeString))
+        assertEquals(localTime, convert(typeOf<kotlinx.datetime.LocalTime>(), dateTimeString))
+        assertEquals("2023-10-17 10:00:00", convert(typeOf<String>(), dateTime))
+        assertEquals(instant.toEpochMilliseconds(), convert(typeOf<Long>(), dateTime))
 
         // 测试无效输入
-        assertFailsWith<NumberFormatException> {
-            getTypeSafeValue(typeOf<Int>(), "invalid")
+        assertFailsWith<ValueMappingException> {
+            convert(typeOf<Int>(), "invalid")
         }
-        assertEquals(false, getTypeSafeValue(typeOf<Boolean>(), "invalid"))
+        assertEquals(false, convert(typeOf<Boolean>(), "invalid"))
+        kotlinXRegistration.close()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun toDatabaseValueUsesTransformerSafeValueForFieldKClass() {
+    fun toDatabaseValueUsesFieldKType() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val intField = Field("age", "age", kType = typeOf<Int>())
 
         assertEquals(42, toDatabaseValue(wrapper, intField, "42"))
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun toDatabaseParameterValueUsesTransformerSafeValueForSuffixedParameter() {
+    fun fieldBoundEncodePassesTheCompleteDeclaredSourceKType() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val fieldType = typeOf<Int?>()
+        val intField = Field("age", "age", kType = fieldType)
+        var seenSourceType: KType? = null
+        val registration = Kronos.registerValueCodec(valueCodec(
+            supports = { _, context ->
+                seenSourceType = context.sourceType
+                context.direction == ValueCodecDirection.ENCODE && context.targetType == fieldType
+            },
+            convert = { _, _ -> 42 }
+        ))
+
+        try {
+            assertEquals(42, toDatabaseValue(wrapper, intField, "42"))
+            assertEquals(fieldType, seenSourceType)
+        } finally {
+            registration.close()
+        }
+    }
+
+    @Test
+    fun toDatabaseParameterValueUsesFieldKTypeForSuffixedParameter() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val intField = Field("status", "status", kType = typeOf<Int>())
 
         assertEquals(7, toDatabaseParameterValue(wrapper, mapOf("status" to intField), "status@1", "7"))
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun toDatabaseValueUsesExplicitTransformerSafeValueBeforeFieldType() {
+    fun expandedListIndexBelongsToValueNameAndDoesNotCreateABatchIndex() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val intField = Field("status", "status", kType = typeOf<Int>())
+        val fields = mapOf("status" to intField)
+
+        val nonBatchFailure = assertFailsWith<ValueMappingException> {
+            toDatabaseParameterValue(
+                wrapper,
+                fields,
+                "status",
+                listOf("invalid"),
+                expandAsList = true
+            )
+        }
+        assertEquals("status[0]", nonBatchFailure.valueName)
+        assertNull(nonBatchFailure.batchIndex)
+
+        val batchFailure = assertFailsWith<ValueMappingException> {
+            toDatabaseParameterValue(
+                wrapper,
+                fields,
+                "status",
+                listOf("invalid"),
+                expandAsList = true,
+                batchIndex = 7
+            )
+        }
+        assertEquals("status[0]", batchFailure.valueName)
+        assertEquals(7, batchFailure.batchIndex)
+    }
+
+    @Test
+    fun databaseValueEntryPointsEncodeEnumsWithBuiltInCodec() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val statusField = Field("status", "status", kType = typeOf<CommonUtilStatus>())
+        val nullableStatusField = Field("optional_status", "optionalStatus", kType = typeOf<CommonUtilStatus?>())
+
+        assertEquals("READY", toDatabaseValue(wrapper, statusField, CommonUtilStatus.READY))
+        assertEquals("READY", toDatabaseValue(wrapper, nullableStatusField, CommonUtilStatus.READY))
+        assertEquals(
+            "READY",
+            toDatabaseParameterValue(
+                wrapper,
+                mapOf("status" to statusField),
+                "status@1",
+                CommonUtilStatus.READY
+            )
+        )
+    }
+
+    @Test
+    fun valueCodecRegistryDecodesEnumFromGeneratedMetadata() {
+        assertEquals(
+            CommonUtilStatus.CLOSED,
+            convert(typeOf<CommonUtilStatus>(), "CLOSED")
+        )
+    }
+
+    @Test
+    fun toDatabaseValueUsesReadyDatabaseValueBeforeFieldType() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val intField = Field("id", "id", kType = typeOf<Int>())
-        val pattern = TransformerSafeValue("1%", typeOf<String>())
+        val pattern = PreparedValue(
+            value = "1%",
+            sourceType = typeOf<String>(),
+            kind = PreparedValueKind.READY_DATABASE_VALUE
+        )
 
         assertEquals("1%", toDatabaseValue(wrapper, intField, pattern))
         assertEquals("1%", toDatabaseParameterValue(wrapper, mapOf("id" to intField), "id", pattern))
+    }
+
+    @Test
+    fun preparedNullIsUnwrappedWithoutFallingBackToTheTransportObject() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val nullableField = Field("value", "value", kType = typeOf<String?>())
+        val readyNull = PreparedValue(
+            value = null,
+            sourceType = typeOf<String?>(),
+            kind = PreparedValueKind.READY_DATABASE_VALUE
+        )
+        val strategyNull = PreparedValue(
+            value = null,
+            sourceType = typeOf<LocalDateTime?>(),
+            kind = PreparedValueKind.STRATEGY_TEMPORAL
+        )
+
+        assertNull(toDatabaseValue(wrapper, nullableField, readyNull))
+        assertNull(toDatabaseValue(wrapper, nullableField, strategyNull))
+    }
+
+    @Test
+    fun fieldBoundNullValidatesDeclaredKTypeNullability() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val nonNullField = Field("required", "required", kType = typeOf<String>())
+        val nullableField = Field("optional", "optional", kType = typeOf<String?>())
+
+        val failure = assertFailsWith<ValueMappingException> {
+            toDatabaseValue(wrapper, nonNullField, null)
+        }
+
+        assertEquals(ValueCodecDirection.ENCODE, failure.direction)
+        assertEquals(ValueCodecOrigin.PARAMETER, failure.origin)
+        assertEquals(typeOf<String>(), failure.targetType)
+        assertEquals("required", failure.fieldName)
+        assertEquals("required", failure.valueName)
+        assertEquals(null, toDatabaseValue(wrapper, nullableField, null))
+        assertEquals(null, toDatabaseValue(wrapper, Field("untyped"), null))
     }
 
     @Test
@@ -231,12 +378,26 @@ class CommonUtilTest {
         )
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun currentTemporalValueUsesPropertyTypeForVarcharStorage() {
+    fun temporalValueUsesDateFormatForVarcharStorage() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val current = LocalDateTime.of(2026, 7, 21, 13, 14, 15)
+        val field = Field(
+            "created_at",
+            "createdAt",
+            type = KColumnType.VARCHAR,
+            dateFormat = "dd/MM/yyyy HH:mm:ss",
+            kType = typeOf<LocalDateTime>()
+        )
+
+        assertEquals("21/07/2026 13:14:15", toDatabaseValue(wrapper, field, current))
+    }
+
+    @Test
+    fun strategyTemporalValueUsesPropertyTypeForVarcharStorage() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val current = LocalDateTime.of(2026, 7, 17, 12, 34, 56)
-        val value = CurrentTemporalValue(current)
+        val value = strategyTemporalValue(current)
         val pattern = "yyyy/MM/dd HH:mm:ss"
 
         assertEquals(
@@ -257,9 +418,8 @@ class CommonUtilTest {
         )
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun currentTemporalValueConvertsLongBigintWithoutReadingDateFormat() {
+    fun strategyTemporalValueConvertsLongBigintWithoutReadingDateFormat() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val current = LocalDateTime.of(2026, 7, 17, 12, 34, 56)
         val field = Field(
@@ -271,15 +431,15 @@ class CommonUtilTest {
 
         assertEquals(
             current.atZone(timeZone).toInstant().toEpochMilli(),
-            toDatabaseValue(wrapper, field, CurrentTemporalValue(current))
+            toDatabaseValue(wrapper, field, strategyTemporalValue(current))
         )
     }
 
     @Test
-    fun currentTemporalValueFallsBackToColumnTypeWithoutKType() {
+    fun strategyTemporalValueFallsBackToColumnTypeWithoutKType() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val current = LocalDateTime.of(2026, 7, 17, 12, 34, 56)
-        val value = CurrentTemporalValue(current)
+        val value = strategyTemporalValue(current)
         val cases = listOf(
             Field("as_bigint", type = KColumnType.BIGINT) to
                 current.atZone(timeZone).toInstant().toEpochMilli(),
@@ -296,7 +456,6 @@ class CommonUtilTest {
         }
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun databaseBooleanValueUsesNativeBooleanOnlyForBooleanFields() {
         val wrapper = SamplePostgresJdbcWrapper()
@@ -308,6 +467,24 @@ class CommonUtilTest {
         assertEquals(SqlExpr.BooleanLiteral(false), databaseBooleanLiteral(wrapper, booleanField, false))
         assertEquals(SqlExpr.NumberLiteral("0"), databaseBooleanLiteral(wrapper, intField, false))
     }
+
+    private fun convert(
+        targetType: KType,
+        value: Any?
+    ): Any? = ValueCodecRegistry.convert(
+        ValueConversionRequest(
+            value = value,
+            direction = ValueCodecDirection.DECODE,
+            origin = ValueCodecOrigin.MAP,
+            targetType = targetType
+        )
+    )
+
+    private fun strategyTemporalValue(value: LocalDateTime): PreparedValue = PreparedValue(
+        value = value,
+        sourceType = typeOf<LocalDateTime>(),
+        kind = PreparedValueKind.STRATEGY_TEMPORAL
+    )
 
     @Test
     fun returnsPairOfNumbersWhenBothArePresent() {
@@ -351,3 +528,12 @@ class CommonUtilTest {
         assertEquals(Pair(0, 0), result)
     }
 }
+
+enum class CommonUtilStatus {
+    READY,
+    CLOSED
+}
+
+data class CommonUtilEnumEntity(
+    var status: CommonUtilStatus? = null
+) : KPojo

@@ -20,7 +20,10 @@ package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.firstTypeArgument
+import com.kotlinorm.compiler.core.isTypeOrSubtypeOf
+import com.kotlinorm.compiler.core.joinSourceClassSymbol
 import com.kotlinorm.compiler.core.kPojoClassSymbol
+import com.kotlinorm.compiler.core.kSelectableClassSymbol
 import com.kotlinorm.compiler.fir.KronosProjectionField
 import com.kotlinorm.compiler.fir.KronosProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionRegistry
@@ -63,7 +66,6 @@ import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrVararg
-import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.IrSimpleType
@@ -73,9 +75,7 @@ import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.createType
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
-import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
-import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.util.addFakeOverrides
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
@@ -164,9 +164,7 @@ class KronosProjectionIrTransformer(
         return materializeGeneratedProjectionClass(generatedClass, sourceType)
     }
 
-    /**
-     * Rewrites bare select calls to pass the generated projection and context KClasses at runtime.
-     */
+    /** Rewrites bare select calls to the generated projection helper with materialized type arguments. */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun buildGeneratedSelectCall(call: IrCall): IrCall? {
         val function = call.symbol.owner
@@ -197,7 +195,7 @@ class KronosProjectionIrTransformer(
         val selectGeneratedSymbol = pluginContext.referenceFunctions(selectGeneratedCallableId)
             .firstOrNull { symbol ->
                 symbol.owner.typeParameters.size >= 3 &&
-                    symbol.owner.parameters.size == 4 &&
+                    symbol.owner.parameters.size == 2 &&
                     if (isJoinSelect) {
                         symbol.owner.parameters[0].type.classFqName == receiverClassFqName
                     } else {
@@ -207,27 +205,13 @@ class KronosProjectionIrTransformer(
             ?: return null
 
         return DeclarationIrBuilder(pluginContext, currentScope!!.scope.scopeOwnerSymbol).irCall(selectGeneratedSymbol).takeIf {
-            it.typeArguments.size >= 3 && it.arguments.size >= 4
+            it.typeArguments.size >= 3 && it.arguments.size >= 2
         }?.apply {
             typeArguments[0] = sourceType
             typeArguments[1] = materializedProjectionType
             typeArguments[2] = materializedContextType
             arguments[0] = call.arguments.getOrNull(0)
-            arguments[1] = IrClassReferenceImpl(
-                call.startOffset,
-                call.endOffset,
-                pluginContext.irBuiltIns.kClassClass.typeWith(materializedProjectionType),
-                materializedProjectionClass.symbol,
-                materializedProjectionType
-            )
-            arguments[2] = IrClassReferenceImpl(
-                call.startOffset,
-                call.endOffset,
-                pluginContext.irBuiltIns.kClassClass.typeWith(materializedContextType),
-                materializedContextClass.symbol,
-                materializedContextType
-            )
-            arguments[3] = call.arguments[1]
+            arguments[1] = call.arguments.getOrNull(1)
         }
     }
 
@@ -483,11 +467,23 @@ class KronosProjectionIrTransformer(
     private fun IrClass.isGeneratedProjectionClass(): Boolean =
         kotlinFqName.parent() == GeneratedProjectionPackageFqName
 
+    /**
+     * Returns whether this receiver reaches KSelectable through its classifier graph.
+     *
+     * @receiver the select call receiver type to inspect
+     * @return true when the receiver is or inherits KSelectable
+     */
     private fun IrType.isKSelectableReceiver(): Boolean {
-        return classFqName == KSelectableFqName || superTypes().any { it.classFqName == KSelectableFqName }
+        return with(pluginContext) { isTypeOrSubtypeOf(kSelectableClassSymbol) }
     }
 
+    /**
+     * Returns whether this receiver reaches JoinSource through its classifier graph.
+     *
+     * @receiver the select call receiver type to inspect
+     * @return true when the receiver is or inherits JoinSource
+     */
     private fun IrType.isJoinSourceReceiver(): Boolean {
-        return classFqName == JoinSourceFqName || superTypes().any { it.classFqName == JoinSourceFqName }
+        return with(pluginContext) { isTypeOrSubtypeOf(joinSourceClassSymbol) }
     }
 }

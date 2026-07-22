@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.beans.task
 
 import com.kotlinorm.enums.QueryType
@@ -28,23 +30,54 @@ import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 /**
- * KronosQueryTask class represents a collection of Kronos atomic query tasks used to execute SELECT operations.
- * It provides functionality to manage and execute a batch of read-only SQL queries.
+ * Executable facade around one [KronosAtomicQueryTask].
+ *
+ * Each terminal operation copies the atomic task with the requested logical [KType], invokes
+ * hooks and global query events in a deterministic order, and delegates execution to one
+ * [KronosDataSourceWrapper]. Result decoding is performed by the wrapper from that complete type
+ * and the task's result-column metadata.
+ *
+ * @property atomicTask planned SQL, parameters, target type, and result metadata
  */
-class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
-    var beforeQuery: (KronosQueryTask.() -> Any?)? = null //在执行之前执行的操作
-    var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)? = null //在执行之后执行的操作
+class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
+    /** Hook invoked immediately before global before-query events. Its return value is ignored. */
+    var beforeQuery: (KronosQueryTask.() -> Any?)? = null
 
-    fun doBeforeQuery(beforeQuery: KronosQueryTask.() -> Any?): KronosQueryTask { //设置在执行之前执行的操作
+    /** Hook invoked after global after-query events with the decoded result. Its return value is ignored. */
+    var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)? = null
+
+    /**
+     * Replaces the operation-local before-query hook.
+     *
+     * @return this task for fluent configuration
+     */
+    fun doBeforeQuery(beforeQuery: KronosQueryTask.() -> Any?): KronosQueryTask {
         this.beforeQuery = beforeQuery
         return this
     }
 
-    fun doAfterQuery(afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)): KronosQueryTask { // 设置在执行之后执行的操作(返回一个新的KronosQueryTask)
+    /**
+     * Replaces the operation-local after-query hook.
+     *
+     * @return this task for fluent configuration
+     */
+    fun doAfterQuery(afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)): KronosQueryTask {
         this.afterQuery = afterQuery
         return this
     }
 
+    /**
+     * Executes [queryAction] with the explicit wrapper or Kronos default wrapper.
+     *
+     * Hook order is local-before, global-before, execution/logging, global-after, local-after.
+     * Exceptions propagate immediately and therefore skip the remaining later stages.
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @param queryType terminal operation classification passed to logging and hooks
+     * @param task atomic task passed to events and execution
+     * @param queryAction wrapper-specific execution operation
+     * @return the exact result returned by [queryAction]
+     */
     inline fun <T> executeQuery(
         wrapper: KronosDataSourceWrapper?,
         queryType: QueryType,
@@ -62,6 +95,14 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         return result
     }
 
+    /**
+     * Executes the query and decodes every row as [targetType].
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @param targetType complete row type, including generic arguments and nullability
+     * @param queryType terminal operation classification used by hooks and logging
+     * @return decoded rows in result-set order
+     */
     fun toList(
         wrapper: KronosDataSourceWrapper?,
         targetType: KType,
@@ -73,6 +114,16 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         }
     }
 
+    /**
+     * Executes the query and decodes the first row as [targetType].
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @param targetType complete logical result type
+     * @param queryType terminal operation classification used by hooks and logging
+     * @param required whether an empty result must throw; defaults from target nullability
+     * @return decoded first row, or `null` when no row exists and [required] is false
+     * @throws NoSuchElementException when no row exists and [required] is true
+     */
     fun first(
         wrapper: KronosDataSourceWrapper?,
         targetType: KType,
@@ -89,31 +140,45 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         return result
     }
 
+    /** Returns every row as a raw, string-keyed map without a declared value type. */
     @Suppress("UNCHECKED_CAST")
     fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
         return toList(wrapper, typeOf<Map<String, Any?>>(), ToMapList) as List<Map<String, Any?>>
     }
 
+    /** Executes and decodes every row using the complete reified type [T]. */
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): List<T> {
         return toList(wrapper, typeOf<T>()) as List<T>
     }
 
+    /**
+     * Returns the first row as a raw map.
+     *
+     * @throws NoSuchElementException when the query returns no rows
+     */
     @Suppress("UNCHECKED_CAST")
     fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
         return first(wrapper, typeOf<Map<String, Any?>>(), ToMap) as Map<String, Any?>
     }
 
+    /** Returns the first row as a raw map, or `null` when the query returns no rows. */
     @Suppress("UNCHECKED_CAST")
     fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
         return first(wrapper, typeOf<Map<String, Any?>?>(), ToMap) as Map<String, Any?>?
     }
 
+    /**
+     * Decodes the first row using the complete reified type [T].
+     *
+     * @throws NoSuchElementException when the query returns no rows
+     */
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
         return first(wrapper, typeOf<T>()) as T
     }
 
+    /** Decodes the first row as nullable [T], returning `null` for an empty result. */
     inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
         return first(wrapper, typeOf<T?>()) as T?
     }

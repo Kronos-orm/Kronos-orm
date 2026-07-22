@@ -27,6 +27,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
+import kotlin.reflect.typeOf
 
 @Table("tb_filter_alias_user")
 data class FilterAliasUser(
@@ -64,7 +65,9 @@ fun box(): String {
     val serializedProjection = FilterAliasUser()
         .select { [it.id, it.tags.alias("labels")] }
     val customProjection = FilterAliasUser()
-        .select(FilterCustomProjectionRow::class) { [it.id, it.username.alias("displayName")] }
+        .select<FilterAliasUser, FilterCustomProjectionRow>(typeOf<FilterCustomProjectionRow>()) {
+            [it.id, it.username.alias("displayName")]
+        }
 
     val aggregate = aggregateProjection.filter { it.totalCount > 1 }.toSqlQuery() as SqlQuery.Select
     val scalar = scalarProjection.filter { it.latestAmount > 10 }.toSqlQuery() as SqlQuery.Select

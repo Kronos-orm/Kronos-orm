@@ -18,14 +18,15 @@
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_condition_string_matrix")
 data class StringMatrixUser(
@@ -36,7 +37,8 @@ data class StringMatrixUser(
 
 data class CapturedStringMatrix(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun stringMatrixWhere(user: StringMatrixUser, block: ToFilter<StringMatrixUser, Boolean?>): CapturedStringMatrix {
@@ -44,14 +46,15 @@ fun stringMatrixWhere(user: StringMatrixUser, block: ToFilter<StringMatrixUser, 
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedStringMatrix(sqlExpr, parameterValues.toMap())
+        result = CapturedStringMatrix(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedStringMatrix(null, emptyMap())
+    return result ?: CapturedStringMatrix(null, emptyMap(), emptyMap())
 }
 
 fun stringMatrixParameter(actual: CapturedStringMatrix, expr: SqlExpr?): Any? {
-    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
-    return actual.parameters[name]
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun expectParameterizedLike(
@@ -103,39 +106,39 @@ fun box(): String {
         expectParameterizedLike(
             "like",
             stringMatrixWhere(user) { it.name like "A%" },
-            TransformerSafeValue("A%", typeOf<String>()),
+            "A%",
             not = false
         ),
         expectParameterizedLike(
             "notLike",
             stringMatrixWhere(user) { it.name notLike "A%" },
-            TransformerSafeValue("A%", typeOf<String>()),
+            "A%",
             not = true
         ),
         expectParameterizedLike(
             "startsWith",
             stringMatrixWhere(user) { it.name.startsWith("A%_\\") },
-            TransformerSafeValue("A\\%\\_\\\\%", typeOf<String>()),
+            "A\\%\\_\\\\%",
             not = false,
             escape = SqlExpr.StringLiteral("\\")
         ),
         expectParameterizedLike(
             "negatedLike",
             stringMatrixWhere(user) { !(it.name like "A%") },
-            TransformerSafeValue("A%", typeOf<String>()),
+            "A%",
             not = true
         ),
         expectParameterizedLike(
             "endsWith",
             stringMatrixWhere(user) { it.name.endsWith("%_a\\") },
-            TransformerSafeValue("%\\%\\_a\\\\", typeOf<String>()),
+            "%\\%\\_a\\\\",
             not = false,
             escape = SqlExpr.StringLiteral("\\")
         ),
         expectParameterizedLike(
             "contains",
             stringMatrixWhere(user) { it.name.contains("%d_\\") },
-            TransformerSafeValue("%\\%d\\_\\\\%", typeOf<String>()),
+            "%\\%d\\_\\\\%",
             not = false,
             escape = SqlExpr.StringLiteral("\\")
         ),

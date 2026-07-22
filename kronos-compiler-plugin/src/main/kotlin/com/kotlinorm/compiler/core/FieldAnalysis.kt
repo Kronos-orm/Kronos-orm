@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION")
+@file:Suppress("DEPRECATION", "TooManyFunctions")
 
 package com.kotlinorm.compiler.core
 
@@ -27,7 +27,6 @@ import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
 import com.kotlinorm.compiler.utils.ErrorMessages
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
-import com.kotlinorm.compiler.utils.KSelectableFqName
 import com.kotlinorm.compiler.utils.NonNullAnnotationFqName
 import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationFqName
 import com.kotlinorm.compiler.utils.SelectAliasFunctionName
@@ -89,7 +88,6 @@ import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 
@@ -343,9 +341,15 @@ private fun IrCall.isProjectionCollectionCall(): Boolean {
     return symbol.owner.name.asString() in DslCollectionFunctionNames
 }
 
+/**
+ * Returns whether this type reaches KSelectable through its classifier graph.
+ *
+ * @receiver the IR type to inspect
+ * @return true when the type is or inherits KSelectable
+ */
 context(context: IrPluginContext)
 internal fun IrType.isKSelectableType(): Boolean {
-    return classFqName == KSelectableFqName || superTypes().any { it.classFqName == KSelectableFqName }
+    return isTypeOrSubtypeOf(kSelectableClassSymbol)
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)

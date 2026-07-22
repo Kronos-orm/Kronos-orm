@@ -148,7 +148,6 @@ class FieldTest {
         val field = Field(columnName = "age", name = "age", kType = typeOf<Int?>())
 
         assertEquals(typeOf<Int?>(), field.kType)
-        assertEquals(Int::class, field.kClass)
         assertFalse(field.cascadeIsCollectionOrArray)
         assertNull(field.elementKType)
     }
@@ -159,7 +158,6 @@ class FieldTest {
         val field = Field(columnName = "items", name = "items", kType = typeOf<List<FieldTestChild>?>())
 
         assertEquals(typeOf<FieldTestChild>(), field.elementKType)
-        assertEquals(List::class, field.kClass)
         assertTrue(field.cascadeIsCollectionOrArray)
     }
 
@@ -172,12 +170,21 @@ class FieldTest {
         assertTrue(field.cascadeIsCollectionOrArray)
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldRetainsStarProjectionWithoutInventingAnElementType() {
+        val field = Field(columnName = "items", name = "items", kType = typeOf<List<*>?>())
+
+        assertEquals(typeOf<List<*>?>(), field.kType)
+        assertNull(field.elementKType)
+        assertTrue(field.cascadeIsCollectionOrArray)
+    }
+
     @Test
     fun testDatabaseMetadataFieldAllowsNullKType() {
         val field = Field(columnName = "db_only")
 
         assertNull(field.kType)
-        assertNull(field.kClass)
         assertNull(field.elementKType)
         assertFalse(field.cascadeIsCollectionOrArray)
     }

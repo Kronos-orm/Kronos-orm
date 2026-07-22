@@ -68,9 +68,10 @@ class SpringJdbcKronosWrapper(
 `KAtomicQueryTask.sql`使用命名参数，`paramMap`保存参数值，`targetType`保存完整的目标`KType`。自定义wrapper只需为Map、标量、KPojo和DTO实现一个列表方法和一个单行方法。
 
 ```kotlin group="Spring wrapper 2" name="query mapping" icon="kotlin"
+import kotlin.reflect.jvm.jvmErasure
+
 private fun rowMapper(targetType: KType): RowMapper<Any?> {
-    val targetClass = targetType.classifier as? KClass<*>
-        ?: error("Unsupported target type: $targetType")
+    val targetClass = targetType.jvmErasure
 
     return when {
         targetClass == Map::class -> ColumnMapRowMapper()

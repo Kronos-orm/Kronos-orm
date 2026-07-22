@@ -1,3 +1,5 @@
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.sql.mysql
 
 import com.kotlinorm.annotations.UnsafeProjectionOverride
@@ -71,9 +73,9 @@ class MysqlSelectSqlTest : MysqlTestBase() {
             "SELECT `id`, `id` AS `id_2`, `username` AS `id_1` FROM `tb_user` WHERE `deleted` = 0",
             task.sql
         )
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id_2"])
-        assertEquals(typeOf<String?>(), task.resultColumnTypes["id_1"])
+        assertEquals(typeOf<Int?>(), task.resultColumns["id"]?.type)
+        assertEquals(typeOf<Int?>(), task.resultColumns["id_2"]?.type)
+        assertEquals(typeOf<String?>(), task.resultColumns["id_1"]?.type)
     }
 
     @Test

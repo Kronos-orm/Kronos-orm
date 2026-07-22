@@ -1,8 +1,27 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Verifies separate KPojo transforms retain their concrete KType and metadata.
+
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.statement.SqlQuery
+import kotlin.reflect.typeOf
 
 @Table("tb_symbol_user")
 data class SymbolUser(var id: Int? = null, var name: String? = null) : KPojo
@@ -24,9 +43,9 @@ fun box(): String {
     val commentMap = comment.toDataMap()
 
     return when {
-        user.__kClass != SymbolUser::class -> "Fail: user kClass was ${user.__kClass}"
-        post.__kClass != SymbolPost::class -> "Fail: post kClass was ${post.__kClass}"
-        comment.__kClass != SymbolComment::class -> "Fail: comment kClass was ${comment.__kClass}"
+        user.__kType != typeOf<SymbolUser>() -> "Fail: user KType was ${user.__kType}"
+        post.__kType != typeOf<SymbolPost>() -> "Fail: post KType was ${post.__kType}"
+        comment.__kType != typeOf<SymbolComment>() -> "Fail: comment KType was ${comment.__kType}"
         user.__columns.map { it.name } != ["id", "name"] -> "Fail: user columns were ${user.__columns.map { it.name }}"
         post.__columns.map { it.name } != ["id", "userId", "title"] -> "Fail: post columns were ${post.__columns.map { it.name }}"
         comment.__columns.map { it.name } != ["id", "postId", "content"] -> "Fail: comment columns were ${comment.__columns.map { it.name }}"

@@ -21,18 +21,43 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
- * Kronos Atomic Task
+ * Minimal executable SQL unit handed from ORM planning to a data-source wrapper.
  *
- * Interface for Atomic Task
- *
- * @author OUSC
+ * [sql] and [paramMap] are the named-parameter representation. [parsed] must preserve
+ * the one-to-one order of materialized JDBC values and parameter names so binding metadata
+ * can be resolved by position. [statement] is optional planning context, not a substitute
+ * for the materialized SQL contract.
  */
 interface KAtomicTask {
+    /**
+     * Named-parameter SQL before JDBC positional materialization.
+     * Implementations may make it mutable while planners finalize the statement.
+     */
     val sql: String
+
+    /**
+     * Values keyed by names referenced from [sql].
+     * A value may be `null`; wrappers must not infer its JDBC type from the runtime value.
+     */
     val paramMap: Map<String, Any?>
+
+    /**
+     * Operation classification used by execution hooks and wrappers.
+     * It describes intent independently from the SQL string's leading token.
+     */
     val operationType: KOperationType
+
+    /**
+     * Structured statement that produced [sql], when retained by the planner.
+     * Wrappers must execute [parsed] output rather than re-render this optional value.
+     */
     val statement: SqlStatement?
         get() = null
 
+    /**
+     * Materializes this task for JDBC-style positional execution.
+     *
+     * @return SQL, values, and parameter names in the exact binding order
+     */
     fun parsed(): ParsedSql
 }

@@ -22,8 +22,9 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 /**
@@ -41,7 +42,6 @@ import kotlin.reflect.typeOf
  * @property kType the Kotlin declaration type of the field, or null for database metadata fields
  * @property elementKType the element type of collection and array fields
  * @property cascadeIsCollectionOrArray whether the cascade field is a collection or array
- * @property kClass the raw class of the field
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field
@@ -73,12 +73,8 @@ open class Field(
             ?: kType?.arguments?.firstOrNull()?.type
     }
 
-    val kClass: KClass<*>? by lazy(LazyThreadSafetyMode.NONE) {
-        kType?.classifier as? KClass<*>
-    }
-
     val cascadeIsCollectionOrArray: Boolean by lazy(LazyThreadSafetyMode.NONE) {
-        kClass.isCollectionOrArrayClassifier()
+        kType?.isCollectionOrArrayType() == true
     }
 
     // Returns the name of the field as a string
@@ -180,40 +176,27 @@ open class Field(
         )
     }
 
-    private fun KType.primitiveArrayElementType(): KType? = when (classifier) {
-        BooleanArray::class -> typeOf<Boolean>()
-        ByteArray::class -> typeOf<Byte>()
-        CharArray::class -> typeOf<Char>()
-        DoubleArray::class -> typeOf<Double>()
-        FloatArray::class -> typeOf<Float>()
-        IntArray::class -> typeOf<Int>()
-        LongArray::class -> typeOf<Long>()
-        ShortArray::class -> typeOf<Short>()
+    private fun KType.primitiveArrayElementType(): KType? = when (withoutTopLevelNullability()) {
+        typeOf<BooleanArray>() -> typeOf<Boolean>()
+        typeOf<ByteArray>() -> typeOf<Byte>()
+        typeOf<CharArray>() -> typeOf<Char>()
+        typeOf<DoubleArray>() -> typeOf<Double>()
+        typeOf<FloatArray>() -> typeOf<Float>()
+        typeOf<IntArray>() -> typeOf<Int>()
+        typeOf<LongArray>() -> typeOf<Long>()
+        typeOf<ShortArray>() -> typeOf<Short>()
         else -> null
     }
 
-    private fun KClass<*>?.isCollectionOrArrayClassifier(): Boolean {
-        if (this == null) return false
-        return this in collectionOrArrayClassifiers
+    private fun KType.isCollectionOrArrayType(): Boolean {
+        val normalized = withoutTopLevelNullability()
+        if (normalized.primitiveArrayElementType() != null) return true
+        return runCatching {
+            normalized.isSubtypeOf(typeOf<Iterable<*>>()) ||
+                normalized.isSubtypeOf(typeOf<Array<*>>())
+        }.getOrDefault(false)
     }
 
-    private companion object {
-        val collectionOrArrayClassifiers = setOf(
-            Collection::class,
-            Iterable::class,
-            List::class,
-            MutableList::class,
-            Set::class,
-            MutableSet::class,
-            Array::class,
-            BooleanArray::class,
-            ByteArray::class,
-            CharArray::class,
-            DoubleArray::class,
-            FloatArray::class,
-            IntArray::class,
-            LongArray::class,
-            ShortArray::class,
-        )
-    }
+    private fun KType.withoutTopLevelNullability(): KType =
+        if (isMarkedNullable) withNullability(false) else this
 }

@@ -32,8 +32,8 @@ class UnionClauseSyntaxTest : MysqlTestBase() {
     @Test
     fun testToSqlQueryBuildsUnionSetStatement() {
         val statement = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         ).toSqlQuery()
 
         val set = assertIs<SqlQuery.Set>(statement)
@@ -47,8 +47,8 @@ class UnionClauseSyntaxTest : MysqlTestBase() {
     @Test
     fun testAllUsesAllQuantifierInSetOperator() {
         val statement = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         ).all().toSqlQuery()
 
         val set = assertIs<SqlQuery.Set>(statement)
@@ -58,9 +58,9 @@ class UnionClauseSyntaxTest : MysqlTestBase() {
     @Test
     fun testMultipleQueriesNestAsLeftAssociativeSetStatement() {
         val statement = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 3 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 3 }
         ).toSqlQuery()
 
         val outer = assertIs<SqlQuery.Set>(statement)
@@ -75,8 +75,8 @@ class UnionClauseSyntaxTest : MysqlTestBase() {
     @Test
     fun testLimitIsStoredOnSetStatement() {
         val statement = union(
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 1 },
-            TestUser().select(TestUser::class) { it.id }.where { it.id == 2 }
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 1 },
+            TestUser().select<TestUser, TestUser> { it.id }.where { it.id == 2 }
         ).limit(10, 5).toSqlQuery()
 
         val set = assertIs<SqlQuery.Set>(statement)

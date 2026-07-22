@@ -7,6 +7,7 @@
 
 package com.kotlinorm.orm.join
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -44,6 +45,7 @@ internal data class SourceQualifierSnapshot(
 internal data class JoinConditionSnapshot(
     val expression: SqlExpr,
     val parameters: Map<String, Any?>,
+    val parameterFields: Map<String, Field>,
     val qualifiers: List<SourceQualifierSnapshot>
 )
 

@@ -8,7 +8,7 @@ import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
 import com.kotlinorm.integration.support.IntegrationSuiteSupport
 import com.kotlinorm.interfaces.KIdGenerator
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.interfaces.serializedValueCodec
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.upsert.upsert
 import kotlinx.serialization.KSerializer
@@ -63,12 +63,14 @@ abstract class PostgresUpsertOriginalCaseIntegrationSuite(
     private inline fun withOriginalUpsertTable(block: () -> Unit) {
         requireDatabaseAvailable()
         configureKronos()
-        val originalProcessor = Kronos.serializeProcessor
         val originalIdGenerator = customIdGenerator
         val table = originalUser("table-shape")
+        val serializationRegistration = Kronos.registerValueCodec(serializedValueCodec(
+            encode = UpsertKotlinxFormat::encode,
+            decode = UpsertKotlinxFormat::decode
+        ))
 
         try {
-            Kronos.serializeProcessor = UpsertKotlinxSerializeProcessor
             customIdGenerator = object : KIdGenerator<String> {
                 private var sequence = 0
 
@@ -78,7 +80,7 @@ abstract class PostgresUpsertOriginalCaseIntegrationSuite(
             wrapper.table.createTable(table)
             block()
         } finally {
-            Kronos.serializeProcessor = originalProcessor
+            serializationRegistration.close()
             customIdGenerator = originalIdGenerator
             wrapper.table.dropTable(table)
         }
@@ -89,18 +91,18 @@ abstract class PostgresUpsertOriginalCaseIntegrationSuite(
     }
 }
 
-private object UpsertKotlinxSerializeProcessor : KronosSerializeProcessor {
+private object UpsertKotlinxFormat {
     private val json = Json {
         encodeDefaults = true
         ignoreUnknownKeys = true
     }
 
-    override fun deserialize(serializedStr: String, kType: KType): Any {
+    fun decode(serializedStr: String, kType: KType): Any {
         return json.decodeFromString(serializer(kType), serializedStr)
             ?: error("Kotlinx serialization returned null for $kType")
     }
 
-    override fun serialize(obj: Any, kType: KType): String {
+    fun encode(obj: Any, kType: KType): String {
         @Suppress("UNCHECKED_CAST")
         val valueSerializer = serializer(kType) as KSerializer<Any>
         return json.encodeToString(valueSerializer, obj)

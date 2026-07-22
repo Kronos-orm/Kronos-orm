@@ -140,7 +140,7 @@ complexity:
   LongMethod:
     active: true
     threshold: 180
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/beans/dsl/KTableForCondition.kt', '**/com/kotlinorm/compiler/core/FieldAnalysis.kt']
+    excludes: ['**/test/**', '**/testData/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/beans/dsl/KTableForCondition.kt', '**/com/kotlinorm/compiler/core/FieldAnalysis.kt']
   LongParameterList:
     active: true
     functionThreshold: 24
@@ -178,7 +178,7 @@ complexity:
     ignoreStringsRegex: '$^'
   TooManyFunctions:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/beans/dsl/KTableForCondition.kt', '**/com/kotlinorm/syntax/render/StandardSqlRenderer.kt']
     thresholdInFiles: 48
     thresholdInClasses: 48
     thresholdInInterfaces: 48
@@ -357,7 +357,7 @@ naming:
     active: true
     rootPackage: ''
     requireRootInDeclaration: false
-    excludes: ['**/*.kts', '**/test/**']
+    excludes: ['**/*.kts', '**/test/**', '**/testData/**']
   LambdaParameterNaming:
     active: false
     parameterPattern: '[a-z][A-Za-z0-9]*|_'
@@ -721,6 +721,7 @@ style:
     excludeReturnFromLambda: true
     excludeGuardClauses: false
     excludes:
+      - "**/testData/**"
       - "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt"
       - "**/com/kotlinorm/compiler/backend/transformers/KronosProjectionIrTransformer.kt"
       - "**/kronos-idea-plugin/**"
@@ -779,6 +780,7 @@ style:
     allowedNames: 'ignored|expected'
   UnusedPrivateClass:
     active: true
+    excludes: ['**/testData/diagnostics/**']
   UnusedPrivateMember:
     active: true
     allowedNames: ''

@@ -72,6 +72,8 @@ The built-in wrapper also exposes registries for custom parameter binding and re
 import com.kotlinorm.wrappers.KronosArgument
 import com.kotlinorm.wrappers.KronosArgumentFactory
 import com.kotlinorm.wrappers.KronosJdbcWrapper
+import com.kotlinorm.wrappers.KronosPhysicalReadResult
+import com.kotlinorm.wrappers.KronosPhysicalValueReader
 import java.sql.Types
 import java.util.UUID
 
@@ -86,11 +88,18 @@ val wrapper = KronosJdbcWrapper(dataSource) {
         }
     })
 
-    columnMappers.register(UUID::class) { resultSet, position, _, _ ->
-        resultSet.getString(position)?.let(UUID::fromString)
-    }
+    columnMappers.register(KronosPhysicalValueReader { resultSet, position, _ ->
+        val jdbcTypeName = resultSet.metaData.getColumnTypeName(position)
+        if (jdbcTypeName.equals("jsonb", ignoreCase = true)) {
+            KronosPhysicalReadResult.Handled(resultSet.getString(position))
+        } else {
+            KronosPhysicalReadResult.NotHandled
+        }
+    })
 }
 ```
+
+Physical readers run before `ResultSet.getObject(position)` and match JDBC metadata or vendor behavior, not a logical target type. Return `Handled(null)` when the column was handled and its value is SQL `NULL`; return `NotHandled` to continue to the next reader and the default JDBC path. Converting the resulting string to a logical type such as `UUID` belongs in a `ValueCodec` registered with `Kronos.registerValueCodec`, so typed results pass through the semantic conversion registry exactly once.
 
 ## Query lists with {{ $.title("toList(task)") }}
 
@@ -110,7 +119,7 @@ val users = wrapper.toList(
 )
 ```
 
-The built-in JDBC wrapper recognizes scalar types, `Map<String, Any?>`, and `KPojo` types from this target `KType`.
+The built-in JDBC wrapper recognizes scalar types, typed row maps, and `KPojo` types from this target `KType`. JDBC row mapping materializes each row as a `LinkedHashMap`, so the supported map containers are only direct `Map` and `MutableMap` declarations (including a nullable top-level target). Fixed, reordered, and custom `Map` subtypes are rejected because Kronos cannot return their declared container safely. Map keys must be `String`, `String?`, or `*`; `Any`, `Any?`, and `*` values remain raw, while a typed value argument is converted using its complete `KType`.
 
 ## Query one value with {{ $.title("first(task)") }}
 

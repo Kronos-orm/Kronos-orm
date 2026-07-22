@@ -9,7 +9,7 @@ const IgnoreActionPage: NgDocPage = {
     title: `忽略策略`,
     mdFile: './index.md',
     route: 'ignore',
-    order: 8,
+    order: 9,
     category: MappingCategory
 };
 

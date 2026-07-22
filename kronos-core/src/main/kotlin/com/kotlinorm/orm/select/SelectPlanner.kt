@@ -50,22 +50,24 @@ internal class SelectPlanner(
         val parameters = linkedMapOf<String, Any?>()
         parameters.putAll(context.parameterValues)
         parameters.putAll(context.patchValues)
+        val parameterFields = linkedMapOf<String, Field>()
+        parameterFields.putAll(context.parameterFields)
 
         val parameterCounter = mutableMapOf<String, Int>()
-        val selectItems = selectItems(dataSource, parameters, parameterCounter, totalCount)
-        val fromTable = table(dataSource, parameters, parameterCounter)
+        val selectItems = selectItems(dataSource, parameters, parameterCounter, parameterFields, totalCount)
+        val fromTable = table(dataSource, parameters, parameterCounter, parameterFields)
         val orderByItems = if (totalCount) {
             emptyList()
         } else {
             sqlServerPageOrderItems(dataSource) ?: context.orderByItems.map {
-                it.toOrderingItem(selectItems, dataSource, parameters, parameterCounter)
+                it.toOrderingItem(selectItems, dataSource, parameters, parameterCounter, parameterFields)
             }
         }
         val query = SqlQuery.Select(
             quantifier = if (context.distinct) SqlQuantifier.Distinct else null,
             select = selectItems,
             from = listOf(fromTable),
-            where = where(dataSource, parameters),
+            where = where(dataSource, parameters, parameterFields),
             groupBy = context.groupByItems.takeIf { it.isNotEmpty() }?.let {
                 SqlGroup(items = it.map { expr -> SqlGroupingItem.Expr(context.bindExpr(expr)) })
             },
@@ -75,13 +77,14 @@ internal class SelectPlanner(
             lock = context.lock.takeUnless { totalCount }
         )
 
-        return SqlQueryPlan(query, parameters)
+        return SqlQueryPlan(query, parameters, parameterFields)
     }
 
     private fun selectItems(
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
         parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>,
         totalCount: Boolean
     ): List<SqlSelectItem> {
         if (
@@ -102,7 +105,12 @@ internal class SelectPlanner(
                         )
                     is KTableForSelect.ProjectionItem.SelectItemValue -> context.bindSelectItem(projection.item)
                     is KTableForSelect.ProjectionItem.ScalarSubqueryValue -> {
-                        val query = projection.query.materializeSqlQuery(parameters, parameterCounter, dataSource)
+                        val query = projection.query.materializeSqlQuery(
+                            parameters,
+                            parameterCounter,
+                            dataSource,
+                            parameterFields
+                        )
                         scalarSubqueryItem(query, projection.alias)
                     }
                 }
@@ -189,11 +197,12 @@ internal class SelectPlanner(
     private fun table(
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
-        parameterCounter: MutableMap<String, Int>
+        parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>
     ): SqlTable {
         context.sourceQuery?.let { query ->
             return SqlTable.Subquery(
-                query = query.materializeSqlQuery(parameters, parameterCounter, dataSource),
+                query = query.materializeSqlQuery(parameters, parameterCounter, dataSource, parameterFields),
                 alias = SqlTableAlias(context.sourceTableAlias ?: "q")
             )
         }
@@ -205,7 +214,11 @@ internal class SelectPlanner(
         )
     }
 
-    private fun where(dataSource: KronosDataSourceWrapper, parameters: MutableMap<String, Any?>): SqlExpr? {
+    private fun where(
+        dataSource: KronosDataSourceWrapper,
+        parameters: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>
+    ): SqlExpr? {
         var where = context.where?.let(context::bindExpr)
         context.logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
             val logicDeleteExpression = SqlExpr.Binary(
@@ -218,10 +231,13 @@ internal class SelectPlanner(
             )
             where = and(where, logicDeleteExpression)
         }
-        return and(where, cursorCondition(parameters))
+        return and(where, cursorCondition(parameters, parameterFields))
     }
 
-    private fun cursorCondition(parameters: MutableMap<String, Any?>): SqlExpr? {
+    private fun cursorCondition(
+        parameters: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>
+    ): SqlExpr? {
         val spec = context.cursorSpec ?: return null
         if (spec.cursor == null) return null
         require(context.orderByItems.isNotEmpty()) { "Cursor pagination requires orderBy()." }
@@ -237,6 +253,7 @@ internal class SelectPlanner(
                 ?: error("Cursor token contains null for orderBy field '${item.field.name}', which is not supported.")
             val parameterName = "cursor_${item.field.name}"
             parameters[parameterName] = value
+            parameterFields[parameterName] = item.field
             val comparison = SqlExpr.Binary(
                 item.expr ?: item.field.toPlannerExpr(),
                 if (item.ordering == SqlOrdering.Desc) SqlBinaryOperator.LessThan else SqlBinaryOperator.GreaterThan,
@@ -247,6 +264,7 @@ internal class SelectPlanner(
                     ?: error("Cursor token contains null for orderBy field '${previous.field.name}', which is not supported.")
                 val previousParameterName = "cursor_${previous.field.name}"
                 parameters.putIfAbsent(previousParameterName, previousValue)
+                parameterFields[previousParameterName] = previous.field
                 SqlExpr.Binary(
                     SqlExpr.Binary(
                         previous.expr ?: previous.field.toPlannerExpr(),
@@ -292,14 +310,17 @@ internal class SelectPlanner(
         selectItems: List<SqlSelectItem>,
         dataSource: KronosDataSourceWrapper,
         parameters: MutableMap<String, Any?>,
-        parameterCounter: MutableMap<String, Int>
+        parameterCounter: MutableMap<String, Int>,
+        parameterFields: MutableMap<String, Field>
     ): SqlOrderingItem =
         SqlOrderingItem(
             expr = when (this) {
                 is SelectOrderItem.FieldItem -> selectItems.orderAliasExpr(field.name) ?: expr?.let(context::bindExpr) ?: field.toPlannerExpr()
                 is SelectOrderItem.ExprItem -> context.bindExpr(expr)
                 is SelectOrderItem.SelectableItem ->
-                    SqlExpr.Subquery(query.materializeSqlQuery(parameters, parameterCounter, dataSource))
+                    SqlExpr.Subquery(
+                        query.materializeSqlQuery(parameters, parameterCounter, dataSource, parameterFields)
+                    )
             },
             ordering = ordering
         )

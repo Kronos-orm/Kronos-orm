@@ -20,16 +20,36 @@ import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
- * Kronos Atomic Task
+ * Atomic mutation contract with operation-local metadata and generated-key output.
  *
- * Interface for Atomic Task
- *
- * @author OUSC
+ * Generated keys are populated by the executing wrapper only when [generatedKeyRequest]
+ * applies. They remain raw database values; action execution does not run them through the
+ * logical result decoder.
  */
 interface KAtomicActionTask : KAtomicTask {
     override val statement: SqlStatement?
+
+    /**
+     * Mutable operation-local metadata forwarded to parameter binding and execution hooks.
+     * Wrappers preserve the map by reference for the lifetime of one execution.
+     */
     val stash: MutableMap<String, Any?>
+
+    /**
+     * Requested generated-key assignment, or `null` when key retrieval is disabled.
+     * A wrapper may additionally restrict retrieval to insert operations.
+     */
     var generatedKeyRequest: GeneratedKeyRequest?
+
+    /**
+     * Raw generated values returned by the data-source wrapper in driver order.
+     * Wrappers append or replace entries according to their generated-key execution contract.
+     */
     val generatedKeys: MutableList<Any?>
+
+    /**
+     * Numeric representation of the first generated key when it can be derived.
+     * It remains `null` for non-numeric key shapes or when retrieval is disabled.
+     */
     var lastInsertId: Long?
 }

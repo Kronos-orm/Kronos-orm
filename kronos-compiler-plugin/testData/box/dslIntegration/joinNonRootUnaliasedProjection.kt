@@ -34,7 +34,7 @@ import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.Extensions.mapperTo
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 @Table("tb_join_non_root_user")
 data class JoinNonRootUser(
@@ -66,11 +66,8 @@ class JoinNonRootWrapper : KronosDataSourceWrapper {
     override fun first(task: KAtomicQueryTask): Any? = mapResult(task)
 
     private fun mapResult(task: KAtomicQueryTask): Any {
-        val classifier = task.targetType.classifier
-        if (classifier == Map::class) return joinNonRootRow
-        val kClass = classifier as? KClass<*> ?: return joinNonRootRow
-        @Suppress("UNCHECKED_CAST")
-        return joinNonRootRow.mapperTo(kClass as KClass<out KPojo>)
+        if (task.targetType == typeOf<Map<String, Any?>>()) return joinNonRootRow
+        return joinNonRootRow.mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0

@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-private const val MaxJoinSourceArity = 16
+private const val MAX_JOIN_SOURCE_ARITY = 16
 
 /**
  * FQN constants for Kronos classes and interfaces
@@ -128,7 +128,10 @@ val SerializeAnnotationFqName = FqName("com.kotlinorm.annotations.Serialize")
 val UnsafeProjectionOverrideAnnotationFqName = FqName("com.kotlinorm.annotations.UnsafeProjectionOverride")
 val KronosCommonStrategyFqName = FqName("com.kotlinorm.beans.config.KronosCommonStrategy")
 val KronosObjectFqName = FqName("com.kotlinorm.Kronos")
-val KPojoFactoryProviderFqName = FqName("com.kotlinorm.utils.KPojoFactoryProvider")
+val GeneratedTypeProviderFqName = FqName("com.kotlinorm.utils.GeneratedTypeProvider")
+val GeneratedTypeRegistrarFqName = FqName("com.kotlinorm.utils.GeneratedTypeRegistrar")
+val KPojoFactoryFqName = FqName("com.kotlinorm.utils.KPojoFactory")
+val EnumFactoryFqName = FqName("com.kotlinorm.utils.EnumFactory")
 
 // Annotation FqNames grouped for class transformer
 object AnnotationFqNames {
@@ -206,5 +209,5 @@ fun ClassId.isJoinSourceClassId(): Boolean {
     if (packageFqName != JoinPackageFqName) return false
     val name = relativeClassName.asString()
     return name == "JoinSource" ||
-        name.removePrefix("JoinSource").toIntOrNull()?.let { it in 2..MaxJoinSourceArity } == true
+        name.removePrefix("JoinSource").toIntOrNull()?.let { it in 2..MAX_JOIN_SOURCE_ARITY } == true
 }

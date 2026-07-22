@@ -506,6 +506,22 @@ object NamedParameterUtils {
         }.toTypedArray()
     }
 
+    /** Builds names aligned with the expanded JDBC value array for typed-null hints. */
+    fun buildParameterNameList(parsedSql: ParsedSql, paramSource: Map<String, Any?>): List<String> {
+        validatePlaceholders(parsedSql)
+        return buildList {
+            parsedSql.parameterNames.forEachIndexed { index, paramName ->
+                if (index in parsedSql.listParameterOccurrences) {
+                    val list = getValueFromMap(paramSource, paramName).asListValue()
+                    validateListParameterNotEmpty(paramName, list)
+                    repeat(list.size) { add(paramName) }
+                } else {
+                    add(paramName)
+                }
+            }
+        }
+    }
+
     private fun validateListParameterNotEmpty(paramName: String, values: List<Any?>) {
         if (values.isEmpty()) {
             throw InvalidDataAccessApiUsageException(

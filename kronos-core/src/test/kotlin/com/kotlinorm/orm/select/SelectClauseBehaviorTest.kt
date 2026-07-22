@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.KSelectable
@@ -22,6 +24,7 @@ import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.testfixtures.cascade.onetoone.Car
 import com.kotlinorm.testfixtures.cascade.onetoone.CarDetails
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.limit.SqlLimit
@@ -56,24 +59,51 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
             .build()
             .atomicTask
 
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
-        assertEquals(typeOf<Int?>(), task.resultColumnTypes["ID"])
-        assertEquals(typeOf<String?>(), task.resultColumnTypes["username"])
-        assertFalse("score" in task.resultColumnTypes)
+        val id = task.resultColumns["id"]
+        assertEquals(typeOf<Int?>(), id?.type)
+        assertEquals("id", id?.field?.name)
+        assertEquals("id", id?.field?.columnName)
+        assertEquals(ValueStorage.NONE, id?.storage)
+        assertEquals("id", id?.columnLabel)
+        assertFalse("ID" in task.resultColumns)
+
+        val username = task.resultColumns["username"]
+        assertEquals(typeOf<String?>(), username?.type)
+        assertEquals("username", username?.field?.name)
+        assertEquals("username", username?.field?.columnName)
+        assertEquals(ValueStorage.NONE, username?.storage)
+        assertEquals("username", username?.columnLabel)
+        assertFalse("score" in task.resultColumns)
     }
 
     @Test
-    fun `select clause uses projection class as selected type`() {
+    fun `select clause uses projection KType as selected type`() {
         val wrapper = CapturingMysqlWrapper()
-        val clause = TestUser().select(UserRelation::class) { it.username }
+        val clause = TestUser().select<TestUser, UserRelation>(typeOf<UserRelation>()) { it.username }
 
         clause.toList(wrapper)
 
         assertEquals(typeOf<UserRelation>(), clause.selectedType)
+        assertEquals(typeOf<UserRelation?>(), clause.nullableSelectedType)
         assertEquals(
             listOf<QueryCall>(QueryCall.ToList(typeOf<UserRelation>())),
             wrapper.calls
         )
+    }
+
+    @Test
+    fun `select projection defaults to the reified result KType`() {
+        val clause = TestUser().select<TestUser, UserRelation> { it.username }
+
+        assertEquals(typeOf<UserRelation>(), clause.selectedType)
+        assertEquals(typeOf<UserRelation?>(), clause.nullableSelectedType)
+    }
+
+    @Test
+    fun `select rejects a projection KType that does not match the reified result`() {
+        assertFailsWith<IllegalArgumentException> {
+            TestUser().select<TestUser, UserRelation>(typeOf<TestUser>()) { it.username }
+        }
     }
 
     @Test

@@ -7,6 +7,7 @@
 
 package com.kotlinorm.orm.sql
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -17,13 +18,15 @@ import com.kotlinorm.syntax.statement.SqlQuery
 
 internal data class SqlQueryPlan(
     val query: SqlQuery,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val parameterFields: Map<String, Field> = emptyMap()
 )
 
 internal fun KSelectable<*>.materializeSqlQuery(
     parameterValues: MutableMap<String, Any?>,
     parameterCounter: MutableMap<String, Int> = mutableMapOf(),
-    wrapper: KronosDataSourceWrapper? = null
+    wrapper: KronosDataSourceWrapper? = null,
+    parameterFields: MutableMap<String, Field> = mutableMapOf()
 ): SqlQuery {
     val plan = toSqlQueryPlan(wrapper)
     if (plan.parameters.isEmpty()) return plan.query
@@ -32,6 +35,7 @@ internal fun KSelectable<*>.materializeSqlQuery(
     plan.parameters.forEach { (name, value) ->
         val uniqueName = uniqueParameterName(name, parameterValues, parameterCounter)
         parameterValues[uniqueName] = value
+        plan.parameterFields[name]?.let { parameterFields[uniqueName] = it }
         if (uniqueName != name) {
             renames[name] = uniqueName
         }

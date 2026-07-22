@@ -16,18 +16,37 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.annotations.InternalKronosApi
+import com.kotlinorm.beans.task.ResultColumnMetadata
 import kotlin.reflect.KType
 
 /**
- * Kronos Atomic Task
+ * Atomic query contract including the logical result type and planned column metadata.
  *
- * Interface for Atomic Task
- *
- * @author OUSC
+ * A data-source wrapper reads physical values first and then decodes each typed result value
+ * once using [targetType] or the matching [resultColumns] entry. Untyped raw-map behavior is
+ * wrapper-defined and must not be inferred from the erased classifier alone.
  */
 interface KAtomicQueryTask : KAtomicTask {
+    /**
+     * Complete logical result type, including generic arguments and nullability.
+     * Wrappers use this value to choose map, KPojo, or scalar mapping without erasing generics.
+     */
     val targetType: KType
 
-    val resultColumnTypes: Map<String, KType>
+    /**
+     * Runtime hints carried from query planning into JDBC parameter binding.
+     * Implementations may override the default empty map for operation-local data.
+     */
+    val stash: MutableMap<String, Any?>
+        get() = mutableMapOf()
+
+    /**
+     * Planned result metadata keyed by exact output label.
+     *
+     * Wrappers may fall back to a case-insensitive label match only when it is unambiguous.
+     */
+    @InternalKronosApi
+    val resultColumns: Map<String, ResultColumnMetadata>
         get() = emptyMap()
 }

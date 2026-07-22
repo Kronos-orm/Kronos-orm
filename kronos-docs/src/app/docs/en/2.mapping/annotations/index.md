@@ -180,9 +180,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serialize") }}List Serialization/Deserialization Settings
+## {{ $.annotation("Serialize") }}Serialized storage
 
-Used to declare whether the column needs to be autoserialized, deserialized or not. Fields using this annotation invoke the serialization deserialization handler (see {{ $.keyword("configuration/global-config", ["Global Settings", "Serialization Deserialization Processor"]) }}) when values are stored in and read from the database.
+Marks a property as serialized storage. `@Serialize` only selects `ValueStorage.SERIALIZED`; it does not install a serializer or a second processing pipeline. Register one `serializedValueCodec` through `Kronos.registerValueCodec` for the application's text format. The codec receives the property's complete `KType` in both directions.
 
 ```kotlin
 data class User(
@@ -190,9 +190,7 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-Please refer to the documentation for the serialization and deserialization feature usage:{{ $.keyword("configuration/serialization-processor", ["Automatic Serialization and Deserialization"]) }}。
-
-See {{ $.keyword("mapping/serialization", ["Serialization"]) }} for the model-level `@Serialize` workflow.
+For serialized-field usage and codec registration, see {{ $.keyword("mapping/serialization", ["Serialized storage"]) }}.
 
 ## {{ $.annotation("Cascade") }}Cascading Relationship Declaration
 

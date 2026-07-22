@@ -35,7 +35,7 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.utils.Extensions.patchTo
 import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Used to build a cascade select clause.
@@ -73,7 +73,6 @@ object CascadeSelectClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
-        kClass: KClass<out KPojo>,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>,
         operationType: KOperationType,
@@ -90,7 +89,7 @@ object CascadeSelectClause {
         generateTask(
             cascadeAllowed,
             pojo,
-            metadata.kClass,
+            metadata.kType,
             metadata.allFields.filter {
                 it.name in selectedFieldNames || it.name in allowedCascadeFieldNames
             },
@@ -117,7 +116,7 @@ object CascadeSelectClause {
     private fun generateTask(
         cascadeAllowed: Set<Field>?,
         pojo: KPojo,
-        kClass: KClass<out KPojo>,
+        sourceType: KType,
         columns: List<Field>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask,
@@ -126,7 +125,7 @@ object CascadeSelectClause {
         val tableName = pojo.resolveRuntimeMetadata().tableName
         val selectedCascadeProps = cascadeSelectedProps.filter { it.tableName == tableName }
         val validCascades = findValidRefs(
-            kClass,
+            sourceType,
             columns,
             operationType,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
@@ -278,7 +277,7 @@ object CascadeSelectClause {
         // 单行或复合键：逐行查询
         if (parentRows.size == 1 || localProps.size > 1) {
             if (parentRows.size > 1 && localProps.size > 1) {
-                val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
+                val refPojo = validRef.refPojo.patchTo(validRef.refPojo.__kType)
                 val remoteFields = remoteProps.map { remoteProp ->
                     refPojo.resolveRuntimeMetadata().allFields.first { it.name == remoteProp }
                 }
@@ -312,7 +311,7 @@ object CascadeSelectClause {
 
             for (row in parentRows) {
                 val fkPairs = buildFkPairs(row.toDataMap()) ?: continue
-                val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class, *fkPairs.toTypedArray())
+                val refPojo = validRef.refPojo.patchTo(validRef.refPojo.__kType, *fkPairs.toTypedArray())
                 val remoteFields = refPojo.resolveRuntimeMetadata().allFields
                     .filter { field -> fkPairs.any { it.first == field.name } }
                 val clause = cascadeSelect(refPojo).apply {
@@ -335,7 +334,7 @@ object CascadeSelectClause {
         }
         if (parentsByFk.isEmpty()) return
 
-        val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
+        val refPojo = validRef.refPojo.patchTo(validRef.refPojo.__kType)
         val remoteField = refPojo.resolveRuntimeMetadata().allFields.first { it.name == remoteProp }
         val allChildren = mutableListOf<KPojo>()
         parentsByFk.keys.chunked(MAX_CASCADE_SELECT_PARAMETERS).forEach { keyChunk ->

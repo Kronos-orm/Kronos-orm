@@ -179,7 +179,9 @@ class PaginationStageBehaviorTest : MysqlTestBase() {
     fun `derived cursor propagates a stable key by its projected alias`() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
         val innerPage = TestUser()
-            .select(PageStableKeyProjection::class) { it.id.alias("userId") }
+            .select<TestUser, PageStableKeyProjection>(typeOf<PageStableKeyProjection>()) {
+                it.id.alias("userId")
+            }
             .orderBy { it.id.asc() }
             .page(1, 3)
         val outer = innerPage

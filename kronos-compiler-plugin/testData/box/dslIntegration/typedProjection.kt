@@ -27,7 +27,8 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.statement.SqlQuery
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_projection_source")
 data class ProjectionSource(
@@ -42,7 +43,7 @@ data class ProjectionRow(
 ) : KPojo
 
 data class ProjectionMappingCall(
-    val kClass: KClass<*>,
+    val mappedType: KType,
 )
 
 class ProjectionRecordingWrapper : KronosDataSourceWrapper {
@@ -54,8 +55,7 @@ class ProjectionRecordingWrapper : KronosDataSourceWrapper {
     override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
     override fun first(task: KAtomicQueryTask): Any? {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return null
-        objectCall = ProjectionMappingCall(kClass)
+        objectCall = ProjectionMappingCall(task.targetType)
         return ProjectionRow(7, "Projected")
     }
 
@@ -71,7 +71,7 @@ class ProjectionRecordingWrapper : KronosDataSourceWrapper {
 }
 
 fun buildProjection(user: ProjectionSource): com.kotlinorm.orm.select.SelectClause<ProjectionSource, ProjectionRow, ProjectionSource> {
-    return user.select(ProjectionRow::class) {
+    return user.select<ProjectionSource, ProjectionRow>(typeOf<ProjectionRow>()) {
         it.ignored
         [it.id, it.name]
     }
@@ -94,7 +94,7 @@ fun box(): String {
     val failures = listOfNotNull(
         expect(statement.select.size == 2) { "select size was ${statement.select.size}" },
         expect(row?.name == "Projected") { "projection row was $row" },
-        expect(call?.kClass == ProjectionRow::class) { "mapping kClass was ${call?.kClass}" },
+        expect(call?.mappedType == typeOf<ProjectionRow?>()) { "mapping type was ${call?.mappedType}" },
     )
 
     return failures.firstOrNull() ?: "OK"

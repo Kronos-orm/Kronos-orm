@@ -17,54 +17,25 @@
 package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
-import com.kotlinorm.compiler.core.buildFieldFromProperty
-import com.kotlinorm.compiler.core.isColumnType
 import com.kotlinorm.compiler.utils.AnnotationFqNames
-import com.kotlinorm.compiler.utils.KPojoFqName
 import com.kotlinorm.compiler.utils.set
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
-import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
 import org.jetbrains.kotlin.ir.builders.declarations.addDefaultGetter
 import org.jetbrains.kotlin.ir.builders.declarations.addDefaultSetter
 import org.jetbrains.kotlin.ir.builders.irBlockBody
-import org.jetbrains.kotlin.ir.builders.irBoolean
-import org.jetbrains.kotlin.ir.builders.irBranch
-import org.jetbrains.kotlin.ir.builders.irCall
-import org.jetbrains.kotlin.ir.builders.irElseBranch
-import org.jetbrains.kotlin.ir.builders.irEquals
-import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irGetField
-import org.jetbrains.kotlin.ir.builders.irGetObject
-import org.jetbrains.kotlin.ir.builders.irNull
-import org.jetbrains.kotlin.ir.builders.irReturn
-import org.jetbrains.kotlin.ir.builders.irSetField
-import org.jetbrains.kotlin.ir.builders.irString
-import org.jetbrains.kotlin.ir.builders.irWhen
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.superTypes
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.hasAnnotation
-import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.name.FqName
 
 /**
  * Kronos IR Class Transformer
@@ -73,7 +44,7 @@ import org.jetbrains.kotlin.name.FqName
  * fake-override functions and properties with real, compiler-generated implementations.
  *
  * The following methods/properties are generated for each KPojo class:
- * - `__kClass` — property holding the concrete KClass reference for static KPojo classes.
+ * - `__kType` — property holding the concrete KType for static KPojo classes.
  * - `__columns` — property holding the list of [Field] descriptors for all column properties.
  * - `__tableName` — property holding the table name (from `@Table` annotation or class name).
  * - `__tableComment` — property holding the table comment.
@@ -90,7 +61,6 @@ class KronosIrClassTransformer(
     @Suppress("unused") private val errorReporter: ErrorReporter,
     private val metadataClass: IrClass = irClass
 ) : IrElementTransformerVoidWithContext() {
-
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
         if (declaration !is IrSimpleFunction || !declaration.isFakeOverride) {
@@ -131,7 +101,7 @@ class KronosIrClassTransformer(
             with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {
                 with(pluginContext) {
                     when (declaration.name.asString()) {
-                        "__kClass" -> replaceFakeProp { createKClassProperty(irClass) }
+                        "__kType" -> replaceFakeProp { createKTypeProperty(irClass) }
                         "__columns" -> replaceFakeProp { createColumns(irClass, metadataClass) }
                         "__tableName" -> replaceFakeProp { createTableName(metadataClass) }
                         "__tableComment" -> replaceFakeProp { createTableComment(metadataClass) }

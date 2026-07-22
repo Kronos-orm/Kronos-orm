@@ -47,6 +47,7 @@ import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 
 internal fun FirBlock.lastExpression(): FirStatement? {
@@ -299,12 +300,28 @@ internal fun FirProperty.isKronosColumn(session: FirSession): Boolean {
     }
 }
 
+/**
+ * Checks this type and its recursively declared FIR supertypes for [KPojoClassId].
+ * Visited class IDs prevent cycles and repeated traversal of shared supertype graphs.
+ *
+ * @receiver the type whose resolved class hierarchy is inspected
+ * @param session the FIR session used to resolve class-like symbols
+ * @return `true` when this type is KPojo-like, otherwise `false`
+ */
+internal fun ConeKotlinType.isKPojoLikeType(session: FirSession): Boolean =
+    isKPojoLikeType(session, mutableSetOf())
+
 @OptIn(SymbolInternals::class)
-internal fun ConeKotlinType.isKPojoLikeType(session: FirSession): Boolean {
+private fun ConeKotlinType.isKPojoLikeType(
+    session: FirSession,
+    visitedClassIds: MutableSet<ClassId>
+): Boolean {
     val classLike = this as? ConeClassLikeType ?: return false
-    if (classLike.lookupTag.classId == KPojoClassId) return true
+    val classId = classLike.lookupTag.classId
+    if (classId == KPojoClassId) return true
+    if (!visitedClassIds.add(classId)) return false
     val symbol = classLike.toClassSymbol(session) ?: return false
     return symbol.fir.superTypeRefs
         .mapNotNull { ref -> (ref as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType }
-        .any { superType -> superType.lookupTag.classId == KPojoClassId }
+        .any { superType -> superType.isKPojoLikeType(session, visitedClassIds) }
 }

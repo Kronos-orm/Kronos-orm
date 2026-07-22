@@ -19,6 +19,7 @@ import com.kotlinorm.integration.suites.StrategyIntegrationSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
 import com.kotlinorm.integration.suites.TypeDialectDdlCornerIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
+import com.kotlinorm.integration.suites.ValueMappingIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
 import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.sqlite
@@ -38,6 +39,12 @@ class SqliteErrorIntegrationTest : ErrorIntegrationSuite(sqlite, StandardIntegra
 class SqliteWrapperSqlIntegrationTest : WrapperSqlIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteCascadeIntegrationTest : CascadeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteValueTypeIntegrationTest : ValueTypeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteValueMappingIntegrationTest : ValueMappingIntegrationSuite(sqlite, StandardIntegrationScenarioProfile) {
+    @Test
+    fun sqliteNumericEnumFieldMetadataSurvivesAllMappingBoundaries() {
+        verifyNumericEnumFieldMetadataAgainstSqlite()
+    }
+}
 class SqliteTypeDialectDdlCornerIntegrationTest :
     TypeDialectDdlCornerIntegrationSuite(sqlite, StandardIntegrationScenarioProfile) {
     @Test

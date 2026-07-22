@@ -33,6 +33,7 @@ import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @Table("tb_projection_scalar_variant_user")
 data class ProjectionScalarVariantUser(
@@ -51,18 +52,16 @@ class ProjectionScalarVariantWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:projection-scalar-variant"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        mappedClasses += kClass
-        return listOf(row(1).mapperTo(kClass as KClass<out KPojo>))
+        mappedTypes += task.targetType
+        return listOf(row(1).mapperTo(task.targetType))
     }
 
     override fun first(task: KAtomicQueryTask): Any? {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return null
-        mappedClasses += kClass
-        return row(mappedClasses.size).mapperTo(kClass as KClass<out KPojo>)
+        mappedTypes += task.targetType
+        return row(mappedTypes.size).mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0
@@ -143,9 +142,14 @@ fun box(): String {
         expect(directStatement.hasScalarAlias("lastAmount")) { "direct aliases were ${directStatement.aliases()}" },
         expect(collectionStatement.hasScalarAlias("latestAmount")) { "collection aliases were ${collectionStatement.aliases()}" },
         expect(listStatement.hasScalarAlias("listAmount")) { "list aliases were ${listStatement.aliases()}" },
-        expect(wrapper.mappedClasses.size == 3) { "mapped classes were ${wrapper.mappedClasses}" },
-        expect(wrapper.mappedClasses.all { it.simpleName?.startsWith("KronosSelectResult_") == true }) {
-            "mapped classes were ${wrapper.mappedClasses}"
+        expect(wrapper.mappedTypes.size == 3) { "mapped types were ${wrapper.mappedTypes}" },
+        expect(wrapper.mappedTypes.all { !it.isMarkedNullable && it.arguments.isEmpty() }) {
+            "mapped types were ${wrapper.mappedTypes}"
+        },
+        expect(wrapper.mappedTypes.all {
+            (it.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true
+        }) {
+            "mapped types were ${wrapper.mappedTypes}"
         },
     )
 

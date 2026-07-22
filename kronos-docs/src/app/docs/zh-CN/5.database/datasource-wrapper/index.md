@@ -72,6 +72,8 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 import com.kotlinorm.wrappers.KronosArgument
 import com.kotlinorm.wrappers.KronosArgumentFactory
 import com.kotlinorm.wrappers.KronosJdbcWrapper
+import com.kotlinorm.wrappers.KronosPhysicalReadResult
+import com.kotlinorm.wrappers.KronosPhysicalValueReader
 import java.sql.Types
 import java.util.UUID
 
@@ -86,11 +88,18 @@ val wrapper = KronosJdbcWrapper(dataSource) {
         }
     })
 
-    columnMappers.register(UUID::class) { resultSet, position, _, _ ->
-        resultSet.getString(position)?.let(UUID::fromString)
-    }
+    columnMappers.register(KronosPhysicalValueReader { resultSet, position, _ ->
+        val jdbcTypeName = resultSet.metaData.getColumnTypeName(position)
+        if (jdbcTypeName.equals("jsonb", ignoreCase = true)) {
+            KronosPhysicalReadResult.Handled(resultSet.getString(position))
+        } else {
+            KronosPhysicalReadResult.NotHandled
+        }
+    })
 }
 ```
+
+物理reader在`ResultSet.getObject(position)`之前执行，只按JDBC metadata或driver行为匹配，不接收逻辑目标类型。已经处理且值为SQL `NULL`时返回`Handled(null)`；需要继续尝试后续reader和默认JDBC读取时返回`NotHandled`。把读取到的字符串转换成`UUID`等逻辑类型应通过`Kronos.registerValueCodec`注册`ValueCodec`，这样typed result只经过一次语义转换。
 
 ## 使用{{ $.title("toList(task)") }}查询列表
 
@@ -110,7 +119,7 @@ val users = wrapper.toList(
 )
 ```
 
-内置JDBC wrapper会根据目标`KType`识别标量类型、`Map<String, Any?>`和`KPojo`类型。
+内置 JDBC wrapper 会根据目标 `KType` 识别标量、typed row Map 和 `KPojo`。每行 JDBC 结果都会物化为 `LinkedHashMap`，因此只支持直接声明的 `Map` 和 `MutableMap`（顶层目标可空也支持）。固定实现、调整泛型顺序或自定义 `Map` 子类型都会被拒绝，因为 Kronos 无法安全返回声明的容器。Map key 只支持 `String`、`String?` 或 `*`；`Any`、`Any?` 和 `*` value 保持 raw，具体 value 参数则使用完整 `KType` 转换。
 
 ## 使用{{ $.title("first(task)") }}查询单个值
 

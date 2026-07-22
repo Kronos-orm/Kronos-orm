@@ -17,25 +17,30 @@
 package com.kotlinorm.compiler
 
 import com.kotlinorm.compiler.plugin.KronosCompilerPluginRegistrar
+import com.kotlinorm.compiler.plugin.GeneratedProviderFqNameKey
+import com.kotlinorm.compiler.plugin.GeneratedProviderIdKey
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives
 import org.jetbrains.kotlin.test.FirParser
 import org.jetbrains.kotlin.test.builders.TestConfigurationBuilder
 import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
 import org.jetbrains.kotlin.test.directives.JvmEnvironmentConfigurationDirectives
-import org.jetbrains.kotlin.test.runners.AbstractFirLightTreeDiagnosticsTest
+import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives
+import org.jetbrains.kotlin.test.model.DependencyKind
 import org.jetbrains.kotlin.test.model.TestModule
+import org.jetbrains.kotlin.test.runners.AbstractFirLightTreeDiagnosticsTest
 import org.jetbrains.kotlin.test.runners.codegen.AbstractFirBlackBoxCodegenTestBase
 import org.jetbrains.kotlin.test.services.EnvironmentBasedStandardLibrariesPathProvider
 import org.jetbrains.kotlin.test.services.EnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.KotlinStandardLibrariesPathProvider
 import org.jetbrains.kotlin.test.services.RuntimeClasspathProvider
 import org.jetbrains.kotlin.test.services.TestServices
+import org.jetbrains.kotlin.test.services.getOrCreateTempDirectory
 import org.opentest4j.AssertionFailedError
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * Base class for Kronos official JVM box tests.
@@ -61,6 +66,7 @@ abstract class AbstractKronosJvmBoxTest : AbstractFirBlackBoxCodegenTestBase(Fir
 
         defaultDirectives {
             +JvmEnvironmentConfigurationDirectives.FULL_JDK
+            +JvmEnvironmentConfigurationDirectives.WITH_REFLECT
             +CodegenTestDirectives.IGNORE_DEXING
             LanguageSettingsDirectives.LANGUAGE with "+CollectionLiterals"
         }
@@ -164,6 +170,9 @@ private class KronosCompilerPluginConfigurator(testServices: TestServices) : Env
      */
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
         configuration.addJvmClasspathRoots(kronosCompilerTestClasspath)
+        val identity = testGeneratedTypeProviderIdentity("kronos-test:${module.name}")
+        configuration.put(GeneratedProviderIdKey, identity.id)
+        configuration.put(GeneratedProviderFqNameKey, identity.fqName)
     }
 
     /**
@@ -179,14 +188,55 @@ private class KronosCompilerPluginConfigurator(testServices: TestServices) : Env
     }
 }
 
+private data class TestGeneratedTypeProviderIdentity(val id: String, val fqName: String)
+
+private fun testGeneratedTypeProviderIdentity(moduleCoordinate: String): TestGeneratedTypeProviderIdentity {
+    val hash = MessageDigest.getInstance("SHA-256")
+        .digest(moduleCoordinate.toByteArray(Charsets.UTF_8))
+        .joinToString(separator = "") { byte ->
+            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+        }
+        .take(16)
+    return TestGeneratedTypeProviderIdentity(
+        id = "$moduleCoordinate#$hash",
+        fqName = "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_$hash"
+    )
+}
+
 private class KronosRuntimeClasspathProvider(testServices: TestServices) : RuntimeClasspathProvider(testServices) {
     /**
      * Provides runtime artifacts needed when the generated `box()` method is executed.
      */
     override fun runtimeClassPaths(module: TestModule): List<File> {
-        return kronosCompilerTestClasspath
+        val providerResources = buildList {
+            val visited = mutableSetOf<TestModule>()
+
+            fun addProviderResource(current: TestModule) {
+                if (!visited.add(current)) return
+                add(generatedProviderResourceRoot(current))
+                current.allDependencies
+                    .filter { it.kind == DependencyKind.Binary }
+                    .forEach { addProviderResource(it.dependencyModule) }
+            }
+
+            addProviderResource(module)
+        }
+        return kronosCompilerTestClasspath + providerResources
+    }
+
+    private fun generatedProviderResourceRoot(module: TestModule): File {
+        val identity = testGeneratedTypeProviderIdentity("kronos-test:${module.name}")
+        val identityHash = identity.fqName.substringAfterLast('_')
+        val resourceRoot = testServices.getOrCreateTempDirectory("kronos-provider-$identityHash")
+        val serviceFile = File(resourceRoot, GeneratedTypeProviderServicePath)
+        serviceFile.parentFile.mkdirs()
+        serviceFile.writeText("${identity.fqName}\n")
+        return resourceRoot
     }
 }
+
+private const val GeneratedTypeProviderServicePath =
+    "META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
 
 private val kronosCompilerTestClasspath: List<File> by lazy {
     val classpath = System.getProperty("kronos.compiler.test.classpath")

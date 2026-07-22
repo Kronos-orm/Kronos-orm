@@ -33,7 +33,6 @@ import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 object CascadeUpdateClause {
@@ -43,21 +42,19 @@ object CascadeUpdateClause {
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
         targetType: KType,
-        kClass: KClass<out KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         where: SqlExpr?,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
-            cascadeAllowed, pojo, targetType, kClass, paramMap, toUpdateFields, where, rootTask
+            cascadeAllowed, pojo, targetType, paramMap, toUpdateFields, where, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
         targetType: KType,
-        kClass: KClass<out KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         where: SqlExpr?,
@@ -66,7 +63,7 @@ object CascadeUpdateClause {
         val metadata = pojo.resolveRuntimeMetadata()
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
         val validCascades = findValidRefs( // 获取有效的引用
-            metadata.kClass,
+            metadata.kType,
             metadata.allFields,
             KOperationType.UPDATE,
             cascadeAllowed?.filter { it.tableName == metadata.tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性

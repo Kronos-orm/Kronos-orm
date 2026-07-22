@@ -18,14 +18,15 @@
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
-import com.kotlinorm.utils.TransformerSafeValue
-import kotlin.reflect.typeOf
+import com.kotlinorm.utils.toDatabaseParameterValue
 
 @Table(name = "tb_no_arg_string_match")
 data class NoArgStringMatchUser(
@@ -36,7 +37,8 @@ data class NoArgStringMatchUser(
 
 data class CapturedNoArgStringMatch(
     val expr: SqlExpr?,
-    val parameters: Map<String, Any?>
+    val parameters: Map<String, Any?>,
+    val fields: Map<String, Field>
 )
 
 fun noArgStringWhere(user: NoArgStringMatchUser, block: ToFilter<NoArgStringMatchUser, Boolean?>): CapturedNoArgStringMatch {
@@ -44,14 +46,15 @@ fun noArgStringWhere(user: NoArgStringMatchUser, block: ToFilter<NoArgStringMatc
     user.afterFilter {
         sourceValues = user.toDataMap()
         block(it)
-        result = CapturedNoArgStringMatch(sqlExpr, parameterValues.toMap())
+        result = CapturedNoArgStringMatch(sqlExpr, parameterValues.toMap(), parameterFields.toMap())
     }
-    return result ?: CapturedNoArgStringMatch(null, emptyMap())
+    return result ?: CapturedNoArgStringMatch(null, emptyMap(), emptyMap())
 }
 
 fun noArgStringParameter(actual: CapturedNoArgStringMatch, expr: SqlExpr?): Any? {
-    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
-    return actual.parameters[name]
+    val parameter = expr as? SqlExpr.Parameter ?: return null
+    val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return null
+    return toDatabaseParameterValue(CompilerTestDataSourceWrapper, actual.fields, name, actual.parameters[name], expandAsList = parameter.expandAsList)
 }
 
 fun expectLikeCondition(
@@ -100,33 +103,33 @@ fun box(): String {
 
     val user = NoArgStringMatchUser(name = "A%_\\", pattern = "^A.*")
     val failures = listOfNotNull(
-        expectLikeCondition("like", noArgStringWhere(user) { it.name.like }, "name", TransformerSafeValue("A%_\\", typeOf<String>())),
+        expectLikeCondition("like", noArgStringWhere(user) { it.name.like }, "name", "A%_\\"),
         expectLikeCondition(
             "notLike",
             noArgStringWhere(user) { it.name.notLike },
             "name",
-            TransformerSafeValue("A%_\\", typeOf<String>()),
+            "A%_\\",
             not = true
         ),
         expectLikeCondition(
             "startsWith",
             noArgStringWhere(user) { it.name.startsWith },
             "name",
-            TransformerSafeValue("A\\%\\_\\\\%", typeOf<String>()),
+            "A\\%\\_\\\\%",
             escape = SqlExpr.StringLiteral("\\")
         ),
         expectLikeCondition(
             "endsWith",
             noArgStringWhere(user) { it.name.endsWith },
             "name",
-            TransformerSafeValue("%A\\%\\_\\\\", typeOf<String>()),
+            "%A\\%\\_\\\\",
             escape = SqlExpr.StringLiteral("\\")
         ),
         expectLikeCondition(
             "contains",
             noArgStringWhere(user) { it.name.contains },
             "name",
-            TransformerSafeValue("%A\\%\\_\\\\%", typeOf<String>()),
+            "%A\\%\\_\\\\%",
             escape = SqlExpr.StringLiteral("\\")
         ),
         expectRegexpCondition(

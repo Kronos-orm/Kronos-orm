@@ -9,7 +9,7 @@ const CodeFirstPage: NgDocPage = {
     title: `Code First`,
     mdFile: './index.md',
     route: 'code-first',
-    order: 11,
+    order: 12,
     category: MappingCategory,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent},

@@ -20,6 +20,18 @@ internal fun SqlStatement.renderForCore(
     dataSource: KronosDataSourceWrapper,
     parameterValues: Map<String, Any?>,
     fieldsMap: Map<String, Field> = emptyMap()
+): RenderedSql = renderCore(dataSource, parameterValues, fieldsMap, parametersArePrepared = false)
+
+internal fun SqlStatement.renderPreparedForCore(
+    dataSource: KronosDataSourceWrapper,
+    parameterValues: Map<String, Any?>
+): RenderedSql = renderCore(dataSource, parameterValues, emptyMap(), parametersArePrepared = true)
+
+private fun SqlStatement.renderCore(
+    dataSource: KronosDataSourceWrapper,
+    parameterValues: Map<String, Any?>,
+    fieldsMap: Map<String, Field>,
+    parametersArePrepared: Boolean
 ): RenderedSql {
     val rendered = toRenderedSql(
         SqlRenderContext(
@@ -32,10 +44,23 @@ internal fun SqlStatement.renderForCore(
         listParameterOccurrences = rendered.listParameterOccurrences
     ).parameterNames
     val usedParameterNames = parameterNames.toSet()
+    val listParameterNames = parameterNames.mapIndexedNotNull { index, name ->
+        name.takeIf { index in rendered.listParameterOccurrences }
+    }.toSet()
     val parameters = rendered.parameters
         .filterKeys { it in usedParameterNames }
         .mapValues { (key, value) ->
-            toDatabaseParameterValue(dataSource, fieldsMap, key, value)
+            if (parametersArePrepared) {
+                value
+            } else {
+                toDatabaseParameterValue(
+                    dataSource,
+                    fieldsMap,
+                    key,
+                    value,
+                    expandAsList = key in listParameterNames
+                )
+            }
         }
     return rendered.copy(
         parameters = parameters,

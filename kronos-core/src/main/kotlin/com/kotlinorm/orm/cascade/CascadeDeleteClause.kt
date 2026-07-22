@@ -35,7 +35,6 @@ import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import com.kotlinorm.utils.resolveRuntimeMetadata
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 /**
@@ -72,7 +71,6 @@ object CascadeDeleteClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>?,
         targetType: KType,
-        kClass: KClass<out KPojo>,
         pojo: T,
         where: SqlExpr?,
         paramMap: Map<String, Any?>,
@@ -82,7 +80,6 @@ object CascadeDeleteClause {
         if (cascade) generateTask(
             cascadeAllowed,
             targetType,
-            kClass,
             pojo,
             where,
             paramMap,
@@ -106,7 +103,6 @@ object CascadeDeleteClause {
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>?,
         targetType: KType,
-        kClass: KClass<out KPojo>,
         pojo: T,
         where: SqlExpr?,
         paramMap: Map<String, Any?>,
@@ -116,7 +112,7 @@ object CascadeDeleteClause {
     ): KronosActionTask {
         val tableName = pojo.__tableName
         val validCascades = findValidRefs( // 获取有效的引用
-            kClass,
+            targetType,
             columns,
             KOperationType.DELETE,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
@@ -140,21 +136,7 @@ object CascadeDeleteClause {
                 val toDeleteRecords = selectClause.toList(wrapper) //先查询出要删除的记录
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
-                // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
-                val restrictCascades =
-                    validCascades.filter { it.kCascade.onDelete == RESTRICT }
-                toDeleteRecords.forEach { record ->
-                    restrictCascades.forEach { cascade ->
-                        val valueOfPojo = record.toDataMap()[cascade.field.name]
-                        if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
-                            throw UnsupportedOperationException(
-                                "The record cannot be deleted because it is restricted by a cascade." +
-                                        "${record.__tableName}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, " +
-                                        "and the value is ${valueOfPojo}."
-                            )
-                        }
-                    }
-                }
+                validateRestrictCascades(toDeleteRecords, validCascades)
 
                 // 生成树结构，后序遍历所有的子节点，将所有的子节点压入list，最后由子到父执行删除操作
                 val forestOfKPojo = toDeleteRecords.map {
@@ -249,6 +231,30 @@ object CascadeDeleteClause {
                             }
                         }
                     }.flatten()) // 生成删除任务
+                }
+            }
+        }
+    }
+
+    /**
+     * Rejects deletion when a record still contains a value governed by a
+     * `RESTRICT` cascade relationship.
+     *
+     * @param records records selected for deletion
+     * @param validCascades cascade relationships applicable to the deletion
+     * @throws UnsupportedOperationException when a restricted relationship has data
+     */
+    private fun validateRestrictCascades(records: List<KPojo>, validCascades: List<ValidCascade>) {
+        val restrictCascades = validCascades.filter { it.kCascade.onDelete == RESTRICT }
+        records.forEach { record ->
+            restrictCascades.forEach { cascade ->
+                val valueOfPojo = record.toDataMap()[cascade.field.name]
+                if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
+                    throw UnsupportedOperationException(
+                        "The record cannot be deleted because it is restricted by a cascade." +
+                            "${record.__tableName}.${cascade.kCascade.properties} is restricted by " +
+                            "${cascade.kCascade.targetProperties}, and the value is $valueOfPojo."
+                    )
                 }
             }
         }

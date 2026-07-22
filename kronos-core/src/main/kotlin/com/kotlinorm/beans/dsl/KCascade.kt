@@ -20,12 +20,14 @@ import com.kotlinorm.enums.CascadeDeleteAction
 import com.kotlinorm.enums.CascadeDeleteAction.NO_ACTION
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.KTypeKey
+import com.kotlinorm.utils.createKPojo
 import com.kotlinorm.utils.resolveRuntimeMetadata
 import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty0
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class KCascade(
     val properties: Array<String> = arrayOf(),
@@ -42,12 +44,14 @@ class KCascade(
 ) {
     companion object {
         inline fun <reified T : KPojo, reified R : KPojo> manyToMany(relationOfThis: KProperty0<List<R>?>): ManyToMany<T, R> {
-            return ManyToMany(relationOfThis.name, R::class, T::class)
+            return ManyToMany(relationOfThis.name, typeOf<R>(), typeOf<T>())
         }
 
         // 自定义委托类
         class ManyToMany<T, R>(
-            private var relationOfThis: String, private val relationClass: KClass<*>, private val targetClass: KClass<*>
+            private var relationOfThis: String,
+            private val relationType: KType,
+            private val targetType: KType
         ) : ReadWriteProperty<Any, List<T>> {
 
             private var targetOfRelationName: String? = null
@@ -55,8 +59,11 @@ class KCascade(
             @Suppress("UNCHECKED_CAST")
             private fun initKProperty() {
                 if (targetOfRelationName == null) {
-                    val relation = (relationClass as KClass<out KPojo>).createInstance()
-                    targetOfRelationName = relation.resolveRuntimeMetadata().allFields.find { it.kClass == targetClass }?.name
+                    val relation = createKPojo(relationType)
+                    val targetKey = KTypeKey.from(targetType, ignoreTopLevelNullability = true)
+                    targetOfRelationName = relation.resolveRuntimeMetadata().allFields.find { field ->
+                        field.kType?.let { KTypeKey.from(it, ignoreTopLevelNullability = true) } == targetKey
+                    }?.name
                 }
             }
 
@@ -72,7 +79,7 @@ class KCascade(
             override fun setValue(thisRef: Any, property: KProperty<*>, value: List<T>) {
                 initKProperty()
                 (thisRef as KPojo)[relationOfThis] = value.map {
-                    (relationClass as KClass<out KPojo>).createInstance().apply {
+                    createKPojo(relationType).apply {
                         this@apply[targetOfRelationName!!] = it
                     }
                 }

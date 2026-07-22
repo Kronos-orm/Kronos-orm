@@ -1,20 +1,21 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 通过 KClass 创建 KPojo
+## 通过 KType 创建 KPojo
 
-泛型代码拿到 `KClass` 并需要创建 KPojo 实例时，使用 `createInstance()`。Kronos 会通过已生成或已注册的 KPojo factory 创建实例。
+泛型代码拿到完整 `KType` 并需要创建 KPojo 实例时，使用 `Kronos.createKPojo(type)`。运行时通过编译器生成或显式注册的非反射 factory 创建实例。
 
 ```kotlin group="Create 1" name="kotlin" icon="kotlin"
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.Kronos
+import kotlin.reflect.typeOf
 
 data class User(
     var id: Int? = null,
     var name: String = ""
 ) : KPojo
 
-val instance = User::class.createInstance()
+val instance = Kronos.createKPojo(typeOf<User>())
 // User(id = null, name = "")
 ```
 
@@ -22,7 +23,7 @@ val instance = User::class.createInstance()
 
 ```kotlin group="Create 2" name="generic helper" icon="kotlin"
 inline fun <reified T : KPojo> newKPojo(): T {
-    return T::class.createInstance()
+    return Kronos.createKPojo(typeOf<T>()) as T
 }
 
 val user = newKPojo<User>()
@@ -38,68 +39,54 @@ val user = newKPojo<User>()
 
 ## 注册显式构造函数
 
-模型类型来自其他模块、第三方包或工厂边界时，使用 `registerKPojo` 指定构造函数。
+模型类型来自其他模块、第三方包或工厂边界时，使用 `Kronos.registerKPojoFactory` 指定构造函数。注册键是完整且精确的 `KType`；当前版本不支持泛型 KPojo 类型。
 
 ```kotlin group="Register 1" name="single type" icon="kotlin"
-import com.kotlinorm.utils.registerKPojo
+import com.kotlinorm.Kronos
+import com.kotlinorm.utils.KPojoFactory
+import kotlin.reflect.typeOf
 
-registerKPojo(User::class) { User() }
-registerKPojo(Permissions::class) { Permissions() }
+val userRegistration = Kronos.registerKPojoFactory(typeOf<User>(), KPojoFactory { _ -> User() })
+val permissionsRegistration = Kronos.registerKPojoFactory(
+    typeOf<Permissions>(),
+    KPojoFactory { _ -> Permissions() }
+)
 ```
 
-调用点已知目标类型时，可以使用 reified 重载把同一注册写在一处。
+每个注册只覆盖一个精确类型。同一类型后注册的 factory 优先；调用 `close()` 只移除本次覆盖，并恢复之前的用户或生成 factory。
 
-```kotlin group="Register 2" name="reified" icon="kotlin"
-import com.kotlinorm.utils.registerKPojo
-
-registerKPojo<User> { User() }
-```
-
-一个注册需要覆盖多个模型类型时，使用 `registerKPojoFactory`。
-
-```kotlin group="Register 3" name="factory" icon="kotlin"
-import com.kotlinorm.utils.registerKPojoFactory
-
-registerKPojoFactory { kClass ->
-    when (kClass) {
-        User::class -> User()
-        Permissions::class -> Permissions()
-        else -> null
-    }
-}
-```
-
-factory 对不负责的类型返回 `null`，后续 factory 可以继续处理同一次请求。
-
-```text group="Register 4" name="result"
-User::class.createInstance() 返回 User()。
-Permissions::class.createInstance() 返回 Permissions()。
-未匹配的 KPojo 类型会继续交给后续注册的 factory。
+```kotlin group="Register 2" name="lifecycle" icon="kotlin"
+val user = Kronos.createKPojo(typeOf<User>())
+userRegistration.close()
+permissionsRegistration.close()
 ```
 
 ## 处理未注册类型
 
-没有生成或注册的 factory 能处理该类型时，`createInstance()` 会抛出包含修复建议的错误。为声明该 KPojo 的模块启用 Kronos compiler plugin，或手动注册构造函数。
+没有生成或注册的 factory 能处理该 `KType` 时，`createKPojo` 会抛出包含修复建议的错误。为声明该 KPojo 的模块启用 Kronos compiler plugin，或手动注册构造函数。
 
 ```kotlin group="Missing factory 1" name="kotlin" icon="kotlin"
 data class ExternalUser(
     val id: Int
 ) : KPojo
 
-ExternalUser::class.createInstance()
+Kronos.createKPojo(typeOf<ExternalUser>())
 ```
 
 ```text group="Missing factory 1" name="result"
-KClass ... instantiation failed.
+KType ... instantiation failed.
 No generated or registered KPojo factory matched this class.
 ```
 
 无法使用生成 factory 的类型，可以显式注册构造函数。
 
 ```kotlin group="Missing factory 2" name="registration" icon="kotlin"
-registerKPojo(ExternalUser::class) { ExternalUser(id = 0) }
+val registration = Kronos.registerKPojoFactory(
+    typeOf<ExternalUser>(),
+    KPojoFactory { _ -> ExternalUser(id = 0) }
+)
 
-val external = ExternalUser::class.createInstance()
+val external = Kronos.createKPojo(typeOf<ExternalUser>())
 // ExternalUser(id = 0)
 ```
 

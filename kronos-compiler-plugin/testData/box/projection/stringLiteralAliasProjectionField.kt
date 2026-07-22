@@ -28,6 +28,8 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table("tb_string_literal_projection")
 data class StringLiteralProjectionUser(
@@ -39,14 +41,13 @@ class StringLiteralProjectionWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:string-literal-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
     override fun first(task: KAtomicQueryTask): Any? {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return null
-        mappedClasses += kClass
-        return mapOf("computedAlias" to "ready").mapperTo(kClass as KClass<out KPojo>)
+        mappedTypes += task.targetType
+        return mapOf("computedAlias" to "ready").mapperTo(task.targetType)
     }
 
     override fun update(task: KAtomicActionTask): Int = 0
@@ -66,15 +67,19 @@ fun box(): String {
         .select { "computedAlias" }
         .first(wrapper)
     val fieldNames = row.__columns.map { it.name }
+    val mappedType = wrapper.mappedTypes.singleOrNull()
 
     val failures = listOfNotNull(
         expectStringLiteralProjection(row.computedAlias == "ready") { "computedAlias was ${row.computedAlias}" },
         expectStringLiteralProjection(fieldNames == listOf("computedAlias")) { "field names were $fieldNames" },
-        expectStringLiteralProjection(wrapper.mappedClasses.singleOrNull() != StringLiteralProjectionUser::class) {
-            "mapped source class ${StringLiteralProjectionUser::class}"
+        expectStringLiteralProjection(mappedType != typeOf<StringLiteralProjectionUser>()) {
+            "mapped source type ${typeOf<StringLiteralProjectionUser>()}"
         },
-        expectStringLiteralProjection(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
-            "mapped classes were ${wrapper.mappedClasses}"
+        expectStringLiteralProjection(mappedType != null && !mappedType.isMarkedNullable && mappedType.arguments.isEmpty()) {
+            "mapped type was $mappedType"
+        },
+        expectStringLiteralProjection((mappedType?.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped types were ${wrapper.mappedTypes}"
         },
     )
 

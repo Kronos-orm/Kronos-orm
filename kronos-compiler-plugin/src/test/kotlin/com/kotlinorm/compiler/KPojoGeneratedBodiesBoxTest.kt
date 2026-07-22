@@ -39,6 +39,19 @@ class KPojoGeneratedBodiesBoxTest : AbstractKronosJvmBoxSuite("kpojoGeneratedBod
     fun fromMapData() = box("fromMapData")
 
     /**
+     * Verifies unified factory construction and missing/null/default/ignore assignment behavior.
+     */
+    @Test
+    fun mapperConstructionAndAssignmentSemantics() = box("mapperConstructionAndAssignmentSemantics")
+
+    /**
+     * Verifies safe generated mapping passes complete KTypes and serialization metadata through
+     * the single decode boundary for enum, temporal, serialized, and user ValueCodecs.
+     */
+    @Test
+    fun safeMapperUsesUnifiedValueCodec() = box("safeMapperUsesUnifiedValueCodec")
+
+    /**
      * Verifies generated dynamic `get` and `set` operators, including immutable property handling.
      */
     @Test

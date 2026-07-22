@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.KSelectable
@@ -93,7 +95,12 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     internal override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = planner.planTotalCount(dataSource)
-        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, context.fieldMap)
+        val renderedSql = renderStatement(
+            dataSource,
+            plan.query,
+            plan.parameters,
+            context.fieldMap + plan.parameterFields
+        )
         return KronosQueryTask(
             KronosAtomicQueryTask(
                 sql = renderedSql.sql,
@@ -246,7 +253,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                     selectCondition(filterTable)
                     andWhere(
                         this@filter.sqlExpr?.qualifySourceAliasIfPresent(sourceTableAlias),
-                        this@filter.parameterValues
+                        this@filter.parameterValues,
+                        this@filter.parameterFields
                     )
                 }
             }
@@ -264,7 +272,8 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                     selectCondition(filterTable)
                     andHaving(
                         this@filter.sqlExpr?.qualifySourceAliasIfPresent(sourceTableAlias),
-                        this@filter.parameterValues
+                        this@filter.parameterValues,
+                        this@filter.parameterFields
                     )
                 }
             }
@@ -321,7 +330,12 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         val dataSource = wrapper.orDefault()
         val plan = toSqlQueryPlan(dataSource)
-        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, context.fieldMap)
+        val renderedSql = renderStatement(
+            dataSource,
+            plan.query,
+            plan.parameters,
+            context.fieldMap + plan.parameterFields
+        )
         val finalSelectFields = if (context.selectAll) {
             (context.allFields + context.cascadeFields).toLinkedSet()
         } else {
@@ -336,14 +350,13 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             context.cascadeEnabled,
             context.cascadeAllowed,
             pojo,
-            context.kClass,
             KronosAtomicQueryTask(
                 sql = renderedSql.sql,
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
                 statement = plan.query,
                 targetType = context.projectionType,
-                resultColumnTypes = resultColumnTypes(resultFieldsByLabel),
+                resultColumns = resultColumns(resultFieldsByLabel),
                 listParameterOccurrences = renderedSql.listParameterOccurrences
             ),
             finalSelectFields,

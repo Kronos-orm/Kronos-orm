@@ -22,19 +22,62 @@ import com.kotlinorm.beans.config.NoneNamingStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
-import com.kotlinorm.beans.serialize.NoneSerializeProcessor
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.ValueCodec
+import com.kotlinorm.interfaces.ValueCodecRegistration
 import com.kotlinorm.types.KLoggerFactory
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.KPojoFactory
+import com.kotlinorm.utils.KPojoFactoryRegistration
+import com.kotlinorm.utils.codec.ValueCodecRegistry
+import com.kotlinorm.utils.createKPojo as createRegisteredKPojo
+import com.kotlinorm.utils.registerKPojoFactory as registerExactKPojoFactory
 import java.time.ZoneId
+import kotlin.reflect.KType
 
 object Kronos {
+    /**
+     * Registers one bidirectional value codec at highest priority.
+     *
+     * The returned handle is idempotent; closing it removes only this codec and
+     * restores the previous matching registration. SQL `NULL` is handled by the
+     * registry, and codec failures include direction/origin/field context.
+     *
+     * @param codec stateless matcher/converter to install at highest current priority
+     * @return an idempotent handle that removes only this registration on close
+     */
+    fun registerValueCodec(codec: ValueCodec): ValueCodecRegistration = ValueCodecRegistry.register(codec)
+
+    /**
+     * Registers a user KPojo factory for the exact complete [type].
+     * Later registrations have priority; the returned handle removes only this
+     * registration and restores the previous user or generated factory on close.
+     *
+     * @param type concrete, non-generic KPojo type for this release
+     * @param factory fresh-instance constructor that must return a type-compatible KPojo
+     * @return an idempotent handle that restores the previous exact-type factory on close
+     * @throws com.kotlinorm.exceptions.UnsupportedType when [type] is not a supported concrete KPojo
+     */
+    fun registerKPojoFactory(type: KType, factory: KPojoFactory): KPojoFactoryRegistration =
+        registerExactKPojoFactory(type, factory)
+
+    /**
+     * Creates a fresh KPojo through the highest-priority user factory for [type],
+     * falling back to compiler-generated metadata. Missing or incompatible
+     * factories fail with a contextual construction exception.
+     *
+     * @param type exact concrete KPojo type; top-level nullability is ignored for lookup
+     * @return a fresh instance whose generated `__kType` matches [type]
+     * @throws com.kotlinorm.exceptions.KPojoFactoryException when construction metadata is missing or invalid
+     */
+    fun createKPojo(type: KType): KPojo = createRegisteredKPojo(type)
+
     // 默认日志适配器
     var defaultLogger: KLoggerFactory =
         {
@@ -73,9 +116,6 @@ object Kronos {
 
     // 当前时区
     var timeZone: ZoneId = ZoneId.systemDefault()
-
-    // 序列化
-    var serializeProcessor: KronosSerializeProcessor = NoneSerializeProcessor
 
     val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
 

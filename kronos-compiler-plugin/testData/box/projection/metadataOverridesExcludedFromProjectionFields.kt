@@ -37,13 +37,15 @@ import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class MetadataOverrideProjectionSource(
     var id: Int? = null,
     var name: String? = null,
 ) : KPojo {
     @Ignore([IgnoreAction.ALL])
-    override var __kClass: KClass<out KPojo> = KPojo::class
+    override var __kType = typeOf<KPojo>()
     @Ignore([IgnoreAction.ALL])
     override var __tableName: String = "runtime_projection_user"
     @Ignore([IgnoreAction.ALL])
@@ -72,12 +74,11 @@ class MetadataOverrideProjectionWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:metadata-override-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        mappedClasses.add(kClass)
-        return [mapOf("id" to 5, "name" to "Ada").mapperTo(kClass as KClass<out KPojo>)]
+        mappedTypes.add(task.targetType)
+        return [mapOf("id" to 5, "name" to "Ada").mapperTo(task.targetType)]
     }
 
     override fun first(task: KAtomicQueryTask): Any? = null
@@ -106,7 +107,7 @@ fun box(): String {
     val row = clause.toList(wrapper).singleOrNull()
     val generatedFieldNames = row?.__columns.orEmpty().map { it.name }
     val metadataNames = listOf(
-        "__kClass",
+        "__kType",
         "__tableName",
         "__tableComment",
         "__columns",
@@ -119,6 +120,7 @@ fun box(): String {
     val leakedSqlNames = sqlOutputNames.filter { it in metadataNames }
     val leakedGeneratedNames = generatedFieldNames.filter { it in metadataNames }
     val staticSource = StaticProjectionMetadataSource()
+    val mappedType = wrapper.mappedTypes.singleOrNull()
 
     val failures = listOfNotNull(
         metadataProjectionExpect(sqlOutputNames == listOf("id", "name", "sourceId")) {
@@ -139,8 +141,8 @@ fun box(): String {
         metadataProjectionExpect(row?.name == "Ada") {
             "mapped name was ${row?.name}"
         },
-        metadataProjectionExpect(staticSource.__kClass == StaticProjectionMetadataSource::class) {
-            "static __kClass was ${staticSource.__kClass}"
+        metadataProjectionExpect(staticSource.__kType == typeOf<StaticProjectionMetadataSource>()) {
+            "static __kType was ${staticSource.__kType}"
         },
         metadataProjectionExpect(staticSource.__tableName == "tb_static_projection_metadata") {
             "static __tableName was ${staticSource.__tableName}"
@@ -148,8 +150,11 @@ fun box(): String {
         metadataProjectionExpect(staticSource.__columns.map { it.name } == listOf("id", "name")) {
             "static __columns were ${staticSource.__columns.map { it.name }}"
         },
-        metadataProjectionExpect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
-            "mapped class was ${wrapper.mappedClasses.singleOrNull()}"
+        metadataProjectionExpect(mappedType != null && !mappedType.isMarkedNullable && mappedType.arguments.isEmpty()) {
+            "mapped type was $mappedType"
+        },
+        metadataProjectionExpect((mappedType?.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped type was $mappedType"
         },
     )
 

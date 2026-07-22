@@ -25,12 +25,12 @@ import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
 import com.kotlinorm.syntax.table.SqlJoinType
 import com.kotlinorm.utils.KPojoRuntimeMetadata
+import com.kotlinorm.utils.KTypeKey
 import com.kotlinorm.utils.LinkedHashSet
-import com.kotlinorm.utils.createInstance
+import com.kotlinorm.utils.createKPojo
 import com.kotlinorm.utils.resolveRuntimeMetadata
 import com.kotlinorm.utils.toLinkedSet
 import java.util.IdentityHashMap
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : KPojo>(
@@ -60,8 +60,8 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
     }
 
     val tableName: String = rootMetadata.tableName
-    val listOfPojo: List<Pair<KClass<out KPojo>, KPojo>> = state.sources.map { source ->
-        metadataBySource.getValue(source).kClass to source
+    val listOfPojo: List<Pair<KType, KPojo>> = state.sources.map { source ->
+        metadataBySource.getValue(source).kType to source
     }
     val allFields: List<Field> = rootMetadata.allColumns
     val allSourceFields: List<Field> = state.sources.flatMap { source ->
@@ -76,6 +76,7 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
     }
     val patchValues: MutableMap<String, Any?> = linkedMapOf()
     val parameterValues: MutableMap<String, Any?> = linkedMapOf()
+    val parameterFields: MutableMap<String, Field> = linkedMapOf()
     private val parameterNameCounter = mutableMapOf<String, Int>()
 
     var where: SqlExpr? = null
@@ -233,17 +234,16 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
         } ?: return emptyList()
         val metadata = metadataFor(source)
         val direct = field.cascade?.properties.orEmpty().asSequence()
-        val reverse = field.kClass
-            ?.let { it as? KClass<out KPojo> }
-            ?.let { relationClass ->
-                val relationFields = relationClass.objectInstanceOrNull()?.resolveRuntimeMetadata()?.allFields.orEmpty()
+        val reverse = (field.elementKType ?: field.kType)
+            ?.let { relationType ->
+                val relationFields = relationType.kPojoInstanceOrNull()?.resolveRuntimeMetadata()?.allFields.orEmpty()
                 relationFields.asSequence()
                     .filter { relation ->
                         relation.cascade != null &&
                             relation.cascade.targetProperties.all { target ->
                                 metadata.allFields.any { sourceField -> sourceField.name == target }
                             } &&
-                            relation.kClass == source::class
+                            (relation.elementKType ?: relation.kType)?.sameDeclaredTypeAs(source.__kType) == true
                     }
                     .flatMap { relation -> relation.cascade?.targetProperties.orEmpty().asSequence() }
             }
@@ -254,8 +254,12 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
             .toList()
     }
 
-    private fun KClass<out KPojo>.objectInstanceOrNull(): KPojo? =
-        runCatching { this.createInstance() }.getOrNull()
+    private fun KType.kPojoInstanceOrNull(): KPojo? =
+        runCatching { createKPojo(this) }.getOrNull()
+
+    private fun KType.sameDeclaredTypeAs(other: KType): Boolean =
+        KTypeKey.from(this, ignoreTopLevelNullability = true) ==
+            KTypeKey.from(other, ignoreTopLevelNullability = true)
 
     fun fieldsMap(): Map<String, Field> =
         allSourceFields.associateBy { it.name } + allSourceFields.associateBy { it.columnName }
@@ -267,17 +271,26 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
         return source.toDataMap()[field.name]
     }
 
-    fun andWhere(expr: SqlExpr?, parameters: Map<String, Any?> = emptyMap()) {
-        where = and(where, mergeParameters(expr, parameters))
+    fun andWhere(
+        expr: SqlExpr?,
+        parameters: Map<String, Any?> = emptyMap(),
+        fields: Map<String, Field> = emptyMap()
+    ) {
+        where = and(where, mergeParameters(expr, parameters, fields))
     }
 
-    fun andHaving(expr: SqlExpr?, parameters: Map<String, Any?> = emptyMap()) {
-        having = and(having, mergeParameters(expr, parameters))
+    fun andHaving(
+        expr: SqlExpr?,
+        parameters: Map<String, Any?> = emptyMap(),
+        fields: Map<String, Field> = emptyMap()
+    ) {
+        having = and(having, mergeParameters(expr, parameters, fields))
     }
 
-    fun bindParameter(name: String, value: Any?): String {
+    fun bindParameter(name: String, value: Any?, field: Field? = null): String {
         val uniqueName = uniqueParameterName(name)
         parameterValues[uniqueName] = value
+        field?.let { parameterFields[uniqueName] = it }
         return uniqueName
     }
 
@@ -361,6 +374,8 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
         patchValues.putAll(source.patchValues)
         parameterValues.clear()
         parameterValues.putAll(source.parameterValues)
+        parameterFields.clear()
+        parameterFields.putAll(source.parameterFields)
         parameterNameCounter.clear()
         parameterNameCounter.putAll(source.parameterNameCounter)
         source.databaseBySource.forEach { (key, value) -> databaseBySource[key] = value }
@@ -491,11 +506,15 @@ internal class JoinedSelectContext<Source : KPojo, Selected : KPojo, Context : K
 
     private fun Field.resolvedCursorKey(): String = "${qualifierFor(tableName)}.$columnName"
 
-    private fun mergeParameters(expr: SqlExpr?, parameters: Map<String, Any?>): SqlExpr? {
+    private fun mergeParameters(
+        expr: SqlExpr?,
+        parameters: Map<String, Any?>,
+        fields: Map<String, Field>
+    ): SqlExpr? {
         if (expr == null || parameters.isEmpty()) return expr
         val renames = linkedMapOf<String, String>()
         parameters.forEach { (name, value) ->
-            val uniqueName = bindParameter(name, value)
+            val uniqueName = bindParameter(name, value, fields[name])
             if (uniqueName != name) renames[name] = uniqueName
         }
         return expr.renameNamedParameters(renames)

@@ -1,8 +1,13 @@
 | 症状/关键词 | 经验记录 |
 |---|---|
+| ValueCodec；ENCODE；logical input；BasicValueCodec；TemporalValueCodec；String to Int；coercion guard | [ENCODE 类型保护必须保留内置 coercion](evolution/2026-07-21-encode-built-in-coercion-guard.md) |
+| JDBC result mapping；ResultColumnMetadata；raw/vendor read；single-pass decode；factory reuse；LOB；SQLXML；PGobject；Oracle LONG | [JDBC 结果必须分离物理读取与逻辑解码](evolution/2026-07-21-jdbc-result-codec-single-pass.md) |
+| pagination；count wrapper；prepared parameters；double encode；listParameterOccurrences；empty fieldsMap | [重渲染 SQL 不得重新准备参数](evolution/2026-07-21-rerender-prepared-parameters.md) |
 | generated code；`Patch.kt`；detekt；Codacy；static analysis；codegen template | [Generated sources need durable static-analysis policy](evolution/2026-07-20-generated-source-static-analysis.md) |
 | non-root JOIN cascade projection；hidden local key；`profile_id`；owner source | [Non-root JOIN cascade must preserve the owner local key](evolution/2026-07-20-join-cascade-owner-local-key.md) |
 | runtime `__tableName` override；stale qualifier；select/page；JOIN；UNION；DDL | [Runtime table overrides must rebind qualifiers](evolution/2026-07-20-runtime-table-name-qualifier-binding.md) |
+| ValueCodec；`KType`；`starProjectedType`；primitive；boxed；`javaObjectType`；Boolean encode | [运行时 KType 赋值判断必须归一化 primitive boxing](evolution/2026-07-20-runtime-ktype-primitive-boxing.md) |
+| TemporalValueSupport；`java.sql`；`NoClassDefFoundError`；GeneratedClassLoader；optional JDBC KType；lazy holder | [Temporal codec 不得提前解析可选 JDBC 类型](evolution/2026-07-21-temporal-optional-jdbc-classloader.md) |
 | typed query；`KSelectable.pojo`；generic `Source`；DSL 泛型擦除；member extension；JVM signature clash | [Typed query properties and JVM signatures](evolution/2026-07-19-typed-query-properties-and-jvm-signatures.md) |
 | IDEA plugin；`signPlugin`；`verifyPluginSignature`；`publishPlugin`；Marketplace；PEM；`supportsKotlinPluginMode`；Plugin Verifier；`-offline` | [IDEA 插件签名与校验必须使用明确输入](evolution/2026-07-18-idea-plugin-signing-and-verification.md) |
 | IDEA plugin；`buildPlugin`；2026.2；EAP；`javaCompiler`；platform build | [IDEA 平台与 Java compiler 必须使用同一正式 build](evolution/2026-07-18-idea-platform-java-compiler-build-alignment.md) |

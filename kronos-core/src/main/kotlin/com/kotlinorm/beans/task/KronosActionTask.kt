@@ -21,20 +21,31 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
 
 /**
- * KronosActionTask class represents a Kronos action task used to execute multiple Kronos atomic action tasks.
+ * Transactional execution facade for an ordered sequence of atomic mutation tasks.
+ *
+ * Adjacent tasks with identical named SQL are combined into a JDBC batch; non-adjacent tasks
+ * retain their original execution order. The aggregate result sums affected rows and exposes
+ * the final executed task's insert id and stash.
  */
 class KronosActionTask {
-    internal val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
-    private var beforeExecute: (KronosActionTask.(KronosDataSourceWrapper) -> Unit)? = null //在执行之前执行的操作
-    var afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)? =
-        null //在执行之后执行的操作(返回一个新的KronosActionTask)
+    /** Ordered atomic mutations that will execute in one transaction. */
+    internal val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf()
 
-    fun doBeforeExecute(beforeExecute: KronosActionTask.(KronosDataSourceWrapper) -> Unit): KronosActionTask { //设置在执行之前执行的操作
+    /** Hook invoked before this task is materialized for execution. */
+    private var beforeExecute: (KronosActionTask.(KronosDataSourceWrapper) -> Unit)? = null
+
+    /** Hook invoked with the aggregate result after all mutations complete successfully. */
+    var afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)? =
+        null
+
+    /** Replaces the before-execute hook and returns this task for fluent configuration. */
+    fun doBeforeExecute(beforeExecute: KronosActionTask.(KronosDataSourceWrapper) -> Unit): KronosActionTask {
         this.beforeExecute = beforeExecute
         return this
     }
 
-    fun doAfterExecute(afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)?): KronosActionTask { //设置在执行之前执行的操作
+    /** Replaces or clears the after-execute hook and returns this task. */
+    fun doAfterExecute(afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)?): KronosActionTask {
         this.afterExecute = afterExecute
         return this
     }
@@ -57,19 +68,10 @@ class KronosActionTask {
     }
 
     /**
-     * Groups a list of KronosAtomicActionTask by their SQL statements.
+     * Groups only adjacent tasks with identical SQL, preserving global execution order.
      *
-     * This function takes a list of KronosAtomicActionTask as input and groups them by their SQL statements.
-     * It uses the fold function to iterate over the list of tasks and groups them into sublists.
-     * If the accumulator list is empty or the SQL statement of the last task in the last sublist is not the same as the SQL statement of the current task,
-     * it adds a new sublist to the accumulator list with the current task as its first element.
-     * Otherwise, it adds the current task to the last sublist in the accumulator list.
-     * The function returns the accumulator list which is a list of sub lists of tasks grouped by their SQL statements.
-     *
-     * 保证只有连续的sql语句才会被分组，[a, a, b, b, b, c, c, a, a] => [[a, a], [b, b, b], [c, c], [a, a]]
-     *
-     * @param listOfTask List<KronosAtomicActionTask> the list of KronosAtomicActionTask to group.
-     * @return List<List<KronosAtomicActionTask>> returns a list of sub lists of KronosAtomicActionTask grouped by their SQL statements.
+     * For example, `a, a, b, a` becomes `(a, a), (b), (a)` rather than merging both
+     * `a` runs across the intervening statement.
      */
     private fun groupBySql(listOfTask: List<KronosAtomicActionTask>): List<List<KronosAtomicActionTask>> {
         return listOfTask.fold(mutableListOf<MutableList<KronosAtomicActionTask>>()) { acc, task ->
@@ -82,16 +84,22 @@ class KronosActionTask {
         }
     }
 
+    /**
+     * Executes all atomic tasks in one transaction.
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @return aggregate affected rows, final insert id, and final task stash
+     */
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-        val dataSource = wrapper.orDefault() //获取数据源
+        val dataSource = wrapper.orDefault()
         @Suppress("UNCHECKED_CAST")
-        return dataSource.transact { //执行事务
-            beforeExecute?.invoke(this@KronosActionTask, dataSource) // 在执行之前执行的操作
+        return dataSource.transact {
+            beforeExecute?.invoke(this@KronosActionTask, dataSource)
 
-            val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
+            val groupedTasks = groupBySql(atomicTasks).map {
                 val first = it.first()
-                if (it.size > 1) { //如果有多个任务
-                    KronosAtomicBatchTask( //创建一个批量任务
+                if (it.size > 1) {
+                    KronosAtomicBatchTask(
                         first.sql,
                         it.map { task -> task.paramMap }.toTypedArray(),
                         first.operationType,
@@ -100,7 +108,7 @@ class KronosActionTask {
                         generatedKeyRequest = first.generatedKeyRequest,
                         listParameterOccurrences = first.listParameterOccurrences
                     )
-                } else { //如果只有一个任务
+                } else {
                     first
                 }
             }
@@ -108,13 +116,13 @@ class KronosActionTask {
             val results = groupedTasks.map {
                 it.execute(dataSource)
             }
-            val affectRows = results.sumOf { it.affectedRows } //受影响的行数
+            val affectRows = results.sumOf { it.affectedRows }
             val lastResult = results.lastOrNull()
             KronosOperationResult(affectRows, lastResult?.lastInsertId).apply {
                 if(results.isNotEmpty()) {
-                    stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
+                    stash.putAll(results.last().stash)
                 }
-                afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
+                afterExecute?.invoke(this, dataSource)
             }
         } as KronosOperationResult
     }
@@ -127,13 +135,9 @@ class KronosActionTask {
         }
 
         /**
-         * Converts a KronosAtomicActionTask to a KronosActionTask.
+         * Wraps one atomic task and copies its stash into the wrapped task.
          *
-         * This function creates a new KronosActionTask and adds the current KronosAtomicActionTask to it.
-         * It also copies the stash from the current task to the new task.
-         *
-         * @receiver KronosAtomicActionTask the current KronosAtomicActionTask to convert.
-         * @return KronosActionTask returns a new KronosActionTask with the current task added to it.
+         * @return a new action task containing this atomic task
          */
         fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
             return KronosActionTask().also {
@@ -143,14 +147,9 @@ class KronosActionTask {
         }
 
         /**
-         * Merges a list of KronosActionTask into a single KronosActionTask.
+         * Concatenates action tasks while preserving atomic-task order and hooks.
          *
-         * This function creates a new KronosActionTask and adds all the atomic tasks from each KronosActionTask in the list to it.
-         * It uses the flatMap function to flatten the list of atomic tasks from each KronosActionTask into a single list.
-         * The flattened list of atomic tasks is then added to the atomic tasks of the new KronosActionTask.
-         *
-         * @receiver List<KronosActionTask> the list of KronosActionTask to merge.
-         * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from each KronosActionTask in the list.
+         * @return a new action task containing all source tasks
          */
         fun List<KronosActionTask>.merge(): KronosActionTask {
             return KronosActionTask().apply {

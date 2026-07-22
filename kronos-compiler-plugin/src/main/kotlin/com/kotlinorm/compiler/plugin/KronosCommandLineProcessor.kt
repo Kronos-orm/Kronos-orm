@@ -19,6 +19,7 @@ package com.kotlinorm.compiler.plugin
 import com.google.auto.service.AutoService
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
+import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
@@ -30,13 +31,30 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 class KronosCommandLineProcessor : CommandLineProcessor {
     override val pluginId: String = "kronos-compiler-plugin"
 
-    override val pluginOptions: Collection<AbstractCliOption> = emptyList()
+    override val pluginOptions: Collection<AbstractCliOption> = listOf(
+        CliOption(
+            optionName = GENERATED_PROVIDER_ID_OPTION_NAME,
+            valueDescription = "<stable-module-id>",
+            description = "Stable id for this compilation's generated type provider",
+            required = false
+        ),
+        CliOption(
+            optionName = GENERATED_PROVIDER_FQ_NAME_OPTION_NAME,
+            valueDescription = "<provider-fq-name>",
+            description = "Module-unique generated type provider class name",
+            required = false
+        )
+    )
 
     override fun processOption(
         option: AbstractCliOption,
         value: String,
         configuration: CompilerConfiguration
     ) {
-        throw IllegalArgumentException("Unexpected config option ${option.optionName}")
+        when (option.optionName) {
+            GENERATED_PROVIDER_ID_OPTION_NAME -> configuration.put(GeneratedProviderIdKey, value)
+            GENERATED_PROVIDER_FQ_NAME_OPTION_NAME -> configuration.put(GeneratedProviderFqNameKey, value)
+            else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
+        }
     }
 }

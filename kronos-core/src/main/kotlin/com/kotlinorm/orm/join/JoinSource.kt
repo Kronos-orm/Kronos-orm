@@ -129,6 +129,7 @@ internal class JoinSourceState<T1 : KPojo>(
             snapshot = JoinConditionSnapshot(
                 expression = sqlExpr ?: throw EmptyFieldsException(),
                 parameters = parameterValues.toMap(),
+                parameterFields = parameterFields.toMap(),
                 qualifiers = sources.map { source ->
                     SourceQualifierSnapshot(source, qualifierFor(source))
                 }

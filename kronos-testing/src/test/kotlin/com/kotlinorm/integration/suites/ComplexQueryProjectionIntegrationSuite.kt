@@ -17,6 +17,7 @@ import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.pagination.Cursor
 import com.kotlinorm.orm.select.select
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -249,7 +250,7 @@ abstract class ComplexQueryProjectionIntegrationSuite(
         recreateComplexTables()
 
         val rows = ComplexCustomer()
-            .select(ComplexCustomerCard::class) {
+            .select<ComplexCustomer, ComplexCustomerCard>(typeOf<ComplexCustomerCard>()) {
                 [
                     it.id.alias("customerId"),
                     it.name.alias("displayName"),

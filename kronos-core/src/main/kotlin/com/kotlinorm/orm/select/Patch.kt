@@ -16,13 +16,15 @@
 
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToSelect
-import com.kotlinorm.utils.createInstance
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.KTypeKey
+import com.kotlinorm.utils.createKPojo
 import kotlin.reflect.KType
+import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 @PublishedApi
@@ -46,8 +48,7 @@ inline fun <reified T : KPojo> T.where(noinline selectCondition: ToFilter<T, Boo
 inline fun <reified S : KPojo> KSelectable<S>.select(
     noinline fields: ToSelect<S, Any?> = null
 ): SelectClause<S, S, S> {
-    val selectedClass = selectedType.classifier as KClass<S>
-    val source = selectedClass.createInstance()
+    val source = Kronos.createKPojo(selectedType) as S
     return SelectClause(
         source,
         fields,
@@ -69,51 +70,50 @@ inline fun <reified Selected : KPojo> KSelectable<Selected>.filter(
 ): SelectClause<Selected, Selected, Selected> = select().where(predicate)
 
 @PublishedApi
-internal inline fun <T : KPojo, reified R : KPojo> T.selectGeneratedProjection(
-    @Suppress("UNUSED_PARAMETER")
-    projectionClass: KClass<R>,
-    noinline fields: ToSelect<T, Any?> = null
-): SelectClause<T, R, T> {
-    return SelectClause(this, fields, typeOf<R>(), typeOf<R?>())
-}
-
-@PublishedApi
-internal inline fun <T : KPojo, reified R : KPojo, C : KPojo> T.selectGeneratedProjection(
-    @Suppress("UNUSED_PARAMETER")
-    projectionClass: KClass<R>,
-    contextClass: KClass<C>,
+internal inline fun <T : KPojo, reified R : KPojo, reified C : KPojo> T.selectGeneratedProjection(
     noinline fields: ToSelect<T, Any?> = null
 ): SelectClause<T, R, C> {
-    return SelectClause(this, fields, typeOf<R>(), typeOf<R?>(), contextClass.createInstance())
+    val projectionType = typeOf<R>()
+    @Suppress("UNCHECKED_CAST")
+    val contextPojo = if (this is C) {
+        this as C
+    } else {
+        createKPojo<C>()
+    }
+    return SelectClause(this, fields, projectionType, projectionType.withNullability(true), contextPojo)
 }
 
 @PublishedApi
-internal inline fun <S : KPojo, reified R : KPojo, C : KPojo> KSelectable<S>.selectGeneratedProjection(
-    @Suppress("UNUSED_PARAMETER")
-    projectionClass: KClass<R>,
-    contextClass: KClass<C>,
+internal inline fun <S : KPojo, reified R : KPojo, reified C : KPojo> KSelectable<S>.selectGeneratedProjection(
     noinline fields: ToSelect<S, Any?> = null
 ): SelectClause<S, R, C> {
-    val selectedClass = selectedType.classifier as KClass<S>
-    val source = selectedClass.createInstance()
+    val source = Kronos.createKPojo(selectedType) as S
+    val projectionType = typeOf<R>()
     return SelectClause(
         source,
         fields,
-        typeOf<R>(),
-        typeOf<R?>(),
-        contextClass.createInstance(),
+        projectionType,
+        projectionType.withNullability(true),
+        createKPojo<C>(),
         sourceQuery = this,
         sourceAlias = DerivedQueryAlias
     )
 }
 
+/**
+ * Selects rows as [R] using a complete projection [KType].
+ *
+ * [projectionType] must equal `typeOf<R>()`; the nullable selected type is derived from it.
+ *
+ * @throws IllegalArgumentException when [projectionType] does not match the reified [R]
+ */
 @JvmName("selectProjection")
 inline fun <reified T : KPojo, reified R : KPojo> T.select(
-    @Suppress("UNUSED_PARAMETER")
-    projectionClass: KClass<R> = R::class,
+    projectionType: KType = typeOf<R>(),
     noinline fields: ToSelect<T, Any?> = null
 ): SelectClause<T, R, T> {
-    return SelectClause(this, fields, typeOf<R>(), typeOf<R?>())
+    val validatedType = requireProjectionType(projectionType, typeOf<R>())
+    return SelectClause(this, fields, validatedType, validatedType.withNullability(true))
 }
 
 fun <T : KPojo> T.db(name: String) = this to name
@@ -121,8 +121,36 @@ fun <T : KPojo> T.db(name: String) = this to name
 inline fun <reified T : KPojo> Pair<T, String>.select(noinline fields: ToSelect<T, Any?> = null) =
     SelectClause<T, T, T>(this.first, fields, typeOf<T>(), typeOf<T?>()).db(this.second)
 
+/**
+ * Selects rows from a named database as [R] using a complete projection [KType].
+ *
+ * [projectionType] must equal `typeOf<R>()`; the nullable selected type is derived from it.
+ *
+ * @throws IllegalArgumentException when [projectionType] does not match the reified [R]
+ */
 inline fun <T : KPojo, reified R : KPojo> Pair<T, String>.select(
-    @Suppress("UNUSED_PARAMETER")
-    projectionClass: KClass<R>,
+    projectionType: KType = typeOf<R>(),
     noinline fields: ToSelect<T, Any?> = null
-) = SelectClause<T, R, T>(this.first, fields, typeOf<R>(), typeOf<R?>()).db(this.second)
+) = requireProjectionType(projectionType, typeOf<R>()).let { validatedType ->
+    SelectClause<T, R, T>(this.first, fields, validatedType, validatedType.withNullability(true)).db(this.second)
+}
+
+/**
+ * Validates an explicit projection type against its reified result type.
+ *
+ * @return [projectionType] unchanged when both complete KTypes match
+ * @throws IllegalArgumentException when the types differ
+ */
+@PublishedApi
+internal fun requireProjectionType(projectionType: KType, reifiedType: KType): KType {
+    require(sameProjectionType(projectionType, reifiedType)) {
+        "Projection type $projectionType does not match reified result type $reifiedType"
+    }
+    return projectionType
+}
+
+@PublishedApi
+internal fun sameProjectionType(
+    first: KType,
+    second: KType
+): Boolean = KTypeKey.from(first) == KTypeKey.from(second)

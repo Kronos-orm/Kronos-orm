@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.join
 
+import com.kotlinorm.beans.dsl.KTableForSelect
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.select.where
 import com.kotlinorm.beans.subquery.SubqueryOrder
@@ -44,5 +45,46 @@ class JoinSelectableSqlTest : MysqlTestBase() {
             task.sql
         )
         assertEquals(mapOf("status" to 40), task.paramMap)
+    }
+
+    @Test
+    fun `outer patch reserves names before joined scalar and derived parameters`() {
+        val derived = SubqueryOrder()
+            .select { [it.userId, it.status] }
+            .where { it.status == 40 }
+        val scalar = SubqueryOrder()
+            .select { it.status }
+            .where { it.status == 50 }
+        val query = SubqueryUser()
+            .join(derived) { user, order ->
+                leftJoin { user.id == order.userId }
+                    .select { user.id }
+            }
+            .patch("status" to 99)
+        val scalarTable = KTableForSelect<SubqueryUser>()
+        scalarTable.addScalarSubquery(scalar, "scalarStatus")
+        query.context.projectionItems = query.context.projectionItems + scalarTable.projectionItems
+
+        val plan = query.toSqlQueryPlan()
+        val task = query.build().atomicTask
+        val scalarField = scalar.toSqlQueryPlan().parameterFields.getValue("status")
+        val derivedField = derived.toSqlQueryPlan().parameterFields.getValue("status")
+
+        assertEquals(
+            "SELECT `tb_subquery_user`.`id` AS `id`, " +
+                "(SELECT `status` FROM `tb_subquery_order` " +
+                "WHERE `tb_subquery_order`.`status` = :status@1) AS `scalarStatus` " +
+                "FROM `tb_subquery_user` LEFT JOIN " +
+                "(SELECT `user_id` AS `userId`, `status` FROM `tb_subquery_order` " +
+                "WHERE `tb_subquery_order`.`status` = :status@2) AS `q` " +
+                "ON `tb_subquery_user`.`id` = `q`.`userId`",
+            task.sql
+        )
+        assertEquals(linkedMapOf("status@1" to 50, "status@2" to 40), plan.parameters)
+        assertEquals(
+            linkedMapOf("status@1" to scalarField, "status@2" to derivedField),
+            plan.parameterFields
+        )
+        assertEquals(plan.parameters, task.paramMap)
     }
 }

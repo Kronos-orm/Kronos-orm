@@ -22,7 +22,7 @@ import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
 import org.jetbrains.kotlin.fir.types.ProjectionKind
 import java.security.MessageDigest
 
-private const val ProjectionHashByteCount = 8
+private const val PROJECTION_HASH_BYTE_COUNT = 8
 
 /** Generates a stable synthetic class suffix from the source row type and selected field signatures. */
 internal fun mangleProjectionName(sourceType: ConeKotlinType, fields: List<KronosProjectionField>): String {
@@ -49,7 +49,7 @@ internal fun mangleProjectionName(sourceType: ConeKotlinType, fields: List<Krono
 
 private fun stableHash(value: String): String {
     val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray())
-    return digest.take(ProjectionHashByteCount).joinToString("") { byte -> "%02x".format(byte) }
+    return digest.take(PROJECTION_HASH_BYTE_COUNT).joinToString("") { byte -> "%02x".format(byte) }
 }
 
 private fun ConeKotlinType.renderForMangle(): String {

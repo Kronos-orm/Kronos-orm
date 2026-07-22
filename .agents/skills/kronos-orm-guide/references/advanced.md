@@ -248,7 +248,7 @@ where {
 
 ## 序列化
 
-复杂对象字段可通过 `@Serialize` 注解以 JSON 形式存储：
+复杂对象字段可通过 `@Serialize` 注解使用 serialized 文本存储；具体格式由注册的 `ValueCodec` 决定，JSON 只是常见示例：
 
 ```kotlin
 data class User(
@@ -257,40 +257,35 @@ data class User(
 ) : KPojo
 ```
 
-需要配置序列化处理器：
-```kotlin
-Kronos.serializeProcessor = JacksonProcessor()  // 或 GsonProcessor
-```
+使用 `serializedValueCodec` 把序列化库的两个函数包装成普通 `ValueCodec`，再通过唯一入口 `Kronos.registerValueCodec` 注册。编码和解码都收到字段声明上的完整 `KType`，一次注册即可处理对象、`List<String>`、`List<List<String>>`、`List<Profile>` 和 `List<Enum>`。
 
-自定义处理器实现 `KronosSerializeProcessor` 时，`serialize` 和 `deserialize` 都会收到字段声明上的 `KType`。处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段时，直接使用这个完整声明类型。
+标量 enum 不需要 `@Serialize`：没有显式列类型时使用 `VARCHAR + Enum.name`，整数 `@ColumnType` 使用 ordinal。稳定的 code、value 或 label 通过同一个 `ValueCodec` 入口覆盖；`@Serialize List<Enum>` 则把完整集合作为一个字符串值交给 serialized codec。
 
 Kotlinx Serialization 接入示例：
 
 ```kotlin
-import com.kotlinorm.interfaces.KronosSerializeProcessor
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.serializedValueCodec
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import kotlin.reflect.KType
 
-object KotlinxSerializeProcessor : KronosSerializeProcessor {
-    private val json = Json {
-        encodeDefaults = true
-        ignoreUnknownKeys = true
-    }
-
-    override fun serialize(obj: Any, kType: KType): String {
-        @Suppress("UNCHECKED_CAST")
-        val valueSerializer = serializer(kType) as KSerializer<Any>
-        return json.encodeToString(valueSerializer, obj)
-    }
-
-    override fun deserialize(serializedStr: String, kType: KType): Any {
-        return json.decodeFromString(serializer(kType), serializedStr)
-            ?: error("Kotlinx serialization returned null for $kType")
-    }
+val json = Json {
+    encodeDefaults = true
+    ignoreUnknownKeys = true
 }
+
+val serializationRegistration = Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, type ->
+            @Suppress("UNCHECKED_CAST")
+            val valueSerializer = serializer(type) as KSerializer<Any>
+            json.encodeToString(valueSerializer, value)
+        },
+        decode = { text, type -> json.decodeFromString(serializer(type), text) }
+    )
+)
 
 @Serializable
 data class ProfileSetting(
@@ -299,7 +294,9 @@ data class ProfileSetting(
 )
 ```
 
-交给 Kotlinx Serialization 的类型需要有 serializer；data class 通常加 `@Serializable`，集合元素类型也要可序列化。
+交给 Kotlinx Serialization 的类型需要有 serializer；data class 通常加 `@Serializable`，集合元素类型也要可序列化。后注册的 codec 优先匹配；应用通常长期保留注册，测试或热更新结束时调用 `serializationRegistration.close()`。
+
+需要覆盖编译器生成的 KPojo 构造时，使用精确 `KType` 注册 `Kronos.registerKPojoFactory(typeOf<T>(), KPojoFactory { ... })`。后注册的 factory 优先，关闭句柄恢复之前的用户或生成 factory；当前不支持泛型 KPojo。factory 只创建新实例，不接管字段 ValueCodec 转换，完整示例见主指南“数据类定义”中的 KPojo 工厂段落。
 
 ---
 
@@ -624,6 +621,8 @@ Kronos.transact(pgWrapper) {
 ```
 
 `KronosJdbcWrapper` 也可以在构造器中传入 `databaseType`，并通过配置 block 设置 JDBC statement、warning、参数绑定和结果映射；回答连接或方言识别问题时优先参考主指南“数据库与方言”段落。
+
+typed Map 查询只接受直接 `Map`/`MutableMap` 声明（顶层可空也支持），因为 JDBC 行容器固定为 `LinkedHashMap`；自定义、固定或重排的 Map subtype 会被拒绝。key 支持 `String`、`String?` 和 `*`，`Any`/`Any?`/`*` value 保持 raw，具体 value 通过完整 `KType` 转换。
 
 ---
 

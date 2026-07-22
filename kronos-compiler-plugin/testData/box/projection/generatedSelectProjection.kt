@@ -29,6 +29,8 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Table("tb_projection_source")
 data class ProjectionSourceRow(
@@ -41,12 +43,11 @@ class ProjectionMappingWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:generated-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
-    val mappedClasses = mutableListOf<KClass<*>>()
+    val mappedTypes = mutableListOf<KType>()
 
     override fun toList(task: KAtomicQueryTask): List<Any?> {
-        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
-        mappedClasses.add(kClass)
-        return [mapOf("id" to 7, "xx" to "Ada").mapperTo(kClass as KClass<out KPojo>)]
+        mappedTypes.add(task.targetType)
+        return [mapOf("id" to 7, "xx" to "Ada").mapperTo(task.targetType)]
     }
 
     override fun first(task: KAtomicQueryTask): Any? = null
@@ -73,6 +74,7 @@ fun box(): String {
     val rows = source.select { [it.id, it.name.alias("xx")] }.toList(wrapper)
     val row = rows.singleOrNull()
     val fieldNames = row?.__columns.orEmpty().map { it.name }.toSet()
+    val mappedType = wrapper.mappedTypes.singleOrNull()
 
     val failures = listOfNotNull(
         expect(rows.size == 1) { "row count was ${rows.size}" },
@@ -82,11 +84,14 @@ fun box(): String {
         expect(row?.__columns?.all { it.tableName == "tb_projection_source" } == true) {
             "projection column table names were ${row?.__columns?.map { it.tableName }}"
         },
-        expect(wrapper.mappedClasses.singleOrNull() != ProjectionSourceRow::class) {
-            "toList mapped with source class ${ProjectionSourceRow::class}"
+        expect(mappedType != typeOf<ProjectionSourceRow>()) {
+            "toList mapped with source type ${typeOf<ProjectionSourceRow>()}"
         },
-        expect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
-            "mapped class was ${wrapper.mappedClasses.singleOrNull()}"
+        expect(mappedType != null && !mappedType.isMarkedNullable && mappedType.arguments.isEmpty()) {
+            "mapped type was $mappedType"
+        },
+        expect((mappedType?.classifier as? KClass<*>)?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped type was $mappedType"
         },
         expect("ignoredInProjection" !in fieldNames) {
             "projection field names were $fieldNames"

@@ -28,9 +28,9 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class ValueCodecSupportTest {
-    private class Entity : KPojo
+internal class CodecSupportEntity : KPojo
 
+class ValueCodecSupportTest {
     private enum class Status {
         READY
     }
@@ -50,7 +50,7 @@ class ValueCodecSupportTest {
 
         assertTrue(typeOf<Array<String?>>().accepts(arrayOf("value", null)))
         assertFalse(typeOf<Array<String>>().accepts(arrayOf("value", null)))
-        assertTrue(typeOf<Array<*>>().accepts(arrayOf(1, "raw")))
+        assertTrue(typeOf<Array<*>>().accepts(arrayOf<Any>(1, "raw")))
     }
 
     @Test
@@ -73,7 +73,7 @@ class ValueCodecSupportTest {
     @Test
     fun `database binding rejects logical containers while retaining binary scalars`() {
         val rejected = listOf<Any>(
-            Entity(),
+            CodecSupportEntity(),
             listOf(1),
             mapOf("id" to 1),
             sequenceOf(1),

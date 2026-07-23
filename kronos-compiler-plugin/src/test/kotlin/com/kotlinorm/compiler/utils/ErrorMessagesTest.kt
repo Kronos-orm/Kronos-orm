@@ -266,4 +266,13 @@ class ErrorMessagesTest {
             msg
         )
     }
+
+    @Test
+    fun `inaccessibleEnumMetadata explains the required visibility`() {
+        assertEquals(
+            "Required enum metadata for 'com.example.Status' cannot be generated because the enum or one of its containing " +
+                "declarations is not public or internal.",
+            ErrorMessages.inaccessibleEnumMetadata("com.example.Status")
+        )
+    }
 }

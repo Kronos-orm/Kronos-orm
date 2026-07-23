@@ -278,7 +278,8 @@ All workflows in `.github/workflows/`:
 | `kronos-compiler-plugin-testing.yml` | push/PR to `main` | `./gradlew :kronos-compiler-plugin:test` (JDK 21) |
 | `kronos-codegen-testing.yml` | push/PR to `main` | `./gradlew :kronos-codegen:test` (JDK 21) |
 | `kronos-testing.yml` | push/PR to `main` | Integration tests with real DBs (MySQL 8.0, PostgreSQL 17, SQL Server 2022 via `ankane/setup-*` actions) |
-| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out external examples, rewires their coordinates to the current version, runs backend smoke tests, and builds/lints/tests the Android example on an API 35 emulator |
+| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out the external Ktor, Spring Boot, Solon, and Vert.x examples, rewires their coordinates to the current version, and runs their smoke tests |
+| `kronos-android-example.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out the Android example, rewires its coordinates to the current version, and runs `:app:assembleDebug` plus `:app:lintDebug` |
 | `kronos-docs-testing.yml` | docs/workflow push or PR to `main` | Installs locked pnpm dependencies and builds the Angular/ng-doc documentation site |
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
@@ -415,8 +416,11 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 The IDEA plugin version comes from `rootProject.version`; do not hard-code a
 release number in the plugin build. Snapshot pushes never upload to Marketplace.
 The formal release job must fail if Marketplace credentials are absent, plugin
-signing fails, upload fails, or the expected signed zip is missing. Only the
-signed zip for the current release version may be attached to the GitHub Release.
+signing fails, upload fails, or the expected signed zip is missing. Plugin
+Verifier runs as a visible, non-blocking compatibility report, while signing,
+structure/signature validation, and artifact validation remain release gates.
+Only the signed zip for the current release version may be attached to the
+GitHub Release.
 
 Create `JETBRAINS_MARKETPLACE_TOKEN` in the JetBrains Marketplace profile. Store
 the complete PEM certificate chain, matching complete PEM private key, and key

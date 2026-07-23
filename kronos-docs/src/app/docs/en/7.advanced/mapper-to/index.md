@@ -1,253 +1,106 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos provides conversion APIs between KPojo entities and `Map<String, Any?>`.
+Move values between a {{ $.code("KPojo") }} model and `Map<String, Any?>` when an application receives map-shaped input, prepares an API response, or copies data between models.
 
-Use `toDataMap()` when you need a column-value map, and use `mapperTo()` or `safeMapperTo()` when you need to build another KPojo value from a map.
+## Choose an API
 
-```kotlin
-data class User(
+| Task | API |
+|------|-----|
+| Read a model as a map | `toDataMap()` |
+| Create a new model from values already expressed as its property types | `mapperTo()` |
+| Create a new model from values that need normal Kronos conversion | `safeMapperTo()` |
+| Apply already-typed values to an existing model | `fromMapData()` |
+| Apply values that need normal Kronos conversion to an existing model | `safeFromMapData()` |
+
+## Start with a complete example
+
+`mapperTo` is useful for a map returned by `toDataMap`. `safeMapperTo` is useful for input such as JSON or form data, where a number may arrive as a string.
+
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.Extensions.mapperTo
+import com.kotlinorm.utils.Extensions.safeMapperTo
+
+data class UserDto(
     var id: Int? = null,
-    var name: String? = null
+    var name: String? = null,
 ) : KPojo
 
-val user = User(id = 1, name = "Tom")
+val typedInput = mapOf("id" to 1, "name" to "Ada")
+val copied = typedInput.mapperTo<UserDto>()
+// UserDto(id = 1, name = "Ada")
 
-val data = user.toDataMap()
-// mapOf("id" to 1, "name" to "Tom")
-
-val copied = data.mapperTo<User>()
-// User(id = 1, name = "Tom")
-
-val converted = mapOf("id" to "1", "name" to "Tom").safeMapperTo<User>()
-// User(id = 1, name = "Tom")
+val requestInput = mapOf("id" to "2", "name" to "Lin")
+val converted = requestInput.safeMapperTo<UserDto>()
+// UserDto(id = 2, name = "Lin")
 ```
 
-## KPojo to Map Conversion
+## Read a model as a map
 
-### 1. {{ $.title("KPojo.toDataMap()")}}
+Call `toDataMap()` to obtain the model's mapped property names and values.
 
-Converts an entity object to a Map.
+```kotlin name="kotlin" icon="kotlin"
+val data = UserDto(id = 1, name = "Ada").toDataMap()
+// {id=1, name=Ada}
+```
 
-- **Declaration**
+## Create a new model
 
-    ```kotlin
-    fun KPojo.toDataMap(): Map<String, Any?>
-    ```
+Use `mapperTo<T>()` when the map already contains the Kotlin types declared by `T`. Use `safeMapperTo<T>()` when input values need conversion, such as `"2"` to `Int`.
 
-- **Example**
+The safe APIs also use registered application mappings. See {{ $.keyword("configuration/value-codec", ["Custom Value Mapping"]) }} when a property uses a domain value such as `Money`.
 
-    ```kotlin
-    val user = User(id = 1, name = "Tom").toDataMap()
-    ```
+```kotlin name="kotlin" icon="kotlin"
+val direct = mapOf("id" to 3, "name" to "Mika").mapperTo<UserDto>()
+val converted = mapOf("id" to "4", "name" to "Noa").safeMapperTo<UserDto>()
+```
 
-- **Return**
+## Fill an existing model
 
-    `Map<String, Any?>` Map
+Use `fromMapData()` or `safeFromMapData()` when the application already owns the target model. Both functions return that same model after applying the supplied keys. Missing keys leave the current property values in place.
 
-{{ $.hr() }}
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
 
-## Mapper to Strict Conversion
+data class UserDto(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-MapperTo contains a total of 4 functions for type conversion, namely:
+val user = UserDto(id = 1, name = "Draft")
 
-### 1. {{ $.title("Map<String, Any?>.mapperTo(KType)")}}
+user.fromMapData<UserDto>(mapOf("name" to "Published"))
+// UserDto(id = 1, name = "Published")
 
-Converted to an entity object via Map. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
+user.safeFromMapData<UserDto>(mapOf("id" to "2"))
+// UserDto(id = 2, name = "Published")
+```
 
-Pass the complete target type with `typeOf<T>()`. Generic KPojo construction is reserved for a later release; the current target must be a concrete, non-generic KPojo type.
+## Copy between models
 
-- **Declaration**
+The same new-object functions are available on a {{ $.code("KPojo") }} source. They copy matching property names into a new target model.
 
-    ```kotlin
-    fun Map<String, Any?>.mapperTo(type: KType): Any
-    ```
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.Extensions.mapperTo
 
-- **Example**
+data class UserRecord(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-    ```kotlin
-    val user = mapOf("id" to 1, "name" to "Tom").mapperTo(typeOf<User>())
-    ```
+data class UserCard(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-- **Parameters**
+val card = UserRecord(id = 7, name = "Kai").mapperTo<UserCard>()
+// UserCard(id = 7, name = "Kai")
+```
 
-  {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
+Use `source.safeMapperTo<T>()` when matching properties require conversion.
 
-- **Return**
+## Runtime-selected target type
 
-  `Any` Entity object
-
-{{ $.hr() }}
-
-### 2. {{ $.title("Map<String, Any?>.mapperTo<T: KPojo>()")}}
-
-When converting a Map to an entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
-
-- **Declaration**
-
-    ```kotlin
-    inline fun <reified T : KPojo> Map<String, Any?>.mapperTo(): T
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val user = mapOf("id" to 1, "name" to "Tom").mapperTo<User>()
-    ```
-
-- **Return**
-
-  `T` Entity object
-
-{{ $.hr() }}
-
-### 3. {{ $.title("KPojo.mapperTo(KType)")}}
-
-By converting an entity object to another entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
-
-Pass the exact concrete KPojo target with `typeOf<T>()`.
-
-- **Declaration**
-
-    ```kotlin
-    fun KPojo.mapperTo(type: KType): Any
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").mapperTo(typeOf<Student>())
-    ```
-
-- **Parameters**
-
-  {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
-
-- **Return**
-
-  `Any` Entity object
-
-{{ $.hr() }}
-
-### 4. {{ $.title("KPojo.mapperTo<T: KPojo>()")}}
-
-By converting an entity object to another entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
-
-- **Declaration**
-
-    ```kotlin
-    inline fun <reified T : KPojo> KPojo.mapperTo(): T
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").mapperTo<Student>()
-    ```
-
-- **Return**
-
-  `T` Entity object
-
-{{ $.hr() }}
-
-## Safe Mapper to Secure Conversion
-
-SafeMapperTo contains 4 functions for type conversion, which are:
-
-### 1. {{ $.title("Map<String, Any?>.safeMapperTo(KType)")}}
-
-Converted to an entity object via Map. When a value does not match the property type, the unified conversion registry attempts a safe conversion; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
-
-Pass the complete target type with `typeOf<T>()`. Generic KPojo construction is reserved for a later release; the current target must be a concrete, non-generic KPojo type.
-
-- **Declaration**
-
-    ```kotlin
-    fun Map<String, Any?>.safeMapperTo(type: KType): Any
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val user = mapOf("id" to "1", "name" to "Tom").safeMapperTo(typeOf<User>())
-    ```
-
-- **Parameters**
-
-    {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
-
-- **Return**
-
-  `Any` Entity object
-
-{{ $.hr() }}
-
-### 2. {{ $.title("Map<String, Any?>.safeMapperTo<T: KPojo>()")}}
-
-Converted to an entity object via Map. When a value does not match the property type, the unified conversion registry attempts a safe conversion; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
-
-- **Declaration**
-
-    ```kotlin
-    inline fun <reified T : KPojo> Map<String, Any?>.safeMapperTo(): T
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val user = mapOf("id" to "1", "name" to "Tom").safeMapperTo<User>()
-    ```
-
-- **Return**
-
-    `T` Entity object
-
-{{ $.hr() }}
-
-### 3. {{ $.title("KPojo.safeMapperTo(KType)")}}
-
-Converting from one entity object to another attempts safe conversion when source and target properties use different types; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
-Pass the exact concrete KPojo target with `typeOf<T>()`.
-
-- **Declaration**
-
-    ```kotlin
-    fun KPojo.safeMapperTo(type: KType): Any
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").safeMapperTo(typeOf<Student>())
-    ```
-
-- **Parameters**
-
-    {{ $.params([['type', 'Complete entity target type', 'KType']]) }}
-
-- **Return**
-
-    `Any` Entity object
-
-{{ $.hr() }}
-
-### 4. {{ $.title("KPojo.safeMapperTo<T: KPojo>()")}}
-
-Converting to another entity object attempts safe conversion when source and target property types differ; see {{ $.keyword("configuration/value-codec", ["Concept", "ValueCodec"]) }}.
-
-- **Declaration**
-
-    ```kotlin
-    inline fun <reified T : KPojo> KPojo.safeMapperTo(): T
-    ```
-
-- **Examples**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").safeMapperTo<Student>()
-    ```
-
-- **Return**
-
-    `T` Entity object
+The `mapperTo(type: KType)` and `safeMapperTo(type: KType)` overloads are available when code selects the target model at runtime. The generic forms shown above are the usual choice when the target type is known in source code.

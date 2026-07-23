@@ -2,6 +2,10 @@
 
 `KronosDataSourceWrapper`连接Kronos SQL task和数据库执行层。内置JDBC实现是`KronosJdbcWrapper`，自定义wrapper可以把执行委托给Spring JDBC、JDBI、MyBatis或项目中的数据访问层。
 
+## Android SQLite
+
+Android/JVM `SQLiteDatabase` 配置和完整 wrapper 参考实现见{{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}。
+
 ## 成员属性
 
 {{ $.members([
@@ -99,7 +103,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 }
 ```
 
-物理reader在`ResultSet.getObject(position)`之前执行，只按JDBC metadata或driver行为匹配，不接收逻辑目标类型。已经处理且值为SQL `NULL`时返回`Handled(null)`；需要继续尝试后续reader和默认JDBC读取时返回`NotHandled`。把读取到的字符串转换成`UUID`等逻辑类型应通过`Kronos.registerValueCodec`注册`ValueCodec`，这样typed result只经过一次语义转换。
+物理 reader 会在`ResultSet.getObject(position)`之前检查 JDBC metadata 或 driver 行为。已经处理且值为 SQL `NULL` 时返回`Handled(null)`；需要继续默认 JDBC 读取时返回`NotHandled`。读取到的字符串需要转换为 `UUID` 等领域值时，注册一份自定义值映射。
 
 ## 使用{{ $.title("toList(task)") }}查询列表
 

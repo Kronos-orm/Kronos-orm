@@ -91,7 +91,7 @@ Based on field metadata and global strategy config:
 ```toml
 [dataSource]
 className = "org.apache.commons.dbcp2.BasicDataSource"
-wrapperClassName = "com.kotlinorm.KronosBasicWrapper"
+wrapperClassName = "com.kotlinorm.wrappers.KronosJdbcWrapper"
 driverClassName = "com.mysql.cj.jdbc.Driver"
 url = "jdbc:mysql://localhost:3306/mydb"
 username = "root"
@@ -165,13 +165,13 @@ logger.info(log { +"Starting server"[green] })
 
 Default JDBC `KronosDataSourceWrapper` implementation.
 
-### KronosBasicWrapper
+### KronosJdbcWrapper
 ```kotlin
-class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
-    companion object {
-        private val transactionConnection = ThreadLocal<Connection?>()
-    }
-}
+class KronosJdbcWrapper(
+    val dataSource: DataSource,
+    databaseType: DBType? = null,
+    configure: KronosJdbcConfig.() -> Unit = {}
+) : KronosDataSourceWrapper
 ```
 
 ### Connection Management
@@ -184,10 +184,9 @@ private fun obtainConnection(): Pair<Connection, Boolean> {
 ```
 
 ### Query Methods
-- `forList(task)` → `List<Map<String, Any>>` — maps ResultSet to list of maps
-- `forMap(task)` → `Map<String, Any>?` — single row
-- `forObject(task, kClass, isKPojo, superTypes)` → `Any?` — maps to KPojo or scalar
-- KPojo instantiation: uses generated `KPojoFactoryProvider` registrations loaded by `createInstance()`
+- `toList(task)` → `List<Any?>` — maps ResultSet rows to maps, scalars, or KPojo values
+- `first(task)` → `Any?` — returns the first decoded row
+- KPojo construction uses exact generated metadata through `Kronos.createKPojo(type)` and can be overridden through `Kronos.registerKPojoFactory(...)`
 
 ### Action Methods
 - `update(task)` → `Int` — returns affected rows
@@ -210,26 +209,25 @@ private fun obtainConnection(): Pair<Connection, Boolean> {
 
 ## kronos-gradle-plugin
 
-Wires the compiler plugin into Gradle Kotlin compilation. **Included build** (not a regular subproject).
+Wires the compiler plugin into Gradle Kotlin compilation and attaches generated-provider service resources for JVM source sets and Android application/library variants. **Included build** (not a regular subproject).
 
 ### KronosGradlePlugin
 ```kotlin
 class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
-    override fun getCompilerPluginId() = "com.kotlinorm.kronos-compiler-gradle-plugin"
+    override fun getCompilerPluginId() = "kronos-compiler-plugin"
     override fun getPluginArtifact() = SubpluginArtifact(
         groupId = "com.kotlinorm",
         artifactId = "kronos-compiler-plugin",
-        version = "0.2.3"
+        version = version
     )
-    override fun getPluginArtifactForNative() = getPluginArtifact()
-    override fun applyToCompilation(compilation) = provider {
-        listOf(SubpluginOption("timestamp", System.currentTimeMillis().toString()))
-    }
+    override fun applyToCompilation(compilation) = provider { generatedProviderOptions(...) }
     override fun isApplicable(compilation) = true
 }
 ```
 
 Registered as `com.kotlinorm.kronos-gradle-plugin` in `gradlePlugin {}` block.
+
+`GenerateKronosGeneratedTypeService` writes the provider descriptor after compilation only when the generated provider class exists. Android variants add the output to merged Java resources and merge duplicate provider descriptors. `kronos-core` packages a consumer R8 rule that preserves generated provider classes in minified Android artifacts.
 
 ### Version Sync
 Version in two places (must stay in sync):

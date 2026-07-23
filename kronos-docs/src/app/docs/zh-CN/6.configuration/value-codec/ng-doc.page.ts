@@ -2,11 +2,11 @@ import {NgDocPage} from '@ng-doc/core';
 import ConfigurationCategory from "../ng-doc.category";
 
 /**
- * Kronos 统一值转换的注册、匹配、优先级与生命周期。
- * @status:info NEW
+ * 面向领域类型的自定义值映射。
+ * @status:info
  */
 const ValueCodecPage: NgDocPage = {
-    title: `值编解码器`,
+    title: `自定义值映射`,
     mdFile: './index.md',
     route: 'value-codec',
     category: ConfigurationCategory,

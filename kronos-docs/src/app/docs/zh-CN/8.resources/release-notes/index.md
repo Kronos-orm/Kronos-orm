@@ -7,6 +7,12 @@
 
 ## 📝 更新日志
 
+### 0.3.0
+
+- ✨ 新增 Android/JVM SQLite 接入：使用 Gradle 插件、`kronos-core` 和 Android `SQLiteDatabase` wrapper。
+- ✨ 新增 [Android SQLite](/documentation/zh-CN/database/android-sqlite) 指南与 [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) 参考应用，其中包含 `AndroidSQLiteDataSourceWrapper` 实现。
+- 📚 将 Android/JVM 的安装、wrapper、事务和日志入口统一链接到 Android SQLite 独立指南。
+
 ### 0.2.4
 
 - 🐛 修复 identity-source select 的生成投影类型，并在 alias、生成投影、window 派生查询与嵌套投影中保留包括 `@Serialize` 在内的源字段元数据 ([#246](https://github.com/Kronos-orm/Kronos-orm/issues/246))。
@@ -191,12 +197,15 @@ override fun first(task: KAtomicQueryTask): Any?
   `Kronos-maven-plugin` 等官方库，可直接使用。
 - 最低支持的 Kotlin 版本为 `2.2.0`。
 
-> **Note**
-> 当前版本为开发阶段，不保证向后兼容性。
->
-> 若您有意愿，可以使用最新版本来测试。
+## 使用快照版本
 
-```groovy name="gradle(groovy)" icon="gradle" group="dependency"
+快照版本提供下一稳定版之前的功能，可用于开发和验证。
+
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v{{ $.kronosSnapshotBadgeVersion() }}-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+
+在插件和依赖解析中加入快照仓库，再使用快照坐标。
+
+```groovy name="gradle(groovy)" icon="gradle" group="snapshot dependency"
 // settings.gradle
 pluginManagement {
     repositories {
@@ -225,7 +234,7 @@ dependencies {
 }
 ```
 
-```groovy name="gradle(kts)" icon="gradlekts" group="dependency"
+```kotlin name="gradle(kts)" icon="gradlekts" group="snapshot dependency"
 // settings.gradle.kts
 pluginManagement {
     repositories {
@@ -256,71 +265,77 @@ dependencies {
 }
 ```
 
-```xml name="maven" icon="maven" group="dependency"
+```xml name="maven" icon="maven" group="snapshot dependency"
 <project>
-    <repositories>
-        <repository>
-            <id>maven-center-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+  <properties>
+    <kronos.version>{{ $.kronosSnapshotVersion() }}</kronos.version>
+  </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.kotlinorm</groupId>
-            <artifactId>kronos-core</artifactId>
-            <version>{{ $.kronosSnapshotVersion() }}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.kotlinorm</groupId>
-            <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>{{ $.kronosSnapshotVersion() }}</version>
-        </dependency>
-    </dependencies>
+  <repositories>
+    <repository>
+      <id>maven-central-snapshots</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>central-portal-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
+  <dependencies>
+    <dependency>
+      <groupId>com.kotlinorm</groupId>
+      <artifactId>kronos-core</artifactId>
+      <version>${kronos.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.kotlinorm</groupId>
+      <artifactId>kronos-jdbc-wrapper</artifactId>
+      <version>${kronos.version}</version>
+    </dependency>
+  </dependencies>
 
+  <pluginRepositories>
+    <pluginRepository>
+      <id>maven-central-snapshots</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <build>
     <plugins>
-        <plugin>
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <compilerPlugins>
+            <plugin>all-open</plugin>
+            <plugin>kronos-maven-plugin</plugin>
+          </compilerPlugins>
+        </configuration>
+        <dependencies>
+          <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-plugin</artifactId>
-            <extensions>true</extensions>
-            <configuration>
-                <compilerPlugins>
-                    <plugin>all-open</plugin>
-                    <plugin>kronos-maven-plugin</plugin>
-                </compilerPlugins>
-            </configuration>
-            <dependencies>
-                <dependency>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-maven-allopen</artifactId>
-                    <version>${kotlin.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.kotlinorm</groupId>
-                    <artifactId>kronos-maven-plugin</artifactId>
-                    <version>${kronos.version}</version>
-                </dependency>
-            </dependencies>
-        </plugin>
+            <artifactId>kotlin-maven-allopen</artifactId>
+            <version>${kotlin.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>com.kotlinorm</groupId>
+            <artifactId>kronos-maven-plugin</artifactId>
+            <version>${kronos.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
     </plugins>
+  </build>
 </project>
 ```

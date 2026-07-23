@@ -2,6 +2,10 @@
 
 `KronosDataSourceWrapper` connects Kronos SQL tasks to a database execution engine. The built-in JDBC implementation is `KronosJdbcWrapper`, and custom wrappers can delegate execution to Spring JDBC, JDBI, MyBatis, or another data access layer.
 
+## Android SQLite
+
+For Android/JVM `SQLiteDatabase` setup and a complete wrapper reference, see {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}.
+
 ## Properties
 
 {{ $.members([
@@ -99,7 +103,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 }
 ```
 
-Physical readers run before `ResultSet.getObject(position)` and match JDBC metadata or vendor behavior, not a logical target type. Return `Handled(null)` when the column was handled and its value is SQL `NULL`; return `NotHandled` to continue to the next reader and the default JDBC path. Converting the resulting string to a logical type such as `UUID` belongs in a `ValueCodec` registered with `Kronos.registerValueCodec`, so typed results pass through the semantic conversion registry exactly once.
+Physical readers inspect JDBC metadata or vendor behavior before `ResultSet.getObject(position)`. Return `Handled(null)` when the column was handled and its value is SQL `NULL`; return `NotHandled` to continue with the default JDBC read. Register a custom value mapping when the resulting string should become a domain value such as `UUID`.
 
 ## Query lists with {{ $.title("toList(task)") }}
 

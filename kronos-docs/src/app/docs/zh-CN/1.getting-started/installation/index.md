@@ -89,6 +89,10 @@ dependencies {
 
 连接配置见 {{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。Spring JDBC 或其他框架的接入见 {{ $.keyword("database/custom-wrapper", ["自定义 Wrapper"]) }}。
 
+## Android SQLite
+
+Android/JVM 和 Android `SQLiteDatabase` 接入请统一阅读 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} 独立章节，其中包含依赖、wrapper、事务、日志和完整示例。
+
 ## 数据库驱动和连接池
 
 JDBC Driver 和连接池版本需要与数据库服务端、JDK 匹配。下面的 `<latest-stable>` 占位符表示第三方依赖按运行环境选择当前稳定版。

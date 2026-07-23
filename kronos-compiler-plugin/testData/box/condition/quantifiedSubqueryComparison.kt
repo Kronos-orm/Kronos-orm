@@ -50,20 +50,44 @@ fun box(): String {
         tableNamingStrategy = lineHumpNamingStrategy
     }
 
-    val condition = quantifiedCmpWhere(QuantifiedCmpOrder(status = 3)) {
+    val anyCondition = quantifiedCmpWhere(QuantifiedCmpOrder(status = 3)) {
         it.status > any<Int>(
             QuantifiedCmpOrder()
                 .select { order -> order.status }
                 .where { order -> order.userId == 1 }
         )
     } as? SqlExpr.QuantifiedComparisonPredicate
-    val column = condition?.expr as? SqlExpr.Column
+    val allCondition = quantifiedCmpWhere(QuantifiedCmpOrder(status = 3)) {
+        it.status > all<Int>(
+            QuantifiedCmpOrder()
+                .select { order -> order.status }
+                .where { order -> order.userId == 1 }
+        )
+    } as? SqlExpr.QuantifiedComparisonPredicate
+    val anyColumn = anyCondition?.expr as? SqlExpr.Column
+    val allColumn = allCondition?.expr as? SqlExpr.Column
 
     val failures = listOfNotNull(
-        expect(column?.columnName == "status") { "field was ${column?.columnName}" },
-        expect(condition?.operator == SqlQuantifiedComparisonOperator.GreaterThan) { "operator was ${condition?.operator}" },
-        expect(condition?.quantifier == SqlSubqueryQuantifier.Any) { "quantifier was ${condition?.quantifier}" },
-        expect(condition?.query is SqlQuery.Select) { "query was ${condition?.query?.let { it::class.qualifiedName }}" },
+        expect(anyColumn?.columnName == "status") { "ANY field was ${anyColumn?.columnName}" },
+        expect(anyCondition?.operator == SqlQuantifiedComparisonOperator.GreaterThan) {
+            "ANY operator was ${anyCondition?.operator}"
+        },
+        expect(anyCondition?.quantifier == SqlSubqueryQuantifier.Any) {
+            "ANY quantifier was ${anyCondition?.quantifier}"
+        },
+        expect(anyCondition?.query is SqlQuery.Select) {
+            "ANY query was ${anyCondition?.query?.let { it::class.qualifiedName }}"
+        },
+        expect(allColumn?.columnName == "status") { "ALL field was ${allColumn?.columnName}" },
+        expect(allCondition?.operator == SqlQuantifiedComparisonOperator.GreaterThan) {
+            "ALL operator was ${allCondition?.operator}"
+        },
+        expect(allCondition?.quantifier == SqlSubqueryQuantifier.All) {
+            "ALL quantifier was ${allCondition?.quantifier}"
+        },
+        expect(allCondition?.query is SqlQuery.Select) {
+            "ALL query was ${allCondition?.query?.let { it::class.qualifiedName }}"
+        },
     )
 
     return failures.firstOrNull() ?: "OK"

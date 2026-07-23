@@ -174,6 +174,52 @@ WHERE LENGTH(`name`) > :nameLength
 | 拼接 | `f.concat(x, y, ...)` |
 | 使用分隔符拼接 | `f.join(separator, x, y, ...)` |
 
+### 条件中的 Kotlin 原生大小写调用
+
+在条件中，source `String` 字段的无参 Kotlin `lowercase()` 和 `uppercase()` 会生成 SQL `LOWER` 和 `UPPER`。
+
+```kotlin group="Native string case equality" name="kotlin" icon="kotlin"
+val name = "Ada"
+
+val users = User()
+    .select()
+    .where { it.userName?.lowercase() == name.lowercase() }
+    .toList()
+```
+
+```sql group="Native string case equality" name="MySQL" icon="mysql"
+SELECT `id`, `user_name` AS `userName`
+FROM `user`
+WHERE LOWER(`user_name`) = :userName
+```
+
+`contains` 保持自动转义并添加 `%value%` 的匹配语义；`like` 则直接使用调用方提供的模式。
+
+```kotlin group="Native string case match" name="kotlin" icon="kotlin"
+val name = "Ada"
+
+val users = User()
+    .select()
+    .where {
+        it.userName?.lowercase().contains(name.lowercase()) ||
+            it.userName?.uppercase() like "ADA%"
+    }
+    .toList()
+```
+
+```sql group="Native string case match" name="MySQL" icon="mysql"
+SELECT `id`, `user_name` AS `userName`
+FROM `user`
+WHERE LOWER(`user_name`) LIKE :userName ESCAPE '\\'
+   OR UPPER(`user_name`) LIKE :userName@1
+```
+
+捕获变量 `name.lowercase()` 由 Kotlin 先求值，再作为参数绑定。
+
+source 字段和普通变量直接使用即可。需要读取 KPojo 属性实际值时，将 `.value` 放在该属性链的末端，例如 `probe.userName.value`。
+
+条件匹配规则见 {{ $.keyword("query/conditions", ["条件"]) }}。
+
 ## 使用窗口函数
 
 Kronos 当前提供 `f.rowNumber()` 作为窗口函数入口。需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`。
@@ -237,16 +283,27 @@ WHERE `q`.`rn` = :rn
 
 ## PostgreSQL 数组辅助函数
 
-PostgreSQL 数组比较可以使用专用的 `f.any(...)` 和 `f.all(...)`。使用前导入 `com.kotlinorm.functions.bundled.exts.PostgresFunctions.any` 或 `all`。这些函数只用于 PostgreSQL 数组语义，普通子查询量词 `any<T>(query)`、`some<T>(query)`、`all<T>(query)` 见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
+PostgreSQL 数组比较使用 `f.any(...)` 和 `f.all(...)`。使用前导入对应函数。
+
+这些 `f` receiver 函数会渲染 PostgreSQL 数组比较表达式。
 
 ```kotlin group="PostgreSQL functions" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.PostgresFunctions.all
 import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
+
+val acceptedIds = intArrayOf(1, 2, 3)
+val blockedIds = intArrayOf(8, 9)
 
 val rows = User()
     .select()
-    .where { it.id == f.any(intArrayOf(1, 2, 3)) }
+    .where {
+        it.id == f.any(acceptedIds) &&
+            it.id != f.all(blockedIds)
+    }
     .toList()
 ```
+
+该条件会生成 PostgreSQL `ANY (...)` 和 `ALL (...)` 数组谓词。
 
 ## 自定义函数
 

@@ -265,4 +265,46 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
      */
     @Test
     fun capturedNonKPojoValues() = box("capturedNonKPojoValues")
+
+    /**
+     * Verifies Iterable.any string predicates lower to ordered OR syntax expressions.
+     */
+    @Test
+    fun iterableAnyContains() = box("iterableAnyContains")
+
+    /**
+     * Verifies Iterable.any predicates compose with boolean operators and negation.
+     */
+    @Test
+    fun iterableAnyLogicalComposition() = box("iterableAnyLogicalComposition")
+
+    /**
+     * Verifies Iterable.any/all/none predicates preserve their SQL tree and leaf-negation semantics.
+     */
+    @Test
+    fun iterablePredicateMatrix() = box("iterablePredicateMatrix")
+
+    /**
+     * Verifies empty and no-value Iterable predicates retain an explicit false criterion.
+     */
+    @Test
+    fun iterablePredicateEmptySafety() = box("iterablePredicateEmptySafety")
+
+    /**
+     * Verifies LOWER and UPPER function expressions support equality and string-match conditions.
+     */
+    @Test
+    fun lowerFunctionStringMatches() = box("lowerFunctionStringMatches")
+
+    /**
+     * Verifies native Kotlin string-case calls lower only for source field receiver chains.
+     */
+    @Test
+    fun nativeStringCaseFunctions() = box("nativeStringCaseFunctions")
+
+    /**
+     * Verifies callable boundaries remain outside Iterable predicate lowering.
+     */
+    @Test
+    fun iterableAnyCallableBoundaries() = box("iterableAnyCallableBoundaries")
 }

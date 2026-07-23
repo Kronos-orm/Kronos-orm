@@ -7,6 +7,10 @@
 
 For the full interface contract, see {{ $.keyword("database/datasource-wrapper", ["Data source wrapper"]) }}.
 
+## Android SQLite reference
+
+The dedicated {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} chapter provides Android/JVM `SQLiteDatabase` setup and a complete wrapper reference.
+
 ## Add Spring JDBC and Kronos
 
 Spring Boot projects usually manage Spring dependency versions through the selected Boot version. Use the latest stable JDBC driver that matches your database server and JDK.

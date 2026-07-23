@@ -136,7 +136,7 @@ DDL 类型片段：
 
 ## JSON、二进制、空间和 XML 类型
 
-Kotlin 值是对象且数据库列需要 JSON 类型时，可以把 `JSON` 与 `@Serialize` 搭配使用。二进制、空间和 XML 值也使用同样的 `@ColumnType` 写法。
+{{ $.annotation("Serialize") }} 会把对象编码为 JSON 文本。数据库列需要 JSON 类型时，可以额外使用 `@ColumnType(KColumnType.JSON)` 生成对应 DDL。二进制、空间和 XML 值也使用同样的 `@ColumnType` 写法。
 
 ```kotlin name="kotlin" icon="kotlin" {11,12,15,18,21}
 import com.kotlinorm.annotations.ColumnType

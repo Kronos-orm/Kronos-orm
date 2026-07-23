@@ -1,254 +1,106 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos 提供 KPojo 实体与 `Map<String, Any?>` 之间的转换 API。
+应用接收 Map 形式的输入、准备接口响应或在模型间复制数据时，可以在 {{ $.code("KPojo") }} 模型与 `Map<String, Any?>` 之间转换值。
 
-需要列值 Map 时使用 `toDataMap()`，需要从 Map 构造 KPojo 时使用 `mapperTo()` 或 `safeMapperTo()`。
+## 选择 API
 
-```kotlin
-data class User(
+| 任务 | API |
+|------|-----|
+| 将模型读取为 Map | `toDataMap()` |
+| 用已符合属性类型的值创建新模型 | `mapperTo()` |
+| 用需要 Kronos 常规转换的值创建新模型 | `safeMapperTo()` |
+| 将已符合属性类型的值填入已有模型 | `fromMapData()` |
+| 将需要 Kronos 常规转换的值填入已有模型 | `safeFromMapData()` |
+
+## 从完整示例开始
+
+`mapperTo` 适合处理 `toDataMap` 生成的 Map。`safeMapperTo` 适合 JSON 或表单等输入场景，其中数字可能以字符串形式传入。
+
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.Extensions.mapperTo
+import com.kotlinorm.utils.Extensions.safeMapperTo
+
+data class UserDto(
     var id: Int? = null,
-    var name: String? = null
+    var name: String? = null,
 ) : KPojo
 
-val user = User(id = 1, name = "Tom")
+val typedInput = mapOf("id" to 1, "name" to "Ada")
+val copied = typedInput.mapperTo<UserDto>()
+// UserDto(id = 1, name = "Ada")
 
-val data = user.toDataMap()
-// mapOf("id" to 1, "name" to "Tom")
-
-val copied = data.mapperTo<User>()
-// User(id = 1, name = "Tom")
-
-val converted = mapOf("id" to "1", "name" to "Tom").safeMapperTo<User>()
-// User(id = 1, name = "Tom")
+val requestInput = mapOf("id" to "2", "name" to "Lin")
+val converted = requestInput.safeMapperTo<UserDto>()
+// UserDto(id = 2, name = "Lin")
 ```
 
-## KPojo to Map 转换
+## 将模型读取为 Map
 
-### 1. {{ $.title("KPojo.toDataMap()")}}
+调用 `toDataMap()` 可以取得模型的已映射属性名和属性值。
 
-将实体对象转换为Map。
+```kotlin name="kotlin" icon="kotlin"
+val data = UserDto(id = 1, name = "Ada").toDataMap()
+// {id=1, name=Ada}
+```
 
-- **函数声明**
+## 创建新模型
 
-    ```kotlin
-    fun KPojo.toDataMap(): Map<String, Any?>
-    ```
+Map 中的值已经符合 `T` 声明的 Kotlin 类型时，使用 `mapperTo<T>()`。输入值需要转换时，例如将 `"2"` 转为 `Int`，使用 `safeMapperTo<T>()`。
 
-- **使用示例**
+安全转换 API 也会使用应用已注册的映射规则。模型属性使用 `Money` 等领域值时，配置方式见 {{ $.keyword("configuration/value-codec", ["自定义值映射"]) }}。
 
-    ```kotlin
-    val user = User(id = 1, name = "Tom").toDataMap()
-    ```
+```kotlin name="kotlin" icon="kotlin"
+val direct = mapOf("id" to 3, "name" to "Mika").mapperTo<UserDto>()
+val converted = mapOf("id" to "4", "name" to "Noa").safeMapperTo<UserDto>()
+```
 
-- **返回值**
+## 填充已有模型
 
-  `Map<String, Any?>` Map
+应用已经持有目标模型时，使用 `fromMapData()` 或 `safeFromMapData()`。两个函数都会在填入提供的 key 后返回同一个模型；缺少的 key 会保留当前属性值。
 
-{{ $.hr() }}
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
 
-## Mapper to 严格转换
+data class UserDto(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-MapperTo共包含4个函数用于类型转换，分别是：
+val user = UserDto(id = 1, name = "Draft")
 
-### 1. {{ $.title("Map<String, Any?>.mapperTo(KType)")}}
+user.fromMapData<UserDto>(mapOf("name" to "Published"))
+// UserDto(id = 1, name = "Published")
 
-通过Map转换为实体对象，当Map中的值与实体对象属性的类型不匹配时，则会跳过该属性。
+user.safeFromMapData<UserDto>(mapOf("id" to "2"))
+// UserDto(id = 2, name = "Published")
+```
 
-通过 `typeOf<T>()` 传入完整目标类型。泛型 KPojo 构造留待后续版本支持，当前目标必须是具体、非泛型的 KPojo 类型。
+## 在模型间复制
 
-- **函数声明**
+{{ $.code("KPojo") }} 源对象也提供相同的新对象 API。它们会将同名属性复制到新的目标模型。
 
-    ```kotlin
-    fun Map<String, Any?>.mapperTo(type: KType): Any
-    ```
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.Extensions.mapperTo
 
-- **使用示例**
+data class UserRecord(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-    ```kotlin
-    val user = mapOf("id" to 1, "name" to "Tom").mapperTo(typeOf<User>())
-    ```
+data class UserCard(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-- **接收参数**
+val card = UserRecord(id = 7, name = "Kai").mapperTo<UserCard>()
+// UserCard(id = 7, name = "Kai")
+```
 
-  {{ $.params([['type', '完整实体目标类型', 'KType']]) }}
+同名属性需要转换时，使用 `source.safeMapperTo<T>()`。
 
-- **返回值**
+## 运行时选择目标类型
 
-  `Any` 实体对象
-
-{{ $.hr() }}
-
-### 2. {{ $.title("Map<String, Any?>.mapperTo<T: KPojo>()")}}
-
-通过Map转换为实体对象，当Map中的值与实体对象属性的类型不匹配时，则会跳过该属性。
-
-- **函数声明**
-
-    ```kotlin
-    inline fun <reified T : KPojo> Map<String, Any?>.mapperTo(): T
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val user = mapOf("id" to 1, "name" to "Tom").mapperTo<User>()
-    ```
-
-- **返回值**
-
-  `T` 实体对象
-
-{{ $.hr() }}
-
-### 3. {{ $.title("KPojo.mapperTo(KType)")}}
-
-通过实体对象转换为另一个实体对象，当实体对象属性的类型与目标实体对象属性的类型不匹配时，则会跳过该属性。
-
-通过 `typeOf<T>()` 传入精确的具体 KPojo 目标类型。
-
-- **函数声明**
-
-    ```kotlin
-    fun KPojo.mapperTo(type: KType): Any
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").mapperTo(typeOf<Student>())
-    ```
-
-- **接收参数**
-
-  {{ $.params([['type', '完整实体目标类型', 'KType']]) }}
-
-- **返回值**
-
-  `Any` 实体对象
-
-{{ $.hr() }}
-
-### 4. {{ $.title("KPojo.mapperTo<T: KPojo>()")}}
-
-通过实体对象转换为另一个实体对象，当实体对象属性的类型与目标实体对象属性的类型不匹配时，则会跳过该属性。
-
-- **函数声明**
-
-    ```kotlin
-    inline fun <reified T : KPojo> KPojo.mapperTo(): T
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").mapperTo<Student>()
-    ```
-
-- **返回值**
-
-  `T` 实体对象
-
-{{ $.hr() }}
-
-## Safe Mapper to 安全转换
-
-SafeMapperTo共包含4个函数用于类型转换，分别是：
-
-### 1. {{ $.title("Map<String, Any?>.safeMapperTo(KType)")}}
-
-通过 Map 转换为实体对象。当值与属性类型不匹配时，统一转换注册表会尝试安全转换，详见 {{ $.keyword("configuration/value-codec", ["概念", "ValueCodec"]) }}。
-
-通过 `typeOf<T>()` 传入完整目标类型。泛型 KPojo 构造留待后续版本支持，当前目标必须是具体、非泛型的 KPojo 类型。
-
-- **函数声明**
-
-    ```kotlin
-    fun Map<String, Any?>.safeMapperTo(type: KType): Any
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val user = mapOf("id" to "1", "name" to "Tom").safeMapperTo(typeOf<User>())
-    ```
-
-- **接收参数**
-
-    {{ $.params([['type', '完整实体目标类型', 'KType']]) }}
-
-- **返回值**
-
-  `Any` 实体对象
-
-{{ $.hr() }}
-
-### 2. {{ $.title("Map<String, Any?>.safeMapperTo<T: KPojo>()")}}
-
-通过 Map 转换为实体对象。当值与属性类型不匹配时，统一转换注册表会尝试安全转换，详见 {{ $.keyword("configuration/value-codec", ["概念", "ValueCodec"]) }}。
-
-- **函数声明**
-
-    ```kotlin
-    inline fun <reified T : KPojo> Map<String, Any?>.safeMapperTo(): T
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val user = mapOf("id" to "1", "name" to "Tom").safeMapperTo<User>()
-    ```
-
-- **返回值**
-
-    `T` 实体对象
-
-{{ $.hr() }}
-
-### 3. {{ $.title("KPojo.safeMapperTo(KType)")}}
-
-通过实体对象转换为另一个实体对象。源属性与目标属性类型不匹配时会尝试安全转换，详见 {{ $.keyword("configuration/value-codec", ["概念", "ValueCodec"]) }}。
-
-通过 `typeOf<T>()` 传入精确的具体 KPojo 目标类型。
-
-- **函数声明**
-
-    ```kotlin
-    fun KPojo.safeMapperTo(type: KType): Any
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").safeMapperTo(typeOf<Student>())
-    ```
-
-- **接收参数**
-
-    {{ $.params([['type', '完整实体目标类型', 'KType']]) }}
-
-- **返回值**
-
-    `Any` 实体对象
-
-{{ $.hr() }}
-
-### 4. {{ $.title("KPojo.safeMapperTo<T: KPojo>()")}}
-
-通过实体对象转换为另一个实体对象。源属性与目标属性类型不匹配时会尝试安全转换，详见 {{ $.keyword("configuration/value-codec", ["概念", "ValueCodec"]) }}。
-
-- **函数声明**
-
-    ```kotlin
-    inline fun <reified T : KPojo> KPojo.safeMapperTo(): T
-    ```
-
-- **使用示例**
-
-    ```kotlin
-    val student = User(id = 1, name = "Tom").safeMapperTo<Student>()
-    ```
-
-- **返回值**
-
-    `T` 实体对象
+代码需要在运行时选择目标模型时，可以使用 `mapperTo(type: KType)` 和 `safeMapperTo(type: KType)` 重载。目标类型已在源码中确定时，优先使用上面的泛型形式。

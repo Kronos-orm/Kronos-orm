@@ -68,6 +68,15 @@ jobs:
           path: kronos-example-vertx
           persist-credentials: false
 
+      - name: Detect Kronos version
+        working-directory: kronos-orm
+        run: |
+          set -euo pipefail
+          version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+          kotlin_version=$(grep -E '^kotlin\s*=\s*"[^"]+"' libs.versions.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+          echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
+
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -77,6 +86,57 @@ jobs:
       - name: Publish current Kronos artifacts to Maven local
         working-directory: kronos-orm
         run: ./gradlew publishAllToMavenLocal --no-daemon --console=plain -x test
+
+      - name: Publish current Kronos Gradle plugin to Maven local
+        working-directory: kronos-orm/kronos-gradle-plugin
+        run: ./gradlew publishToMavenLocal --no-daemon --console=plain -x test
+
+      - name: Point examples to current Kronos version
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["KRONOS_EXAMPLE_VERSION"]
+          kotlin_version = os.environ["KRONOS_EXAMPLE_KOTLIN_VERSION"]
+          replacements = {
+              "kronos-example-ktor/build.gradle.kts": [
+                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
+                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
+                  (r'implementation\("com\.kotlinorm:kronos-jdbc-wrapper:[^"]+"\)', f'implementation("com.kotlinorm:kronos-jdbc-wrapper:{version}")'),
+              ],
+              "kronos-example-spring-boot/gradle-project/libs.versions.toml": [
+                  (r'kronos = "[^"]+"', f'kronos = "{version}"'),
+              ],
+              "kronos-example-spring-boot/gradle-project/gradle.properties": [
+                  (r'^version=.*$', f'version={version}'),
+                  (r'^kronosVersion=.*$', f'kronosVersion={version}'),
+              ],
+              "kronos-example-spring-boot/maven-project/pom.xml": [
+                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
+              ],
+              "kronos-example-solon/pom.xml": [
+                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
+                  (r'<kotlin.version>[^<]+</kotlin.version>', f'<kotlin.version>{kotlin_version}</kotlin.version>'),
+              ],
+              "kronos-example-vertx/build.gradle.kts": [
+                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
+                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
+                  (r'implementation\("com\.kotlinorm:kronos-jdbc-wrapper:[^"]+"\)', f'implementation("com.kotlinorm:kronos-jdbc-wrapper:{version}")'),
+              ],
+          }
+
+          for file_name, patterns in replacements.items():
+              path = Path(file_name)
+              text = path.read_text()
+              for pattern, replacement in patterns:
+                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+                  if count != 1:
+                      raise SystemExit(f"missing expected pattern in {file_name}: {pattern}")
+              path.write_text(text)
+          PY
 
       - name: Run Ktor example smoke tests
         working-directory: kronos-example-ktor
@@ -99,3 +159,97 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew test --no-daemon --console=plain
+
+  android-example:
+    name: Run Android example
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Kronos
+        uses: actions/checkout@v6
+        with:
+          path: kronos-orm
+          persist-credentials: false
+
+      - name: Checkout Android example
+        uses: actions/checkout@v6
+        with:
+          repository: Kronos-orm/kronos-example-android
+          path: kronos-example-android
+          persist-credentials: false
+
+      - name: Detect Kronos version
+        working-directory: kronos-orm
+        run: |
+          set -euo pipefail
+          version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+          echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: Set up JDK 21 for Kronos publication
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Publish current Kronos artifacts to Maven local
+        working-directory: kronos-orm
+        run: ./gradlew publishAllToMavenLocal --no-daemon --console=plain -x test
+
+      - name: Publish current Kronos Gradle plugin to Maven local
+        working-directory: kronos-orm/kronos-gradle-plugin
+        run: ./gradlew publishToMavenLocal --no-daemon --console=plain -x test
+
+      - name: Point Android example to current Kronos version
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["KRONOS_EXAMPLE_VERSION"]
+          replacements = {
+              "kronos-example-android/build.gradle.kts": [
+                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
+              ],
+              "kronos-example-android/app/build.gradle.kts": [
+                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
+              ],
+          }
+
+          for file_name, patterns in replacements.items():
+              path = Path(file_name)
+              text = path.read_text()
+              for pattern, replacement in patterns:
+                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+                  if count != 1:
+                      raise SystemExit(f"missing expected pattern in {file_name}: {pattern}")
+              path.write_text(text)
+          PY
+
+      - name: Set up JDK 17 for Android
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build and lint Android example
+        working-directory: kronos-example-android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew -PkronosUseMavenLocal=true :app:assembleDebug :app:lintDebug --no-daemon --console=plain
+
+      - name: Run Android instrumentation tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          working-directory: kronos-example-android
+          script: ./gradlew -PkronosUseMavenLocal=true :app:connectedDebugAndroidTest --no-daemon --console=plain

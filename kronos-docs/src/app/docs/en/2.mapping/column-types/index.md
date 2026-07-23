@@ -1,8 +1,8 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 
-## Kotlin Type Inference
+## Kotlin type inference
 
-Kronos infers a `KColumnType` for each persisted `KPojo` property when the property does not use {{ $.keyword("mapping/annotations", ["Annotation Settings", "@ColumnType column type and length"]) }}. The inferred value is visible from `__columns` and is used by table DDL.
+Kronos chooses a column type from each persisted `KPojo` property when the property has no {{ $.keyword("mapping/annotations", ["Annotations"]) }}. The selected database dialect renders the final DDL type when the table is created or synchronized.
 
 ```kotlin name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.Table
@@ -16,11 +16,9 @@ data class TypeProfile(
     var payload: ByteArray? = null,
     var createdAt: LocalDateTime? = null,
 ) : KPojo
-
-val types = TypeProfile().__columns.associate { it.name to it.type }
 ```
 
-Result:
+For this model, Kronos selects the following column types:
 
 | Property | Inferred `KColumnType` |
 |----------|-------------------------|
@@ -29,7 +27,7 @@ Result:
 | `payload` | `BLOB` |
 | `createdAt` | `DATETIME` |
 
-MySQL DDL type fragments:
+MySQL renders those columns as:
 
 ```sql name="MySQL" icon="mysql"
 `enabled` TINYINT(1)
@@ -38,9 +36,9 @@ MySQL DDL type fragments:
 `createdAt` DATETIME
 ```
 
-## Default Mapping
+## Default mapping
 
-Use the table as a compact reference for the automatic mapping. The final DDL type is rendered by the selected database dialect; see {{ $.keyword("mapping/column-type-reference", ["KColumnType"]) }} for dialect examples.
+Use this table as a compact reference for automatic mapping. The selected database dialect renders the final DDL type; see {{ $.keyword("mapping/column-type-reference", ["Column Type Reference"]) }} for dialect examples.
 
 | Kotlin type | Inferred `KColumnType` |
 |-------------|-------------------------|
@@ -63,11 +61,11 @@ Use the table as a compact reference for the automatic mapping. The final DDL ty
 | `@Serialize` property | `VARCHAR` unless `@ColumnType` overrides it |
 | Other property types | `VARCHAR` |
 
-Scalar enums use `Enum.name` for string-compatible columns. An explicitly integer `@ColumnType` uses ordinal values unless a later user `ValueCodec` overrides the field. `@Serialize` stores the complete logical value as text; it does not convert a collection element by element. See {{ $.keyword("mapping/enum-serialization", ["Enum Storage and Serialization"]) }} for the complete mapping rules.
+Scalar enums use `Enum.name` for string-compatible columns. An integer {{ $.annotation("ColumnType") }} stores the enum position. Use a custom mapping for a business code, and see {{ $.keyword("mapping/enum-serialization", ["Enum Fields"]) }} for examples.
 
-## Override With {{ $.annotation("ColumnType") }}
+## Override with {{ $.annotation("ColumnType") }}
 
-Use `@ColumnType` to set the column type for one property. The annotation value replaces the inferred type in `__columns`.
+Use `@ColumnType` to select the column type for one property.
 
 ```kotlin name="kotlin" icon="kotlin" {8,10}
 import com.kotlinorm.annotations.ColumnType
@@ -82,25 +80,23 @@ data class OverrideType(
     @ColumnType(KColumnType.UUID)
     var externalId: String? = null,
 ) : KPojo
-
-val columns = OverrideType().__columns.associate { it.name to it.type }
 ```
 
-Result:
+For this model, the selected column types are:
 
 | Property | `KColumnType` |
 |----------|----------------|
 | `bio` | `TEXT` |
 | `externalId` | `UUID` |
 
-PostgreSQL DDL type fragments:
+PostgreSQL renders them as:
 
 ```sql name="PostgreSQL" icon="postgres"
 "bio" TEXT
 "externalId" UUID
 ```
 
-## Set `length` And `scale`
+## Set `length` and `scale`
 
 The `@ColumnType` annotation also accepts `length` and `scale`. String-like types use `length`; decimal types use `length` and `scale`.
 
@@ -130,30 +126,18 @@ DDL type fragments:
 | SQLServer | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | Oracle | `VARCHAR2(80)` | `NUMBER(12,2)` |
 
-## Combine JSON And Serialization
+## Use a native JSON column
 
-Use `@Serialize` for value conversion and `@ColumnType(KColumnType.JSON)` for the DDL type. Register one serialized `ValueCodec` to encode and decode every serialized field from its complete declared `KType`.
+With the Gson or Kotlinx Serialization setup shown on {{ $.keyword("mapping/serialization", ["Serialization"]) }}, {{ $.annotation("Serialize") }} properties are encoded as JSON text. Add {{ $.annotation("ColumnType") }} with `KColumnType.JSON` when the database table should use a native JSON column.
 
-```kotlin name="kotlin" icon="kotlin" {13-16,22,23}
-import com.google.gson.Gson
-import com.kotlinorm.Kronos
+```kotlin name="kotlin" icon="kotlin"
 import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.serializedValueCodec
-import kotlin.reflect.jvm.javaType
 
 data class AuditPayload(val ip: String, val tags: List<String>)
-
-val gson = Gson()
-val gsonRegistration = Kronos.registerValueCodec(
-    serializedValueCodec(
-        encode = { value, _ -> gson.toJson(value) },
-        decode = { text, type -> gson.fromJson(text, type.javaType) }
-    )
-)
 
 @Table("tb_audit_event")
 data class AuditEvent(
@@ -163,7 +147,7 @@ data class AuditEvent(
 ) : KPojo
 ```
 
-Parameter result when inserting `AuditPayload("127.0.0.1", listOf("login"))`:
+When the registered JSON configuration saves `AuditPayload("127.0.0.1", listOf("login"))`, the insert parameter is:
 
 ```text name="result"
 payload -> {"ip":"127.0.0.1","tags":["login"]}
@@ -180,6 +164,4 @@ DDL type fragments:
 | Oracle | `JSON` |
 
 > **Note**
-> `@Serialize` uses the codec described in {{ $.keyword("configuration/value-codec", ["ValueCodec"]) }}. `@ColumnType` controls the database type rendered by table operations. Call `gsonRegistration.close()` when this scoped override is no longer needed; later registrations are checked first.
-
-For the complete serialized-field mapping flow, see {{ $.keyword("mapping/serialization", ["Serialization"]) }}.
+> The registered JSON configuration sends `payload` as a JSON string through JDBC. {{ $.annotation("ColumnType") }} selects the type used in generated table DDL. Use the default `VARCHAR` column for JSON text tables.

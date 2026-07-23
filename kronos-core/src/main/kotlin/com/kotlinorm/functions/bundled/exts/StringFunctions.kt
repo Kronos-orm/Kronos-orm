@@ -8,10 +8,10 @@ object StringFunctions {
     fun FunctionHandler.length(x: String?): Int? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.upper(x: String?): Any? = null
+    fun FunctionHandler.upper(x: String?): String? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.lower(x: String?): Any? = null
+    fun FunctionHandler.lower(x: String?): String? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.substr(x: String?, y: Int?, z: Int?): Any? = null

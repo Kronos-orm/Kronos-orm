@@ -121,11 +121,10 @@ Use the latest stable MySQL Connector/J and connection pool versions that match 
 ```kotlin
 #!/usr/bin/env kotlin
 
-@file:Repository("https://central.sonatype.com/repository/maven-snapshots/")
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.4")
-@file:DependsOn("com.kotlinorm:kronos-core:0.2.4")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.4")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 @file:DependsOn("com.alibaba:druid:<latest-stable>")
 
@@ -194,4 +193,3 @@ kotlinc -script example.main.kts
 ```
 
 This will generate code based on the information in the configuration file and write it to the specified directory.
-

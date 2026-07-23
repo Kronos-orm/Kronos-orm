@@ -5,7 +5,7 @@ import MappingCategory from "../ng-doc.category";
  * @status:stable
  */
 const EnumSerializationPage: NgDocPage = {
-    title: `Enum Storage and Serialization`,
+    title: `Enum Fields`,
     mdFile: './index.md',
     route: 'enum-serialization',
     category: MappingCategory,

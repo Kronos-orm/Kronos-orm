@@ -89,6 +89,10 @@ dependencies {
 
 For connection setup, see {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }}. For Spring JDBC or other frameworks, see {{ $.keyword("database/custom-wrapper", ["Custom Wrapper"]) }}.
 
+## Android SQLite
+
+For Android/JVM and Android `SQLiteDatabase` setup, use the dedicated {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} chapter. It covers dependencies, the wrapper, transactions, logging, and the complete example.
+
 ## Database driver and pool
 
 Choose JDBC driver and connection-pool versions that match your database server and JDK. The `<latest-stable>` placeholders below represent the current stable third-party versions for your runtime environment.

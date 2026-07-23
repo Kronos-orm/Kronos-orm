@@ -1,23 +1,24 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 
-## Mark serialized storage
+## Store JSON text
 
-Use `@Serialize` when a persisted Kotlin value must be stored as text and restored after a typed read. The annotation selects `ValueStorage.SERIALIZED`; it does not install a serializer. Register one serialized `ValueCodec` during application startup.
+Use {{ $.annotation("Serialize") }} for a property that should be stored as JSON text, such as a settings object or a list. The JSON library encodes the property into one string, and Kronos writes that string as a JDBC parameter; query results restore the property's Kotlin type. Choose the model tab that matches the JSON library and configure it when the application starts.
 
-```kotlin group="Serialized model" name="model" icon="kotlin"
-import com.kotlinorm.annotations.ColumnType
+```kotlin group="JSON model" name="Gson" icon="kotlin"
 import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
 
 enum class Status { READY, CLOSED }
-data class ProfileSetting(val theme: String, val shortcuts: List<String>)
+
+data class ProfileSetting(
+    val theme: String,
+    val shortcuts: List<String>
+)
 
 @Table("tb_user_profile")
 data class UserProfile(
     var id: Int? = null,
-    @ColumnType(KColumnType.JSON)
     @Serialize
     var setting: ProfileSetting? = null,
     @Serialize
@@ -25,15 +26,45 @@ data class UserProfile(
 ) : KPojo
 ```
 
-The codec receives the complete property `KType` in both directions. `ProfileSetting`, `List<Status>`, and nested collections therefore use the same registration. A serialized collection is converted as one field value; Kronos does not run the enum codec for each element.
+```kotlin group="JSON model" name="Kotlinx Serialization" icon="kotlin"
+import com.kotlinorm.annotations.Serialize
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
+import kotlinx.serialization.Serializable
 
-Unless a column type is explicitly supplied, `@Serialize` fields use a string-compatible `VARCHAR` column type. `@ColumnType` changes the DDL type, while `@Serialize` continues to select the `SERIALIZED` storage protocol.
+@Serializable
+enum class Status { READY, CLOSED }
 
-## Register Gson once
+@Serializable
+data class ProfileSetting(
+    val theme: String,
+    val shortcuts: List<String>
+)
 
-`serializedValueCodec` wraps two functions as a normal `ValueCodec`. Register the result through the only conversion registration entry, `Kronos.registerValueCodec`.
+@Table("tb_user_profile")
+data class UserProfile(
+    var id: Int? = null,
+    @Serialize
+    var setting: ProfileSetting? = null,
+    @Serialize
+    var statuses: List<Status>? = null
+) : KPojo
+```
 
-```kotlin group="Gson codec" name="startup" icon="kotlin"
+The `setting` and `statuses` properties above use `VARCHAR` columns by default. See {{ $.keyword("mapping/column-types", ["Column Types"]) }} when an existing schema or table creation needs a specific column type.
+
+## Configure Gson
+
+Add Gson and Kotlin reflection to the application, then register JSON text conversion once during startup. The same setup handles objects, lists, and nested values marked with {{ $.annotation("Serialize") }}.
+
+```kotlin name="build.gradle.kts" icon="gradlekts"
+dependencies {
+    implementation(kotlin("reflect"))
+    implementation("com.google.code.gson:gson:2.14.0")
+}
+```
+
+```kotlin name="startup" icon="kotlin"
 import com.google.gson.Gson
 import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.serializedValueCodec
@@ -41,7 +72,7 @@ import kotlin.reflect.jvm.javaType
 
 val gson = Gson()
 
-val serializationRegistration = Kronos.registerValueCodec(
+Kronos.registerValueCodec(
     serializedValueCodec(
         encode = { value, type -> gson.toJson(value, type.javaType) },
         decode = { text, type -> gson.fromJson(text, type.javaType) }
@@ -49,19 +80,27 @@ val serializationRegistration = Kronos.registerValueCodec(
 )
 ```
 
-Later registrations have higher priority. Closing `serializationRegistration` removes only this codec and restores an older matching registration. Applications normally keep it for their lifetime; closing is useful for tests or hot reload.
+Place this registration in the application's startup path, such as an Android `Application` or server bootstrap.
 
-When no codec accepts serialized storage, writes and typed database/delegate reads fail with `MissingSerializedCodec`. SQL null is handled before codec invocation. Safe Map mapping keeps a value that is already assignable to the target type.
+## Configure Kotlinx Serialization
 
-## Register Kotlinx Serialization
+Enable the Kotlinx Serialization compiler plugin, add the JSON and reflection dependencies, and choose the Kotlinx Serialization model tab above.
 
-Kotlinx Serialization uses the same registration shape. It receives the complete `KType`, so its serializer can retain generic element types.
+```kotlin name="build.gradle.kts" icon="gradlekts"
+plugins {
+    id("org.jetbrains.kotlin.plugin.serialization") version "<your Kotlin version>"
+}
 
-```kotlin group="Kotlinx codec" name="startup" icon="kotlin"
+dependencies {
+    implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+}
+```
+
+```kotlin name="startup" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.serializedValueCodec
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 
@@ -80,53 +119,26 @@ Kronos.registerValueCodec(
         decode = { text, type -> json.decodeFromString(serializer(type), text) }
     )
 )
+```
 
-@Serializable
-data class ProfileSetting(
-    val theme: String,
-    val shortcuts: List<String>
+## Use the property normally
+
+After configuration, construct, save, and query `UserProfile` with its regular Kotlin properties.
+
+```kotlin name="kotlin" icon="kotlin"
+val profile = UserProfile(
+    setting = ProfileSetting("dark", listOf("search", "save")),
+    statuses = listOf(Status.READY, Status.CLOSED)
 )
+profile.insert().execute()
+
+val loaded = UserProfile()
+    .select()
+    .where { it.id == 1 }
+    .first()
+
+println(loaded.setting?.theme)
+println(loaded.statuses)
 ```
 
-> **Note**
-> Classes handled by Kotlinx Serialization still need `@Serializable`. For `List<ProfileSetting>`, the element type must also be serializable.
-
-## Read through safe mapping
-
-Raw `mapperTo` / `fromMapData` assignment does not invoke codecs. Use safe mapping or typed JDBC results when stored text should be decoded.
-
-```kotlin group="Safe mapping" name="decode" icon="kotlin"
-val profile = UserProfile().safeFromMapData<UserProfile>(
-    mapOf(
-        "id" to 1,
-        "setting" to """{"theme":"dark","shortcuts":["search","save"]}""",
-        "statuses" to """["READY","CLOSED"]"""
-    )
-)
-
-profile.statuses == listOf(Status.READY, Status.CLOSED)
-```
-
-## Use a delegated serialized view
-
-For an existing string column, retain the stored `String?` property and expose a typed view with `serialize(::column)`. The delegate uses the same registered codec, the complete target `KType`, and the `DELEGATE` origin for both directions.
-
-```kotlin group="Serialized delegate" name="delegate" icon="kotlin"
-import com.kotlinorm.annotations.Table
-import com.kotlinorm.beans.serialize.serialize
-import com.kotlinorm.interfaces.KPojo
-
-@Table("tb_user_profile")
-data class UserProfileRaw(
-    var id: Int? = null,
-    var settingJson: String? = null
-) : KPojo {
-    var setting: ProfileSetting? by serialize(::settingJson)
-}
-
-val profile = UserProfileRaw()
-profile.setting = ProfileSetting("dark", listOf("search"))
-profile.settingJson == """{"theme":"dark","shortcuts":["search"]}"""
-```
-
-See {{ $.keyword("mapping/enum-serialization", ["Enum Storage and Serialization"]) }} for scalar enum columns and `List<Enum>` boundaries. See {{ $.keyword("configuration/value-codec", ["Value Codec"]) }} for the common registration contract. Use {{ $.keyword("mapping/column-types", ["Column Types"]) }} when the serialized column also needs a DDL type such as `JSON`.
+See {{ $.keyword("mapping/enum-serialization", ["Enum Fields"]) }} for scalar enum columns. See {{ $.keyword("configuration/value-codec", ["Custom Value Mapping"]) }} for domain values such as `Money` that use a scalar database column.

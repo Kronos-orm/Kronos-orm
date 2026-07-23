@@ -201,7 +201,7 @@ class MysqlTest {
                 url = "jdbc:mysql://localhost:3306/kronos_testing"
                 username = System.getenv("MYSQL_USERNAME") ?: "kronos"
                 password = System.getenv("MYSQL_PASSWORD") ?: ""
-            }.let { KronosBasicWrapper(it) }
+            }.let { KronosJdbcWrapper(it) }
         }
 
         @BeforeAll @JvmStatic
@@ -278,7 +278,8 @@ All workflows in `.github/workflows/`:
 | `kronos-compiler-plugin-testing.yml` | push/PR to `main` | `./gradlew :kronos-compiler-plugin:test` (JDK 21) |
 | `kronos-codegen-testing.yml` | push/PR to `main` | `./gradlew :kronos-codegen:test` (JDK 21) |
 | `kronos-testing.yml` | push/PR to `main` | Integration tests with real DBs (MySQL 8.0, PostgreSQL 17, SQL Server 2022 via `ankane/setup-*` actions) |
-| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out `kronos-example-ktor` and `kronos-example-spring-boot`, rewires them to the current Kronos version, and runs backend smoke tests only |
+| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out external examples, rewires their coordinates to the current version, runs backend smoke tests, and builds/lints/tests the Android example on an API 35 emulator |
+| `kronos-docs-testing.yml` | docs/workflow push or PR to `main` | Installs locked pnpm dependencies and builds the Angular/ng-doc documentation site |
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
 | `publish.yml` | push to `main` | Snapshot publishing to Central Snapshots, or formal release publishing to Maven Central, JetBrains Marketplace, and GitHub Releases |
@@ -336,16 +337,16 @@ kover {
 
 ### Where Version Lives
 Two files (must stay in sync):
-1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.2.3"`
-2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.2.3"`
+1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.3.0"`
+2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.3.0"`
 
 ### Bump Script
 `.github/scripts/bump-version.sh`:
 ```bash
 bump-version.sh set 1.2.3            # set explicit version
-bump-version.sh next-snapshot         # 0.2.3 → 0.2.4-SNAPSHOT
-bump-version.sh release-from-current  # 0.2.3-SNAPSHOT → 0.2.3
-bump-version.sh next-release          # 0.2.3 → 0.2.4
+bump-version.sh next-snapshot         # 0.3.0 → 0.3.1-SNAPSHOT
+bump-version.sh release-from-current  # 0.3.0-SNAPSHOT → 0.3.0
+bump-version.sh next-release          # 0.3.0 → 0.3.1
 ```
 
 Parses `MAJOR.MINOR.PATCH`, increments PATCH, uses `sed` to update both files. Handles macOS vs Linux `sed` differences.
@@ -355,7 +356,7 @@ Parses `MAJOR.MINOR.PATCH`, increments PATCH, uses `sed` to update both files. H
 When preparing a stable release, do not stop after changing the two code version fields. Update every user-facing version surface in the same change:
 
 - Run `bash .github/scripts/bump-version.sh set <stable-version>` to update `publishing.gradle.kts` and `KronosGradlePlugin.kt`.
-- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.2.4-SNAPSHOT` / `0.2.4--SNAPSHOT`.
+- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.3.1-SNAPSHOT` / `0.3.1--SNAPSHOT`.
 - Update `README.MD` and `README-zh_CN.MD`: Maven Central snapshot badge, Kotlin compatibility table, Gradle Kotlin/Groovy snippets, Maven dependency snippets, and plugin dependency snippets.
 - Update docs release notes in both languages: add a new top section for `<stable-version>` and update `8.resources/release-notes/ng-doc.page.ts` `@status:primary`.
 - Update non-macro docs surfaces: `kronos-docs/src/app/routes/home/home.component.ts`, blog snippets under `kronos-docs/src/assets/blogs/*`, `kronos-gradle-plugin/README.md`, and `kronos-maven-plugin/README.md`.
@@ -364,7 +365,7 @@ When preparing a stable release, do not stop after changing the two code version
 - Scan for stale release strings before finishing:
 
 ```bash
-rg -n "0\\.2\\.0|0\\.2\\.1-SNAPSHOT|0\\.2\\.1--SNAPSHOT" build-logic kronos-gradle-plugin kronos-maven-plugin kronos-docs README.MD README-zh_CN.MD .agents/skills -g '!kronos-docs/node_modules' -g '!kronos-docs/dist' -g '!**/build/**'
+rg -n "0\\.2\\.5-SNAPSHOT|0\\.2\\.5--SNAPSHOT" build-logic kronos-gradle-plugin kronos-maven-plugin kronos-docs README.MD README-zh_CN.MD .agents/skills -g '!kronos-docs/node_modules' -g '!kronos-docs/dist' -g '!**/build/**'
 ```
 
 ### Dependency Versions

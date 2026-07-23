@@ -73,6 +73,26 @@ class KronosCommandLineProcessorTest {
     }
 
     @Test
+    fun requiresBothGeneratedProviderOptionsWhenProviderGenerationIsRequested() {
+        assertEquals(
+            "Missing compiler option 'generated-provider-id'",
+            assertFailsWith<IllegalStateException> {
+                CompilerConfiguration().generatedTypeProviderConfiguration()
+            }.message
+        )
+
+        val idOnly = CompilerConfiguration().apply {
+            put(GeneratedProviderIdKey, "gradle:com.example:sample::main#0123456789abcdef")
+        }
+        assertEquals(
+            "Missing compiler option 'generated-provider-fq-name'",
+            assertFailsWith<IllegalStateException> {
+                idOnly.generatedTypeProviderConfiguration()
+            }.message
+        )
+    }
+
+    @Test
     fun rejectsPartialGeneratedProviderOptionPairs() {
         val idOnly = CompilerConfiguration().apply {
             put(GeneratedProviderIdKey, "gradle:com.example:sample::main#0123456789abcdef")
@@ -118,6 +138,12 @@ class KronosCommandLineProcessorTest {
             "Generated type provider fq-name must not be blank",
             assertFailsWith<IllegalArgumentException> {
                 configuration("valid-id", "").generatedTypeProviderConfigurationOrNull()
+            }.message
+        )
+        assertEquals(
+            "Generated type provider must be in com.kotlinorm.generated.factory: com.example.Provider",
+            assertFailsWith<IllegalArgumentException> {
+                configuration("valid-id", "com.example.Provider").generatedTypeProviderConfigurationOrNull()
             }.message
         )
         assertEquals(

@@ -1,78 +1,87 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-## 注册唯一转换机制
+## 将领域值保存到单个列
 
-`ValueCodec` 是唯一公开值转换扩展点。safe Map 映射、typed JDBC 结果、ORM 参数和 serialized delegate 都会创建 `ValueCodecContext`，并选择一个匹配的 codec。
+自定义值映射让 Kotlin 保留领域值，同时以数据库易处理的值保存到一个列。下面的发票使用 {{ $.code("Money") }}，并以整数分值写入 `BIGINT` 列。
 
-| 上下文值 | 含义 |
-|----------|------|
-| `direction` | `ENCODE` 把逻辑 Kotlin 值准备为 JDBC 值；`DECODE` 恢复逻辑目标值。 |
-| `origin` | `MAP`、`DATABASE`、`DELEGATE` 或 `PARAMETER`；仅在需要细粒度边界时匹配。 |
-| `sourceType` | 已知时为完整声明源 `KType`，否则为运行时 star-projected fallback。 |
-| `targetType` | 完整逻辑 Kotlin `KType`，包含泛型参数与可空性。 |
-| `field` | 可选字段 metadata，例如 `dateFormat`。 |
-| `storage` | 标量转换使用 `NONE`，序列化文本使用 `SERIALIZED`。 |
+## 定义模型
 
-Registry 会先处理 null，因此 `supports` 和 `convert` 只接收非空值。后注册的 codec 先匹配。对于 `storage = NONE`，用户 codec 之后才是内置 enum、temporal、basic 和 identity 规则。
+```kotlin name="model" icon="kotlin"
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
 
-## 添加自定义类型
+data class Money(val cents: Long)
 
-用 `valueCodec` 定义两个方向，再注册一次。下面把 `Money` 存储为 `BigDecimal`。
+@Table("tb_invoice")
+data class Invoice(
+    @PrimaryKey(identity = true)
+    var id: Long? = null,
+    @ColumnType(KColumnType.BIGINT)
+    var total: Money? = null,
+) : KPojo
+```
 
-```kotlin group="Money codec" name="registration" icon="kotlin"
+## 注册转换规则
+
+{{ $.code("valueCodec") }} 用一对转换函数说明模型值和列值之间的往返转换。在应用启动时注册下面的 `Money` 规则。`supports` 选择 `Money` 属性，`convert` 在保存时写入分值、读取时重建 `Money`。保存时方向为 `ENCODE`，读取时方向为 `DECODE`。
+
+```kotlin name="startup" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.enums.ValueCodecDirection
-import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.interfaces.valueCodec
-import java.math.BigDecimal
-import kotlin.reflect.full.withNullability
-import kotlin.reflect.typeOf
 
-data class Money(val amount: BigDecimal)
-private val moneyType = typeOf<Money>()
-
-val moneyRegistration = Kronos.registerValueCodec(
+Kronos.registerValueCodec(
     valueCodec(
         supports = { value, context ->
-            context.storage == ValueStorage.NONE &&
-                context.targetType.withNullability(false) == moneyType &&
-                !(context.direction == ValueCodecDirection.DECODE && value is Money)
+            context.targetType.classifier == Money::class &&
+                when (context.direction) {
+                    ValueCodecDirection.ENCODE -> value is Money
+                    ValueCodecDirection.DECODE -> value is Number
+                }
         },
         convert = { value, context ->
             when (context.direction) {
-                ValueCodecDirection.ENCODE -> (value as Money).amount
-                ValueCodecDirection.DECODE -> Money(value.toString().toBigDecimal())
+                ValueCodecDirection.ENCODE -> (value as Money).cents
+                ValueCodecDirection.DECODE -> Money((value as Number).toLong())
             }
         }
     )
 )
 ```
 
-codec 抛出的异常会包装为 `ValueMappingException`，并尽可能携带 direction、origin、字段/列、目标类型和 batch index。DECODE 结果必须能赋值给完整目标类型；ENCODE 结果必须能被 JDBC 绑定。
+类型判断会让这条规则只用于声明为 `Money` 的属性。例如，`Money(1_999)` 在列中保存为 `1999`。
 
-## 控制优先级和生命周期
+## 像普通值一样使用 Money
 
-后注册的匹配项会覆盖更早的用户行为和内置行为。`close()` 幂等且只注销自身；已经取得 registry snapshot 的请求仍会使用原 snapshot 完成。
+注册完成后，业务代码可以直接用 `Money` 创建和查询 `Invoice`。
 
-```kotlin group="Codec lifetime" name="close" icon="kotlin"
-val registration = Kronos.registerValueCodec(customCodec)
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
 
-// 仅用于测试或热更新：
-registration.close()
+val invoiceId = requireNotNull(
+    Invoice(total = Money(1_999))
+        .insert()
+        .withId()
+        .execute()
+        .lastInsertId
+)
+
+val loaded = Invoice()
+    .select()
+    .where { it.id == invoiceId }
+    .first()
+
+println(loaded.total?.cents)
 ```
 
-## Enum 存储
+## 选择映射方式
 
-标量 enum 已内置处理。没有覆盖列类型时，Kronos 推断为 `VARCHAR` 并存储 `Enum.name`。显式整数 `@ColumnType` 使用 ordinal；如果用户为该字段注册了更晚的 `ValueCodec`，则由用户 codec 覆盖。String code/label 也使用普通的 `Kronos.registerValueCodec` 入口。
-
-`@Serialize List<Status>` 是另一种协议：完整集合和完整 `KType` 只交给 serialized codec 一次，不会逐元素调用标量 enum codec。
-
-列类型矩阵、ordinal、code/label 覆盖和集合边界见 {{ $.keyword("mapping/enum-serialization", ["Enum 存储与序列化"]) }}。
-
-## 日期与 strict 模式
-
-内置 temporal codec 的格式优先级为：显式 prepared format、`Field.dateFormat`、`Kronos.defaultDateFormat`。跨 instant 与本地日期时间语义时使用 `Kronos.timeZone`；原生 JDBC temporal 转换不会无意义地绕经文本。
-
-`Kronos.strictSetValue = true` 会关闭隐式 basic/temporal DECODE coercion，但不会关闭用户 codec、serialized storage、enum 解码或参数写入所需的 ENCODE。
-
-raw `mapperTo` 和 `fromMapData` 只直接赋值，不调用 registry。需要转换时使用 `safeMapperTo`、`safeFromMapData`、typed 查询或正常 ORM 参数。
+| 模型中的值 | 数据库中的值 | 参考页面 |
+|------------|--------------|----------|
+| `Money` | `BIGINT` 分值 | 本页 |
+| 设置对象或 `List<String>` | JSON 文本 | {{ $.keyword("mapping/serialization", ["序列化"]) }} |
+| `Status` 等枚举 | 名称、位置或业务 code | {{ $.keyword("mapping/enum-serialization", ["枚举字段"]) }} |

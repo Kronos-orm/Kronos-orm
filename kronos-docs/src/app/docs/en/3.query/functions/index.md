@@ -174,6 +174,52 @@ WHERE LENGTH(`name`) > :nameLength
 | Concatenate | `f.concat(x, y, ...)` |
 | Join with separator | `f.join(separator, x, y, ...)` |
 
+### Native Kotlin case calls in conditions
+
+For a source `String` field in a condition, the no-argument Kotlin calls `lowercase()` and `uppercase()` generate SQL `LOWER` and `UPPER`.
+
+```kotlin group="Native string case equality" name="kotlin" icon="kotlin"
+val name = "Ada"
+
+val users = User()
+    .select()
+    .where { it.userName?.lowercase() == name.lowercase() }
+    .toList()
+```
+
+```sql group="Native string case equality" name="MySQL" icon="mysql"
+SELECT `id`, `user_name` AS `userName`
+FROM `user`
+WHERE LOWER(`user_name`) = :userName
+```
+
+`contains` keeps its escaped `%value%` matching behavior, while `like` accepts the pattern you provide.
+
+```kotlin group="Native string case match" name="kotlin" icon="kotlin"
+val name = "Ada"
+
+val users = User()
+    .select()
+    .where {
+        it.userName?.lowercase().contains(name.lowercase()) ||
+            it.userName?.uppercase() like "ADA%"
+    }
+    .toList()
+```
+
+```sql group="Native string case match" name="MySQL" icon="mysql"
+SELECT `id`, `user_name` AS `userName`
+FROM `user`
+WHERE LOWER(`user_name`) LIKE :userName ESCAPE '\\'
+   OR UPPER(`user_name`) LIKE :userName@1
+```
+
+The captured `name.lowercase()` value is evaluated by Kotlin and bound as a parameter.
+
+Source fields and normal variables use their direct form. When a KPojo property's actual value is required, end that property chain with `.value`, for example `probe.userName.value`.
+
+See {{ $.keyword("query/conditions", ["Conditions"]) }} for condition matching rules.
+
 ## Use Window Functions
 
 Kronos currently exposes `f.rowNumber()` for window queries. Import `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber` before using it.
@@ -237,16 +283,27 @@ WHERE `q`.`rn` = :rn
 
 ## PostgreSQL Array Helpers
 
-PostgreSQL array comparisons can use the PostgreSQL-specific `f.any(...)` and `f.all(...)` helpers. Import `com.kotlinorm.functions.bundled.exts.PostgresFunctions.any` or `all` before using them. For normal subquery quantifiers, use `any<T>(query)`, `some<T>(query)`, and `all<T>(query)` from {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
+Use `f.any(...)` and `f.all(...)` for PostgreSQL array comparisons. Import the helpers before using them.
+
+These `f` receiver functions render PostgreSQL array comparison expressions.
 
 ```kotlin group="PostgreSQL functions" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.PostgresFunctions.all
 import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
+
+val acceptedIds = intArrayOf(1, 2, 3)
+val blockedIds = intArrayOf(8, 9)
 
 val rows = User()
     .select()
-    .where { it.id == f.any(intArrayOf(1, 2, 3)) }
+    .where {
+        it.id == f.any(acceptedIds) &&
+            it.id != f.all(blockedIds)
+    }
     .toList()
 ```
+
+The condition renders PostgreSQL `ANY (...)` and `ALL (...)` array predicates.
 
 ## Custom Functions
 

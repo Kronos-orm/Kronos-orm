@@ -1,0 +1,45 @@
+name: Build Kronos documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'kronos-docs/**'
+      - '.github/workflows/kronos-docs-testing.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'kronos-docs/**'
+      - '.github/workflows/kronos-docs-testing.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Build documentation site
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: kronos-docs/pnpm-lock.yaml
+
+      - name: Install documentation dependencies
+        working-directory: kronos-docs
+        run: pnpm install --frozen-lockfile
+
+      - name: Build documentation site
+        working-directory: kronos-docs
+        run: pnpm build

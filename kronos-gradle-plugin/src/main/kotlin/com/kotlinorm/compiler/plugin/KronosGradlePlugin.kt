@@ -16,7 +16,10 @@
 
 package com.kotlinorm.compiler.plugin
 
+import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSetContainer
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -38,7 +41,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         pluginId = "kronos-compiler-plugin"
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
-        version = "0.2.5-SNAPSHOT"
+        version = "0.3.0"
         target.logger.lifecycle("Loaded Gradle plugin ${javaClass.name} version $version")
         target.logger.lifecycle("Loaded Compiler plugin $group.$artifactId version $version")
         configureKotlinIncrementalCompilation(target)
@@ -93,39 +96,101 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
             target.extensions.findByType(SourceSetContainer::class.java)
                 ?.configureEach { sourceSet ->
                     val sourceSetName = sourceSet.name
-                    val generatedDir = target.layout.buildDirectory.dir(
-                        "generated/kronos/generatedTypeService/$sourceSetName"
+                    val task = target.registerGeneratedTypeProviderService(
+                        name = sourceSetName,
+                        compilationTaskName = sourceSet.getCompileTaskName("kotlin"),
+                        providerClassDirectories = sourceSet.output.classesDirs
                     )
-                    val identity = target.provider {
-                        gradleGeneratedTypeProviderIdentity(target.moduleCoordinate(sourceSetName))
-                    }
-                    val taskName = "generateKronos${sourceSetName.replaceFirstChar { it.uppercaseChar() }}GeneratedTypeService"
-                    val task = target.tasks.register(taskName) { task ->
-                        val outputFile = generatedDir.map {
-                            it.file("META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider")
-                        }
-                        task.inputs.property("generatedTypeProviderId", identity.map { it.id })
-                        task.inputs.property("generatedTypeProviderFqName", identity.map { it.fqName })
-                        task.outputs.dir(generatedDir)
-                        task.dependsOn(sourceSet.getCompileTaskName("kotlin"))
-                        task.doLast {
-                            val file = outputFile.get().asFile
-                            val providerClassPath = identity.get().fqName.replace('.', '/') + ".class"
-                            val providerExists = sourceSet.output.classesDirs.files.any { classesDir ->
-                                classesDir.resolve(providerClassPath).isFile
-                            }
-                            if (!providerExists) {
-                                file.delete()
-                                return@doLast
-                            }
-                            file.parentFile.mkdirs()
-                            file.writeText(identity.get().serviceContent)
-                        }
-                    }
                     // Passing the producer itself preserves task dependencies for every resource consumer.
                     sourceSet.resources.srcDir(task)
                 }
         }
+        target.pluginManager.withPlugin("com.android.application") {
+            target.configureAndroidGeneratedTypeProviderService()
+        }
+        target.pluginManager.withPlugin("com.android.library") {
+            target.configureAndroidGeneratedTypeProviderService()
+        }
+    }
+
+    private fun Project.configureAndroidGeneratedTypeProviderService() {
+        val androidComponents = extensions.findByName("androidComponents")
+            ?: error("Android Components extension was not registered")
+        val selector = androidComponents.invokeNoArg("selector")
+        val allVariants = selector.invokeNoArg("all")
+        androidComponents.invokeAction("onVariants", allVariants, Action<Any> { variant ->
+            val variantName = variant.invokeNoArg("getName") as String
+            val compilationTaskName = variant.invokeMethod("computeTaskName", "compile", "Kotlin") as String
+            val task = registerGeneratedTypeProviderService(
+                name = variantName,
+                compilationTaskName = compilationTaskName,
+                providerClassDirectories = provider {
+                    tasks.findByName(compilationTaskName)?.outputs?.files ?: emptyList<java.io.File>()
+                }
+            )
+            val resources = variant.invokeNoArg("getSources").invokeNoArg("getResources")
+            val outputDirectory: (GenerateKronosGeneratedTypeService) -> DirectoryProperty = {
+                it.outputDirectory
+            }
+            resources.invokeGeneratedSourceDirectory(task, outputDirectory)
+
+            // Android's resource merger needs an explicit merge rule when app and library modules
+            // both contribute generated providers.
+            @Suppress("UNCHECKED_CAST")
+            val mergePaths = variant.invokeNoArg("getPackaging")
+                .invokeNoArg("getResources")
+                .invokeNoArg("getMerges") as SetProperty<String>
+            mergePaths.add(GENERATED_TYPE_PROVIDER_SERVICE_PATH)
+        })
+    }
+
+    private fun Any.invokeNoArg(name: String): Any = invokeMethod(name)
+
+    private fun Any.invokeMethod(name: String, vararg arguments: Any): Any {
+        val method = javaClass.methods.firstOrNull {
+            it.name == name && it.parameterCount == arguments.size
+        } ?: error("Android Gradle Plugin API method $name/${arguments.size} was not found on ${javaClass.name}")
+        return method.invoke(this, *arguments)
+            ?: error("Android Gradle Plugin API method $name returned null")
+    }
+
+    private fun Any.invokeAction(name: String, selector: Any, action: Action<Any>) {
+        val method = javaClass.methods.singleOrNull {
+            it.name == name &&
+                it.parameterCount == 2 &&
+                it.parameterTypes[1] == Action::class.java
+        } ?: error("Android Gradle Plugin API method $name(Action) was not found on ${javaClass.name}")
+        method.invoke(this, selector, action)
+    }
+
+    private fun Any.invokeGeneratedSourceDirectory(
+        task: Any,
+        outputDirectory: Any
+    ) {
+        val method = javaClass.methods.singleOrNull {
+            it.name == "addGeneratedSourceDirectory" &&
+                it.parameterCount == 2 &&
+                it.parameterTypes[1].name == "kotlin.jvm.functions.Function1"
+        } ?: error("Android Gradle Plugin resources API does not support generated source directories")
+        method.invoke(this, task, outputDirectory)
+    }
+
+    private fun Project.registerGeneratedTypeProviderService(
+        name: String,
+        compilationTaskName: String,
+        providerClassDirectories: Any
+    ) = tasks.register(
+        "generateKronos${name.replaceFirstChar { it.uppercaseChar() }}GeneratedTypeService",
+        GenerateKronosGeneratedTypeService::class.java
+    ) { task ->
+        val identity = provider {
+            gradleGeneratedTypeProviderIdentity(moduleCoordinate(name))
+        }
+        task.providerClassName.set(identity.map { it.fqName })
+        task.serviceContent.set(identity.map { it.serviceContent })
+        task.providerClassDirectories.from(providerClassDirectories)
+        task.outputDirectory.set(layout.buildDirectory.dir("generated/kronos/generatedTypeService/$name"))
+        task.dependsOn(compilationTaskName)
     }
 
     private fun Project.moduleCoordinate(compilationName: String): String =

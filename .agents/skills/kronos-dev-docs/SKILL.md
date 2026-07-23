@@ -59,7 +59,7 @@ They are generated output or dependencies unless the user explicitly asks otherw
 
 Use the current repository implementation as the source of truth.
 
-- Use stable release-style versions such as `0.2.3` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
+- Use stable release-style versions such as `0.3.0` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
 - In `kronos-docs/src/app/docs` Markdown, source current Kronos versions from the docs macros instead of hard-coding them. Use `{{ $.kronosVersion() }}`, `{{ $.kronosSnapshotVersion() }}`, and `{{ $.kronosSnapshotBadgeVersion() }}` after the page imports its language macro file.
 - README files, homepage TypeScript snippets, module READMEs, and blog assets do not share the `kronos-docs` Markdown macro pipeline; keep their version text explicit or use local constants when the file already has that pattern.
 - Verify the current repository development version from `build-logic/src/main/kotlin/publishing.gradle.kts` before changing source-development or snapshot-specific text.
@@ -67,8 +67,8 @@ Use the current repository implementation as the source of truth.
 - Complete database dialects are MySQL, PostgreSQL, SQLite, SQL Server, and Oracle.
 - `Kronos` global configuration is direct property assignment on the `Kronos` object; do not document `Kronos.init { ... }` unless it exists again.
 - `KronosJdbcWrapper` lives in `com.kotlinorm.wrappers`, takes a `DataSource`, optional `DBType`, and `KronosJdbcConfig` block; database type is inferred from JDBC metadata when `databaseType` is not supplied.
-- Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, and implementation pipeline details out of ordinary docs navigation.
-- Multi-platform, KMP, mobile, and Android language may remain in homepage/blog/product direction areas, but runnable tutorials must focus on current working JVM/JDBC usage.
+- Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, service-discovery details, and implementation pipeline details out of ordinary docs navigation.
+- Android/JVM SQLite has a dedicated `database/android-sqlite` chapter. Keep Android setup, wrapper behavior, transactions, logging, and example links there; installation, data-source wrapper, custom-wrapper, transaction, and logging pages retain short Android headings that link to this chapter.
 
 Version upgrade docs checklist:
 
@@ -190,7 +190,7 @@ These scans are not automatic proof of failure. Inspect matches and decide wheth
 
 Known high-risk patterns:
 
-- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.2.3`.
+- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.3.0`.
 - Hard-coded current Kronos versions in `kronos-docs/src/app/docs` Markdown when the value should come from `$.kronosVersion()` or the snapshot macros.
 - Broken version macro text such as `{{ 9kronosVersion() }}` after shell or Perl replacements.
 - `latest.release` in copyable dependency examples.
@@ -264,7 +264,7 @@ The ORM guide must match the docs for:
 - transactions, table operations, cascade, logic delete, optimistic lock,
 - database dialect support and wrapper usage.
 
-If the docs change invalidates guide examples, update the guide in the same task. If the guide cannot be fully refreshed, record the exact remaining sync gap in `DOCS_REFACTOR_TASK_LIST/verification-gaps.md`.
+If the docs change invalidates guide examples, update the guide in the same task.
 
 ## Workflow
 

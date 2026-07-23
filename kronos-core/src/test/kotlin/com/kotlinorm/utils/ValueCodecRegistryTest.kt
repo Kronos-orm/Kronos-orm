@@ -95,6 +95,8 @@ class ValueCodecRegistryTest {
 
     private class CustomSqlTimestamp(millis: Long) : Timestamp(millis)
 
+    private data class Money(val cents: Long)
+
     private class DriverNumber(private val value: String) : Number() {
         override fun toByte(): Byte = value.toBigDecimal().toByte()
         override fun toDouble(): Double = value.toDouble()
@@ -897,6 +899,54 @@ class ValueCodecRegistryTest {
                 field = field
             ), enumMetadata())
         )
+    }
+
+    @Test
+    fun `custom Money codec preserves cents through database mapping`() {
+        val moneyType = typeOf<Money?>()
+        val field = Field("total", type = KColumnType.BIGINT, kType = moneyType)
+        val registration = Kronos.registerValueCodec(valueCodec(
+            supports = { value, context ->
+                context.targetType.classifier == Money::class &&
+                    when (context.direction) {
+                        ENCODE -> value is Money
+                        DECODE -> value is Number
+                    }
+            },
+            convert = { value, context ->
+                when (context.direction) {
+                    ENCODE -> (value as Money).cents
+                    DECODE -> Money((value as Number).toLong())
+                }
+            }
+        ))
+        try {
+            assertEquals(
+                1_999L,
+                ValueCodecRegistry.convert(ValueConversionRequest(
+                    Money(1_999),
+                    ENCODE,
+                    PARAMETER,
+                    moneyType,
+                    sourceType = moneyType,
+                    field = field,
+                    physicalTargetType = typeOf<Long>()
+                ))
+            )
+            assertEquals(
+                Money(1_999),
+                ValueCodecRegistry.convert(ValueConversionRequest(
+                    1_999L,
+                    DECODE,
+                    DATABASE,
+                    moneyType,
+                    sourceType = typeOf<Long>(),
+                    field = field
+                ))
+            )
+        } finally {
+            registration.close()
+        }
     }
 
     @Test

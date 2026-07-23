@@ -73,11 +73,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     readonly installCode = [
         'plugins {',
-        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.4"',
+        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.0"',
         '}',
         '',
         'dependencies {',
-        '    implementation("com.kotlinorm:kronos-core:0.2.4")',
+        '    implementation("com.kotlinorm:kronos-core:0.3.0")',
         '}'
     ];
 
@@ -221,29 +221,27 @@ export class HomeComponent implements OnInit, OnDestroy {
                 en: 'Frameworks and plugins'
             },
             title: {
-                zh: '接入常用数据库和 Kotlin 框架。',
-                en: 'Connect common databases and Kotlin frameworks.'
+                zh: '接入 JVM 框架和 Android SQLite 应用。',
+                en: 'Connect JVM frameworks and Android SQLite applications.'
             },
             copy: {
-                zh: 'Kronos 内置 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 方言，可与 Spring Boot、Ktor、Vert.x、Solon、Android 项目集成。',
-                en: 'Kronos ships built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server and Oracle, with integration paths for Spring Boot, Ktor, Vert.x, Solon and Android.'
+                zh: 'Kronos 内置 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 方言，服务端可接入 Spring Boot、Ktor、Vert.x、Solon，Android/JVM 可接入 SQLiteDatabase。',
+                en: 'Kronos ships MySQL, PostgreSQL, SQLite, SQL Server, and Oracle dialects for Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLiteDatabase applications.'
             },
             bullets: [
-                {zh: '动态数据源和多数据源配置', en: 'Dynamic and multiple data sources'},
-                {zh: '日志、序列化、命名策略、数据守卫', en: 'Logging, serialization, naming strategy and data guard'},
-                {zh: '代码生成器与模块 API 文档', en: 'Code generator and module API references'}
+                {zh: 'Android/JVM SQLite 接入指南', en: 'Android/JVM SQLite integration guide'},
+                {zh: 'KPojo 模型与 CRUD', en: 'KPojo models and CRUD'},
+                {zh: '服务端自定义 wrapper 接入', en: 'Server-side custom wrapper integration'}
             ],
             code: [
                 'Kronos.dataSource = {',
-                '  KronosJdbcWrapper(dataSource)',
+                '  AndroidSQLiteDataSourceWrapper(applicationContext)',
                 '}',
                 '',
-                'transact {',
-                '  user.insert().execute()',
-                '  order.update().by { it.id }.execute()',
-                '}'
+                'MarkdownDocument().insert().execute()',
+                'MarkdownDocument().select().toList()'
             ],
-            docPath: 'database/custom-wrapper'
+            docPath: 'database/android-sqlite'
         }
     ];
 
@@ -295,12 +293,12 @@ export class HomeComponent implements OnInit, OnDestroy {
         },
         {
             label: '06',
-            title: {zh: '框架无关', en: 'Framework agnostic'},
+            title: {zh: '框架与平台接入', en: 'Framework and platform integration'},
             copy: {
-                zh: 'Spring Boot、Ktor、Vert.x、Solon、Android 均可接入，适合服务端和移动端应用。',
-                en: 'Use it with Spring Boot, Ktor, Vert.x, Solon and Android for server-side and mobile applications.'
+                zh: 'Spring Boot、Ktor、Vert.x、Solon 与 Android/JVM SQLite 共享同一套 ORM DSL。',
+                en: 'Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLite applications share the same ORM DSL.'
             },
-            docPath: 'database/custom-wrapper'
+            docPath: 'database/android-sqlite'
         }
     ];
 
@@ -318,6 +316,13 @@ export class HomeComponent implements OnInit, OnDestroy {
             copy: {zh: '表操作、命名参数 SQL、insert、delete、update、upsert、select、join 和事务。', en: 'Table operations, named-argument SQL, insert, delete, update, upsert, select, join and transactions.'},
             action: {zh: '查看章节', en: 'View chapter'},
             docPath: 'mutation/insert'
+        },
+        {
+            label: 'Android',
+            title: {zh: 'Android SQLite', en: 'Android SQLite'},
+            copy: {zh: 'Android/JVM、SQLiteDatabase wrapper 与 KPojo CRUD。', en: 'Android/JVM, SQLiteDatabase wrappers, and KPojo CRUD.'},
+            action: {zh: '打开指南', en: 'Open guide'},
+            docPath: 'database/android-sqlite'
         },
         {
             label: 'Plugin',

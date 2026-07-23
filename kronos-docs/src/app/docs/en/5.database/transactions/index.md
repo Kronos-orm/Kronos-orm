@@ -86,6 +86,9 @@ Kronos.transact(
 
 Available isolation values are `READ_UNCOMMITTED`, `READ_COMMITTED`, `REPEATABLE_READ`, and `SERIALIZABLE`.
 
+> **Note**
+> Android/JVM SQLite transaction behavior is documented in {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}.
+
 ## Savepoints
 
 `TransactionScope` is the transaction block receiver. JDBC wrappers can expose the active connection to `TransactionScope`, which enables `savepoint`, `rollbackToSavepoint`, and `releaseSavepoint`.

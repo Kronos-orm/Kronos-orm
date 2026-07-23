@@ -488,6 +488,42 @@ class KTableForConditionBehaviorTest {
     }
 
     @Test
+    fun `iterable predicate helpers combine generated expressions`() {
+        val first = SqlExpr.BooleanLiteral(true)
+        val second = SqlExpr.UnsafeRaw("score > 0")
+        val values = listOf<SqlExpr?>(first, null, second)
+
+        assertEquals(
+            SqlExpr.Binary(first, SqlBinaryOperator.Or, second),
+            KTableForCondition<KPojo>().iterableAnyConditionExpr(values, { it }, negated = false)
+        )
+        assertEquals(
+            SqlExpr.Binary(first, SqlBinaryOperator.And, second),
+            KTableForCondition<KPojo>().iterableAnyConditionExpr(values, { it }, negated = true)
+        )
+        assertEquals(
+            SqlExpr.Binary(first, SqlBinaryOperator.And, second),
+            KTableForCondition<KPojo>().iterableAllConditionExpr(values, { it }, negated = false)
+        )
+        assertEquals(
+            SqlExpr.Binary(first, SqlBinaryOperator.Or, second),
+            KTableForCondition<KPojo>().iterableAllConditionExpr(values, { it }, negated = true)
+        )
+        assertEquals(
+            SqlExpr.Binary(first, SqlBinaryOperator.And, second),
+            KTableForCondition<KPojo>().iterableNoneConditionExpr(values, { it }, negated = false)
+        )
+        assertEquals(
+            SqlExpr.Binary(first, SqlBinaryOperator.Or, second),
+            KTableForCondition<KPojo>().iterableNoneConditionExpr(values, { it }, negated = true)
+        )
+        assertEquals(
+            SqlExpr.BooleanLiteral(false),
+            KTableForCondition<KPojo>().iterableAnyConditionExpr(emptyList<SqlExpr?>(), { it }, negated = false)
+        )
+    }
+
+    @Test
     fun `runtime-only compiler stubs return stable sentinel values`() {
         val table = KTableForCondition<KPojo>()
         table.sourceValues["id"] = 42

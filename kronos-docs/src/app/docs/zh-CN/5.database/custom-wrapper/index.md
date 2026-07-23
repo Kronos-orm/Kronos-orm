@@ -7,6 +7,10 @@
 
 完整接口说明见{{ $.keyword("database/datasource-wrapper", ["数据源包装器"]) }}。
 
+## Android SQLite 参考实现
+
+独立的 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} 章节提供 Android/JVM `SQLiteDatabase` 配置和完整 wrapper 参考实现。
+
 ## 添加Spring JDBC和Kronos
 
 Spring Boot项目通常由选定的Boot版本管理Spring依赖版本。JDBC Driver使用与数据库服务端、JDK匹配的最新稳定版。

@@ -7,7 +7,7 @@ Use this table to choose the global settings to configure first.
 |-------|-----------|-------|
 | Required | Default data source wrapper | [Default Data Source Settings](#default-data-source-settings) |
 | Common | Table and column naming, default date format, time zone, logging | [Global Table Name Strategy](#global-table-name-strategy), [Global Column Naming Strategy](#global-column-naming-strategy), [Default Date Time Format](#default-date-time-format), [Default Time Zone](#default-time-zone), [Log output path and switch](#log-output-path-and-switch) |
-| Enable by business need | Common field strategies, no-value behavior, serialization, smart value conversion | [Creation Time Strategy](#creation-time-strategy), [Logical Deletion Strategy](#logical-deletion-strategy), [No-value strategy](#no-value-strategy), [Value codecs](#value-codecs), [Smart Value Conversion](#smart-value-conversion) |
+| Enable by business need | Common field strategies, no-value behavior, JSON serialization, custom value mapping, map value conversion | [Creation Time Strategy](#creation-time-strategy), [Logical Deletion Strategy](#logical-deletion-strategy), [No-value strategy](#no-value-strategy), {{ $.keyword("mapping/serialization", ["Serialization"]) }}, [Custom value mapping](#custom-value-mapping), [Map value conversion](#map-value-conversion) |
 
 Compiler-plugin setup is configured in the build tool. See {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} for source-set and diagnostic checks.
 
@@ -45,6 +45,8 @@ User(id = 1)
 Return different wrappers from `Kronos.dataSource` when the application chooses a data source at runtime.
 
 ```kotlin group="Data source 3" name="dynamic" icon="kotlin"
+import com.kotlinorm.Kronos
+
 Kronos.dataSource = {
     if (TenantContext.current() == "archive") archiveWrapper else primaryWrapper
 }
@@ -63,7 +65,9 @@ Creating a custom table naming strategy `KronosNamingStrategy` is detailed in: {
 This strategy converts kotlin class names to underscore-separated lowercase strings, e.g., `ADataClass` -> `a_data_class`, and database table/column names to camel names, e.g., `user_name` -> `userName`.
 
 ```kotlin group="Naming 1" name="table" icon="kotlin"
-Kronos.tableNamingStrategy = lineHumpNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.tableNamingStrategy = Kronos.lineHumpNamingStrategy
 ```
 
 ```text group="Naming 1" name="result"
@@ -75,7 +79,9 @@ UserProfile -> user_profile
 `NoneNamingStrategy` leaves kotlin class names and database names unchanged. Kronos uses this strategy by default.
 
 ```kotlin group="Naming 2" name="none" icon="kotlin"
-Kronos.tableNamingStrategy = noneNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.tableNamingStrategy = Kronos.noneNamingStrategy
 ```
 
 ```text group="Naming 2" name="none result"
@@ -92,7 +98,9 @@ Similar to the global table naming strategy, the column naming strategy refers t
 Use the same naming strategy for columns when Kotlin property names should map to database column names.
 
 ```kotlin group="Naming 3" name="field" icon="kotlin"
-Kronos.fieldNamingStrategy = lineHumpNamingStrategy
+import com.kotlinorm.Kronos
+
+Kronos.fieldNamingStrategy = Kronos.lineHumpNamingStrategy
 ```
 
 ```text group="Naming 3" name="field result"
@@ -115,6 +123,8 @@ Customize the creation of a time strategy by creating a `KronosCommonStrategy`, 
 
 The global default for the creation time strategy is turned off and needs to be manually enabled.
 
+Add the configured property to each model that uses this strategy. `Field("create_time", "createTime")` uses a `createTime` property.
+
 ```kotlin group="Common strategies 1" name="create time" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
@@ -124,7 +134,7 @@ Kronos.createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("
 ```
 
 > **Note**
-> After the global setting for the creation time strategy is established, it can still be overridden in the `KPojo` class through {{ $.keyword("mapping/annotations", ["Annotation Settings", "@CreateTime Creation Time Column"]) }}.
+> Configure `@CreateTime` on an individual model to override the global setting. See {{ $.keyword("mapping/annotations", ["Annotations"]) }}.
 
 ## Update Time Strategy
 
@@ -142,12 +152,18 @@ By creating a custom update strategy `KronosCommonStrategy`, see: {{ $.keyword("
 
 The global default for update time strategy is turned off and needs to be manually enabled.
 
+Add the configured property to each model that uses this strategy. `Field("update_time", "updateTime")` uses an `updateTime` property.
+
 ```kotlin group="Common strategies 2" name="update time" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
+
 Kronos.updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
 ```
 
 > **Note**
-> After setting the logic update time strategy globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("mapping/annotations", ["Annotation Settings", "@UpdateTime Update Time Column"]) }}.
+> Configure `@UpdateTime` on an individual model to override the global setting. See {{ $.keyword("mapping/annotations", ["Annotations"]) }}.
 
 ## Logical Deletion Strategy
 
@@ -162,7 +178,13 @@ By creating a custom logical deletion strategy `KronosCommonStrategy`, see: {{ $
 
 The global default for the logical delete strategy is turned off and needs to be manually enabled.
 
+Add the configured property to each model that uses this strategy. `Field("deleted")` uses a `deleted` property.
+
 ```kotlin group="Common strategies 3" name="logic delete" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
+
 Kronos.logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
 ```
 
@@ -173,7 +195,7 @@ WHERE `user`.`deleted` = 0
 ```
 
 > **Note**
-> After setting the global logical deletion strategy, it can still be overridden in the `KPojo` class through {{ $.keyword("mapping/annotations", ["Annotation Settings","@LogicDelete Logical Delete Column"]) }}.
+> Configure `@LogicDelete` on an individual model to override the global setting. See {{ $.keyword("mapping/annotations", ["Annotations"]) }}.
 
 ## Optimistic Lock (Version) Strategy
 
@@ -191,12 +213,18 @@ By creating a custom optimistic lock strategy `KronosCommonStrategy`, see: {{ $.
 
 The global default for the optimistic lock strategy is turned off and needs to be manually enabled.
 
+Add the configured property to each model that uses this strategy. `Field("version")` uses a `version` property.
+
 ```kotlin group="Common strategies 4" name="version" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
+
 Kronos.optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
 ```
 
 > **Note**
-> After setting the global optimistic lock strategy, it can still be overridden in the `KPojo` class through {{ $.keyword("mapping/annotations", ["Annotation Settings", "@Version Optimistic Lock (Version) Column"]) }}.
+> Configure `@Version` on an individual model to override the global setting. See {{ $.keyword("mapping/annotations", ["Annotations"]) }}.
 
 ## Default Date Time Format
 
@@ -208,11 +236,13 @@ Used to specify the default date-time formatting pattern. The default value is `
 Kronos uses `yyyy-MM-dd HH:mm:ss` to format the date/time by default, you can change the default format by the following ways:
 
 ```kotlin group="Time 1" name="format" icon="kotlin"
+import com.kotlinorm.Kronos
+
 Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
 > **Note**
-> After setting the default date format globally, it can still be overridden in the `KPojo` class through {{ $.keyword("mapping/annotations", ["Annotation Settings", "@DateTimeFormat Date and Time Format"]) }}.
+> Configure `@DateTimeFormat` on an individual model to override the global setting. See {{ $.keyword("mapping/annotations", ["Annotations"]) }}.
 
 ## Default Time Zone
 
@@ -224,6 +254,7 @@ Used to specify the default time zone, following the `ISO 8601` standard, for us
 Kronos uses the current system time zone by default. You can change the default time zone by doing the following:
 
 ```kotlin group="Time 2" name="zone" icon="kotlin"
+import com.kotlinorm.Kronos
 import java.time.ZoneId
 
 with(Kronos) {
@@ -272,49 +303,55 @@ WHERE `user`.`name` IS NULL
 > **Warning**
 > Use `NoValueStrategyType.Ignore` with caution in `DELETE` and `UPDATE` operations to avoid full-table deletion or full-table updates.
 
-For details, see: {{ $.keyword("configuration/no-value-strategy", ["concept", "No Value Strategy"]) }}.
+For details, see {{ $.keyword("configuration/no-value-strategy", ["No-value Behavior"]) }}.
 
-## Value codecs
+## Custom value mapping
 
-Value conversion is registered through `Kronos.registerValueCodec`; it is not a mutable global serializer property. Built-in basic, temporal, and enum behavior is available without registration. Register custom scalar rules or one serialized text codec as described in {{ $.keyword("configuration/value-codec", ["Value Codec"]) }}.
+Register a mapping at application startup when a model property uses a domain value such as `Money` and its column stores a scalar value. See {{ $.keyword("configuration/value-codec", ["Custom Value Mapping"]) }} for a complete `Money` example.
 
-`@Serialize` fields pass their complete declaration `KType` to the registered serialized codec. Gson, Kotlinx Serialization, Jackson, Moshi, and other formats can therefore handle objects and generic collections with one registration. See {{ $.keyword("mapping/serialization", ["Serialization"]) }} for complete examples.
+Use {{ $.annotation("Serialize") }} with {{ $.keyword("mapping/serialization", ["Serialization"]) }} for JSON objects and collections.
 
 ## Log output path and switch
 
 Used to set the path and switch for log output under global default conditions.
 
 **Parameters**:
-{{$.params([['logPath', 'Log Output Path', 'List<String>', 'listOf("console")']])}}
+{{$.params([['logPath', 'Log Output Path', 'Array<String>', '["console"]']])}}
 
-Write logs to the console and a file path by setting `logPath`.
+Write logs to the console and a file path by setting `logPath`. The {{ $.keyword("configuration/logging", ["Kronos-logging"]) }} page covers output destinations and logger adapters.
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
-Kronos.logPath = listOf("console", "/var/log/kronos")
+import com.kotlinorm.Kronos
+
+Kronos.logPath = ["console", "/var/log/kronos"]
 ```
 
-Turn off bundled log output with an empty list.
+## Map value conversion
 
-```kotlin group="Logging 2" name="off" icon="kotlin"
-Kronos.logPath = emptyList()
-```
+Use `safeMapperTo` to create a new model from application input, and use `safeFromMapData` to apply input to a model that already exists. Both APIs match map keys with model properties and convert compatible values. See {{ $.keyword("advanced/mapper-to", ["Map/KPojo Conversion"]) }} for the complete map-to-model and model-to-model API reference.
 
-## Smart Value Conversion
+```kotlin name="kotlin" icon="kotlin"
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.Extensions.safeMapperTo
 
-`safeMapperTo`, `safeFromMapData`, typed JDBC results, and ORM parameters use the ValueCodec registry for basic, temporal, enum, serialized, and user-defined conversion. See {{ $.keyword("configuration/value-codec", ["Value Codec"]) }} for matching and registration.
+data class User(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
 
-```kotlin
-val mapOfUser = mapOf("id" to 1L, "name" to "Kronos")
+val input = mapOf("id" to 1L, "name" to "Kronos")
 
-val direct = runCatching { mapOfUser.mapperTo<User>() }
-// Direct mapping does not convert Long to Int.
+val created = input.safeMapperTo<User>()
+// User(id = 1, name = "Kronos")
 
-val user = mapOfUser.safeMapperTo<User>()
+val updated = User().safeFromMapData<User>(input)
 // User(id = 1, name = "Kronos")
 ```
 
-Set `strictSetValue = true` to disable implicit basic and temporal DECODE coercion. Registered user codecs, serialized fields, enum decoding, and required parameter encoding still run.
+Set `strictSetValue = true` for an input boundary that receives already-normalized values. With this setting, built-in numeric, boolean, and date/time values are accepted when they match the model property type. Registered custom mappings remain available. For example, `User.id: Int?` accepts an `Int` input and reports a mapping error for a `Long` input.
 
 ```kotlin
+import com.kotlinorm.Kronos
+
 Kronos.strictSetValue = true
 ```

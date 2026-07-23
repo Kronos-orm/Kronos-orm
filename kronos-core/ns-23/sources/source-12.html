@@ -1,0 +1,412 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KTypeKey</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: KTypeKey (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KTypeKey</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KTypeKey$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (62/62)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (79/79)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.InternalKronosApi
+&nbsp;import com.kotlinorm.exceptions.UnsupportedType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import kotlin.jvm.javaObjectType
+&nbsp;import kotlin.reflect.KClass
+&nbsp;import kotlin.reflect.KClassifier
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.KTypeParameter
+&nbsp;import kotlin.reflect.KVariance
+&nbsp;import kotlin.reflect.full.isSubtypeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Immutable structural key for KType lookup without collapsing generic
+&nbsp; * arguments, variance or nested nullability. Individual registries may ignore
+&nbsp; * only top-level nullability when their declared contract permits it.
+&nbsp; *
+&nbsp; * @property classifier exact Kotlin classifier, including type-parameter identity
+&nbsp; * @property nullable whether the represented level is nullable
+&nbsp; * @property arguments recursively preserved type projections
+&nbsp; */
+<b class="fc">&nbsp;internal data class KTypeKey(</b>
+<b class="fc">&nbsp;    val classifier: KClassifier?,</b>
+<b class="fc">&nbsp;    val nullable: Boolean,</b>
+<b class="fc">&nbsp;    val arguments: List&lt;KTypeArgumentKey&gt;</b>
+&nbsp;) {
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Builds a structural key while optionally normalizing only the root
+&nbsp;         * nullability marker.
+&nbsp;         *
+&nbsp;         * @param type complete type to preserve
+&nbsp;         * @param ignoreTopLevelNullability whether the root nullable marker is excluded
+&nbsp;         * @return recursive key retaining projections and nested nullability
+&nbsp;         */
+<b class="fc">&nbsp;        fun from(type: KType, ignoreTopLevelNullability: Boolean = false): KTypeKey = KTypeKey(</b>
+<b class="fc">&nbsp;            type.classifier,</b>
+<b class="fc">&nbsp;            type.isMarkedNullable &amp;&amp; !ignoreTopLevelNullability,</b>
+<b class="fc">&nbsp;            type.arguments.map { argument -&gt;</b>
+<b class="fc">&nbsp;                KTypeArgumentKey(</b>
+<b class="fc">&nbsp;                    argument.variance,</b>
+<b class="fc">&nbsp;                    argument.type?.let { from(it) }</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Structural representation of one KType argument.
+&nbsp; *
+&nbsp; * A `null` [type] represents a star projection; [variance] is retained so
+&nbsp; * invariant, input and output projections do not share registry keys.
+&nbsp; *
+&nbsp; * @property variance use-site projection variance, or `null` for a star projection
+&nbsp; * @property type recursive argument type, or `null` for a star projection
+&nbsp; */
+&nbsp;internal data class KTypeArgumentKey(
+&nbsp;    val variance: KVariance?,
+&nbsp;    val type: KTypeKey?
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns whether this complete declared type is [KPojo] or reaches it through
+&nbsp; * its declared KType supertype graph.
+&nbsp; *
+&nbsp; * Class supertypes and type-parameter upper bounds participate in the graph.
+&nbsp; * Type arguments do not: containing a KPojo does not make the container one.
+&nbsp; *
+&nbsp; * @receiver complete declared type to classify
+&nbsp; * @return `true` when this type is [KPojo] or has a declared KPojo supertype
+&nbsp; */
+&nbsp;@InternalKronosApi
+&nbsp;fun KType.isKPojoType(): Boolean = isKPojoType(mutableSetOf())
+&nbsp;
+&nbsp;private fun KType.isKPojoType(visited: MutableSet&lt;KClassifier&gt;): Boolean {
+&nbsp;    val currentClassifier = classifier ?: return false
+&nbsp;    if (currentClassifier == KPojo::class) return true
+&nbsp;    if (!visited.add(currentClassifier)) return false
+&nbsp;    val declaredSupertypes = when (currentClassifier) {
+&nbsp;        is KClass&lt;*&gt; -&gt; currentClassifier.supertypes
+&nbsp;        is KTypeParameter -&gt; currentClassifier.upperBounds
+&nbsp;        else -&gt; emptyList()
+&nbsp;    }
+&nbsp;    return declaredSupertypes.any { superType -&gt; superType.isKPojoType(visited) }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks complete KType assignability using Kotlin reflection subtype rules.
+&nbsp; *
+&nbsp; * Declaration-site and use-site variance, star projections, nested
+&nbsp; * nullability and supertype substitution are delegated to [KType.isSubtypeOf].
+&nbsp; * The only fallback normalizes equivalent JVM primitive and boxed classifiers,
+&nbsp; * which can differ when a source type was inferred from a runtime value.
+&nbsp; *
+&nbsp; * @receiver declared or runtime-inferred source type
+&nbsp; * @param target complete declared target type
+&nbsp; * @return whether the source can safely flow to [target]
+&nbsp; */
+&nbsp;internal fun KType.isStructurallyAssignableTo(target: KType): Boolean {
+&nbsp;    if (isSubtypeOfSafely(target)) return true
+&nbsp;    return primitiveBoxingFallbackSafely(target)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Applies Kotlin reflection subtype semantics without allowing unsupported or
+&nbsp; * unavailable reflection metadata to escape the assignability boundary.
+&nbsp; *
+&nbsp; * Linkage failures represent unavailable type metadata, while argument and
+&nbsp; * cast failures represent synthetic/foreign KType implementations unsupported
+&nbsp; * by Kotlin reflection. Cancellation and unrelated Errors are not caught.
+&nbsp; *
+&nbsp; * @param target complete declared target type
+&nbsp; * @return subtype result, or `false` when reflection cannot resolve the types
+&nbsp; */
+&nbsp;private fun KType.isSubtypeOfSafely(target: KType): Boolean = try {
+&nbsp;    isSubtypeOf(target)
+&nbsp;} catch (_: LinkageError) {
+&nbsp;    false
+&nbsp;} catch (_: IllegalArgumentException) {
+&nbsp;    false
+&nbsp;} catch (_: ClassCastException) {
+&nbsp;    false
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks the narrow runtime primitive/boxed equivalence fallback after Kotlin
+&nbsp; * reflection subtype resolution has failed or returned `false`.
+&nbsp; *
+&nbsp; * @param target complete declared target type
+&nbsp; * @return whether both non-generic types represent the same boxed JVM class
+&nbsp; */
+&nbsp;private fun KType.primitiveBoxingFallbackSafely(target: KType): Boolean {
+&nbsp;    return try {
+&nbsp;        when {
+&nbsp;            arguments.isNotEmpty() || target.arguments.isNotEmpty() -&gt; false
+&nbsp;            isMarkedNullable &amp;&amp; !target.isMarkedNullable -&gt; false
+&nbsp;            else -&gt; {
+&nbsp;                val sourceClass = classifier as? KClass&lt;*&gt;
+&nbsp;                val targetClass = target.classifier as? KClass&lt;*&gt;
+&nbsp;                if (sourceClass == null || targetClass == null) {
+&nbsp;                    false
+&nbsp;                } else {
+&nbsp;                    val crossesPrimitiveBoundary = sourceClass.java.isPrimitive || targetClass.java.isPrimitive
+&nbsp;                    crossesPrimitiveBoundary &amp;&amp; sourceClass.javaObjectType == targetClass.javaObjectType
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    } catch (_: LinkageError) {
+&nbsp;        false
+&nbsp;    } catch (_: IllegalArgumentException) {
+&nbsp;        false
+&nbsp;    } catch (_: ClassCastException) {
+&nbsp;        false
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns a stable diagnostic signature for deterministic provider conflict
+&nbsp; * comparison without using rendered KType text as a registry key.
+&nbsp; *
+&nbsp; * @receiver structural type key to render
+&nbsp; * @return deterministic classifier, projection and nullability signature
+&nbsp; */
+&nbsp;internal fun KTypeKey.stableSignature(): String = buildString {
+&nbsp;    val classifierName = when (val classifier = classifier) {
+&nbsp;        is KClass&lt;*&gt; -&gt; classifier.qualifiedName ?: classifier.java.name
+&nbsp;        null -&gt; &quot;*&quot;
+&nbsp;        else -&gt; classifier.toString()
+&nbsp;    }
+&nbsp;    append(classifierName)
+&nbsp;    if (arguments.isNotEmpty()) {
+&nbsp;        arguments.joinTo(this, prefix = &quot;&lt;&quot;, postfix = &quot;&gt;&quot;) { argument -&gt;
+&nbsp;            val type = argument.type ?: return@joinTo &quot;*&quot;
+&nbsp;            when (argument.variance) {
+&nbsp;                KVariance.IN -&gt; &quot;in ${type.stableSignature()}&quot;
+&nbsp;                KVariance.OUT -&gt; &quot;out ${type.stableSignature()}&quot;
+&nbsp;                KVariance.INVARIANT, null -&gt; type.stableSignature()
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;    if (nullable) append(&#39;?&#39;)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Validates and normalizes a concrete, currently non-generic KPojo lookup key.
+&nbsp; *
+&nbsp; * @receiver requested KPojo type
+&nbsp; * @return exact structural key ignoring only top-level nullability
+&nbsp; * @throws UnsupportedType when the classifier is not a supported KPojo
+&nbsp; */
+&nbsp;internal fun KType.normalizedKPojoType(): KTypeKey {
+&nbsp;    if (classifier !is KClass&lt;*&gt;) throw UnsupportedType(this, &quot;classifier must be a concrete class&quot;)
+&nbsp;    if (!isKPojoType()) throw UnsupportedType(this, &quot;classifier must implement KPojo&quot;)
+&nbsp;    if (arguments.isNotEmpty()) throw UnsupportedType(this, &quot;generic KPojo types are not supported yet&quot;)
+&nbsp;    return KTypeKey.from(this, ignoreTopLevelNullability = true)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Validates and normalizes one concrete enum metadata lookup key.
+&nbsp; *
+&nbsp; * @receiver requested enum type
+&nbsp; * @return exact structural key ignoring only top-level nullability
+&nbsp; * @throws IllegalArgumentException when the classifier is not a concrete enum
+&nbsp; */
+&nbsp;internal fun KType.normalizedEnumType(): KTypeKey {
+&nbsp;    val classifier = classifier as? KClass&lt;*&gt; ?: throw IllegalArgumentException(
+&nbsp;        &quot;Enum metadata type must have a concrete classifier: $this&quot;
+&nbsp;    )
+&nbsp;    require(classifier.java.isEnum &amp;&amp; arguments.isEmpty()) {
+&nbsp;        &quot;Enum metadata type must be a concrete enum: $this&quot;
+&nbsp;    }
+&nbsp;    return KTypeKey.from(this, ignoreTopLevelNullability = true)
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,644 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosProjectionIrTransformer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosProjectionIrTransformer (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosProjectionIrTransformer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (25/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.8%
+  </span>
+  <span class="absValue">
+    (154/224)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.9%
+  </span>
+  <span class="absValue">
+    (219/226)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.9%
+  </span>
+  <span class="absValue">
+    (1438/1565)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosProjectionIrTransformer$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (25/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.8%
+  </span>
+  <span class="absValue">
+    (154/224)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.9%
+  </span>
+  <span class="absValue">
+    (219/226)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.9%
+  </span>
+  <span class="absValue">
+    (1438/1565)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;INVISIBLE_MEMBER&quot;, &quot;INVISIBLE_REFERENCE&quot;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.firstTypeArgument
+&nbsp;import com.kotlinorm.compiler.core.isTypeOrSubtypeOf
+&nbsp;import com.kotlinorm.compiler.core.joinSourceClassSymbol
+&nbsp;import com.kotlinorm.compiler.core.kPojoClassSymbol
+&nbsp;import com.kotlinorm.compiler.core.kSelectableClassSymbol
+&nbsp;import com.kotlinorm.compiler.fir.KronosProjectionField
+&nbsp;import com.kotlinorm.compiler.fir.KronosProjectionModel
+&nbsp;import com.kotlinorm.compiler.fir.KronosProjectionRegistry
+&nbsp;import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.JoinSelectGeneratedProjectionCallableId
+&nbsp;import com.kotlinorm.compiler.utils.JoinSourceFqName
+&nbsp;import com.kotlinorm.compiler.utils.KSelectableFqName
+&nbsp;import com.kotlinorm.compiler.utils.KPojoTableCommentPropertyName
+&nbsp;import com.kotlinorm.compiler.utils.KPojoTableNamePropertyName
+&nbsp;import com.kotlinorm.compiler.utils.SelectFunctionFqName
+&nbsp;import com.kotlinorm.compiler.utils.SelectGeneratedProjectionCallableId
+&nbsp;import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
+&nbsp;import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.descriptors.ClassKind
+&nbsp;import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+&nbsp;import org.jetbrains.kotlin.descriptors.Modality
+&nbsp;import org.jetbrains.kotlin.descriptors.impl.MutablePackageFragmentDescriptor
+&nbsp;import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addConstructor
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addDefaultGetter
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addDefaultSetter
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addProperty
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildClass
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irDelegatingConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irExprBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFile
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConst
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrVararg
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.types.IrSimpleType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeProjection
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.createType
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
+&nbsp;import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
+&nbsp;import org.jetbrains.kotlin.ir.util.addFakeOverrides
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
+&nbsp;import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
+&nbsp;import org.jetbrains.kotlin.ir.declarations.moduleDescriptor
+&nbsp;import org.jetbrains.kotlin.ir.util.kotlinFqName
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeClassLikeType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeStarProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.ProjectionKind
+&nbsp;import org.jetbrains.kotlin.ir.types.impl.IrStarProjectionImpl
+&nbsp;import org.jetbrains.kotlin.types.Variance
+&nbsp;
+&nbsp;/**
+&nbsp; * Materializes FIR-declared select projection classes as concrete backend IR classes.
+&nbsp; */
+<b class="fc">&nbsp;class KronosProjectionIrTransformer(</b>
+<b class="fc">&nbsp;    private val pluginContext: IrPluginContext,</b>
+<b class="fc">&nbsp;    private val errorReporter: ErrorReporter</b>
+&nbsp;) : IrElementTransformerVoidWithContext() {
+<b class="fc">&nbsp;    private val materializedProjectionClasses = linkedMapOf&lt;FqName, IrClass&gt;()</b>
+<b class="fc">&nbsp;    private val projectionMetadataClasses = linkedMapOf&lt;FqName, IrClass&gt;()</b>
+&nbsp;    val projectionClasses: Collection&lt;IrClass&gt;
+<b class="fc">&nbsp;        get() = materializedProjectionClasses.values</b>
+&nbsp;
+&nbsp;    private var moduleFragment: IrModuleFragment? = null
+&nbsp;    private var projectionFile: IrFile? = null
+&nbsp;
+&nbsp;    override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment {
+<b class="fc">&nbsp;        moduleFragment = declaration</b>
+<b class="fc">&nbsp;        return super.visitModuleFragment(declaration)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Rewrites bare select calls after their FIR-refined return type exposes a generated projection class.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitCall(expression: IrCall): IrExpression {
+<b class="fc">&nbsp;        val call = super.visitCall(expression) as IrCall</b>
+<b class="fc">&nbsp;        return buildGeneratedSelectCall(call)</b>
+<b class="fc">&nbsp;            ?: redirectProjectionAccessorCall(call)</b>
+<b class="fc">&nbsp;            ?: call</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Redirects property reads from FIR-lazy projection getters to the materialized backend class.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun redirectProjectionAccessorCall(call: IrCall): IrCall? {
+<b class="fc">&nbsp;        if (call.origin != IrStatementOrigin.GET_PROPERTY) return null</b>
+<b class="fc">&nbsp;        val lazyProjectionClass = call.symbol.owner.parent as? IrClass ?: return null</b>
+<b class="fc">&nbsp;        if (!lazyProjectionClass.isGeneratedProjectionClass()) return null</b>
+<b class="pc">&nbsp;        val materializedProjectionClass = materializedProjectionClasses[lazyProjectionClass.kotlinFqName]</b>
+<b class="fc">&nbsp;            ?: materializeProjectionForAccessor(lazyProjectionClass)</b>
+<b class="nc">&nbsp;            ?: return null</b>
+<b class="pc">&nbsp;        val propertyName = call.symbol.owner.correspondingPropertySymbol?.owner?.name ?: return null</b>
+<b class="pc">&nbsp;        val materializedGetter = materializedProjectionClass.properties</b>
+<b class="fc">&nbsp;            .firstOrNull { it.name == propertyName }</b>
+<b class="pc">&nbsp;            ?.getter</b>
+<b class="nc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;        call.symbol = materializedGetter.symbol</b>
+<b class="fc">&nbsp;        call.type = materializedGetter.returnType</b>
+<b class="fc">&nbsp;        call.superQualifierSymbol = null</b>
+<b class="fc">&nbsp;        return call</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Materializes a projection before its originating select call is visited.
+&nbsp;     *
+&nbsp;     * Generated Selected values can cross function boundaries, so a caller&#39;s property read may
+&nbsp;     * be traversed before the helper that contains the select call. Leaving the FIR-lazy getter in
+&nbsp;     * that call path exposes a fake override without an overridden declaration to JVM lowering.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun materializeProjectionForAccessor(generatedClass: IrClass): IrClass? {
+<b class="pc">&nbsp;        val model = KronosProjectionRegistry.findAny(ClassId.topLevel(generatedClass.kotlinFqName)) ?: return null</b>
+<b class="pc">&nbsp;        val sourceType = model.sourceType.toIrTypeOrNull() ?: return null</b>
+<b class="fc">&nbsp;        return materializeGeneratedProjectionClass(generatedClass, sourceType)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Rewrites bare select calls to the generated projection helper with materialized type arguments. */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun buildGeneratedSelectCall(call: IrCall): IrCall? {
+<b class="fc">&nbsp;        val function = call.symbol.owner</b>
+<b class="fc">&nbsp;        val receiverType = call.arguments.getOrNull(0)?.type</b>
+<b class="pc">&nbsp;        val isJoinSelect = function.name.asString() == &quot;select&quot; &amp;&amp; receiverType?.isJoinSourceReceiver() == true</b>
+<b class="fc">&nbsp;        if (function.kotlinFqName != SelectFunctionFqName &amp;&amp; !isJoinSelect) return null</b>
+&nbsp;
+<b class="pc">&nbsp;        val selectType = call.type as? IrSimpleType ?: return null</b>
+<b class="pc">&nbsp;        val sourceType = (selectType.arguments.getOrNull(0) as? IrTypeProjection)?.type ?: return null</b>
+<b class="pc">&nbsp;        val projectionType = (selectType.arguments.getOrNull(1) as? IrTypeProjection)?.type ?: return null</b>
+<b class="pc">&nbsp;        val contextType = (selectType.arguments.getOrNull(2) as? IrTypeProjection)?.type ?: return null</b>
+<b class="pc">&nbsp;        val projectionClass = projectionType.classOrNull?.owner ?: return null</b>
+<b class="pc">&nbsp;        val contextClass = contextType.classOrNull?.owner ?: return null</b>
+<b class="fc">&nbsp;        if (!projectionClass.isGeneratedProjectionClass()) return null</b>
+<b class="pc">&nbsp;        if (!contextClass.isGeneratedProjectionClass()) return null</b>
+<b class="fc">&nbsp;        val materializedProjectionClass = materializeGeneratedProjectionClass(projectionClass, sourceType)</b>
+<b class="fc">&nbsp;        val materializedContextClass = materializeGeneratedProjectionClass(contextClass, sourceType)</b>
+<b class="fc">&nbsp;        val materializedProjectionType = materializedProjectionClass.symbol.defaultType</b>
+<b class="fc">&nbsp;        val materializedContextType = materializedContextClass.symbol.defaultType</b>
+&nbsp;
+<b class="pc">&nbsp;        val selectableReceiver = receiverType?.isKSelectableReceiver() == true</b>
+<b class="fc">&nbsp;        val receiverClassFqName = if (isJoinSelect) JoinSourceFqName else KSelectableFqName</b>
+<b class="fc">&nbsp;        val selectGeneratedCallableId = if (isJoinSelect) {</b>
+<b class="fc">&nbsp;            JoinSelectGeneratedProjectionCallableId</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            SelectGeneratedProjectionCallableId</b>
+&nbsp;        }
+<b class="pc">&nbsp;        val selectGeneratedSymbol = pluginContext.referenceFunctions(selectGeneratedCallableId)</b>
+<b class="fc">&nbsp;            .firstOrNull { symbol -&gt;</b>
+<b class="pc">&nbsp;                symbol.owner.typeParameters.size &gt;= 3 &amp;&amp;</b>
+<b class="pc">&nbsp;                    symbol.owner.parameters.size == 2 &amp;&amp;</b>
+<b class="fc">&nbsp;                    if (isJoinSelect) {</b>
+<b class="fc">&nbsp;                        symbol.owner.parameters[0].type.classFqName == receiverClassFqName</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        (symbol.owner.parameters[0].type.classFqName == receiverClassFqName) == selectableReceiver</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;            }
+<b class="nc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="pc">&nbsp;        return DeclarationIrBuilder(pluginContext, currentScope!!.scope.scopeOwnerSymbol).irCall(selectGeneratedSymbol).takeIf {</b>
+<b class="pc">&nbsp;            it.typeArguments.size &gt;= 3 &amp;&amp; it.arguments.size &gt;= 2</b>
+<b class="pc">&nbsp;        }?.apply {</b>
+<b class="fc">&nbsp;            typeArguments[0] = sourceType</b>
+<b class="fc">&nbsp;            typeArguments[1] = materializedProjectionType</b>
+<b class="fc">&nbsp;            typeArguments[2] = materializedContextType</b>
+<b class="fc">&nbsp;            arguments[0] = call.arguments.getOrNull(0)</b>
+<b class="fc">&nbsp;            arguments[1] = call.arguments.getOrNull(1)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun materializeGeneratedProjectionClass(generatedClass: IrClass, sourceType: IrType): IrClass {
+<b class="fc">&nbsp;        val fqName = generatedClass.kotlinFqName</b>
+<b class="fc">&nbsp;        materializedProjectionClasses[fqName]?.let { return it }</b>
+<b class="fc">&nbsp;        val classId = ClassId.topLevel(fqName)</b>
+<b class="pc">&nbsp;        val model = KronosProjectionRegistry.findAny(classId) ?: return generatedClass</b>
+&nbsp;
+<b class="fc">&nbsp;        val file = projectionFile ?: createProjectionFile().also { projectionFile = it }</b>
+<b class="fc">&nbsp;        val irClass = pluginContext.irFactory.buildClass {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;            name = generatedClass.name</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            kind = ClassKind.CLASS</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            isData = true</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            parent = file</b>
+<b class="fc">&nbsp;            superTypes = listOf(with(pluginContext) { kPojoClassSymbol.defaultType })</b>
+<b class="fc">&nbsp;            createThisReceiverParameter()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        file.declarations += irClass</b>
+<b class="fc">&nbsp;        materializedProjectionClasses[fqName] = irClass</b>
+&nbsp;
+<b class="pc">&nbsp;        val rawSourceClass = sourceType.classOrNull?.owner</b>
+<b class="pc">&nbsp;        val sourceClass = rawSourceClass?.materializedSourceClassOrNull() ?: irClass</b>
+<b class="pc">&nbsp;        val metadataClass = rawSourceClass?.metadataSourceClassOrNull() ?: sourceClass</b>
+<b class="fc">&nbsp;        projectionMetadataClasses[fqName] = metadataClass</b>
+&nbsp;
+<b class="fc">&nbsp;        val sourceProperties = sourceClass.properties.associateBy { it.name }</b>
+<b class="fc">&nbsp;        val projectionFields = model.fieldsFor(classId).withCascadeLocalKeyFields(sourceClass, sourceProperties)</b>
+<b class="fc">&nbsp;        projectionFields.forEach { field -&gt;</b>
+<b class="pc">&nbsp;            val fieldSourceClass = field.sourceClassId</b>
+<b class="pc">&nbsp;                ?.takeUnless { it.isLocal }</b>
+<b class="pc">&nbsp;                ?.let(pluginContext::referenceClass)</b>
+<b class="fc">&nbsp;                ?.owner</b>
+<b class="fc">&nbsp;                ?: sourceClass</b>
+<b class="fc">&nbsp;            val fieldSourceProperties = fieldSourceClass.properties.associateBy { it.name }</b>
+<b class="fc">&nbsp;            val sourceProperty = fieldSourceProperties[field.sourceName] ?: sourceProperties[field.sourceName]</b>
+<b class="pc">&nbsp;            val sourceType = sourceProperty?.getter?.returnType</b>
+<b class="pc">&nbsp;                ?: sourceProperty?.backingField?.type</b>
+&nbsp;            // Cascade-local fields are synthesized from the relationship field in FIR,
+&nbsp;            // but their runtime property must retain the actual local key type.
+<b class="fc">&nbsp;            val propertyType = if (field.signature.startsWith(&quot;cascadeLocal:&quot;)) {</b>
+<b class="pc">&nbsp;                sourceType ?: field.type.toIrTypeOrNull()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                field.type.toIrTypeOrNull()</b>
+<b class="pc">&nbsp;                    ?: if (field.isSourceAlias) sourceType else null</b>
+<b class="fc">&nbsp;            } ?: pluginContext.irBuiltIns.anyNType</b>
+<b class="fc">&nbsp;            irClass.addProjectionProperty(field.name, propertyType, sourceProperty.takeIf { field.isSourceAlias })</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        irClass.addNoArgConstructor()</b>
+<b class="fc">&nbsp;        irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))</b>
+<b class="fc">&nbsp;        irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter, metadataClass), null)</b>
+<b class="fc">&nbsp;        return irClass</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Uses the concrete backend class for generated projection sources.
+&nbsp;     *
+&nbsp;     * A reselect or derived JOIN source can itself be a generated projection. Materialize that
+&nbsp;     * source recursively instead of caching the outer projection with its own incomplete fields.
+&nbsp;     * The outer class is registered before this lookup, so a cyclic source reference terminates
+&nbsp;     * at the already-created class rather than recursing indefinitely.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.materializedSourceClassOrNull(): IrClass? {
+<b class="fc">&nbsp;        if (!isGeneratedProjectionClass()) return this</b>
+<b class="pc">&nbsp;        return materializedProjectionClasses[kotlinFqName]</b>
+<b class="nc">&nbsp;            ?: materializeProjectionForAccessor(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Keeps generated projection table metadata tied to the original source class.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.metadataSourceClassOrNull(): IrClass? {
+<b class="fc">&nbsp;        if (!isGeneratedProjectionClass()) return this</b>
+<b class="fc">&nbsp;        return projectionMetadataClasses[kotlinFqName]</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Selects the generated fields that belong to the materialized result or context class.
+&nbsp;     */
+&nbsp;    private fun KronosProjectionModel.fieldsFor(classId: ClassId): List&lt;KronosProjectionField&gt; =
+<b class="fc">&nbsp;        when (classId) {</b>
+<b class="fc">&nbsp;            this.classId -&gt; fields</b>
+<b class="pc">&nbsp;            contextClassId -&gt; contextFields</b>
+<b class="nc">&nbsp;            else -&gt; error(&quot;Projection model ${this.classId} does not contain fields for $classId&quot;)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun List&lt;KronosProjectionField&gt;.withCascadeLocalKeyFields(
+&nbsp;        sourceClass: IrClass,
+&nbsp;        sourceProperties: Map&lt;Name, IrProperty&gt;
+&nbsp;    ): List&lt;KronosProjectionField&gt; {
+<b class="fc">&nbsp;        val result = linkedMapOf&lt;Name, KronosProjectionField&gt;()</b>
+&nbsp;        fun add(field: KronosProjectionField) {
+<b class="fc">&nbsp;            result.putIfAbsent(field.name, field)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        forEach { field -&gt;</b>
+<b class="fc">&nbsp;            add(field)</b>
+<b class="pc">&nbsp;            val fieldSourceClass = field.sourceClassId</b>
+<b class="pc">&nbsp;                ?.takeUnless { it.isLocal }</b>
+<b class="pc">&nbsp;                ?.let(pluginContext::referenceClass)</b>
+<b class="fc">&nbsp;                ?.owner</b>
+<b class="fc">&nbsp;                ?: sourceClass</b>
+<b class="fc">&nbsp;            val fieldSourceProperties = fieldSourceClass.properties.associateBy { it.name }</b>
+<b class="pc">&nbsp;            val sourceProperty = fieldSourceProperties[field.sourceName] ?: sourceProperties[field.sourceName] ?: return@forEach</b>
+<b class="fc">&nbsp;            val localKeys = sourceProperty.directCascadeLocalProperties() +</b>
+<b class="fc">&nbsp;                sourceProperty.reverseCascadeLocalProperties(fieldSourceClass)</b>
+&nbsp;
+<b class="fc">&nbsp;            localKeys.forEach { localName -&gt;</b>
+<b class="fc">&nbsp;                if (result.containsKey(localName)) return@forEach</b>
+<b class="pc">&nbsp;                val localProperty = fieldSourceProperties[localName] ?: sourceProperties[localName] ?: return@forEach</b>
+<b class="fc">&nbsp;                add(</b>
+<b class="fc">&nbsp;                    field.copy(</b>
+<b class="fc">&nbsp;                        name = localName,</b>
+<b class="fc">&nbsp;                        source = field.source,</b>
+<b class="fc">&nbsp;                        sourceName = localName,</b>
+<b class="fc">&nbsp;                        sourceClassId = field.sourceClassId,</b>
+<b class="fc">&nbsp;                        signature = &quot;cascadeLocal:${sourceProperty.name.asString()}:${localName.asString()}&quot;</b>
+&nbsp;                    )
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        return result.values.toList()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrProperty.directCascadeLocalProperties(): List&lt;Name&gt; =
+<b class="fc">&nbsp;        cascadeStringArguments(index = 0)</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrProperty.reverseCascadeLocalProperties(sourceClass: IrClass): List&lt;Name&gt; {
+<b class="pc">&nbsp;        val targetClass = cascadeTargetClass() ?: return emptyList()</b>
+<b class="fc">&nbsp;        return targetClass.properties</b>
+<b class="fc">&nbsp;            .filter { property -&gt;</b>
+<b class="fc">&nbsp;                property.cascadeStringArguments(index = 0).isNotEmpty() &amp;&amp;</b>
+<b class="fc">&nbsp;                    property.cascadeTargetClass() == sourceClass</b>
+&nbsp;            }
+<b class="fc">&nbsp;            .flatMap { property -&gt; property.cascadeStringArguments(index = 1) }</b>
+<b class="fc">&nbsp;            .toList()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrProperty.cascadeStringArguments(index: Int): List&lt;Name&gt; {
+<b class="fc">&nbsp;        val cascade = annotations.firstOrNull {</b>
+<b class="fc">&nbsp;            it.symbol.owner.returnType.classFqName == CascadeAnnotationFqName</b>
+<b class="fc">&nbsp;        } ?: return emptyList()</b>
+<b class="fc">&nbsp;        val vararg = cascade.arguments[index] as IrVararg</b>
+<b class="fc">&nbsp;        return vararg.elements.filterIsInstance&lt;IrConst&gt;().map { element -&gt;</b>
+<b class="fc">&nbsp;            Name.identifier(element.value.toString())</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrProperty.cascadeTargetClass(): IrClass? {
+<b class="pc">&nbsp;        val type = getter?.returnType ?: backingField!!.type</b>
+<b class="pc">&nbsp;        return type.firstTypeArgument()?.classOrNull?.owner ?: type.classOrNull?.owner</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun createProjectionFile(): IrFile {
+<b class="pc">&nbsp;        val module = moduleFragment ?: error(&quot;Kronos projection materializer has no module fragment&quot;)</b>
+<b class="pc">&nbsp;        val sourceFile = module.files.firstOrNull()</b>
+<b class="nc">&nbsp;            ?: error(&quot;Kronos projection materializer requires at least one source file&quot;)</b>
+<b class="fc">&nbsp;        val fileEntry = sourceFile.fileEntry</b>
+<b class="fc">&nbsp;        val packageFragment = MutablePackageFragmentDescriptor(sourceFile.moduleDescriptor, GeneratedProjectionPackageFqName)</b>
+<b class="fc">&nbsp;        return IrFileImpl(</b>
+<b class="fc">&nbsp;            fileEntry = fileEntry,</b>
+<b class="fc">&nbsp;            packageFragmentDescriptor = packageFragment,</b>
+<b class="fc">&nbsp;            module = module</b>
+<b class="fc">&nbsp;        ).also { module.files += it }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.addProjectionProperty(
+&nbsp;        name: Name,
+&nbsp;        type: IrType,
+&nbsp;        sourceProperty: IrProperty?
+&nbsp;    ): IrProperty {
+<b class="fc">&nbsp;        return addProperty {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;            this.name = name</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            isVar = true</b>
+<b class="fc">&nbsp;        }.also { property -&gt;</b>
+<b class="fc">&nbsp;            property.annotations += sourceProperty</b>
+<b class="fc">&nbsp;                ?.annotations</b>
+<b class="pc">&nbsp;                ?.filter { it.symbol.owner.returnType.classFqName == SerializeAnnotationFqName }</b>
+<b class="fc">&nbsp;                ?.map { it.deepCopyWithSymbols() }</b>
+<b class="fc">&nbsp;                .orEmpty()</b>
+<b class="fc">&nbsp;            val backingField = property.addBackingField {</b>
+<b class="fc">&nbsp;                this.type = type</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            property.addDefaultGetter(this, pluginContext.irBuiltIns)</b>
+<b class="fc">&nbsp;            property.addDefaultSetter(this, pluginContext.irBuiltIns)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts the FIR-selected type to the backend type used by the materialized property.
+&nbsp;     * This keeps a derived alias authoritative even when its logical name matches a source field.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun ConeKotlinType.toIrTypeOrNull(): IrType? {
+<b class="fc">&nbsp;        val classType = this as? ConeClassLikeType ?: return null</b>
+<b class="pc">&nbsp;        val classSymbol = pluginContext.referenceClass(classType.lookupTag.classId) ?: return null</b>
+<b class="fc">&nbsp;        val arguments = classType.typeArguments.map { projection -&gt;</b>
+<b class="fc">&nbsp;            when (projection) {</b>
+<b class="fc">&nbsp;                is ConeStarProjection -&gt; IrStarProjectionImpl</b>
+<b class="pc">&nbsp;                is ConeKotlinTypeProjection -&gt; {</b>
+<b class="pc">&nbsp;                    val type = projection.type.toIrTypeOrNull() ?: return null</b>
+<b class="fc">&nbsp;                    val variance = when (projection.kind) {</b>
+<b class="fc">&nbsp;                        ProjectionKind.IN -&gt; Variance.IN_VARIANCE</b>
+<b class="fc">&nbsp;                        ProjectionKind.OUT -&gt; Variance.OUT_VARIANCE</b>
+<b class="fc">&nbsp;                        else -&gt; Variance.INVARIANT</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    makeTypeProjection(type, variance)</b>
+&nbsp;                }
+<b class="nc">&nbsp;                else -&gt; return null</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return classSymbol.createType(classType.isMarkedNullable, arguments)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.addNoArgConstructor() {
+<b class="fc">&nbsp;        addConstructor {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            isPrimary = true</b>
+<b class="fc">&nbsp;        }.also { constructor -&gt;</b>
+<b class="fc">&nbsp;            constructor.body = DeclarationIrBuilder(pluginContext, constructor.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                +irDelegatingConstructorCall(pluginContext.irBuiltIns.anyClass.owner.constructors.single())</b>
+<b class="fc">&nbsp;                +IrInstanceInitializerCallImpl(</b>
+<b class="fc">&nbsp;                    UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                    UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                    this@addNoArgConstructor.symbol,</b>
+<b class="fc">&nbsp;                    pluginContext.irBuiltIns.unitType</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.isGeneratedProjectionClass(): Boolean =
+<b class="fc">&nbsp;        kotlinFqName.parent() == GeneratedProjectionPackageFqName</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns whether this receiver reaches KSelectable through its classifier graph.
+&nbsp;     *
+&nbsp;     * @receiver the select call receiver type to inspect
+&nbsp;     * @return true when the receiver is or inherits KSelectable
+&nbsp;     */
+&nbsp;    private fun IrType.isKSelectableReceiver(): Boolean {
+<b class="fc">&nbsp;        return with(pluginContext) { isTypeOrSubtypeOf(kSelectableClassSymbol) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns whether this receiver reaches JoinSource through its classifier graph.
+&nbsp;     *
+&nbsp;     * @receiver the select call receiver type to inspect
+&nbsp;     * @return true when the receiver is or inherits JoinSource
+&nbsp;     */
+&nbsp;    private fun IrType.isJoinSourceReceiver(): Boolean {
+<b class="fc">&nbsp;        return with(pluginContext) { isTypeOrSubtypeOf(joinSourceClassSymbol) }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

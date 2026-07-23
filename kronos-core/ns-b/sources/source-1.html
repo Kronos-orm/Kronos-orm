@@ -1,0 +1,461 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > MssqlStatements</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database.mssql</a>
+</div>
+
+<h1>Coverage Summary for Class: MssqlStatements (com.kotlinorm.database.mssql)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">MssqlStatements</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.5%
+  </span>
+  <span class="absValue">
+    (21/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.7%
+  </span>
+  <span class="absValue">
+    (112/148)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.9%
+  </span>
+  <span class="absValue">
+    (182/184)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (1563/1623)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MssqlStatements$mapIndexes$lambda$1$$inlined$sortedBy$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">MssqlStatements$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    91.3%
+  </span>
+  <span class="absValue">
+    (21/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.7%
+  </span>
+  <span class="absValue">
+    (112/148)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.9%
+  </span>
+  <span class="absValue">
+    (182/184)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (1563/1623)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database.mssql
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.database.DatabaseCreateTable
+&nbsp;import com.kotlinorm.database.DatabaseStatements
+&nbsp;import com.kotlinorm.database.DatabaseSyncTable
+&nbsp;import com.kotlinorm.database.asInt
+&nbsp;import com.kotlinorm.database.cell
+&nbsp;import com.kotlinorm.database.sameColumnAttributesAs
+&nbsp;import com.kotlinorm.database.toColumnDefinition
+&nbsp;import com.kotlinorm.database.toCreateIndexStatement
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.table.SqlTableAlias
+&nbsp;
+&nbsp;object MssqlStatements : DatabaseStatements() {
+<b class="fc">&nbsp;    override val defaultIndexType: String = &quot;NONCLUSTERED&quot;</b>
+<b class="fc">&nbsp;    override val defaultIndexMethod: String = &quot;&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    override fun canonicalColumnName(name: String): String = name.uppercase()</b>
+&nbsp;
+&nbsp;    override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
+<b class="pc">&nbsp;        getColumnType(expected.type, expected.length, expected.scale) ==</b>
+<b class="fc">&nbsp;            getColumnType(current.type, current.length, current.scale) &amp;&amp;</b>
+<b class="fc">&nbsp;            expected.sameColumnAttributesAs(current)</b>
+&nbsp;
+&nbsp;    override fun databaseName(wrapper: KronosDataSourceWrapper): String =
+<b class="fc">&nbsp;        wrapper.url.substringAfter(&quot;//&quot;).substringBefore(&quot;;&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun table(tableName: String) = SqlIdentifier.of(&quot;dbo&quot;, tableName)</b>
+&nbsp;
+<b class="nc">&nbsp;    private fun metadataTable(schema: String, name: String, alias: String? = null): SqlTable.Ident =</b>
+<b class="fc">&nbsp;        SqlTable.Ident(</b>
+<b class="fc">&nbsp;            name = name,</b>
+<b class="pc">&nbsp;            alias = alias?.let { SqlTableAlias(it) },</b>
+<b class="fc">&nbsp;            identifier = SqlIdentifier.of(schema, name)</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;    override fun tableExists(): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;COUNT(*)&quot;))),</b>
+<b class="fc">&nbsp;        from = listOf(</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;tables&quot;, &quot;t&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;schemas&quot;, &quot;s&quot;)</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        where = SqlExpr.UnsafeRaw(&quot;t.schema_id = s.schema_id AND s.name = &#39;dbo&#39; AND t.name = :tableName&quot;)</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override fun tableComment(): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;CAST(ep.value AS NVARCHAR(MAX))&quot;))),</b>
+<b class="fc">&nbsp;        from = listOf(</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;extended_properties&quot;, &quot;ep&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;tables&quot;, &quot;t&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;schemas&quot;, &quot;s&quot;)</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        where = SqlExpr.UnsafeRaw(&quot;ep.major_id = t.object_id AND t.schema_id = s.schema_id AND ep.minor_id = 0 AND ep.name = &#39;MS_Description&#39; AND s.name = &#39;dbo&#39; AND t.name = :tableName&quot;)</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override fun tableColumns(tableName: String): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;c.COLUMN_NAME&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;c.DATA_TYPE&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;CASE WHEN c.DATA_TYPE IN (&#39;char&#39;, &#39;nchar&#39;, &#39;varchar&#39;, &#39;nvarchar&#39;) THEN c.CHARACTER_MAXIMUM_LENGTH ELSE NULL END AS CHARACTER_MAXIMUM_LENGTH&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;CASE WHEN c.DATA_TYPE IN (&#39;decimal&#39;, &#39;numeric&#39;) THEN c.NUMERIC_PRECISION ELSE NULL END AS NUMERIC_PRECISION&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;c.IS_NULLABLE&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;c.COLUMN_DEFAULT&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc ON ccu.Constraint_Name = tc.Constraint_Name AND tc.Constraint_Type = &#39;PRIMARY KEY&#39; WHERE ccu.COLUMN_NAME = c.COLUMN_NAME AND ccu.TABLE_NAME = c.TABLE_NAME) THEN &#39;YES&#39; ELSE &#39;NO&#39; END AS PRIMARY_KEY&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;CASE WHEN EXISTS (SELECT 1 FROM sysobjects a INNER JOIN syscolumns b ON a.id = b.id WHERE columnproperty(a.id, b.name, &#39;isIdentity&#39;) = 1 AND objectproperty(a.id, &#39;isTable&#39;) = 1 AND a.name = :tableName AND b.name = c.COLUMN_NAME) THEN &#39;YES&#39; ELSE &#39;NO&#39; END AS AUTOINCREAMENT&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;CAST((SELECT ep.value FROM sys.extended_properties ep WHERE ep.major_id = OBJECT_ID(:tableName) AND ep.minor_id = c.ORDINAL_POSITION AND ep.name = &#39;MS_Description&#39;) AS NVARCHAR(MAX)) AS COLUMN_COMMENT&quot;))</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        from = listOf(metadataTable(&quot;INFORMATION_SCHEMA&quot;, &quot;COLUMNS&quot;, &quot;c&quot;)),</b>
+<b class="fc">&nbsp;        where = SqlExpr.UnsafeRaw(&quot;c.TABLE_CATALOG = DB_NAME() AND c.TABLE_NAME = :tableName&quot;)</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override fun tableIndexes(tableName: String): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;i.name AS name&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;c.name AS columnName&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;ic.key_ordinal AS seqInIndex&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;i.is_unique AS isUnique&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;i.type_desc AS indexType&quot;))</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        from = listOf(</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;indexes&quot;, &quot;i&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;index_columns&quot;, &quot;ic&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;columns&quot;, &quot;c&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;tables&quot;, &quot;t&quot;),</b>
+<b class="fc">&nbsp;            metadataTable(&quot;sys&quot;, &quot;schemas&quot;, &quot;s&quot;)</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        where = SqlExpr.UnsafeRaw(</b>
+<b class="fc">&nbsp;            &quot;i.object_id = ic.object_id AND i.index_id = ic.index_id &quot; +</b>
+&nbsp;                &quot;AND c.object_id = ic.object_id AND c.column_id = ic.column_id &quot; +
+&nbsp;                &quot;AND t.object_id = i.object_id AND s.schema_id = t.schema_id &quot; +
+&nbsp;                &quot;AND s.name = &#39;dbo&#39; AND t.name = :tableName &quot; +
+&nbsp;                &quot;AND i.is_primary_key = 0 AND i.name IS NOT NULL&quot;
+&nbsp;        )
+&nbsp;    )
+&nbsp;
+&nbsp;    override fun mapColumns(tableName: String, rows: List&lt;Map&lt;String, Any&gt;&gt;): List&lt;Field&gt; =
+<b class="fc">&nbsp;        rows.map {</b>
+<b class="fc">&nbsp;            val length = it.cell(&quot;CHARACTER_MAXIMUM_LENGTH&quot;).asInt()</b>
+<b class="fc">&nbsp;            val scale = it.cell(&quot;NUMERIC_PRECISION&quot;).asInt()</b>
+<b class="fc">&nbsp;            Field(</b>
+<b class="fc">&nbsp;                columnName = it.cell(&quot;COLUMN_NAME&quot;).toString(),</b>
+<b class="fc">&nbsp;                type = getKColumnType(it.cell(&quot;DATA_TYPE&quot;).toString(), length, scale),</b>
+<b class="fc">&nbsp;                length = length,</b>
+<b class="fc">&nbsp;                scale = scale,</b>
+<b class="fc">&nbsp;                tableName = tableName,</b>
+<b class="fc">&nbsp;                nullable = it.cell(&quot;IS_NULLABLE&quot;) == &quot;YES&quot;,</b>
+<b class="fc">&nbsp;                primaryKey = when {</b>
+<b class="fc">&nbsp;                    it.cell(&quot;PRIMARY_KEY&quot;) == &quot;NO&quot; -&gt; PrimaryKeyType.NOT</b>
+<b class="pc">&nbsp;                    it.cell(&quot;AUTOINCREAMENT&quot;) == &quot;YES&quot; -&gt; PrimaryKeyType.IDENTITY</b>
+<b class="nc">&nbsp;                    else -&gt; PrimaryKeyType.DEFAULT</b>
+&nbsp;                },
+<b class="fc">&nbsp;                defaultValue = removeOuterParentheses(it.cell(&quot;COLUMN_DEFAULT&quot;) as String?),</b>
+<b class="fc">&nbsp;                kDoc = it.cell(&quot;COLUMN_COMMENT&quot;) as String?</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    override fun mapIndexes(tableName: String, rows: List&lt;Map&lt;String, Any&gt;&gt;): List&lt;KTableIndex&gt; =
+<b class="fc">&nbsp;        rows.groupBy { it.cell(&quot;name&quot;).toString() }.mapNotNull { (indexName, columns) -&gt;</b>
+<b class="pc">&nbsp;            val first = columns.firstOrNull() ?: return@mapNotNull null</b>
+<b class="fc">&nbsp;            KTableIndex(</b>
+<b class="fc">&nbsp;                name = indexName,</b>
+<b class="fc">&nbsp;                columns = columns.sortedBy { it.cell(&quot;seqInIndex&quot;).asInt() }</b>
+<b class="fc">&nbsp;                    .map { it.cell(&quot;columnName&quot;).toString() }</b>
+<b class="fc">&nbsp;                    .toTypedArray(),</b>
+<b class="pc">&nbsp;                type = first.cell(&quot;indexType&quot;)?.toString().orEmpty(),</b>
+<b class="pc">&nbsp;                method = if (first.cell(&quot;isUnique&quot;).asInt() == 1) &quot;UNIQUE&quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    override fun createTable(input: DatabaseCreateTable): List&lt;SqlStatement&gt; {
+<b class="fc">&nbsp;        val table = table(input.tableName)</b>
+<b class="fc">&nbsp;        return listOf(</b>
+<b class="fc">&nbsp;            SqlDdlStatement.CreateTable(</b>
+<b class="fc">&nbsp;                tableName = table,</b>
+<b class="fc">&nbsp;                columns = input.columns.map { it.toColumnDefinition(::getColumnType) },</b>
+<b class="fc">&nbsp;                ifNotExists = true</b>
+&nbsp;            )
+<b class="fc">&nbsp;        ) + input.indexes.map { it.toCreateIndexStatement(table) } +</b>
+<b class="fc">&nbsp;            input.columns.filter { !it.kDoc.isNullOrEmpty() }.map {</b>
+<b class="fc">&nbsp;                SqlDdlStatement.SqlServerExtendedPropertyComment(</b>
+<b class="fc">&nbsp;                    tableName = table,</b>
+<b class="fc">&nbsp;                    columnName = SqlIdentifier.of(it.columnName),</b>
+<b class="fc">&nbsp;                    comment = it.kDoc,</b>
+<b class="fc">&nbsp;                    operation = SqlServerExtendedPropertyOperation.Add</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            } +
+<b class="pc">&nbsp;            listOfNotNull(input.tableComment?.takeIf { it.isNotEmpty() }?.let {</b>
+<b class="fc">&nbsp;                SqlDdlStatement.SqlServerExtendedPropertyComment(</b>
+<b class="fc">&nbsp;                    tableName = table,</b>
+<b class="fc">&nbsp;                    comment = it,</b>
+<b class="fc">&nbsp;                    operation = SqlServerExtendedPropertyOperation.Add</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            })
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun dropTable(tableName: String, ifExists: Boolean): List&lt;SqlStatement&gt; =
+<b class="fc">&nbsp;        listOf(SqlDdlStatement.DropTable(table(tableName), ifExists))</b>
+&nbsp;
+&nbsp;    override fun truncateTable(tableName: String, restartIdentity: Boolean): List&lt;SqlStatement&gt; =
+<b class="fc">&nbsp;        listOf(SqlDmlStatement.Truncate(SqlTable.Ident(tableName, identifier = table(tableName)), restartIdentity = false))</b>
+&nbsp;
+&nbsp;    override fun syncTable(input: DatabaseSyncTable): List&lt;SqlStatement&gt; {
+<b class="fc">&nbsp;        val table = table(input.tableName)</b>
+<b class="fc">&nbsp;        return buildList {</b>
+<b class="pc">&nbsp;            if (input.originalTableComment.orEmpty() != input.tableComment.orEmpty()) {</b>
+<b class="fc">&nbsp;                add(</b>
+<b class="fc">&nbsp;                    SqlDdlStatement.SqlServerExtendedPropertyComment(</b>
+<b class="fc">&nbsp;                        tableName = table,</b>
+<b class="fc">&nbsp;                        comment = input.tableComment,</b>
+<b class="fc">&nbsp;                        operation = commentOperation(input.originalTableComment, input.tableComment)</b>
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            addAll(input.indexes.toDelete.map { SqlDdlStatement.DropIndex(SqlIdentifier.of(it.name), table) })</b>
+<b class="fc">&nbsp;            input.columns.toDelete.forEach {</b>
+<b class="fc">&nbsp;                add(SqlDdlStatement.SqlServerDropDefaultConstraint(table, SqlIdentifier.of(it.columnName)))</b>
+<b class="fc">&nbsp;                add(SqlDdlStatement.AlterTable.DropColumn(table, SqlIdentifier.of(it.columnName)))</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            input.columns.toAdd.forEach {</b>
+<b class="fc">&nbsp;                add(SqlDdlStatement.AlterTable.AddColumn(table, it.first.toColumnDefinition(::getColumnType)))</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            input.columns.toModified.forEach { (column, _, current) -&gt;</b>
+<b class="fc">&nbsp;                add(SqlDdlStatement.SqlServerDropDefaultConstraint(table, SqlIdentifier.of(column.columnName)))</b>
+<b class="fc">&nbsp;                add(SqlDdlStatement.AlterTable.ModifyColumn(table, column.copy(defaultValue = null).toColumnDefinition(::getColumnType)))</b>
+<b class="pc">&nbsp;                if (column.defaultValue.orEmpty() != current.defaultValue.orEmpty() &amp;&amp; column.defaultValue != null) {</b>
+<b class="fc">&nbsp;                    add(</b>
+<b class="fc">&nbsp;                        SqlDdlStatement.AlterTable.AlterColumnDefault(</b>
+<b class="fc">&nbsp;                            table,</b>
+<b class="fc">&nbsp;                            SqlIdentifier.of(column.columnName),</b>
+<b class="fc">&nbsp;                            SqlExpr.UnsafeRaw(column.defaultValue)</b>
+&nbsp;                        )
+&nbsp;                    )
+&nbsp;                }
+<b class="pc">&nbsp;                if (column.kDoc.orEmpty() != current.kDoc.orEmpty()) {</b>
+<b class="fc">&nbsp;                    add(</b>
+<b class="fc">&nbsp;                        SqlDdlStatement.SqlServerExtendedPropertyComment(</b>
+<b class="fc">&nbsp;                            tableName = table,</b>
+<b class="fc">&nbsp;                            columnName = SqlIdentifier.of(column.columnName),</b>
+<b class="fc">&nbsp;                            comment = column.kDoc,</b>
+<b class="fc">&nbsp;                            operation = commentOperation(current.kDoc, column.kDoc)</b>
+&nbsp;                        )
+&nbsp;                    )
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            addAll(input.indexes.toAdd.map { it.toCreateIndexStatement(table) })</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun commentOperation(original: String?, next: String?): SqlServerExtendedPropertyOperation =
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            next == null -&gt; SqlServerExtendedPropertyOperation.Drop</b>
+<b class="pc">&nbsp;            original == null -&gt; SqlServerExtendedPropertyOperation.Add</b>
+<b class="fc">&nbsp;            else -&gt; SqlServerExtendedPropertyOperation.Update</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun removeOuterParentheses(input: String?): String? {
+<b class="pc">&nbsp;        var result = input ?: return null</b>
+<b class="pc">&nbsp;        while (result.length &gt; 1 &amp;&amp; result.first() == &#39;(&#39; &amp;&amp; result.last() == &#39;)&#39;) {</b>
+<b class="fc">&nbsp;            result = result.substring(1, result.length - 1)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun getColumnType(type: KColumnType, length: Int, scale: Int): String = when (type) {</b>
+<b class="fc">&nbsp;        KColumnType.BIT -&gt; &quot;BIT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.TINYINT -&gt; &quot;TINYINT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.SMALLINT -&gt; &quot;SMALLINT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.INT, KColumnType.MEDIUMINT, KColumnType.SERIAL, KColumnType.YEAR -&gt; &quot;INT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.BIGINT -&gt; &quot;BIGINT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.REAL -&gt; &quot;REAL&quot;</b>
+<b class="fc">&nbsp;        KColumnType.FLOAT -&gt; if (length &gt; 0) &quot;FLOAT($length)&quot; else &quot;FLOAT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.DOUBLE -&gt; &quot;FLOAT(53)&quot;</b>
+<b class="fc">&nbsp;        KColumnType.DECIMAL -&gt; when {</b>
+<b class="fc">&nbsp;            length &gt; 0 &amp;&amp; scale &gt; 0 -&gt; &quot;DECIMAL($length,$scale)&quot;</b>
+<b class="fc">&nbsp;            length &gt; 0 -&gt; &quot;DECIMAL($length,0)&quot;</b>
+<b class="fc">&nbsp;            else -&gt; &quot;DECIMAL(18,0)&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        KColumnType.NUMERIC -&gt; when {</b>
+<b class="fc">&nbsp;            length &gt; 0 &amp;&amp; scale &gt; 0 -&gt; &quot;NUMERIC($length,$scale)&quot;</b>
+<b class="fc">&nbsp;            length &gt; 0 -&gt; &quot;NUMERIC($length,0)&quot;</b>
+<b class="fc">&nbsp;            else -&gt; &quot;NUMERIC(18,0)&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        KColumnType.CHAR -&gt; &quot;CHAR(${length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="fc">&nbsp;        KColumnType.VARCHAR -&gt; &quot;VARCHAR(${if (length &lt;= 0) 255 else if (length &gt; 8000) &quot;MAX&quot; else length})&quot;</b>
+<b class="pc">&nbsp;        KColumnType.NCHAR -&gt; &quot;NVARCHAR(${length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="fc">&nbsp;        KColumnType.NVARCHAR -&gt; &quot;NVARCHAR(${if (length &lt;= 0) 255 else if (length &gt; 4000) &quot;MAX&quot; else length})&quot;</b>
+<b class="pc">&nbsp;        KColumnType.BINARY -&gt; &quot;BINARY(${length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="pc">&nbsp;        KColumnType.VARBINARY -&gt; &quot;VARBINARY(${length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+&nbsp;        KColumnType.LONGVARBINARY,
+&nbsp;        KColumnType.BLOB,
+&nbsp;        KColumnType.MEDIUMBLOB,
+<b class="fc">&nbsp;        KColumnType.LONGBLOB -&gt; &quot;VARBINARY(MAX)&quot;</b>
+&nbsp;        KColumnType.TEXT,
+&nbsp;        KColumnType.MEDIUMTEXT,
+&nbsp;        KColumnType.LONGTEXT,
+<b class="fc">&nbsp;        KColumnType.CLOB -&gt; &quot;TEXT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.DATE -&gt; &quot;DATE&quot;</b>
+<b class="fc">&nbsp;        KColumnType.TIME -&gt; if (scale &gt; 0) &quot;TIME($scale)&quot; else &quot;TIME&quot;</b>
+<b class="fc">&nbsp;        KColumnType.DATETIME -&gt; if (scale &gt; 0) &quot;DATETIME2($scale)&quot; else &quot;DATETIME&quot;</b>
+<b class="fc">&nbsp;        KColumnType.TIMESTAMP -&gt; &quot;TIMESTAMP&quot;</b>
+<b class="fc">&nbsp;        KColumnType.JSON -&gt; &quot;JSON&quot;</b>
+<b class="fc">&nbsp;        KColumnType.ENUM -&gt; &quot;NVARCHAR(255)&quot;</b>
+<b class="fc">&nbsp;        KColumnType.NCLOB -&gt; &quot;NTEXT&quot;</b>
+<b class="fc">&nbsp;        KColumnType.UUID -&gt; &quot;CHAR(36)&quot;</b>
+<b class="fc">&nbsp;        KColumnType.SET -&gt; &quot;NVARCHAR(255)&quot;</b>
+&nbsp;        KColumnType.GEOMETRY,
+&nbsp;        KColumnType.POINT,
+<b class="fc">&nbsp;        KColumnType.LINESTRING -&gt; &quot;GEOMETRY&quot;</b>
+<b class="fc">&nbsp;        KColumnType.XML -&gt; &quot;XML&quot;</b>
+<b class="fc">&nbsp;        else -&gt; &quot;NVARCHAR(255)&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getKColumnType(type: String, length: Int, scale: Int): KColumnType =
+<b class="fc">&nbsp;        KColumnType.fromString(type)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

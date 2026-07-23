@@ -1,0 +1,200 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > TypeUtilsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: TypeUtilsKt (com.kotlinorm.compiler.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TypeUtilsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (23/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.6%
+  </span>
+  <span class="absValue">
+    (142/144)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.utils
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;
+&nbsp;/**
+&nbsp; * Type utility functions for Kronos compiler plugin
+&nbsp; *
+&nbsp; * Provides functions for mapping Kotlin types to KColumnType enum values
+&nbsp; * and other type-related operations
+&nbsp; */
+&nbsp;
+&nbsp;/**
+&nbsp; * Maps a Kotlin IrType to its corresponding KColumnType enum name
+&nbsp; *
+&nbsp; * This function converts Kotlin types to database column types used by Kronos ORM.
+&nbsp; * The mapping follows these rules:
+&nbsp; * - Primitive types map to their SQL equivalents (Int -&gt; INT, Boolean -&gt; BIT, etc.)
+&nbsp; * - Date/time types map to appropriate SQL temporal types
+&nbsp; * - String maps to VARCHAR
+&nbsp; * - ByteArray maps to BLOB
+&nbsp; * - Unknown types default to VARCHAR
+&nbsp; *
+&nbsp; * @param type The Kotlin IrType to map
+&nbsp; * @return The name of the corresponding KColumnType enum value (e.g., &quot;INT&quot;, &quot;VARCHAR&quot;)
+&nbsp; */
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun mapTypeToKColumnType(type: IrType): String {
+<b class="pc">&nbsp;    val fqName = type.classFqName?.asString() ?: return &quot;VARCHAR&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    return KColumnTypeByFqName[fqName] ?: &quot;VARCHAR&quot;</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private val KColumnTypeByFqName = mapOf(</b>
+<b class="fc">&nbsp;    &quot;kotlin.Boolean&quot; to &quot;BIT&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Byte&quot; to &quot;TINYINT&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Short&quot; to &quot;SMALLINT&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Int&quot; to &quot;INT&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Long&quot; to &quot;BIGINT&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Float&quot; to &quot;FLOAT&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Double&quot; to &quot;DOUBLE&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.math.BigDecimal&quot; to &quot;DECIMAL&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.Char&quot; to &quot;CHAR&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.String&quot; to &quot;VARCHAR&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.util.Date&quot; to &quot;DATE&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.sql.Date&quot; to &quot;DATE&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.time.LocalDate&quot; to &quot;DATE&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlinx.datetime.LocalDate&quot; to &quot;DATE&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.time.LocalTime&quot; to &quot;TIME&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlinx.datetime.LocalTime&quot; to &quot;TIME&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.time.LocalDateTime&quot; to &quot;DATETIME&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlinx.datetime.LocalDateTime&quot; to &quot;DATETIME&quot;,</b>
+<b class="fc">&nbsp;    &quot;java.sql.Timestamp&quot; to &quot;TIMESTAMP&quot;,</b>
+<b class="fc">&nbsp;    &quot;kotlin.ByteArray&quot; to &quot;BLOB&quot;,</b>
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

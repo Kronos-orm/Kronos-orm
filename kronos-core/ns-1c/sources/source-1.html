@@ -1,0 +1,284 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PatchKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.select</a>
+</div>
+
+<h1>Coverage Summary for Class: PatchKt (com.kotlinorm.orm.select)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PatchKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.9%
+  </span>
+  <span class="absValue">
+    (10/13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.9%
+  </span>
+  <span class="absValue">
+    (41/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.2%
+  </span>
+  <span class="absValue">
+    (363/548)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.select
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.utils.KTypeKey
+&nbsp;import com.kotlinorm.utils.createKPojo
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.full.withNullability
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal const val DerivedQueryAlias = &quot;q&quot;
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal fun &lt;T : KPojo&gt; T.selectWithType(
+&nbsp;    targetType: KType,
+<b class="fc">&nbsp;    nullableTargetType: KType = targetType,</b>
+<b class="fc">&nbsp;    fields: ToSelect&lt;T, Any?&gt; = null</b>
+<b class="fc">&nbsp;): SelectClause&lt;T, T, T&gt; = SelectClause(this, fields, targetType, nullableTargetType)</b>
+&nbsp;
+<b class="fc">&nbsp;inline fun &lt;reified T : KPojo&gt; T.select(noinline fields: ToSelect&lt;T, Any?&gt; = null): SelectClause&lt;T, T, T&gt; {</b>
+<b class="fc">&nbsp;    return selectWithType(typeOf&lt;T&gt;(), typeOf&lt;T?&gt;(), fields)</b>
+&nbsp;}
+&nbsp;
+<b class="nc">&nbsp;inline fun &lt;reified T : KPojo&gt; T.where(noinline selectCondition: ToFilter&lt;T, Boolean?&gt;? = null): SelectClause&lt;T, T, T&gt; {</b>
+<b class="fc">&nbsp;    return selectWithType(typeOf&lt;T&gt;(), typeOf&lt;T?&gt;()).where(selectCondition)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;inline fun &lt;reified S : KPojo&gt; KSelectable&lt;S&gt;.select(</b>
+<b class="fc">&nbsp;    noinline fields: ToSelect&lt;S, Any?&gt; = null</b>
+&nbsp;): SelectClause&lt;S, S, S&gt; {
+<b class="fc">&nbsp;    val source = Kronos.createKPojo(selectedType) as S</b>
+<b class="fc">&nbsp;    return SelectClause(</b>
+<b class="fc">&nbsp;        source,</b>
+<b class="fc">&nbsp;        fields,</b>
+<b class="fc">&nbsp;        selectedType,</b>
+<b class="fc">&nbsp;        nullableSelectedType,</b>
+<b class="fc">&nbsp;        sourceQuery = this,</b>
+<b class="fc">&nbsp;        sourceAlias = DerivedQueryAlias</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Filters this query&#39;s selected result rows through a derived-query boundary.
+&nbsp; *
+&nbsp; * Unlike [SelectClause.where], whose receiver is the current query layer&#39;s source type,
+&nbsp; * this predicate receives only the [KSelectable] result type emitted by the current query.
+&nbsp; */
+&nbsp;inline fun &lt;reified Selected : KPojo&gt; KSelectable&lt;Selected&gt;.filter(
+&nbsp;    noinline predicate: ToFilter&lt;Selected, Boolean?&gt;
+<b class="fc">&nbsp;): SelectClause&lt;Selected, Selected, Selected&gt; = select().where(predicate)</b>
+&nbsp;
+&nbsp;@PublishedApi
+<b class="nc">&nbsp;internal inline fun &lt;T : KPojo, reified R : KPojo, reified C : KPojo&gt; T.selectGeneratedProjection(</b>
+<b class="nc">&nbsp;    noinline fields: ToSelect&lt;T, Any?&gt; = null</b>
+&nbsp;): SelectClause&lt;T, R, C&gt; {
+<b class="fc">&nbsp;    val projectionType = typeOf&lt;R&gt;()</b>
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="pc">&nbsp;    val contextPojo = if (this is C) {</b>
+<b class="nc">&nbsp;        this as C</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        createKPojo&lt;C&gt;()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return SelectClause(this, fields, projectionType, projectionType.withNullability(true), contextPojo)</b>
+&nbsp;}
+&nbsp;
+&nbsp;@PublishedApi
+<b class="fc">&nbsp;internal inline fun &lt;S : KPojo, reified R : KPojo, reified C : KPojo&gt; KSelectable&lt;S&gt;.selectGeneratedProjection(</b>
+<b class="fc">&nbsp;    noinline fields: ToSelect&lt;S, Any?&gt; = null</b>
+&nbsp;): SelectClause&lt;S, R, C&gt; {
+<b class="fc">&nbsp;    val source = Kronos.createKPojo(selectedType) as S</b>
+<b class="fc">&nbsp;    val projectionType = typeOf&lt;R&gt;()</b>
+<b class="fc">&nbsp;    return SelectClause(</b>
+<b class="fc">&nbsp;        source,</b>
+<b class="fc">&nbsp;        fields,</b>
+<b class="fc">&nbsp;        projectionType,</b>
+<b class="fc">&nbsp;        projectionType.withNullability(true),</b>
+<b class="fc">&nbsp;        createKPojo&lt;C&gt;(),</b>
+<b class="fc">&nbsp;        sourceQuery = this,</b>
+<b class="fc">&nbsp;        sourceAlias = DerivedQueryAlias</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Selects rows as [R] using a complete projection [KType].
+&nbsp; *
+&nbsp; * [projectionType] must equal `typeOf&lt;R&gt;()`; the nullable selected type is derived from it.
+&nbsp; *
+&nbsp; * @throws IllegalArgumentException when [projectionType] does not match the reified [R]
+&nbsp; */
+&nbsp;@JvmName(&quot;selectProjection&quot;)
+<b class="fc">&nbsp;inline fun &lt;reified T : KPojo, reified R : KPojo&gt; T.select(</b>
+<b class="fc">&nbsp;    projectionType: KType = typeOf&lt;R&gt;(),</b>
+<b class="nc">&nbsp;    noinline fields: ToSelect&lt;T, Any?&gt; = null</b>
+&nbsp;): SelectClause&lt;T, R, T&gt; {
+<b class="fc">&nbsp;    val validatedType = requireProjectionType(projectionType, typeOf&lt;R&gt;())</b>
+<b class="fc">&nbsp;    return SelectClause(this, fields, validatedType, validatedType.withNullability(true))</b>
+&nbsp;}
+&nbsp;
+<b class="nc">&nbsp;fun &lt;T : KPojo&gt; T.db(name: String) = this to name</b>
+&nbsp;
+<b class="nc">&nbsp;inline fun &lt;reified T : KPojo&gt; Pair&lt;T, String&gt;.select(noinline fields: ToSelect&lt;T, Any?&gt; = null) =</b>
+<b class="nc">&nbsp;    SelectClause&lt;T, T, T&gt;(this.first, fields, typeOf&lt;T&gt;(), typeOf&lt;T?&gt;()).db(this.second)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Selects rows from a named database as [R] using a complete projection [KType].
+&nbsp; *
+&nbsp; * [projectionType] must equal `typeOf&lt;R&gt;()`; the nullable selected type is derived from it.
+&nbsp; *
+&nbsp; * @throws IllegalArgumentException when [projectionType] does not match the reified [R]
+&nbsp; */
+<b class="nc">&nbsp;inline fun &lt;T : KPojo, reified R : KPojo&gt; Pair&lt;T, String&gt;.select(</b>
+<b class="nc">&nbsp;    projectionType: KType = typeOf&lt;R&gt;(),</b>
+<b class="nc">&nbsp;    noinline fields: ToSelect&lt;T, Any?&gt; = null</b>
+<b class="nc">&nbsp;) = requireProjectionType(projectionType, typeOf&lt;R&gt;()).let { validatedType -&gt;</b>
+<b class="nc">&nbsp;    SelectClause&lt;T, R, T&gt;(this.first, fields, validatedType, validatedType.withNullability(true)).db(this.second)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Validates an explicit projection type against its reified result type.
+&nbsp; *
+&nbsp; * @return [projectionType] unchanged when both complete KTypes match
+&nbsp; * @throws IllegalArgumentException when the types differ
+&nbsp; */
+&nbsp;@PublishedApi
+&nbsp;internal fun requireProjectionType(projectionType: KType, reifiedType: KType): KType {
+<b class="fc">&nbsp;    require(sameProjectionType(projectionType, reifiedType)) {</b>
+<b class="fc">&nbsp;        &quot;Projection type $projectionType does not match reified result type $reifiedType&quot;</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return projectionType</b>
+&nbsp;}
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal fun sameProjectionType(
+&nbsp;    first: KType,
+&nbsp;    second: KType
+<b class="fc">&nbsp;): Boolean = KTypeKey.from(first) == KTypeKey.from(second)</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

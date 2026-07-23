@@ -1,0 +1,380 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosQueryTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosQueryTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosQueryTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (20/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (8/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.7%
+  </span>
+  <span class="absValue">
+    (36/43)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.8%
+  </span>
+  <span class="absValue">
+    (373/445)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosQueryTask$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    91.3%
+  </span>
+  <span class="absValue">
+    (21/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (8/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.1%
+  </span>
+  <span class="absValue">
+    (37/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84%
+  </span>
+  <span class="absValue">
+    (377/449)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.enums.QueryType
+&nbsp;import com.kotlinorm.enums.QueryType.First
+&nbsp;import com.kotlinorm.enums.QueryType.ToList
+&nbsp;import com.kotlinorm.enums.QueryType.ToMap
+&nbsp;import com.kotlinorm.enums.QueryType.ToMapList
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.logAndReturn
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Executable facade around one [KronosAtomicQueryTask].
+&nbsp; *
+&nbsp; * Each terminal operation copies the atomic task with the requested logical [KType], invokes
+&nbsp; * hooks and global query events in a deterministic order, and delegates execution to one
+&nbsp; * [KronosDataSourceWrapper]. Result decoding is performed by the wrapper from that complete type
+&nbsp; * and the task&#39;s result-column metadata.
+&nbsp; *
+&nbsp; * @property atomicTask planned SQL, parameters, target type, and result metadata
+&nbsp; */
+<b class="fc">&nbsp;class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {</b>
+&nbsp;    /** Hook invoked immediately before global before-query events. Its return value is ignored. */
+<b class="fc">&nbsp;    var beforeQuery: (KronosQueryTask.() -&gt; Any?)? = null</b>
+&nbsp;
+&nbsp;    /** Hook invoked after global after-query events with the decoded result. Its return value is ignored. */
+<b class="fc">&nbsp;    var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -&gt; Any?)? = null</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Replaces the operation-local before-query hook.
+&nbsp;     *
+&nbsp;     * @return this task for fluent configuration
+&nbsp;     */
+&nbsp;    fun doBeforeQuery(beforeQuery: KronosQueryTask.() -&gt; Any?): KronosQueryTask {
+<b class="fc">&nbsp;        this.beforeQuery = beforeQuery</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Replaces the operation-local after-query hook.
+&nbsp;     *
+&nbsp;     * @return this task for fluent configuration
+&nbsp;     */
+&nbsp;    fun doAfterQuery(afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -&gt; Any?)): KronosQueryTask {
+<b class="fc">&nbsp;        this.afterQuery = afterQuery</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes [queryAction] with the explicit wrapper or Kronos default wrapper.
+&nbsp;     *
+&nbsp;     * Hook order is local-before, global-before, execution/logging, global-after, local-after.
+&nbsp;     * Exceptions propagate immediately and therefore skip the remaining later stages.
+&nbsp;     *
+&nbsp;     * @param wrapper wrapper to use, or `null` to resolve the configured default
+&nbsp;     * @param queryType terminal operation classification passed to logging and hooks
+&nbsp;     * @param task atomic task passed to events and execution
+&nbsp;     * @param queryAction wrapper-specific execution operation
+&nbsp;     * @return the exact result returned by [queryAction]
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;T&gt; executeQuery(</b>
+&nbsp;        wrapper: KronosDataSourceWrapper?,
+&nbsp;        queryType: QueryType,
+<b class="nc">&nbsp;        task: KronosAtomicQueryTask = atomicTask,</b>
+&nbsp;        crossinline queryAction: (KronosDataSourceWrapper, KronosAtomicQueryTask) -&gt; T
+&nbsp;    ): T {
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="pc">&nbsp;        beforeQuery?.invoke(this)</b>
+<b class="fc">&nbsp;        QueryEvent.beforeQueryEvents.forEach { it(task, dataSource) }</b>
+&nbsp;
+<b class="fc">&nbsp;        val result = task.logAndReturn(queryAction(dataSource, task), queryType)</b>
+&nbsp;
+<b class="fc">&nbsp;        QueryEvent.afterQueryEvents.forEach { it(task, dataSource) }</b>
+<b class="pc">&nbsp;        afterQuery?.invoke(result, queryType, dataSource)</b>
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes the query and decodes every row as [targetType].
+&nbsp;     *
+&nbsp;     * @param wrapper wrapper to use, or `null` to resolve the configured default
+&nbsp;     * @param targetType complete row type, including generic arguments and nullability
+&nbsp;     * @param queryType terminal operation classification used by hooks and logging
+&nbsp;     * @return decoded rows in result-set order
+&nbsp;     */
+&nbsp;    fun toList(
+&nbsp;        wrapper: KronosDataSourceWrapper?,
+&nbsp;        targetType: KType,
+<b class="fc">&nbsp;        queryType: QueryType = ToList</b>
+&nbsp;    ): List&lt;Any?&gt; {
+<b class="fc">&nbsp;        val task = atomicTask.copy(targetType = targetType)</b>
+<b class="fc">&nbsp;        return executeQuery(wrapper, queryType, task) { dataSource, queryTask -&gt;</b>
+<b class="fc">&nbsp;            dataSource.toList(queryTask)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes the query and decodes the first row as [targetType].
+&nbsp;     *
+&nbsp;     * @param wrapper wrapper to use, or `null` to resolve the configured default
+&nbsp;     * @param targetType complete logical result type
+&nbsp;     * @param queryType terminal operation classification used by hooks and logging
+&nbsp;     * @param required whether an empty result must throw; defaults from target nullability
+&nbsp;     * @return decoded first row, or `null` when no row exists and [required] is false
+&nbsp;     * @throws NoSuchElementException when no row exists and [required] is true
+&nbsp;     */
+&nbsp;    fun first(
+&nbsp;        wrapper: KronosDataSourceWrapper?,
+&nbsp;        targetType: KType,
+<b class="fc">&nbsp;        queryType: QueryType = First,</b>
+<b class="fc">&nbsp;        required: Boolean = !targetType.isMarkedNullable</b>
+&nbsp;    ): Any? {
+<b class="fc">&nbsp;        val task = atomicTask.copy(targetType = targetType)</b>
+<b class="fc">&nbsp;        val result = executeQuery(wrapper, queryType, task) { dataSource, queryTask -&gt;</b>
+<b class="fc">&nbsp;            dataSource.first(queryTask)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (result == null &amp;&amp; required) {</b>
+<b class="fc">&nbsp;            throw NoSuchElementException(&quot;No result found for query: ${atomicTask.sql}&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns every row as a raw, string-keyed map without a declared value type. */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any?&gt;&gt; {</b>
+<b class="fc">&nbsp;        return toList(wrapper, typeOf&lt;Map&lt;String, Any?&gt;&gt;(), ToMapList) as List&lt;Map&lt;String, Any?&gt;&gt;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Executes and decodes every row using the complete reified type [T]. */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; toList(wrapper: KronosDataSourceWrapper? = null): List&lt;T&gt; {</b>
+<b class="fc">&nbsp;        return toList(wrapper, typeOf&lt;T&gt;()) as List&lt;T&gt;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the first row as a raw map.
+&nbsp;     *
+&nbsp;     * @throws NoSuchElementException when the query returns no rows
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any?&gt; {</b>
+<b class="fc">&nbsp;        return first(wrapper, typeOf&lt;Map&lt;String, Any?&gt;&gt;(), ToMap) as Map&lt;String, Any?&gt;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns the first row as a raw map, or `null` when the query returns no rows. */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any?&gt;? {</b>
+<b class="fc">&nbsp;        return first(wrapper, typeOf&lt;Map&lt;String, Any?&gt;?&gt;(), ToMap) as Map&lt;String, Any?&gt;?</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Decodes the first row using the complete reified type [T].
+&nbsp;     *
+&nbsp;     * @throws NoSuchElementException when the query returns no rows
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; first(wrapper: KronosDataSourceWrapper? = null): T {</b>
+<b class="fc">&nbsp;        return first(wrapper, typeOf&lt;T&gt;()) as T</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Decodes the first row as nullable [T], returning `null` for an empty result. */
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {</b>
+<b class="fc">&nbsp;        return first(wrapper, typeOf&lt;T?&gt;()) as T?</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        fun KronosAtomicQueryTask.toKronosQueryTask(): KronosQueryTask {
+<b class="fc">&nbsp;            return KronosQueryTask(this)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component1(): String {
+<b class="fc">&nbsp;        return atomicTask.sql</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component2(): Map&lt;String, Any?&gt; {
+<b class="fc">&nbsp;        return atomicTask.paramMap</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    operator fun component3() = this</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

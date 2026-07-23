@@ -1,0 +1,281 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ValueCodecKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: ValueCodecKt (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ValueCodecKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ValueCodecKt$valueCodec$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.ValueCodecOrigin
+&nbsp;import com.kotlinorm.enums.ValueStorage
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;
+&nbsp;/**
+&nbsp; * Public information available while selecting and running a [ValueCodec].
+&nbsp; *
+&nbsp; * @property direction whether the logical Kotlin value is being encoded for storage or decoded from input
+&nbsp; * @property origin the conversion boundary; codecs may use it for fine-grained matching
+&nbsp; * @property sourceType the declared source type when known, otherwise a runtime star-projected fallback
+&nbsp; * @property targetType the complete logical Kotlin target type, including nullability and type arguments
+&nbsp; * @property field field metadata when the conversion belongs to a mapped property
+&nbsp; * @property storage the field storage policy; serialized codecs must require [ValueStorage.SERIALIZED]
+&nbsp; */
+&nbsp;data class ValueCodecContext(
+&nbsp;    val direction: ValueCodecDirection,
+&nbsp;    val origin: ValueCodecOrigin,
+&nbsp;    val sourceType: KType?,
+&nbsp;    val targetType: KType,
+&nbsp;    val field: Field? = null,
+&nbsp;    val storage: ValueStorage = ValueStorage.NONE
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Bidirectional value conversion extension used by every safe mapping boundary.
+&nbsp; *
+&nbsp; * The registry handles SQL `NULL` before invoking a codec, checks codecs in
+&nbsp; * newest-registration-first order, wraps failures as value-mapping exceptions,
+&nbsp; * and validates the returned value. A codec should therefore implement a pure
+&nbsp; * match in [supports] and perform only one conversion in [convert].
+&nbsp; */
+&nbsp;interface ValueCodec {
+&nbsp;    /**
+&nbsp;     * Returns whether this codec accepts the non-null [value] for [context].
+&nbsp;     * Implementations should include direction, storage, origin and target type
+&nbsp;     * conditions needed to avoid intercepting unrelated requests. This method
+&nbsp;     * must not mutate registration state or perform the conversion itself.
+&nbsp;     *
+&nbsp;     * @param value non-null source value; SQL null is handled by the registry
+&nbsp;     * @param context complete public matching context for this request
+&nbsp;     * @return `true` only when [convert] can produce a valid result for the request
+&nbsp;     */
+&nbsp;    fun supports(value: Any, context: ValueCodecContext): Boolean
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts a value previously accepted by [supports].
+&nbsp;     *
+&nbsp;     * Returning `null` is allowed only when [ValueCodecContext.targetType] is nullable.
+&nbsp;     * Thrown exceptions are wrapped with field, direction, origin and batch context.
+&nbsp;     * The implementation must perform one semantic conversion and must not call
+&nbsp;     * back into the registry.
+&nbsp;     *
+&nbsp;     * @param value non-null source previously accepted by [supports]
+&nbsp;     * @param context the same context supplied to [supports]
+&nbsp;     * @return a value assignable to the logical target on decode, or a bindable
+&nbsp;     * scalar on encode
+&nbsp;     */
+&nbsp;    fun convert(value: Any, context: ValueCodecContext): Any?
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Handle for one user codec registration.
+&nbsp; *
+&nbsp; * Closing is idempotent, removes only this registration from future snapshots,
+&nbsp; * and leaves conversions already using an earlier snapshot unchanged.
+&nbsp; */
+&nbsp;interface ValueCodecRegistration : AutoCloseable {
+&nbsp;    /**
+&nbsp;     * Removes this codec from future registry snapshots; repeated calls are no-ops.
+&nbsp;     */
+&nbsp;    override fun close()
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a [ValueCodec] from matching and conversion functions.
+&nbsp; *
+&nbsp; * This helper does not register the codec or alter priority. Pass the returned
+&nbsp; * codec to `Kronos.registerValueCodec`; later registrations are checked first.
+&nbsp; *
+&nbsp; * @param supports pure predicate used for non-null values
+&nbsp; * @param convert conversion invoked only after [supports] returns `true`
+&nbsp; * @return an unregistered codec using the supplied functions
+&nbsp; */
+&nbsp;fun valueCodec(
+&nbsp;    supports: (value: Any, context: ValueCodecContext) -&gt; Boolean,
+&nbsp;    convert: (value: Any, context: ValueCodecContext) -&gt; Any?
+&nbsp;): ValueCodec {
+<b class="fc">&nbsp;    val predicate = supports</b>
+<b class="fc">&nbsp;    val converter = convert</b>
+<b class="fc">&nbsp;    return object : ValueCodec {</b>
+<b class="fc">&nbsp;        override fun supports(value: Any, context: ValueCodecContext): Boolean = predicate(value, context)</b>
+&nbsp;
+<b class="fc">&nbsp;        override fun convert(value: Any, context: ValueCodecContext): Any? = converter(value, context)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,320 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlUnaryOperator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.expr</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlUnaryOperator (com.kotlinorm.syntax.expr)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+  <tr>
+    <td class="name">SqlUnaryOperator$BitwiseNot</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlUnaryOperator$Negative</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlUnaryOperator$Not</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlUnaryOperator$Positive</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlUnaryOperator$UnsafeCustom</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.expr
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;/**
+&nbsp; * Binary operators carry precedence so renderers can make parenthesizing decisions from the tree.
+&nbsp; * Higher values bind tighter.
+&nbsp; */
+&nbsp;sealed class SqlBinaryOperator(val precedence: Int) : SqlNode {
+&nbsp;    object Times : SqlBinaryOperator(60)
+&nbsp;    object Div : SqlBinaryOperator(60)
+&nbsp;    object Mod : SqlBinaryOperator(60)
+&nbsp;    object Plus : SqlBinaryOperator(50)
+&nbsp;    object Minus : SqlBinaryOperator(50)
+&nbsp;    object Concat : SqlBinaryOperator(40)
+&nbsp;    object Equal : SqlBinaryOperator(30)
+&nbsp;    object NotEqual : SqlBinaryOperator(30)
+&nbsp;    data class IsDistinctFrom(val withNot: Boolean = false) : SqlBinaryOperator(30)
+&nbsp;    data class Is(val withNot: Boolean = false) : SqlBinaryOperator(30)
+&nbsp;    object GreaterThan : SqlBinaryOperator(30)
+&nbsp;    object GreaterThanEqual : SqlBinaryOperator(30)
+&nbsp;    object LessThan : SqlBinaryOperator(30)
+&nbsp;    object LessThanEqual : SqlBinaryOperator(30)
+&nbsp;    object Overlaps : SqlBinaryOperator(30)
+&nbsp;    object Regexp : SqlBinaryOperator(30)
+&nbsp;    object NotRegexp : SqlBinaryOperator(30)
+&nbsp;    object BitwiseAnd : SqlBinaryOperator(55)
+&nbsp;    object BitwiseOr : SqlBinaryOperator(45)
+&nbsp;    object BitwiseXor : SqlBinaryOperator(45)
+&nbsp;    object BitwiseLeftShift : SqlBinaryOperator(55)
+&nbsp;    object BitwiseRightShift : SqlBinaryOperator(55)
+&nbsp;    object And : SqlBinaryOperator(20)
+&nbsp;    object Or : SqlBinaryOperator(10)
+&nbsp;    data class UnsafeCustom(val tokens: List&lt;SqlUnsafeToken&gt;) : SqlBinaryOperator(0)
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlUnaryOperator : SqlNode {
+<b class="fc">&nbsp;    object Positive : SqlUnaryOperator</b>
+&nbsp;
+<b class="fc">&nbsp;    object Negative : SqlUnaryOperator</b>
+&nbsp;
+<b class="fc">&nbsp;    object Not : SqlUnaryOperator</b>
+&nbsp;
+<b class="fc">&nbsp;    object BitwiseNot : SqlUnaryOperator</b>
+&nbsp;
+<b class="fc">&nbsp;    data class UnsafeCustom(val tokens: List&lt;SqlUnsafeToken&gt;) : SqlUnaryOperator</b>
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlQuantifiedComparisonOperator : SqlNode {
+&nbsp;    object Equal : SqlQuantifiedComparisonOperator
+&nbsp;
+&nbsp;    object NotEqual : SqlQuantifiedComparisonOperator
+&nbsp;
+&nbsp;    object GreaterThan : SqlQuantifiedComparisonOperator
+&nbsp;
+&nbsp;    object GreaterThanEqual : SqlQuantifiedComparisonOperator
+&nbsp;
+&nbsp;    object LessThan : SqlQuantifiedComparisonOperator
+&nbsp;
+&nbsp;    object LessThanEqual : SqlQuantifiedComparisonOperator
+&nbsp;
+&nbsp;    data class UnsafeCustom(val tokens: List&lt;SqlUnsafeToken&gt;) : SqlQuantifiedComparisonOperator
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

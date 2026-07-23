@@ -1,0 +1,366 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosActionTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosActionTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosActionTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (12/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.7%
+  </span>
+  <span class="absValue">
+    (23/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.2%
+  </span>
+  <span class="absValue">
+    (47/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.6%
+  </span>
+  <span class="absValue">
+    (324/350)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosActionTask$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.3%
+  </span>
+  <span class="absValue">
+    (7/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.9%
+  </span>
+  <span class="absValue">
+    (13/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.2%
+  </span>
+  <span class="absValue">
+    (106/129)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (15/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (30/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.3%
+  </span>
+  <span class="absValue">
+    (60/65)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.8%
+  </span>
+  <span class="absValue">
+    (430/479)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;
+&nbsp;/**
+&nbsp; * Transactional execution facade for an ordered sequence of atomic mutation tasks.
+&nbsp; *
+&nbsp; * Adjacent tasks with identical named SQL are combined into a JDBC batch; non-adjacent tasks
+&nbsp; * retain their original execution order. The aggregate result sums affected rows and exposes
+&nbsp; * the final executed task&#39;s insert id and stash.
+&nbsp; */
+<b class="fc">&nbsp;class KronosActionTask {</b>
+&nbsp;    /** Ordered atomic mutations that will execute in one transaction. */
+<b class="fc">&nbsp;    internal val atomicTasks: MutableList&lt;KronosAtomicActionTask&gt; = mutableListOf()</b>
+&nbsp;
+&nbsp;    /** Hook invoked before this task is materialized for execution. */
+&nbsp;    private var beforeExecute: (KronosActionTask.(KronosDataSourceWrapper) -&gt; Unit)? = null
+&nbsp;
+&nbsp;    /** Hook invoked with the aggregate result after all mutations complete successfully. */
+<b class="fc">&nbsp;    var afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -&gt; Unit)? =</b>
+&nbsp;        null
+&nbsp;
+&nbsp;    /** Replaces the before-execute hook and returns this task for fluent configuration. */
+&nbsp;    fun doBeforeExecute(beforeExecute: KronosActionTask.(KronosDataSourceWrapper) -&gt; Unit): KronosActionTask {
+<b class="fc">&nbsp;        this.beforeExecute = beforeExecute</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Replaces or clears the after-execute hook and returns this task. */
+&nbsp;    fun doAfterExecute(afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -&gt; Unit)?): KronosActionTask {
+<b class="fc">&nbsp;        this.afterExecute = afterExecute</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    internal fun appendPrepared(
+&nbsp;        task: KronosActionTask,
+&nbsp;        wrapper: KronosDataSourceWrapper,
+<b class="nc">&nbsp;        transform: (KronosAtomicActionTask) -&gt; KronosAtomicActionTask = { it }</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        task.beforeExecute?.invoke(task, wrapper)</b>
+<b class="fc">&nbsp;        atomicTasks.addAll(task.atomicTasks.map(transform))</b>
+<b class="fc">&nbsp;        val currentAfterExecute = afterExecute</b>
+<b class="fc">&nbsp;        val nextAfterExecute = task.afterExecute</b>
+<b class="pc">&nbsp;        if (nextAfterExecute != null) {</b>
+<b class="nc">&nbsp;            afterExecute = { dataSource -&gt;</b>
+<b class="nc">&nbsp;                currentAfterExecute?.invoke(this, dataSource)</b>
+<b class="nc">&nbsp;                nextAfterExecute.invoke(this, dataSource)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Groups only adjacent tasks with identical SQL, preserving global execution order.
+&nbsp;     *
+&nbsp;     * For example, `a, a, b, a` becomes `(a, a), (b), (a)` rather than merging both
+&nbsp;     * `a` runs across the intervening statement.
+&nbsp;     */
+&nbsp;    private fun groupBySql(listOfTask: List&lt;KronosAtomicActionTask&gt;): List&lt;List&lt;KronosAtomicActionTask&gt;&gt; {
+<b class="fc">&nbsp;        return listOfTask.fold(mutableListOf&lt;MutableList&lt;KronosAtomicActionTask&gt;&gt;()) { acc, task -&gt;</b>
+<b class="fc">&nbsp;            if (acc.isEmpty() || acc.last().last().sql != task.sql) {</b>
+<b class="fc">&nbsp;                acc.add(mutableListOf(task))</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                acc.last().add(task)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            acc</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes all atomic tasks in one transaction.
+&nbsp;     *
+&nbsp;     * @param wrapper wrapper to use, or `null` to resolve the configured default
+&nbsp;     * @return aggregate affected rows, final insert id, and final task stash
+&nbsp;     */
+<b class="fc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;        return dataSource.transact {</b>
+<b class="fc">&nbsp;            beforeExecute?.invoke(this@KronosActionTask, dataSource)</b>
+&nbsp;
+<b class="fc">&nbsp;            val groupedTasks = groupBySql(atomicTasks).map {</b>
+<b class="fc">&nbsp;                val first = it.first()</b>
+<b class="fc">&nbsp;                if (it.size &gt; 1) {</b>
+<b class="fc">&nbsp;                    KronosAtomicBatchTask(</b>
+<b class="fc">&nbsp;                        first.sql,</b>
+<b class="fc">&nbsp;                        it.map { task -&gt; task.paramMap }.toTypedArray(),</b>
+<b class="fc">&nbsp;                        first.operationType,</b>
+<b class="fc">&nbsp;                        first.statement,</b>
+<b class="fc">&nbsp;                        stash = first.stash.toMutableMap(),</b>
+<b class="fc">&nbsp;                        generatedKeyRequest = first.generatedKeyRequest,</b>
+<b class="fc">&nbsp;                        listParameterOccurrences = first.listParameterOccurrences</b>
+&nbsp;                    )
+&nbsp;                } else {
+<b class="fc">&nbsp;                    first</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val results = groupedTasks.map {</b>
+<b class="fc">&nbsp;                it.execute(dataSource)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val affectRows = results.sumOf { it.affectedRows }</b>
+<b class="fc">&nbsp;            val lastResult = results.lastOrNull()</b>
+<b class="fc">&nbsp;            KronosOperationResult(affectRows, lastResult?.lastInsertId).apply {</b>
+<b class="fc">&nbsp;                if(results.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                    stash.putAll(results.last().stash)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                afterExecute?.invoke(this, dataSource)</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        } as KronosOperationResult
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        fun List&lt;KronosAtomicActionTask&gt;.toKronosActionTask(): KronosActionTask {
+<b class="fc">&nbsp;            return KronosActionTask().also {</b>
+<b class="fc">&nbsp;                it.atomicTasks.addAll(this)</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Wraps one atomic task and copies its stash into the wrapped task.
+&nbsp;         *
+&nbsp;         * @return a new action task containing this atomic task
+&nbsp;         */
+&nbsp;        fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
+<b class="fc">&nbsp;            return KronosActionTask().also {</b>
+<b class="fc">&nbsp;                it.atomicTasks.add(this)</b>
+<b class="fc">&nbsp;                it.atomicTasks.forEach { task -&gt; task.stash.putAll(stash) }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Concatenates action tasks while preserving atomic-task order and hooks.
+&nbsp;         *
+&nbsp;         * @return a new action task containing all source tasks
+&nbsp;         */
+&nbsp;        fun List&lt;KronosActionTask&gt;.merge(): KronosActionTask {
+<b class="fc">&nbsp;            return KronosActionTask().apply {</b>
+<b class="fc">&nbsp;                atomicTasks.addAll(flatMap { it.atomicTasks })</b>
+<b class="fc">&nbsp;                if(any { it.beforeExecute != null }) {</b>
+<b class="pc">&nbsp;                    beforeExecute = { wrapper -&gt; forEach { it.beforeExecute?.invoke(this, wrapper) } }</b>
+&nbsp;                }
+<b class="pc">&nbsp;                if (any { it.afterExecute != null }) {</b>
+<b class="nc">&nbsp;                    afterExecute = { wrapper -&gt; forEach { it.afterExecute?.invoke(this, wrapper) } }</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private val firstTask by lazy { atomicTasks.firstOrNull() }</b>
+&nbsp;
+&nbsp;    operator fun component1(): String {
+<b class="pc">&nbsp;        return firstTask?.sql ?: &quot;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component2(): Map&lt;String, Any?&gt; {
+<b class="pc">&nbsp;        return firstTask?.paramMap ?: mapOf()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component3(): MutableList&lt;KronosAtomicActionTask&gt; {
+<b class="fc">&nbsp;        return atomicTasks</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

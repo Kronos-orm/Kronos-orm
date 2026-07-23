@@ -1,0 +1,536 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ValueConversionRequest</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils.codec</a>
+</div>
+
+<h1>Coverage Summary for Class: ValueConversionRequest (com.kotlinorm.utils.codec)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ValueConversionRequest</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (18/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.2%
+  </span>
+  <span class="absValue">
+    (20/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.4%
+  </span>
+  <span class="absValue">
+    (152/174)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils.codec
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.ValueCodecOrigin
+&nbsp;import com.kotlinorm.enums.ValueStorage
+&nbsp;import com.kotlinorm.exceptions.MissingSerializedCodec
+&nbsp;import com.kotlinorm.exceptions.ValueMappingException
+&nbsp;import com.kotlinorm.interfaces.ValueCodec
+&nbsp;import com.kotlinorm.interfaces.ValueCodecContext
+&nbsp;import com.kotlinorm.interfaces.ValueCodecRegistration
+&nbsp;import com.kotlinorm.syntax.render.SqlDialect
+&nbsp;import com.kotlinorm.utils.GeneratedTypeMetadataSnapshot
+&nbsp;import java.time.ZoneId
+&nbsp;import java.util.concurrent.CancellationException
+&nbsp;import java.util.concurrent.atomic.AtomicBoolean
+&nbsp;import java.util.concurrent.atomic.AtomicLong
+&nbsp;import java.util.concurrent.atomic.AtomicReference
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.full.starProjectedType
+&nbsp;
+&nbsp;/**
+&nbsp; * Marks whether a caller supplied a final database value or a temporal value
+&nbsp; * that still needs one registry encoding pass.
+&nbsp; */
+&nbsp;internal enum class PreparedValueKind {
+&nbsp;    /**
+&nbsp;     * The value is already JDBC-bindable and must bypass every codec.
+&nbsp;     */
+&nbsp;    READY_DATABASE_VALUE,
+&nbsp;    /**
+&nbsp;     * The value came from a time strategy and must enter temporal conversion once.
+&nbsp;     */
+&nbsp;    STRATEGY_TEMPORAL
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Carries an explicitly prepared source value across SQL rendering boundaries.
+&nbsp; *
+&nbsp; * @property value source value, including SQL `NULL`
+&nbsp; * @property sourceType complete declared source type when the caller knows it
+&nbsp; * @property dateFormat explicit text format, which takes precedence over field and global formats
+&nbsp; * @property kind whether conversion is complete or still requires temporal encoding
+&nbsp; */
+&nbsp;internal data class PreparedValue(
+&nbsp;    val value: Any?,
+&nbsp;    val sourceType: KType?,
+&nbsp;    val dateFormat: String? = null,
+&nbsp;    val kind: PreparedValueKind
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Complete internal request carried from a safe mapping boundary to the registry.
+&nbsp; *
+&nbsp; * [targetType] always describes the logical Kotlin field/result type. A JDBC
+&nbsp; * [physicalTargetType] may constrain ENCODE output but never replaces that
+&nbsp; * logical type in public codec matching. [storage] is derived from [field] when
+&nbsp; * one is present and conflicting explicit metadata is rejected immediately.
+&nbsp; *
+&nbsp; * @property value raw input value before any semantic conversion
+&nbsp; * @property direction ENCODE for parameters/delegate writes, DECODE for safe Map/JDBC/delegate reads
+&nbsp; * @property origin the boundary creating this request
+&nbsp; * @property targetType complete logical Kotlin target type, including generic arguments and nullability
+&nbsp; * @property sourceType complete declared source type when known; runtime fallback is created only when absent
+&nbsp; * @property field optional mapped field metadata such as serialization and date format
+&nbsp; * @property storage storage protocol gate; serialized requests never fall through to built-in scalar codecs
+&nbsp; * @property physicalTargetType optional JDBC binding type used only to validate/shape encoded results
+&nbsp; * @property dialect optional SQL dialect included in temporal behavior and error context
+&nbsp; * @property dateFormat explicit caller format before field/global fallback
+&nbsp; * @property effectiveDateFormat resolved explicit, field or global date format in priority order
+&nbsp; * @property timeZone zone used for instant/local temporal conversion
+&nbsp; * @property strict whether implicit basic/temporal DECODE coercion is disabled
+&nbsp; * @property batchIndex source index included in conversion failures
+&nbsp; * @property valueName parameter or result label included in conversion failures
+&nbsp; */
+&nbsp;internal data class ValueConversionRequest(
+<b class="fc">&nbsp;    val value: Any?,</b>
+<b class="fc">&nbsp;    val direction: ValueCodecDirection,</b>
+<b class="fc">&nbsp;    val origin: ValueCodecOrigin,</b>
+<b class="fc">&nbsp;    val targetType: KType,</b>
+<b class="fc">&nbsp;    val sourceType: KType? = null,</b>
+<b class="fc">&nbsp;    val field: Field? = null,</b>
+<b class="fc">&nbsp;    val storage: ValueStorage = if (field?.serializable == true) ValueStorage.SERIALIZED else ValueStorage.NONE,</b>
+<b class="fc">&nbsp;    val physicalTargetType: KType? = null,</b>
+<b class="fc">&nbsp;    val dialect: SqlDialect? = null,</b>
+<b class="fc">&nbsp;    val dateFormat: String? = null,</b>
+<b class="fc">&nbsp;    val timeZone: ZoneId = Kronos.timeZone,</b>
+<b class="fc">&nbsp;    val strict: Boolean = Kronos.strictSetValue,</b>
+<b class="fc">&nbsp;    val batchIndex: Int? = null,</b>
+<b class="fc">&nbsp;    val valueName: String? = null</b>
+&nbsp;) {
+&nbsp;    val effectiveDateFormat: String
+<b class="fc">&nbsp;        get() = dateFormat ?: this.field?.dateFormat ?: Kronos.defaultDateFormat</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        if (field != null) {</b>
+<b class="fc">&nbsp;            val fieldStorage = if (field.serializable) ValueStorage.SERIALIZED else ValueStorage.NONE</b>
+<b class="pc">&nbsp;            require(storage == fieldStorage) {</b>
+<b class="nc">&nbsp;                &quot;Value storage $storage conflicts with field &#39;${field.name}&#39; storage $fieldStorage&quot;</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Single runtime dispatch point for all semantic value conversion.
+&nbsp; *
+&nbsp; * Registrations are immutable snapshots: closing a registration removes only
+&nbsp; * that registration from future requests, while in-flight conversions retain
+&nbsp; * the snapshot selected at their start. User codecs are checked newest first,
+&nbsp; * then the built-in codecs are checked in their fixed order.
+&nbsp; */
+&nbsp;internal object ValueCodecRegistry {
+&nbsp;    private data class Entry(val id: Long, val codec: UserRegistryCodec)
+&nbsp;
+&nbsp;    private val nextId = AtomicLong()
+&nbsp;    private val entries = AtomicReference&lt;List&lt;Entry&gt;&gt;(emptyList())
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers one user codec at the highest current priority.
+&nbsp;     *
+&nbsp;     * Later registrations are checked first. The returned handle is idempotent;
+&nbsp;     * closing it removes only this entry from future snapshots and does not
+&nbsp;     * disturb older registrations or requests already in progress.
+&nbsp;     *
+&nbsp;     * @param codec user codec to place at the highest current priority
+&nbsp;     * @return an idempotent registration handle scoped to this entry
+&nbsp;     */
+&nbsp;    fun register(codec: ValueCodec): ValueCodecRegistration {
+&nbsp;        val entry = Entry(nextId.incrementAndGet(), UserRegistryCodec(codec))
+&nbsp;        entries.updateAndGet { listOf(entry) + it }
+&nbsp;        return object : ValueCodecRegistration {
+&nbsp;            private val closed = AtomicBoolean(false)
+&nbsp;
+&nbsp;            override fun close() {
+&nbsp;                if (closed.compareAndSet(false, true)) {
+&nbsp;                    entries.updateAndGet { current -&gt; current.filterNot { it.id == entry.id } }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts one request through the single registry boundary.
+&nbsp;     *
+&nbsp;     * SQL `NULL`, serialized storage gating, user priority, built-in fallback,
+&nbsp;     * output validation and exception context are applied once here. Codec
+&nbsp;     * failures surface as [ValueMappingException] subtypes.
+&nbsp;     *
+&nbsp;     * @param request complete conversion request, including full logical KType
+&nbsp;     * @return the validated logical result or JDBC-bindable encoded scalar
+&nbsp;     * @throws ValueMappingException when no codec matches or conversion/output validation fails
+&nbsp;     */
+&nbsp;    fun convert(request: ValueConversionRequest): Any? = convert(request, null)
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts one request against an explicit generated metadata snapshot.
+&nbsp;     *
+&nbsp;     * The snapshot parameter exists for deterministic compiler/runtime tests;
+&nbsp;     * production calls resolve module-generated metadata lazily. It does not
+&nbsp;     * create a second registry or another conversion pass.
+&nbsp;     *
+&nbsp;     * @param request complete conversion request
+&nbsp;     * @param generatedTypes optional immutable generated metadata snapshot
+&nbsp;     * @return the same validated result contract as [convert]
+&nbsp;     * @throws ValueMappingException when conversion cannot produce a valid result
+&nbsp;     */
+&nbsp;    internal fun convert(
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        generatedTypes: GeneratedTypeMetadataSnapshot?
+&nbsp;    ): Any? {
+&nbsp;        val userCodecs = entries.get()
+&nbsp;        val value = request.value
+&nbsp;        val context = request.context()
+&nbsp;
+&nbsp;        if (value == null) return validateResult(null, request, enforceSerializedText = false)
+&nbsp;
+&nbsp;        if (request.direction == ValueCodecDirection.ENCODE) {
+&nbsp;            val logicalInputType = request.targetType
+&nbsp;            if (!logicalInputType.accepts(value, request.sourceType) &amp;&amp;
+&nbsp;                !canBuiltInCoerceEncode(value, request, context)
+&nbsp;            ) {
+&nbsp;                throw request.failure(
+&nbsp;                    &quot;encode input ${value::class.qualifiedName} is not assignable to logical target $logicalInputType&quot;
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        if (request.storage == ValueStorage.SERIALIZED &amp;&amp;
+&nbsp;            request.direction == ValueCodecDirection.DECODE &amp;&amp;
+&nbsp;            request.origin == ValueCodecOrigin.MAP &amp;&amp;
+&nbsp;            request.targetType.accepts(value, request.sourceType)
+&nbsp;        ) {
+&nbsp;            return value
+&nbsp;        }
+&nbsp;
+&nbsp;        var selectedCodec: RegistryCodec? = null
+&nbsp;        for ((_, codec) in userCodecs) {
+&nbsp;            if (invokeCodec(request, codec, &quot;supports&quot;) { codec.supports(value, request, context) }) {
+&nbsp;                selectedCodec = codec
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        if (selectedCodec == null &amp;&amp; request.storage == ValueStorage.NONE) {
+&nbsp;            for (codec in builtInCodecs) {
+&nbsp;                if (invokeCodec(request, codec, &quot;supports&quot;) { codec.supports(value, request, context) }) {
+&nbsp;                    selectedCodec = codec
+&nbsp;                    break
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        val codec = selectedCodec
+&nbsp;        if (codec != null) {
+&nbsp;            val result = invokeCodec(request, codec, &quot;convert&quot;) {
+&nbsp;                codec.convert(value, request, context, generatedTypes)
+&nbsp;            }
+&nbsp;            return validateResult(result, request)
+&nbsp;        }
+&nbsp;
+&nbsp;        if (request.storage == ValueStorage.NONE) {
+&nbsp;            if (request.targetType.accepts(value, request.sourceType)) {
+&nbsp;                return validateResult(value, request)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        if (request.storage == ValueStorage.SERIALIZED) {
+&nbsp;            throw request.missingSerializedCodec()
+&nbsp;        }
+&nbsp;        throw request.failure(&quot;no ValueCodec matched the conversion request&quot;)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Accepts a caller-marked final database value without codec dispatch.
+&nbsp;     *
+&nbsp;     * The caller must unwrap [PreparedValue] before this boundary. READY values
+&nbsp;     * still receive nullability, physical-target and JDBC scalar validation, but
+&nbsp;     * cannot be encoded a second time.
+&nbsp;     *
+&nbsp;     * @param request unwrapped READY value and its complete mapping context
+&nbsp;     * @return the validated database value unchanged
+&nbsp;     * @throws ValueMappingException when the prepared value violates the target contract
+&nbsp;     */
+&nbsp;    fun acceptPrepared(request: ValueConversionRequest): Any? {
+&nbsp;        return validateResult(request.value, request, enforceSerializedText = false)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Allows only the built-in scalar/temporal ENCODE coercions that preserve
+&nbsp;     * established parameter semantics after declared-type validation fails.
+&nbsp;     * Serialized values and user codecs never enter this exception path.
+&nbsp;     */
+&nbsp;    private fun canBuiltInCoerceEncode(
+&nbsp;        value: Any,
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        context: ValueCodecContext
+&nbsp;    ): Boolean = request.storage == ValueStorage.NONE &amp;&amp;
+&nbsp;        builtInEncodeCoercionCodecs.any { it.supports(value, request, context) }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Preserves contextual mapping failures and wraps arbitrary codec errors
+&nbsp;     * with the selected codec and operation without attempting another codec.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;TooGenericExceptionCaught&quot;)
+&nbsp;    private inline fun &lt;T&gt; invokeCodec(
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        codec: RegistryCodec,
+&nbsp;        operation: String,
+&nbsp;        block: () -&gt; T
+&nbsp;    ): T = try {
+&nbsp;        block()
+&nbsp;    } catch (cause: CancellationException) {
+&nbsp;        throw cause
+&nbsp;    } catch (cause: ValueMappingException) {
+&nbsp;        throw cause
+&nbsp;    } catch (cause: Error) {
+&nbsp;        throw cause
+&nbsp;    } catch (cause: Throwable) {
+&nbsp;        throw request.failure(&quot;${codec.description} failed in $operation&quot;, cause)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Validates DECODE against the logical target KType and ENCODE against its
+&nbsp;     * storage and optional physical target before enforcing the JDBC-bindable
+&nbsp;     * scalar boundary.
+&nbsp;     *
+&nbsp;     * [enforceSerializedText] is disabled for input SQL null and explicit READY
+&nbsp;     * values accepted by [acceptPrepared]. Neither case is the output of
+&nbsp;     * a semantic serialization call.
+&nbsp;     */
+&nbsp;    private fun validateResult(
+&nbsp;        result: Any?,
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        enforceSerializedText: Boolean = true
+&nbsp;    ): Any? {
+&nbsp;        if (enforceSerializedText &amp;&amp;
+&nbsp;            request.direction == ValueCodecDirection.ENCODE &amp;&amp;
+&nbsp;            request.storage == ValueStorage.SERIALIZED &amp;&amp;
+&nbsp;            result !is String
+&nbsp;        ) {
+&nbsp;            throw request.failure(
+&nbsp;                &quot;serialized codec returned ${result?.let { it::class.qualifiedName } ?: &quot;null&quot;}; &quot; +
+&nbsp;                    &quot;SERIALIZED encode must produce kotlin.String&quot;
+&nbsp;            )
+&nbsp;        }
+&nbsp;        if (result == null) {
+&nbsp;            if (!request.targetType.isMarkedNullable) {
+&nbsp;                throw request.failure(&quot;conversion produced null for a non-null target&quot;)
+&nbsp;            }
+&nbsp;            return null
+&nbsp;        }
+&nbsp;        if (request.direction == ValueCodecDirection.DECODE) {
+&nbsp;            if (!request.targetType.accepts(result)) {
+&nbsp;                throw request.failure(
+&nbsp;                    &quot;codec returned ${result::class.qualifiedName}, which is not assignable to ${request.targetType}&quot;
+&nbsp;                )
+&nbsp;            }
+&nbsp;            return result
+&nbsp;        }
+&nbsp;        request.physicalTargetType?.let { physicalType -&gt;
+&nbsp;            if (!physicalType.accepts(result)) {
+&nbsp;                throw request.failure(
+&nbsp;                    &quot;codec returned ${result::class.qualifiedName}, which is not assignable to physical target $physicalType&quot;
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;        if (!result.isBindableScalar()) {
+&nbsp;            throw request.failure(&quot;codec returned unsupported database value ${result::class.qualifiedName}&quot;)
+&nbsp;        }
+&nbsp;        return result
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Derives the runtime source KType without overwriting caller-supplied
+&nbsp; * declared type metadata.
+&nbsp; */
+&nbsp;internal val ValueConversionRequest.runtimeSourceType: KType?
+&nbsp;    get() = value?.let { it::class.starProjectedType }
+&nbsp;
+&nbsp;private fun ValueConversionRequest.context(): ValueCodecContext = ValueCodecContext(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    sourceType ?: runtimeSourceType,
+&nbsp;    targetType,
+&nbsp;    field,
+&nbsp;    storage
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates one diagnostic carrying the full conversion location and declared
+&nbsp; * source/target types so nested, projected and batch failures remain actionable.
+&nbsp; */
+&nbsp;internal fun ValueConversionRequest.failure(
+&nbsp;    detail: String,
+&nbsp;    cause: Throwable? = null
+&nbsp;): ValueMappingException = ValueMappingException(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    sourceType,
+&nbsp;    runtimeSourceType,
+&nbsp;    targetType,
+&nbsp;    field?.name,
+&nbsp;    field?.columnName,
+&nbsp;    valueName,
+&nbsp;    dialect?.family?.name,
+&nbsp;    batchIndex,
+&nbsp;    detail,
+&nbsp;    cause
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates the specialized failure used when serialized input has no decoder.
+&nbsp; *
+&nbsp; * Keeping this separate from [ValueConversionRequest.failure] preserves the
+&nbsp; * public exception subtype while carrying the same source, target, field and
+&nbsp; * batch context as every other registry failure.
+&nbsp; */
+&nbsp;private fun ValueConversionRequest.missingSerializedCodec() = MissingSerializedCodec(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    sourceType,
+&nbsp;    runtimeSourceType,
+&nbsp;    targetType,
+&nbsp;    field?.name,
+&nbsp;    field?.columnName,
+&nbsp;    valueName,
+&nbsp;    dialect?.family?.name,
+&nbsp;    batchIndex
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

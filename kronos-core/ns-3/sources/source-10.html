@@ -1,0 +1,1173 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > QuantifiedSubqueryValue</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: QuantifiedSubqueryValue (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">QuantifiedSubqueryValue</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;@file:Suppress(&quot;INVISIBLE_MEMBER&quot;, &quot;INVISIBLE_REFERENCE&quot;, &quot;UNUSED&quot;, &quot;UnusedReceiverParameter&quot;)
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.UnsafeCondition
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType
+&nbsp;import com.kotlinorm.functions.FunctionHandler
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.orm.sql.materializeSqlQuery
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlInRightOperand
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.expr.SqlQuantifiedComparisonOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlSubqueryQuantifier
+&nbsp;import com.kotlinorm.utils.codec.PreparedValue
+&nbsp;import com.kotlinorm.utils.codec.PreparedValueKind
+&nbsp;import com.kotlinorm.utils.DEFAULT_LIKE_ESCAPE
+&nbsp;import com.kotlinorm.utils.escapeLikeLiteral
+&nbsp;import kotlin.jvm.JvmName
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * kTableForCondition
+&nbsp; *
+&nbsp; * DSL Class of Kronos, which the compiler plugin use to generate the `where` code.
+&nbsp; *
+&nbsp; * @param T the type of the table
+&nbsp; */
+&nbsp;open class KTableForCondition&lt;T : KPojo&gt;(
+&nbsp;    val sourceBinding: SourceBinding? = null
+&nbsp;) {
+&nbsp;    var sourceValues: MutableMap&lt;String, Any?&gt; = mutableMapOf()
+&nbsp;    var operationType: KOperationType = KOperationType.SELECT
+&nbsp;    var sqlExpr: SqlExpr? = null
+&nbsp;    val parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf()
+&nbsp;    val parameterFields: MutableMap&lt;String, Field&gt; = mutableMapOf()
+&nbsp;    private val parameterNameCounter: MutableMap&lt;String, Int&gt; = mutableMapOf()
+&nbsp;    val f: FunctionHandler = FunctionHandler
+&nbsp;
+&nbsp;    fun addCondition(expr: SqlExpr?) {
+&nbsp;        if (expr == null) return
+&nbsp;        sqlExpr = sqlExpr?.let { SqlExpr.Binary(it, SqlBinaryOperator.And, expr) } ?: expr
+&nbsp;    }
+&nbsp;
+&nbsp;    fun column(field: Field, tableName: String? = field.tableName): SqlExpr =
+&nbsp;        field.toSourceColumn(sourceBinding, tableName)
+&nbsp;
+&nbsp;    fun bindParameter(
+&nbsp;        field: Field,
+&nbsp;        value: Any?,
+&nbsp;        baseName: String = field.parameterBaseName(),
+&nbsp;        expandAsList: Boolean = false
+&nbsp;    ): SqlExpr {
+&nbsp;        val name = allocateParameterName(baseName)
+&nbsp;        parameterValues[name] = value
+&nbsp;        parameterFields[name] = field
+&nbsp;        return SqlExpr.Parameter(SqlParameter.Named(name), expandAsList = expandAsList)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun andExpr(children: List&lt;SqlExpr?&gt;): SqlExpr? =
+&nbsp;        logicalExpr(SqlBinaryOperator.And, children)
+&nbsp;
+&nbsp;    fun orExpr(children: List&lt;SqlExpr?&gt;): SqlExpr? =
+&nbsp;        logicalExpr(SqlBinaryOperator.Or, children)
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun &lt;Element&gt; iterableAnyConditionExpr(
+&nbsp;        values: Iterable&lt;Element&gt;,
+&nbsp;        predicate: (Element) -&gt; SqlExpr?,
+&nbsp;        negated: Boolean
+&nbsp;    ): SqlExpr =
+&nbsp;        iterableConditionExpr(values, predicate, if (negated) SqlBinaryOperator.And else SqlBinaryOperator.Or)
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun &lt;Element&gt; iterableAllConditionExpr(
+&nbsp;        values: Iterable&lt;Element&gt;,
+&nbsp;        predicate: (Element) -&gt; SqlExpr?,
+&nbsp;        negated: Boolean
+&nbsp;    ): SqlExpr =
+&nbsp;        iterableConditionExpr(values, predicate, if (negated) SqlBinaryOperator.Or else SqlBinaryOperator.And)
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun &lt;Element&gt; iterableNoneConditionExpr(
+&nbsp;        values: Iterable&lt;Element&gt;,
+&nbsp;        predicate: (Element) -&gt; SqlExpr?,
+&nbsp;        negated: Boolean
+&nbsp;    ): SqlExpr =
+&nbsp;        iterableConditionExpr(values, predicate, if (negated) SqlBinaryOperator.Or else SqlBinaryOperator.And)
+&nbsp;
+&nbsp;    private fun &lt;Element&gt; iterableConditionExpr(
+&nbsp;        values: Iterable&lt;Element&gt;,
+&nbsp;        predicate: (Element) -&gt; SqlExpr?,
+&nbsp;        operator: SqlBinaryOperator
+&nbsp;    ): SqlExpr {
+&nbsp;        val children = values.map(predicate).filterNotNull()
+&nbsp;        if (children.isEmpty()) return SqlExpr.BooleanLiteral(false)
+&nbsp;        return children.drop(1).fold(children.first()) { left, right -&gt; SqlExpr.Binary(left, operator, right) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun logicalExpr(operator: SqlBinaryOperator, children: List&lt;SqlExpr?&gt;): SqlExpr? {
+&nbsp;        val items = children.filterNotNull()
+&nbsp;        if (items.isEmpty()) return null
+&nbsp;        return items.drop(1).fold(items.first()) { left, right -&gt; SqlExpr.Binary(left, operator, right) }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun rawConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? {
+&nbsp;        return when (value) {
+&nbsp;            null -&gt; null
+&nbsp;            is SqlExpr -&gt; value
+&nbsp;            is Boolean -&gt; SqlExpr.BooleanLiteral(if (not) !value else value)
+&nbsp;            is String -&gt; SqlExpr.UnsafeRaw(value)
+&nbsp;            else -&gt; SqlExpr.StringLiteral(value.toString())
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun isNullConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? {
+&nbsp;        val expr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        return SqlExpr.Binary(expr, SqlBinaryOperator.Is(withNot = not), SqlExpr.NullLiteral)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun equalConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        comparisonConditionExpr(
+&nbsp;            field,
+&nbsp;            left,
+&nbsp;            not,
+&nbsp;            value,
+&nbsp;            tableName,
+&nbsp;            noValueStrategyType,
+&nbsp;            positiveOperator = SqlBinaryOperator.Equal,
+&nbsp;            negativeOperator = SqlBinaryOperator.NotEqual,
+&nbsp;            quantifiedOperator = SqlQuantifiedComparisonOperator.Equal
+&nbsp;        ) { NoValueStrategyType.JudgeNull }
+&nbsp;
+&nbsp;    fun greaterThanConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        comparisonConditionExpr(
+&nbsp;            field,
+&nbsp;            left,
+&nbsp;            not,
+&nbsp;            value,
+&nbsp;            tableName,
+&nbsp;            noValueStrategyType,
+&nbsp;            positiveOperator = SqlBinaryOperator.GreaterThan,
+&nbsp;            negativeOperator = SqlBinaryOperator.LessThanEqual,
+&nbsp;            quantifiedOperator = SqlQuantifiedComparisonOperator.GreaterThan
+&nbsp;        ) { NoValueStrategyType.False }
+&nbsp;
+&nbsp;    fun greaterThanOrEqualConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        comparisonConditionExpr(
+&nbsp;            field,
+&nbsp;            left,
+&nbsp;            not,
+&nbsp;            value,
+&nbsp;            tableName,
+&nbsp;            noValueStrategyType,
+&nbsp;            positiveOperator = SqlBinaryOperator.GreaterThanEqual,
+&nbsp;            negativeOperator = SqlBinaryOperator.LessThan,
+&nbsp;            quantifiedOperator = SqlQuantifiedComparisonOperator.GreaterThanEqual
+&nbsp;        ) { NoValueStrategyType.False }
+&nbsp;
+&nbsp;    fun lessThanConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        comparisonConditionExpr(
+&nbsp;            field,
+&nbsp;            left,
+&nbsp;            not,
+&nbsp;            value,
+&nbsp;            tableName,
+&nbsp;            noValueStrategyType,
+&nbsp;            positiveOperator = SqlBinaryOperator.LessThan,
+&nbsp;            negativeOperator = SqlBinaryOperator.GreaterThanEqual,
+&nbsp;            quantifiedOperator = SqlQuantifiedComparisonOperator.LessThan
+&nbsp;        ) { NoValueStrategyType.False }
+&nbsp;
+&nbsp;    fun lessThanOrEqualConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        comparisonConditionExpr(
+&nbsp;            field,
+&nbsp;            left,
+&nbsp;            not,
+&nbsp;            value,
+&nbsp;            tableName,
+&nbsp;            noValueStrategyType,
+&nbsp;            positiveOperator = SqlBinaryOperator.LessThanEqual,
+&nbsp;            negativeOperator = SqlBinaryOperator.GreaterThan,
+&nbsp;            quantifiedOperator = SqlQuantifiedComparisonOperator.LessThanEqual
+&nbsp;        ) { NoValueStrategyType.False }
+&nbsp;
+&nbsp;    fun likeConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? {
+&nbsp;        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        val noValueStrategy = noValueStrategy(
+&nbsp;            value,
+&nbsp;            emptyCollectionIsNoValue = false,
+&nbsp;            explicit = noValueStrategyType,
+&nbsp;            updateDeleteStrategy = { trueWhenNegatedFalseWhenPositive(not) }
+&nbsp;        )
+&nbsp;        if (noValueStrategy != null) {
+&nbsp;            return when (noValueStrategy) {
+&nbsp;                NoValueStrategyType.Ignore -&gt; null
+&nbsp;                NoValueStrategyType.False -&gt; SqlExpr.BooleanLiteral(false)
+&nbsp;                NoValueStrategyType.True -&gt; SqlExpr.BooleanLiteral(true)
+&nbsp;                NoValueStrategyType.JudgeNull -&gt; SqlExpr.Binary(leftExpr, SqlBinaryOperator.Is(withNot = not), SqlExpr.NullLiteral)
+&nbsp;                NoValueStrategyType.Auto -&gt; null
+&nbsp;            }
+&nbsp;        }
+&nbsp;        val baseField = field ?: Field(&quot;value&quot;, &quot;value&quot;)
+&nbsp;        val rightExpr = value.toLikeConditionValueExpr(baseField)
+&nbsp;        return SqlExpr.Like(leftExpr, rightExpr, withNot = not)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun startsWithConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        literalLikeConditionExpr(field, left, not, value, tableName, noValueStrategyType, prefixWildcard = false, suffixWildcard = true)
+&nbsp;
+&nbsp;    fun endsWithConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        literalLikeConditionExpr(field, left, not, value, tableName, noValueStrategyType, prefixWildcard = true, suffixWildcard = false)
+&nbsp;
+&nbsp;    fun containsConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? =
+&nbsp;        literalLikeConditionExpr(field, left, not, value, tableName, noValueStrategyType, prefixWildcard = true, suffixWildcard = true)
+&nbsp;
+&nbsp;    private fun literalLikeConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String?,
+&nbsp;        noValueStrategyType: NoValueStrategyType?,
+&nbsp;        prefixWildcard: Boolean,
+&nbsp;        suffixWildcard: Boolean
+&nbsp;    ): SqlExpr? {
+&nbsp;        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        val noValueStrategy = noValueStrategy(
+&nbsp;            value,
+&nbsp;            emptyCollectionIsNoValue = false,
+&nbsp;            explicit = noValueStrategyType,
+&nbsp;            updateDeleteStrategy = { trueWhenNegatedFalseWhenPositive(not) }
+&nbsp;        )
+&nbsp;        if (noValueStrategy != null) {
+&nbsp;            return when (noValueStrategy) {
+&nbsp;                NoValueStrategyType.Ignore -&gt; null
+&nbsp;                NoValueStrategyType.False -&gt; SqlExpr.BooleanLiteral(false)
+&nbsp;                NoValueStrategyType.True -&gt; SqlExpr.BooleanLiteral(true)
+&nbsp;                NoValueStrategyType.JudgeNull -&gt; SqlExpr.Binary(leftExpr, SqlBinaryOperator.Is(withNot = not), SqlExpr.NullLiteral)
+&nbsp;                NoValueStrategyType.Auto -&gt; null
+&nbsp;            }
+&nbsp;        }
+&nbsp;        val baseField = field ?: Field(&quot;value&quot;, &quot;value&quot;)
+&nbsp;        val rightExpr = value.toLiteralLikeConditionValueExpr(baseField, prefixWildcard, suffixWildcard)
+&nbsp;        return SqlExpr.Like(
+&nbsp;            leftExpr,
+&nbsp;            rightExpr,
+&nbsp;            escape = SqlExpr.StringLiteral(DEFAULT_LIKE_ESCAPE.toString()),
+&nbsp;            withNot = not
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun regexpConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? {
+&nbsp;        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        val noValueStrategy = noValueStrategy(
+&nbsp;            value,
+&nbsp;            emptyCollectionIsNoValue = false,
+&nbsp;            explicit = noValueStrategyType,
+&nbsp;            updateDeleteStrategy = { trueWhenNegatedFalseWhenPositive(not) }
+&nbsp;        )
+&nbsp;        if (noValueStrategy != null) return noValueSqlExpr(leftExpr, noValueStrategy, not)
+&nbsp;        val baseField = field ?: Field(&quot;value&quot;, &quot;value&quot;)
+&nbsp;        val rightExpr = value.toConditionValueExpr(baseField, baseField.parameterBaseName(&quot;Pattern&quot;))
+&nbsp;        return SqlExpr.Binary(leftExpr, if (not) SqlBinaryOperator.NotRegexp else SqlBinaryOperator.Regexp, rightExpr)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun inConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? {
+&nbsp;        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        val noValueStrategy = noValueStrategy(
+&nbsp;            value,
+&nbsp;            emptyCollectionIsNoValue = true,
+&nbsp;            explicit = noValueStrategyType,
+&nbsp;            updateDeleteStrategy = { trueWhenNegatedFalseWhenPositive(not) },
+&nbsp;            queryStrategy = {
+&nbsp;                if (value.isEmptyArrayOrCollection()) trueWhenNegatedFalseWhenPositive(not) else NoValueStrategyType.Ignore
+&nbsp;            }
+&nbsp;        )
+&nbsp;        if (noValueStrategy != null) return noValueSqlExpr(leftExpr, noValueStrategy, not)
+&nbsp;        val baseField = field ?: Field(&quot;value&quot;, &quot;value&quot;)
+&nbsp;        return SqlExpr.In(leftExpr, value.toInRightOperand(baseField), withNot = not)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun betweenConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String? = field?.tableName,
+&nbsp;        noValueStrategyType: NoValueStrategyType? = null
+&nbsp;    ): SqlExpr? {
+&nbsp;        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        val noValueStrategy = noValueStrategy(
+&nbsp;            value,
+&nbsp;            emptyCollectionIsNoValue = false,
+&nbsp;            explicit = noValueStrategyType,
+&nbsp;            updateDeleteStrategy = { trueWhenNegatedFalseWhenPositive(not) }
+&nbsp;        )
+&nbsp;        if (noValueStrategy != null) return noValueSqlExpr(leftExpr, noValueStrategy, not)
+&nbsp;        return value.toBetweenExpr(leftExpr, not)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun comparisonConditionExpr(
+&nbsp;        field: Field?,
+&nbsp;        left: SqlExpr?,
+&nbsp;        not: Boolean,
+&nbsp;        value: Any?,
+&nbsp;        tableName: String?,
+&nbsp;        noValueStrategyType: NoValueStrategyType?,
+&nbsp;        positiveOperator: SqlBinaryOperator,
+&nbsp;        negativeOperator: SqlBinaryOperator,
+&nbsp;        quantifiedOperator: SqlQuantifiedComparisonOperator,
+&nbsp;        updateDeleteNoValueStrategy: () -&gt; NoValueStrategyType
+&nbsp;    ): SqlExpr? {
+&nbsp;        val leftExpr = left ?: field?.let { column(it, tableName) } ?: return null
+&nbsp;        val noValueStrategy = noValueStrategy(
+&nbsp;            value,
+&nbsp;            emptyCollectionIsNoValue = false,
+&nbsp;            explicit = noValueStrategyType,
+&nbsp;            updateDeleteStrategy = updateDeleteNoValueStrategy
+&nbsp;        )
+&nbsp;        if (noValueStrategy != null) return noValueSqlExpr(leftExpr, noValueStrategy, not)
+&nbsp;        if (value is QuantifiedSubqueryValue) {
+&nbsp;            return quantifiedComparisonExpr(leftExpr, quantifiedOperator, value)
+&nbsp;        }
+&nbsp;        val baseField = field ?: Field(&quot;value&quot;, &quot;value&quot;)
+&nbsp;        val rightExpr = value.toConditionValueExpr(baseField, baseField.comparisonParameterBaseName(positiveOperator))
+&nbsp;        return SqlExpr.Binary(leftExpr, if (not) negativeOperator else positiveOperator, rightExpr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun noValueStrategy(
+&nbsp;        value: Any?,
+&nbsp;        emptyCollectionIsNoValue: Boolean,
+&nbsp;        explicit: NoValueStrategyType?,
+&nbsp;        updateDeleteStrategy: () -&gt; NoValueStrategyType,
+&nbsp;        queryStrategy: () -&gt; NoValueStrategyType = { NoValueStrategyType.Ignore }
+&nbsp;    ): NoValueStrategyType? {
+&nbsp;        val noValue = value == null || (emptyCollectionIsNoValue &amp;&amp; value.isEmptyArrayOrCollection())
+&nbsp;        if (!noValue) return null
+&nbsp;        if (explicit != null &amp;&amp; explicit != NoValueStrategyType.Auto) return explicit
+&nbsp;        return when (operationType) {
+&nbsp;            KOperationType.UPDATE, KOperationType.DELETE -&gt; updateDeleteStrategy()
+&nbsp;            else -&gt; queryStrategy()
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun trueWhenNegatedFalseWhenPositive(not: Boolean): NoValueStrategyType =
+&nbsp;        if (not) NoValueStrategyType.True else NoValueStrategyType.False
+&nbsp;
+&nbsp;    private fun noValueSqlExpr(leftExpr: SqlExpr, strategy: NoValueStrategyType, not: Boolean): SqlExpr? =
+&nbsp;        when (strategy) {
+&nbsp;            NoValueStrategyType.Ignore -&gt; null
+&nbsp;            NoValueStrategyType.False -&gt; SqlExpr.BooleanLiteral(false)
+&nbsp;            NoValueStrategyType.True -&gt; SqlExpr.BooleanLiteral(true)
+&nbsp;            NoValueStrategyType.JudgeNull -&gt; SqlExpr.Binary(leftExpr, SqlBinaryOperator.Is(withNot = not), SqlExpr.NullLiteral)
+&nbsp;            NoValueStrategyType.Auto -&gt; null
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Any?.isEmptyArrayOrCollection(): Boolean =
+&nbsp;        when (this) {
+&nbsp;            is Collection&lt;*&gt; -&gt; isEmpty()
+&nbsp;            is Array&lt;*&gt; -&gt; isEmpty()
+&nbsp;            is BooleanArray -&gt; isEmpty()
+&nbsp;            is ByteArray -&gt; isEmpty()
+&nbsp;            is ShortArray -&gt; isEmpty()
+&nbsp;            is IntArray -&gt; isEmpty()
+&nbsp;            is LongArray -&gt; isEmpty()
+&nbsp;            is FloatArray -&gt; isEmpty()
+&nbsp;            is DoubleArray -&gt; isEmpty()
+&nbsp;            is CharArray -&gt; isEmpty()
+&nbsp;            else -&gt; false
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Field.parameterBaseName(suffix: String = &quot;&quot;): String =
+&nbsp;        name.ifBlank { columnName } + suffix
+&nbsp;
+&nbsp;    private fun Field.comparisonParameterBaseName(operator: SqlBinaryOperator): String =
+&nbsp;        when (operator) {
+&nbsp;            SqlBinaryOperator.GreaterThan,
+&nbsp;            SqlBinaryOperator.GreaterThanEqual -&gt; parameterBaseName(&quot;Min&quot;)
+&nbsp;            SqlBinaryOperator.LessThan,
+&nbsp;            SqlBinaryOperator.LessThanEqual -&gt; parameterBaseName(&quot;Max&quot;)
+&nbsp;            else -&gt; parameterBaseName()
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Any?.toConditionValueExpr(field: Field, parameterBaseName: String = field.parameterBaseName()): SqlExpr =
+&nbsp;        when (this) {
+&nbsp;            is SqlExpr -&gt; this
+&nbsp;            is KronosFunctionExpr -&gt; expr
+&nbsp;            is Field -&gt; column(this)
+&nbsp;            is KSelectable&lt;*&gt; -&gt; SqlExpr.Subquery(
+&nbsp;                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            is QuantifiedSubqueryValue -&gt; SqlExpr.Subquery(
+&nbsp;                query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            null -&gt; SqlExpr.NullLiteral
+&nbsp;            else -&gt; bindParameter(field, this, parameterBaseName)
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Any?.toLikeConditionValueExpr(field: Field): SqlExpr =
+&nbsp;        when (this) {
+&nbsp;            is SqlExpr -&gt; this
+&nbsp;            is KronosFunctionExpr -&gt; expr
+&nbsp;            is Field -&gt; column(this)
+&nbsp;            is KSelectable&lt;*&gt; -&gt; SqlExpr.Subquery(
+&nbsp;                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            is QuantifiedSubqueryValue -&gt; SqlExpr.Subquery(
+&nbsp;                query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            null -&gt; SqlExpr.NullLiteral
+&nbsp;            else -&gt; bindParameter(
+&nbsp;                field,
+&nbsp;                PreparedValue(
+&nbsp;                    value = toString(),
+&nbsp;                    sourceType = typeOf&lt;String&gt;(),
+&nbsp;                    kind = PreparedValueKind.READY_DATABASE_VALUE
+&nbsp;                ),
+&nbsp;                field.parameterBaseName()
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Any?.toLiteralLikeConditionValueExpr(
+&nbsp;        field: Field,
+&nbsp;        prefixWildcard: Boolean,
+&nbsp;        suffixWildcard: Boolean
+&nbsp;    ): SqlExpr =
+&nbsp;        when (this) {
+&nbsp;            is SqlExpr -&gt; this
+&nbsp;            is KronosFunctionExpr -&gt; expr
+&nbsp;            is Field -&gt; column(this)
+&nbsp;            is KSelectable&lt;*&gt; -&gt; SqlExpr.Subquery(
+&nbsp;                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            is QuantifiedSubqueryValue -&gt; SqlExpr.Subquery(
+&nbsp;                query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            null -&gt; SqlExpr.NullLiteral
+&nbsp;            else -&gt; bindParameter(
+&nbsp;                field,
+&nbsp;                PreparedValue(
+&nbsp;                    value = toLiteralLikePattern(prefixWildcard, suffixWildcard),
+&nbsp;                    sourceType = typeOf&lt;String&gt;(),
+&nbsp;                    kind = PreparedValueKind.READY_DATABASE_VALUE
+&nbsp;                ),
+&nbsp;                field.parameterBaseName()
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Any.toLiteralLikePattern(prefixWildcard: Boolean, suffixWildcard: Boolean): String =
+&nbsp;        buildString {
+&nbsp;            if (prefixWildcard) append(&#39;%&#39;)
+&nbsp;            append(escapeLikeLiteral(this@toLiteralLikePattern.toString()))
+&nbsp;            if (suffixWildcard) append(&#39;%&#39;)
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun Any?.toInRightOperand(field: Field): SqlInRightOperand =
+&nbsp;        when (this) {
+&nbsp;            is KSelectable&lt;*&gt; -&gt; SqlInRightOperand.Subquery(
+&nbsp;                materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;            )
+&nbsp;            is Iterable&lt;*&gt; -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is Array&lt;*&gt; -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is BooleanArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is ByteArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is CharArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is DoubleArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is FloatArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is IntArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is LongArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            is ShortArray -&gt; SqlInRightOperand.Values(listOf(bindListParameter(field, this)))
+&nbsp;            else -&gt; SqlInRightOperand.Values(listOf(toConditionValueExpr(field)))
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun bindListParameter(field: Field, values: Any?): SqlExpr =
+&nbsp;        bindParameter(field, values, field.parameterBaseName(&quot;List&quot;), expandAsList = true)
+&nbsp;
+&nbsp;    private fun Any?.toBetweenExpr(leftExpr: SqlExpr, not: Boolean): SqlExpr? {
+&nbsp;        val range = this as? ClosedRange&lt;*&gt; ?: return null
+&nbsp;        return SqlExpr.Between(leftExpr, range.start.toLiteralExpr(), range.endInclusive.toLiteralExpr(), withNot = not)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun Any?.toLiteralExpr(): SqlExpr =
+&nbsp;        when (this) {
+&nbsp;            is SqlExpr -&gt; this
+&nbsp;            is KronosFunctionExpr -&gt; expr
+&nbsp;            is Field -&gt; column(this)
+&nbsp;            null -&gt; SqlExpr.NullLiteral
+&nbsp;            is String -&gt; SqlExpr.StringLiteral(this)
+&nbsp;            is Boolean -&gt; SqlExpr.BooleanLiteral(this)
+&nbsp;            is Number -&gt; SqlExpr.NumberLiteral(toString())
+&nbsp;            is Char -&gt; SqlExpr.StringLiteral(toString())
+&nbsp;            else -&gt; SqlExpr.StringLiteral(toString())
+&nbsp;        }
+&nbsp;
+&nbsp;    fun quantifiedComparisonExpr(
+&nbsp;        left: SqlExpr,
+&nbsp;        operator: SqlQuantifiedComparisonOperator,
+&nbsp;        value: QuantifiedSubqueryValue
+&nbsp;    ): SqlExpr =
+&nbsp;        SqlExpr.QuantifiedComparisonPredicate(
+&nbsp;            expr = left,
+&nbsp;            operator = operator,
+&nbsp;            quantifier = value.quantifier,
+&nbsp;            query = value.query.materializeSqlQuery(parameterValues, parameterFields = parameterFields)
+&nbsp;        )
+&nbsp;
+&nbsp;    fun existsExpr(query: KSelectable&lt;*&gt;, not: Boolean): SqlExpr =
+&nbsp;        SqlExpr.ExistsPredicate(
+&nbsp;            query.materializeSqlQuery(parameterValues, parameterFields = parameterFields),
+&nbsp;            withNot = not
+&nbsp;        )
+&nbsp;
+&nbsp;    fun tupleExpr(fields: List&lt;Field&gt;): SqlExpr =
+&nbsp;        SqlExpr.Tuple(fields.map { column(it) })
+&nbsp;
+&nbsp;    private fun allocateParameterName(baseName: String): String {
+&nbsp;        if (!parameterValues.containsKey(baseName)) {
+&nbsp;            return baseName
+&nbsp;        }
+&nbsp;        var count = parameterNameCounter.getOrDefault(baseName, 0)
+&nbsp;        var candidate: String
+&nbsp;        do {
+&nbsp;            count++
+&nbsp;            candidate = &quot;$baseName@$count&quot;
+&nbsp;        } while (parameterValues.containsKey(candidate))
+&nbsp;        parameterNameCounter[baseName] = count
+&nbsp;        return candidate
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun Any?.plus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Any? = null
+&nbsp;
+&nbsp;    operator fun Any?.minus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    operator fun Any?.times(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    operator fun Any?.div(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    operator fun Any?.rem(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Retrieves the source value based on the provided &#39;fieldName&#39;.
+&nbsp;     *
+&nbsp;     * @param fieldName the name of the field to retrieve the value for
+&nbsp;     * @return the value associated with the provided &#39;fieldName&#39;, or null if not found
+&nbsp;     */
+&nbsp;    fun sourceValueByFieldName(fieldName: String): Any? {
+&nbsp;        return sourceValues[fieldName]
+&nbsp;    }
+&nbsp;
+&nbsp;    val &lt;T : Any?&gt; T?.value get() = this
+&nbsp;
+&nbsp;    @get:JvmName(&quot;valueN&quot;)
+&nbsp;    val &lt;T: Any&gt; T.value get() = this
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the iterable contains the element
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * This expression always return `true` whether the iterable contains the element or not
+&nbsp;     *
+&nbsp;     * @param other the element to check
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;
+&nbsp;    operator fun &lt;K&gt; Iterable&lt;K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true
+&nbsp;
+&nbsp;    @JvmName(&quot;containsOutK&quot;)
+&nbsp;    operator fun &lt;K&gt; Collection&lt;K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true
+&nbsp;
+&nbsp;    operator fun &lt;K&gt; Array&lt;K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true
+&nbsp;
+&nbsp;    @JvmName(&quot;containsOutK&quot;)
+&nbsp;    operator fun &lt;K&gt; Array&lt;out K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true
+&nbsp;
+&nbsp;    operator fun IntArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
+&nbsp;
+&nbsp;    operator fun LongArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
+&nbsp;
+&nbsp;    operator fun FloatArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
+&nbsp;
+&nbsp;    operator fun DoubleArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
+&nbsp;
+&nbsp;    operator fun CharArray?.contains(other: @kotlin.internal.NoInfer Char?) = true
+&nbsp;
+&nbsp;    operator fun BooleanArray?.contains(other: @kotlin.internal.NoInfer Boolean?) = true
+&nbsp;
+&nbsp;    operator fun CharSequence?.contains(other: @kotlin.internal.NoInfer Char?) = true
+&nbsp;    
+&nbsp;    operator fun CharSequence?.contains(other: CharSequence): Boolean = true
+&nbsp;
+&nbsp;    @JvmName(&quot;containsSelectable&quot;)
+&nbsp;    operator fun KSelectable&lt;*&gt;?.contains(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?) = true
+&nbsp;
+&nbsp;    fun exists(@Suppress(&quot;UNUSED_PARAMETER&quot;) query: KSelectable&lt;*&gt;): Boolean = true
+&nbsp;
+&nbsp;    fun &lt;T&gt; any(query: KSelectable&lt;*&gt;): T? =
+&nbsp;        QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.Any) as T?
+&nbsp;
+&nbsp;    fun &lt;T&gt; some(query: KSelectable&lt;*&gt;): T? =
+&nbsp;        QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.Some) as T?
+&nbsp;
+&nbsp;    fun &lt;T&gt; all(query: KSelectable&lt;*&gt;): T? =
+&nbsp;        QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.All) as T?
+&nbsp;
+&nbsp;    val CharSequence?.contains get() = true
+&nbsp;
+&nbsp;    fun &lt;T&gt; T?.cast() = this as Any?
+&nbsp;
+&nbsp;    operator fun KPojo.minus(field: Any?) = this
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the Comparable&lt;*&gt; is greater than the specified
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return 1 whether which one is greater
+&nbsp;     *
+&nbsp;     * @param other The Comparable&lt;*&gt; to compare with.
+&nbsp;     * @param T The type of the Comparable&lt;*&gt; to compare with.
+&nbsp;     * @return `1`
+&nbsp;     */
+&nbsp;    operator fun &lt;T&gt; Comparable&lt;T&gt;?.compareTo(other: Comparable&lt;T&gt;?) = 1
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the Comparable&lt;*&gt; is greater than the specified
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return 1 whether which one is greater
+&nbsp;     *
+&nbsp;     * @param other The Comparable&lt;*&gt; to compare with.
+&nbsp;     * @param T The type of the Comparable&lt;*&gt; to compare with.
+&nbsp;     * @param R The type of the Comparable&lt;*&gt; to compare with.
+&nbsp;     * @return `1`
+&nbsp;     */
+&nbsp;    @JvmName(&quot;compareToDifferentType&quot;)
+&nbsp;    @UnsafeCondition(&quot;It&#39;s not safe to compare different Type, use `.cast()` to declare that the expression is safe.&quot;)
+&nbsp;    operator fun &lt;T, R&gt; Comparable&lt;T&gt;?.compareTo(other: Comparable&lt;R&gt;?) = 1
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the Comparable&lt;*&gt; is greater than the specified
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return 1 whether which one is greater
+&nbsp;     *
+&nbsp;     * @param other The Comparable&lt;*&gt; to compare with.
+&nbsp;     * @return `1`
+&nbsp;     */
+&nbsp;    operator fun Any?.compareTo(other: Any?) = 1
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Keeps this SQL predicate when [boolean] is true.
+&nbsp;     *
+&nbsp;     * This is a Kronos condition-DSL operator rather than Kotlin&#39;s standard [kotlin.takeIf]. The nullable
+&nbsp;     * receiver represents the SQL predicate produced by the expression on the left. [boolean] is evaluated
+&nbsp;     * as ordinary Kotlin code and does not become part of the generated SQL.
+&nbsp;     *
+&nbsp;     * Example: `where { (it.age &gt;= minAge).takeIf(minAge != null) }`
+&nbsp;     *
+&nbsp;     * @param boolean whether this SQL predicate should be kept
+&nbsp;     * @return a compiler-rewritten placeholder value
+&nbsp;     */
+&nbsp;    fun Boolean?.takeIf(boolean: Boolean) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Keeps this SQL predicate when [boolean] is false.
+&nbsp;     *
+&nbsp;     * This is a Kronos condition-DSL operator rather than Kotlin&#39;s standard [kotlin.takeUnless]. The nullable
+&nbsp;     * receiver represents the SQL predicate produced by the expression on the left. [boolean] is evaluated
+&nbsp;     * as ordinary Kotlin code and does not become part of the generated SQL.
+&nbsp;     *
+&nbsp;     * Example: `where { (it.status == 0).takeUnless(includeInactive) }`
+&nbsp;     *
+&nbsp;     * @param boolean whether this SQL predicate should be omitted
+&nbsp;     * @return a compiler-rewritten placeholder value
+&nbsp;     */
+&nbsp;    fun Boolean?.takeUnless(boolean: Boolean) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is like the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is like the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    infix fun Comparable&lt;*&gt;?.like(other: String?) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is not like the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is not like the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    infix fun Comparable&lt;*&gt;?.notLike(other: String?) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is between the specified range.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is between the range or not
+&nbsp;     *
+&nbsp;     * @param other The range to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    infix fun Comparable&lt;*&gt;?.between(other: ClosedRange&lt;*&gt;?) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is not between the specified range.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is not between the range or not
+&nbsp;     *
+&nbsp;     * @param other The range to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    infix fun Comparable&lt;*&gt;?.notBetween(other: ClosedRange&lt;*&gt;?) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value matches the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value matches the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    infix fun Comparable&lt;*&gt;?.startsWith(other: String?) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value matches the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value matches the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    infix fun Comparable&lt;*&gt;?.endsWith(other: String?) = true
+&nbsp;
+&nbsp;    infix fun Comparable&lt;*&gt;?.regexp(other: String?) = true
+&nbsp;
+&nbsp;    infix fun Comparable&lt;*&gt;?.notRegexp(other: String?) = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    fun String?.asSql() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    fun Boolean?.asSql() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.eq get() = true
+&nbsp;
+&nbsp;    val KPojo.eq get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.neq get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.like get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.notLike get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.startsWith get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.endsWith get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Any?.isNull get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Any?.notNull get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.lt get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.gt get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.le get() = true
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin condition rewriting
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;    val Comparable&lt;*&gt;?.ge get() = true
+&nbsp;
+&nbsp;    val Comparable&lt;*&gt;?.regexp get() = true
+&nbsp;
+&nbsp;    val Comparable&lt;*&gt;?.notRegexp get() = true
+&nbsp;
+&nbsp;    fun buildContainsStr(str: String?): String? {
+&nbsp;        return if(str == null) null
+&nbsp;        else &quot;%$str%&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Runs the given block on a new instance of [KTableForCondition] with the given [T] object as the data source.
+&nbsp;         *
+&nbsp;         * @param T The type of the KPojo object.
+&nbsp;         * @param block The block of code to be applied to the [KTableForCondition] instance.
+&nbsp;         * @return The resulting [KTableForCondition] instance after applying the block.
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; T.afterFilter(block: KTableForCondition&lt;T&gt;.(T) -&gt; Unit) =
+&nbsp;            KTableForCondition&lt;T&gt;().block(this)
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; T.afterFilter(
+&nbsp;            sourceBinding: SourceBinding?,
+&nbsp;            block: KTableForCondition&lt;T&gt;.(T) -&gt; Unit
+&nbsp;        ) = KTableForCondition&lt;T&gt;(sourceBinding).block(this)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;data class QuantifiedSubqueryValue(</b>
+<b class="fc">&nbsp;    val query: KSelectable&lt;*&gt;,</b>
+<b class="fc">&nbsp;    val quantifier: SqlSubqueryQuantifier</b>
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

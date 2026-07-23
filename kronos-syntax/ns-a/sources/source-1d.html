@@ -1,0 +1,359 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlTablePeriodForMode</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.table</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlTablePeriodForMode (com.kotlinorm.syntax.table)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+  <tr>
+    <td class="name">SqlTablePeriodForMode$SystemTimeAsOf</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlTablePeriodForMode$SystemTimeBetween</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlTablePeriodForMode$SystemTimeFrom</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (36/36)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.table
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonExistsErrorBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonOutputFormat
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonQueryEmptyBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonQueryErrorBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonQueryQuotesBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonQueryWrapperBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;
+&nbsp;/**
+&nbsp; * sqala-style table source tree. Advanced SQL table constructs are modelled explicitly.
+&nbsp; */
+&nbsp;sealed interface SqlTable : SqlNode {
+&nbsp;    data class Ident(
+&nbsp;        val name: String,
+&nbsp;        val alias: SqlTableAlias? = null,
+&nbsp;        val periodForMode: SqlTablePeriodForMode? = null,
+&nbsp;        val matchRecognize: SqlMatchRecognize? = null,
+&nbsp;        val sample: SqlTableSample? = null,
+&nbsp;        val identifier: SqlIdentifier = SqlIdentifier.of(name)
+&nbsp;    ) : SqlTable
+&nbsp;
+&nbsp;    data class Func(
+&nbsp;        val withLateral: Boolean = false,
+&nbsp;        val name: String,
+&nbsp;        val args: List&lt;SqlExpr&gt; = emptyList(),
+&nbsp;        val withOrdinality: Boolean = false,
+&nbsp;        val alias: SqlTableAlias? = null,
+&nbsp;        val matchRecognize: SqlMatchRecognize? = null,
+&nbsp;        val identifier: SqlIdentifier = SqlIdentifier.of(name)
+&nbsp;    ) : SqlTable
+&nbsp;
+&nbsp;    data class Subquery(
+&nbsp;        val withLateral: Boolean = false,
+&nbsp;        val query: SqlQuery,
+&nbsp;        val alias: SqlTableAlias? = null,
+&nbsp;        val matchRecognize: SqlMatchRecognize? = null
+&nbsp;    ) : SqlTable
+&nbsp;
+&nbsp;    data class Join(
+&nbsp;        val left: SqlTable,
+&nbsp;        val joinType: SqlJoinType,
+&nbsp;        val right: SqlTable,
+&nbsp;        val condition: SqlJoinCondition? = null
+&nbsp;    ) : SqlTable
+&nbsp;
+&nbsp;    data class Json(
+&nbsp;        val withLateral: Boolean = false,
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val path: SqlExpr,
+&nbsp;        val pathAlias: String? = null,
+&nbsp;        val passingItems: List&lt;com.kotlinorm.syntax.expr.SqlJsonPassing&gt; = emptyList(),
+&nbsp;        val columns: List&lt;SqlJsonColumn&gt;,
+&nbsp;        val onError: SqlJsonErrorBehavior? = null,
+&nbsp;        val alias: SqlTableAlias? = null,
+&nbsp;        val matchRecognize: SqlMatchRecognize? = null
+&nbsp;    ) : SqlTable {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;JSON_TABLE requires at least one column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Graph(
+&nbsp;        val withLateral: Boolean = false,
+&nbsp;        val name: String,
+&nbsp;        val matchMode: SqlGraphMatchMode? = null,
+&nbsp;        val patterns: List&lt;SqlGraphPattern&gt;,
+&nbsp;        val where: SqlExpr? = null,
+&nbsp;        val rowsMode: SqlGraphRowsMode? = null,
+&nbsp;        val columns: List&lt;SqlSelectItem&gt;,
+&nbsp;        val exportMode: SqlGraphExportMode? = null,
+&nbsp;        val alias: SqlTableAlias? = null,
+&nbsp;        val matchRecognize: SqlMatchRecognize? = null
+&nbsp;    ) : SqlTable {
+&nbsp;        init {
+&nbsp;            require(patterns.isNotEmpty()) { &quot;GRAPH_TABLE requires at least one pattern.&quot; }
+&nbsp;            require(columns.isNotEmpty()) { &quot;GRAPH_TABLE requires at least one output column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlTableAlias(
+&nbsp;    val alias: String,
+&nbsp;    val columnAliases: List&lt;String&gt; = emptyList(),
+&nbsp;    val identifier: SqlIdentifier = SqlIdentifier.of(alias),
+&nbsp;    val columnIdentifiers: List&lt;SqlIdentifier&gt; = columnAliases.map { SqlIdentifier.of(it) }
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;sealed interface SqlTablePeriodForMode : SqlNode {
+<b class="fc">&nbsp;    data class SystemTimeAsOf(val expr: SqlExpr) : SqlTablePeriodForMode</b>
+&nbsp;
+&nbsp;    data class SystemTimeBetween(
+<b class="fc">&nbsp;        val mode: SqlTablePeriodBetweenMode? = null,</b>
+<b class="fc">&nbsp;        val start: SqlExpr,</b>
+<b class="fc">&nbsp;        val end: SqlExpr</b>
+&nbsp;    ) : SqlTablePeriodForMode
+&nbsp;
+<b class="fc">&nbsp;    data class SystemTimeFrom(val from: SqlExpr, val to: SqlExpr) : SqlTablePeriodForMode</b>
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlTablePeriodBetweenMode {
+&nbsp;    Asymmetric,
+&nbsp;    Symmetric
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlTableSample(
+&nbsp;    val mode: SqlTableSampleMode,
+&nbsp;    val percentage: SqlExpr,
+&nbsp;    val repeatable: SqlExpr? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;enum class SqlTableSampleMode {
+&nbsp;    Bernoulli,
+&nbsp;    System
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlJsonColumn : SqlNode {
+&nbsp;    data class Ordinality(val name: String) : SqlJsonColumn
+&nbsp;
+&nbsp;    data class Column(
+&nbsp;        val name: String,
+&nbsp;        val type: SqlType,
+&nbsp;        val format: SqlJsonOutputFormat? = null,
+&nbsp;        val path: SqlExpr? = null,
+&nbsp;        val wrapper: SqlJsonQueryWrapperBehavior? = null,
+&nbsp;        val quotes: SqlJsonQueryQuotesBehavior? = null,
+&nbsp;        val onEmpty: SqlJsonQueryEmptyBehavior? = null,
+&nbsp;        val onError: SqlJsonQueryErrorBehavior? = null
+&nbsp;    ) : SqlJsonColumn
+&nbsp;
+&nbsp;    data class Exists(
+&nbsp;        val name: String,
+&nbsp;        val type: SqlType,
+&nbsp;        val path: SqlExpr? = null,
+&nbsp;        val onError: SqlJsonExistsErrorBehavior? = null
+&nbsp;    ) : SqlJsonColumn
+&nbsp;
+&nbsp;    data class Nested(
+&nbsp;        val path: SqlExpr,
+&nbsp;        val pathAlias: String? = null,
+&nbsp;        val columns: List&lt;SqlJsonColumn&gt;
+&nbsp;    ) : SqlJsonColumn {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;Nested JSON column requires at least one column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlJsonErrorBehavior {
+&nbsp;    Error,
+&nbsp;    Empty,
+&nbsp;    EmptyArray
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

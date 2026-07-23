@@ -1,0 +1,391 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlTreeRewriter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.inspect</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlTreeRewriter (com.kotlinorm.syntax.inspect)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlTreeRewriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.7%
+  </span>
+  <span class="absValue">
+    (169/212)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.6%
+  </span>
+  <span class="absValue">
+    (163/176)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.1%
+  </span>
+  <span class="absValue">
+    (2174/2334)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.inspect
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlInRightOperand
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindow
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowFrame
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowFrameBound
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlInsertMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlUpdateSetPair
+&nbsp;import com.kotlinorm.syntax.statement.SqlUpsertAction
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinCondition
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;interface SqlNodeRewriter {
+&nbsp;    fun rewriteStatement(statement: SqlStatement): SqlStatement =
+&nbsp;        SqlTreeRewriter.rewriteStatement(statement, this)
+&nbsp;
+&nbsp;    fun rewriteQuery(query: SqlQuery): SqlQuery =
+&nbsp;        SqlTreeRewriter.rewriteQuery(query, this)
+&nbsp;
+&nbsp;    fun rewriteTable(table: SqlTable): SqlTable =
+&nbsp;        SqlTreeRewriter.rewriteTable(table, this)
+&nbsp;
+&nbsp;    fun rewriteExpr(expr: SqlExpr): SqlExpr =
+&nbsp;        SqlTreeRewriter.rewriteExpr(expr, this)
+&nbsp;}
+&nbsp;
+&nbsp;object SqlTreeRewriter {
+<b class="fc">&nbsp;    fun rewriteStatement(statement: SqlStatement, rewriter: SqlNodeRewriter): SqlStatement = when (statement) {</b>
+<b class="fc">&nbsp;        is SqlQuery -&gt; rewriteQuery(statement, rewriter)</b>
+<b class="fc">&nbsp;        is SqlDmlStatement -&gt; rewriteDml(statement, rewriter)</b>
+<b class="fc">&nbsp;        else -&gt; statement</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun rewriteQuery(query: SqlQuery, rewriter: SqlNodeRewriter): SqlQuery = when (query) {</b>
+<b class="fc">&nbsp;        is SqlQuery.Select -&gt; query.copy(</b>
+<b class="fc">&nbsp;            from = query.from.map { rewriteTable(it, rewriter) },</b>
+<b class="fc">&nbsp;            where = query.where?.let { rewriter.rewriteExpr(it) },</b>
+<b class="fc">&nbsp;            groupBy = query.groupBy,</b>
+<b class="fc">&nbsp;            having = query.having?.let { rewriter.rewriteExpr(it) },</b>
+<b class="fc">&nbsp;            window = query.window.map { rewriteWindowItem(it, rewriter) },</b>
+<b class="fc">&nbsp;            qualify = query.qualify?.let { rewriter.rewriteExpr(it) },</b>
+<b class="fc">&nbsp;            orderBy = query.orderBy.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="pc">&nbsp;            limit = query.limit?.let { limit -&gt;</b>
+<b class="nc">&nbsp;                limit.copy(</b>
+<b class="nc">&nbsp;                    offset = limit.offset?.let { rewriter.rewriteExpr(it) },</b>
+<b class="nc">&nbsp;                    fetch = limit.fetch?.copy(limit = rewriter.rewriteExpr(limit.fetch.limit))</b>
+<b class="nc">&nbsp;                )</b>
+&nbsp;            },
+<b class="fc">&nbsp;            select = query.select.map { item -&gt;</b>
+<b class="fc">&nbsp;                when (item) {</b>
+<b class="pc">&nbsp;                    is com.kotlinorm.syntax.statement.SqlSelectItem.Expr -&gt; item.copy(expr = rewriter.rewriteExpr(item.expr))</b>
+<b class="nc">&nbsp;                    is com.kotlinorm.syntax.statement.SqlSelectItem.Asterisk -&gt; item</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlQuery.Set -&gt; query.copy(</b>
+<b class="fc">&nbsp;            left = rewriter.rewriteQuery(query.left),</b>
+<b class="fc">&nbsp;            right = rewriter.rewriteQuery(query.right),</b>
+<b class="fc">&nbsp;            orderBy = query.orderBy.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="pc">&nbsp;            limit = query.limit?.let { limit -&gt;</b>
+<b class="nc">&nbsp;                limit.copy(</b>
+<b class="nc">&nbsp;                    offset = limit.offset?.let { rewriter.rewriteExpr(it) },</b>
+<b class="nc">&nbsp;                    fetch = limit.fetch?.copy(limit = rewriter.rewriteExpr(limit.fetch.limit))</b>
+<b class="nc">&nbsp;                )</b>
+&nbsp;            }
+&nbsp;        )
+<b class="pc">&nbsp;        is SqlQuery.Values -&gt; query.copy(values = query.values.map { row -&gt; row.map { rewriter.rewriteExpr(it) } })</b>
+<b class="nc">&nbsp;        is SqlQuery.With -&gt; query.copy(</b>
+<b class="nc">&nbsp;            withItems = query.withItems.map { it.copy(query = rewriter.rewriteQuery(it.query)) },</b>
+<b class="nc">&nbsp;            query = rewriter.rewriteQuery(query.query)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun rewriteTable(table: SqlTable, rewriter: SqlNodeRewriter): SqlTable = when (table) {</b>
+<b class="fc">&nbsp;        is SqlTable.Func -&gt; table.copy(args = table.args.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlTable.Subquery -&gt; table.copy(query = rewriter.rewriteQuery(table.query))</b>
+<b class="fc">&nbsp;        is SqlTable.Join -&gt; table.copy(</b>
+<b class="fc">&nbsp;            left = rewriter.rewriteTable(table.left),</b>
+<b class="fc">&nbsp;            right = rewriter.rewriteTable(table.right),</b>
+<b class="fc">&nbsp;            condition = when (val condition = table.condition) {</b>
+<b class="fc">&nbsp;                is SqlJoinCondition.On -&gt; condition.copy(condition = rewriter.rewriteExpr(condition.condition))</b>
+<b class="pc">&nbsp;                is SqlJoinCondition.Using,</b>
+<b class="fc">&nbsp;                null -&gt; condition</b>
+&nbsp;            }
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlTable.Json -&gt; table.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(table.expr),</b>
+<b class="fc">&nbsp;            path = rewriter.rewriteExpr(table.path),</b>
+<b class="fc">&nbsp;            passingItems = table.passingItems.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) }</b>
+&nbsp;        )
+<b class="pc">&nbsp;        is SqlTable.Graph -&gt; table.copy(where = table.where?.let { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlTable.Ident -&gt; table</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun rewriteExpr(expr: SqlExpr, rewriter: SqlNodeRewriter): SqlExpr = when (expr) {</b>
+<b class="fc">&nbsp;        is SqlExpr.Tuple -&gt; expr.copy(items = expr.items.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlExpr.Array -&gt; expr.copy(items = expr.items.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlExpr.Unary -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.Binary -&gt; expr.copy(left = rewriter.rewriteExpr(expr.left), right = rewriter.rewriteExpr(expr.right))</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonTest -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.In -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            `in` = when (val operand = expr.`in`) {</b>
+<b class="fc">&nbsp;                is SqlInRightOperand.Values -&gt; operand.copy(items = operand.items.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;                is SqlInRightOperand.Subquery -&gt; operand.copy(query = rewriter.rewriteQuery(operand.query))</b>
+&nbsp;            }
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.Between -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            start = rewriter.rewriteExpr(expr.start),</b>
+<b class="fc">&nbsp;            end = rewriter.rewriteExpr(expr.end)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.Like -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            pattern = rewriter.rewriteExpr(expr.pattern),</b>
+<b class="pc">&nbsp;            escape = expr.escape?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.SimilarTo -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            pattern = rewriter.rewriteExpr(expr.pattern),</b>
+<b class="pc">&nbsp;            escape = expr.escape?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.Case -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            branches = expr.branches.map { it.copy(`when` = rewriter.rewriteExpr(it.`when`), then = rewriter.rewriteExpr(it.then)) },</b>
+<b class="pc">&nbsp;            default = expr.default?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.SimpleCase -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            branches = expr.branches.map { it.copy(`when` = rewriter.rewriteExpr(it.`when`), then = rewriter.rewriteExpr(it.then)) },</b>
+<b class="pc">&nbsp;            default = expr.default?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.Coalesce -&gt; expr.copy(items = expr.items.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlExpr.NullIf -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), test = rewriter.rewriteExpr(expr.test))</b>
+<b class="fc">&nbsp;        is SqlExpr.Cast -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.Window -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), window = rewriteWindow(expr.window, rewriter))</b>
+<b class="fc">&nbsp;        is SqlExpr.Subquery -&gt; expr.copy(query = rewriter.rewriteQuery(expr.query))</b>
+<b class="fc">&nbsp;        is SqlExpr.ExistsPredicate -&gt; expr.copy(query = rewriter.rewriteQuery(expr.query))</b>
+<b class="fc">&nbsp;        is SqlExpr.QuantifiedComparisonPredicate -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), query = rewriter.rewriteQuery(expr.query))</b>
+<b class="fc">&nbsp;        is SqlExpr.Grouping -&gt; expr.copy(items = expr.items.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlExpr.Function -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            args = expr.args.map { rewriter.rewriteExpr(it) },</b>
+<b class="fc">&nbsp;            orderBy = expr.orderBy.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="fc">&nbsp;            withinGroup = expr.withinGroup.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="pc">&nbsp;            filter = expr.filter?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.SubstringFunc -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            from = rewriter.rewriteExpr(expr.from),</b>
+<b class="pc">&nbsp;            `for` = expr.`for`?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="pc">&nbsp;        is SqlExpr.TrimFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), trim = expr.trim?.copy(value = expr.trim.value?.let { rewriter.rewriteExpr(it) }))</b>
+<b class="fc">&nbsp;        is SqlExpr.OverlayFunc -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            placing = rewriter.rewriteExpr(expr.placing),</b>
+<b class="fc">&nbsp;            from = rewriter.rewriteExpr(expr.from),</b>
+<b class="pc">&nbsp;            `for` = expr.`for`?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.PositionFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), inExpr = rewriter.rewriteExpr(expr.inExpr))</b>
+<b class="fc">&nbsp;        is SqlExpr.ExtractFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonSerializeFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonParseFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonQueryFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), path = rewriter.rewriteExpr(expr.path))</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonValueFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), path = rewriter.rewriteExpr(expr.path))</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonObjectFunc -&gt; expr.copy(items = expr.items.map { it.copy(key = rewriter.rewriteExpr(it.key), value = rewriter.rewriteExpr(it.value)) })</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonArrayFunc -&gt; expr.copy(items = expr.items.map { it.copy(value = rewriter.rewriteExpr(it.value)) })</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonExistsFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), path = rewriter.rewriteExpr(expr.path))</b>
+<b class="pc">&nbsp;        is SqlExpr.CountAsteriskFunc -&gt; expr.copy(filter = expr.filter?.let { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonObjectAggFunc -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            item = expr.item.copy(key = rewriter.rewriteExpr(expr.item.key), value = rewriter.rewriteExpr(expr.item.value)),</b>
+<b class="pc">&nbsp;            filter = expr.filter?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.JsonArrayAggFunc -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            item = expr.item.copy(value = rewriter.rewriteExpr(expr.item.value)),</b>
+<b class="fc">&nbsp;            orderBy = expr.orderBy.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="pc">&nbsp;            filter = expr.filter?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.ListAggFunc -&gt; expr.copy(</b>
+<b class="fc">&nbsp;            expr = rewriter.rewriteExpr(expr.expr),</b>
+<b class="fc">&nbsp;            separator = rewriter.rewriteExpr(expr.separator),</b>
+<b class="fc">&nbsp;            withinGroup = expr.withinGroup.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="pc">&nbsp;            filter = expr.filter?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlExpr.NullsTreatmentFunc -&gt; expr.copy(args = expr.args.map { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlExpr.NthValueFunc -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr), row = rewriter.rewriteExpr(expr.row))</b>
+<b class="fc">&nbsp;        is SqlExpr.MatchPhase -&gt; expr.copy(expr = rewriter.rewriteExpr(expr.expr))</b>
+<b class="fc">&nbsp;        is SqlExpr.UnsafeCustom -&gt; expr.copy(tokens = expr.tokens.map { if (it is SqlUnsafeToken.Expr) it.copy(value = rewriter.rewriteExpr(it.value)) else it })</b>
+<b class="pc">&nbsp;        SqlExpr.NullLiteral,</b>
+<b class="fc">&nbsp;        is SqlExpr.Column,</b>
+<b class="pc">&nbsp;        is SqlExpr.StringLiteral,</b>
+<b class="pc">&nbsp;        is SqlExpr.NumberLiteral,</b>
+<b class="pc">&nbsp;        is SqlExpr.BooleanLiteral,</b>
+<b class="pc">&nbsp;        is SqlExpr.TimeLiteral,</b>
+<b class="pc">&nbsp;        is SqlExpr.IntervalLiteral,</b>
+<b class="fc">&nbsp;        is SqlExpr.Parameter,</b>
+<b class="pc">&nbsp;        is SqlExpr.IdentFunc,</b>
+<b class="fc">&nbsp;        is SqlExpr.ExcludedColumn,</b>
+<b class="pc">&nbsp;        is SqlExpr.SourceColumn,</b>
+<b class="fc">&nbsp;        is SqlExpr.UnsafeRaw -&gt; expr</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun rewriteDml(statement: SqlDmlStatement, rewriter: SqlNodeRewriter): SqlDmlStatement = when (statement) {</b>
+<b class="pc">&nbsp;        is SqlDmlStatement.Delete -&gt; statement.copy(where = statement.where?.let { rewriter.rewriteExpr(it) })</b>
+<b class="fc">&nbsp;        is SqlDmlStatement.Insert -&gt; statement.copy(mode = when (val mode = statement.mode) {</b>
+<b class="fc">&nbsp;            is SqlInsertMode.Values -&gt; mode.copy(values = mode.values.map { row -&gt; row.map { rewriter.rewriteExpr(it) } })</b>
+<b class="fc">&nbsp;            is SqlInsertMode.Subquery -&gt; mode.copy(query = rewriter.rewriteQuery(mode.query))</b>
+&nbsp;        })
+<b class="fc">&nbsp;        is SqlDmlStatement.Update -&gt; statement.copy(</b>
+<b class="fc">&nbsp;            setPairs = statement.setPairs.map { SqlUpdateSetPair(it.target, rewriter.rewriteExpr(it.value)) },</b>
+<b class="pc">&nbsp;            where = statement.where?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlDmlStatement.Upsert -&gt; statement.copy(</b>
+<b class="fc">&nbsp;            values = statement.values.map { rewriter.rewriteExpr(it) },</b>
+<b class="pc">&nbsp;            conflictTarget = statement.conflictTarget.copy(where = statement.conflictTarget.where?.let { rewriter.rewriteExpr(it) }),</b>
+<b class="fc">&nbsp;            action = when (val action = statement.action) {</b>
+<b class="pc">&nbsp;                SqlUpsertAction.DoNothing -&gt; action</b>
+<b class="fc">&nbsp;                is SqlUpsertAction.Update -&gt; action.copy(</b>
+<b class="fc">&nbsp;                    setPairs = action.setPairs.map { SqlUpdateSetPair(it.target, rewriter.rewriteExpr(it.value)) },</b>
+<b class="fc">&nbsp;                    where = action.where?.let { rewriter.rewriteExpr(it) }</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        )
+<b class="fc">&nbsp;        is SqlDmlStatement.Truncate -&gt; statement</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun rewriteWindow(window: SqlWindow, rewriter: SqlNodeRewriter): SqlWindow =
+<b class="fc">&nbsp;        window.copy(</b>
+<b class="fc">&nbsp;            partitionBy = window.partitionBy.map { rewriter.rewriteExpr(it) },</b>
+<b class="fc">&nbsp;            orderBy = window.orderBy.map { it.copy(expr = rewriter.rewriteExpr(it.expr)) },</b>
+<b class="fc">&nbsp;            frame = window.frame?.let { rewriteWindowFrame(it, rewriter) }</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    private fun rewriteWindowItem(item: SqlWindowItem, rewriter: SqlNodeRewriter): SqlWindowItem =
+<b class="fc">&nbsp;        item.copy(window = rewriteWindow(item.window, rewriter))</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun rewriteWindowFrame(frame: SqlWindowFrame, rewriter: SqlNodeRewriter): SqlWindowFrame = when (frame) {</b>
+<b class="fc">&nbsp;        is SqlWindowFrame.Start -&gt; frame.copy(start = rewriteWindowFrameBound(frame.start, rewriter))</b>
+<b class="fc">&nbsp;        is SqlWindowFrame.Between -&gt; frame.copy(</b>
+<b class="fc">&nbsp;            start = rewriteWindowFrameBound(frame.start, rewriter),</b>
+<b class="fc">&nbsp;            end = rewriteWindowFrameBound(frame.end, rewriter)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun rewriteWindowFrameBound(bound: SqlWindowFrameBound, rewriter: SqlNodeRewriter): SqlWindowFrameBound = when (bound) {</b>
+<b class="fc">&nbsp;        is SqlWindowFrameBound.Preceding -&gt; bound.copy(n = rewriter.rewriteExpr(bound.n))</b>
+<b class="fc">&nbsp;        is SqlWindowFrameBound.Following -&gt; bound.copy(n = rewriter.rewriteExpr(bound.n))</b>
+<b class="pc">&nbsp;        SqlWindowFrameBound.CurrentRow,</b>
+<b class="nc">&nbsp;        SqlWindowFrameBound.UnboundedFollowing,</b>
+<b class="fc">&nbsp;        SqlWindowFrameBound.UnboundedPreceding -&gt; bound</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

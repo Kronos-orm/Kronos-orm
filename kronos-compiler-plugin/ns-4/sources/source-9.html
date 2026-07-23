@@ -1,0 +1,390 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosGenericKPojoChecker</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosGenericKPojoChecker (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosGenericKPojoChecker</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (25/25)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.CascadeAnnotationClassId
+&nbsp;import com.kotlinorm.compiler.utils.IgnoreAnnotationClassId
+&nbsp;import com.kotlinorm.compiler.utils.KPojoClassId
+&nbsp;import com.kotlinorm.compiler.utils.SerializeAnnotationClassId
+&nbsp;import org.jetbrains.kotlin.descriptors.ClassKind
+&nbsp;import org.jetbrains.kotlin.descriptors.Modality
+&nbsp;import org.jetbrains.kotlin.descriptors.Visibility
+&nbsp;import org.jetbrains.kotlin.descriptors.Visibilities
+&nbsp;import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
+&nbsp;import org.jetbrains.kotlin.diagnostics.reportOn
+&nbsp;import org.jetbrains.kotlin.fir.FirSession
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.declaration.DeclarationCheckers
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirPropertyChecker
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirRegularClassChecker
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.expression.ExpressionCheckers
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirFunctionCallChecker
+&nbsp;import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtension
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirClass
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirProperty
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
+&nbsp;import org.jetbrains.kotlin.fir.declarations.extractEnumValueArgumentInfo
+&nbsp;import org.jetbrains.kotlin.fir.declarations.findArgumentByName
+&nbsp;import org.jetbrains.kotlin.fir.declarations.getAnnotationByClassId
+&nbsp;import org.jetbrains.kotlin.fir.declarations.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
+&nbsp;import org.jetbrains.kotlin.fir.declarations.unwrapVarargValue
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
+&nbsp;import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
+&nbsp;import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
+&nbsp;import org.jetbrains.kotlin.fir.symbols.SymbolInternals
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeClassLikeType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
+&nbsp;import org.jetbrains.kotlin.fir.resolve.toClassSymbol
+&nbsp;import org.jetbrains.kotlin.fir.types.resolvedType
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;
+&nbsp;/**
+&nbsp; * Registers declaration diagnostics for unsupported KPojo shapes.
+&nbsp; */
+&nbsp;class KronosKPojoCheckersExtension(session: FirSession) : FirAdditionalCheckersExtension(session) {
+&nbsp;    override val declarationCheckers: DeclarationCheckers = object : DeclarationCheckers() {
+&nbsp;        override val regularClassCheckers: Set&lt;FirRegularClassChecker&gt; = setOf(
+&nbsp;            KronosGenericKPojoChecker,
+&nbsp;            KronosInaccessibleKPojoFactoryChecker,
+&nbsp;        )
+&nbsp;        override val propertyCheckers: Set&lt;FirPropertyChecker&gt; = setOf(KronosScalarEnumMetadataChecker)
+&nbsp;    }
+&nbsp;
+&nbsp;    override val expressionCheckers: ExpressionCheckers = object : ExpressionCheckers() {
+&nbsp;        override val functionCallCheckers: Set&lt;FirFunctionCallChecker&gt; = setOf(KronosTypedResultEnumMetadataChecker)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private object KronosGenericKPojoChecker : FirRegularClassChecker(MppCheckerKind.Common) {</b>
+<b class="fc">&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)</b>
+&nbsp;    override fun check(declaration: FirRegularClass) {
+<b class="fc">&nbsp;        if (declaration.typeParameters.isEmpty() || !declaration.isKPojoClass(context.session)) return</b>
+<b class="fc">&nbsp;        reporter.reportOn(declaration.source, KronosKPojoDiagnostics.GENERIC_KPOJO_NOT_SUPPORTED)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Rejects KPojo declarations whose otherwise eligible generated factory would
+&nbsp; * be silently omitted because the module-level provider cannot reference them.
+&nbsp; */
+&nbsp;private object KronosInaccessibleKPojoFactoryChecker : FirRegularClassChecker(MppCheckerKind.Common) {
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    override fun check(declaration: FirRegularClass) {
+&nbsp;        if (!declaration.requiresGeneratedKPojoFactory(context.session)) return
+&nbsp;        if (declaration.isAccessibleFromGeneratedProvider(context.session)) return
+&nbsp;        reporter.reportOn(declaration.source, KronosKPojoDiagnostics.INACCESSIBLE_KPOJO_FACTORY)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private object KronosScalarEnumMetadataChecker : FirPropertyChecker(MppCheckerKind.Common) {
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    override fun check(declaration: FirProperty) {
+&nbsp;        if (!declaration.requiresScalarEnumMetadata(context.session)) return
+&nbsp;        val owner = declaration.dispatchReceiverType
+&nbsp;            ?.toClassSymbol(context.session)
+&nbsp;            ?.fir as? FirRegularClass
+&nbsp;            ?: return
+&nbsp;        if (!owner.isGeneratedProviderKPojoCandidate(context.session)) return
+&nbsp;        val enumClass = ((declaration.returnTypeRef as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType)
+&nbsp;            ?.toClassSymbol(context.session)
+&nbsp;            ?.fir as? FirRegularClass
+&nbsp;            ?: return
+&nbsp;        if (
+&nbsp;            enumClass.classKind != ClassKind.ENUM_CLASS ||
+&nbsp;            enumClass.isAccessibleFromGeneratedProvider(context.session)
+&nbsp;        ) {
+&nbsp;            return
+&nbsp;        }
+&nbsp;        reporter.reportOn(declaration.source, KronosKPojoDiagnostics.INACCESSIBLE_ENUM_METADATA)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private object KronosTypedResultEnumMetadataChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
+&nbsp;    private val typedResultFunctionNames = setOf(
+&nbsp;        &quot;queryList&quot;,
+&nbsp;        &quot;queryOne&quot;,
+&nbsp;        &quot;queryOneOrNull&quot;,
+&nbsp;        &quot;toList&quot;,
+&nbsp;        &quot;first&quot;,
+&nbsp;        &quot;firstOrNull&quot;,
+&nbsp;    )
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    override fun check(expression: FirFunctionCall) {
+&nbsp;        if (!expression.isKronosTypedResultCall()) return
+&nbsp;        val resultType = runCatching { expression.resolvedType }.getOrNull() ?: return
+&nbsp;        val enumClasses = linkedSetOf&lt;FirRegularClass&gt;()
+&nbsp;        resultType.collectConcreteEnumLeaves(context.session, enumClasses)
+&nbsp;        val hasInaccessibleEnum = enumClasses.any { enumClass -&gt;
+&nbsp;            !enumClass.isAccessibleFromGeneratedProvider(context.session)
+&nbsp;        }
+&nbsp;        if (!hasInaccessibleEnum) return
+&nbsp;        reporter.reportOn(expression.source, KronosKPojoDiagnostics.INACCESSIBLE_ENUM_METADATA)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirFunctionCall.isKronosTypedResultCall(): Boolean {
+&nbsp;        val callableId = ((calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirNamedFunctionSymbol)
+&nbsp;            ?.callableId
+&nbsp;            ?: return false
+&nbsp;        return callableId.callableName.asString() in typedResultFunctionNames &amp;&amp;
+&nbsp;            callableId.packageName.asString().startsWith(&quot;com.kotlinorm.&quot;)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private val IgnoreTargetsName = Name.identifier(&quot;targets&quot;)
+&nbsp;private val IgnoreAllName = Name.identifier(&quot;ALL&quot;)
+&nbsp;
+&nbsp;private fun FirProperty.requiresScalarEnumMetadata(session: FirSession): Boolean =
+&nbsp;    !hasAnnotation(SerializeAnnotationClassId, session) &amp;&amp;
+&nbsp;        !hasAnnotation(CascadeAnnotationClassId, session) &amp;&amp;
+&nbsp;        !isIgnoredForAll(session)
+&nbsp;
+&nbsp;private fun FirProperty.isIgnoredForAll(session: FirSession): Boolean {
+&nbsp;    val ignore = getAnnotationByClassId(IgnoreAnnotationClassId, session) ?: return false
+&nbsp;    val targets = ignore.findArgumentByName(IgnoreTargetsName) ?: return true
+&nbsp;    return targets.unwrapVarargValue().any { target -&gt;
+&nbsp;        target.extractEnumValueArgumentInfo()?.enumEntryName == IgnoreAllName
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun FirRegularClass.isGeneratedProviderKPojoCandidate(session: FirSession): Boolean =
+&nbsp;    classKind == ClassKind.CLASS &amp;&amp;
+&nbsp;        status.modality != Modality.ABSTRACT &amp;&amp;
+&nbsp;        status.modality != Modality.SEALED &amp;&amp;
+&nbsp;        !status.isInner &amp;&amp;
+&nbsp;        isKPojoClass(session) &amp;&amp;
+&nbsp;        isAccessibleFromGeneratedProvider(session, allowLocalClass = true)
+&nbsp;
+&nbsp;private fun FirRegularClass.requiresGeneratedKPojoFactory(session: FirSession): Boolean =
+&nbsp;    classKind == ClassKind.CLASS &amp;&amp;
+&nbsp;        status.modality != Modality.ABSTRACT &amp;&amp;
+&nbsp;        status.modality != Modality.SEALED &amp;&amp;
+&nbsp;        !status.isInner &amp;&amp;
+&nbsp;        !isLocal &amp;&amp;
+&nbsp;        typeParameters.isEmpty() &amp;&amp;
+&nbsp;        isKPojoClass(session) &amp;&amp;
+&nbsp;        hasGeneratedProviderConstructor(session)
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private fun FirRegularClass.hasGeneratedProviderConstructor(session: FirSession): Boolean {
+&nbsp;    var found = false
+&nbsp;    symbol.processAllDeclarations(session, FirResolvePhase.STATUS) { declarationSymbol -&gt;
+&nbsp;        val constructor = (declarationSymbol as? FirConstructorSymbol)?.fir
+&nbsp;            ?: return@processAllDeclarations
+&nbsp;        if (
+&nbsp;            constructor.status.visibility.isAccessibleFromGeneratedProvider() &amp;&amp;
+&nbsp;            constructor.valueParameters.all { parameter -&gt; parameter.defaultValue != null }
+&nbsp;        ) {
+&nbsp;            found = true
+&nbsp;        }
+&nbsp;    }
+&nbsp;    return found
+&nbsp;}
+&nbsp;
+&nbsp;private fun Visibility.isAccessibleFromGeneratedProvider(): Boolean =
+&nbsp;    this == Visibilities.Public || this == Visibilities.Internal
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private fun FirRegularClass.isAccessibleFromGeneratedProvider(
+&nbsp;    session: FirSession,
+&nbsp;    allowLocalClass: Boolean = false,
+&nbsp;): Boolean {
+&nbsp;    if (isLocal) return allowLocalClass
+&nbsp;    var current: FirRegularClass? = this
+&nbsp;    while (current != null) {
+&nbsp;        if (!current.status.visibility.isAccessibleFromGeneratedProvider()) {
+&nbsp;            return false
+&nbsp;        }
+&nbsp;        val outerClassId = current.symbol.classId.outerClassId ?: return true
+&nbsp;        current = session.symbolProvider.getClassLikeSymbolByClassId(outerClassId)?.fir as? FirRegularClass
+&nbsp;            ?: return false
+&nbsp;    }
+&nbsp;    return true
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private fun ConeKotlinType.collectConcreteEnumLeaves(
+&nbsp;    session: FirSession,
+&nbsp;    target: MutableSet&lt;FirRegularClass&gt;,
+&nbsp;) {
+&nbsp;    val classLikeType = this as? ConeClassLikeType ?: return
+&nbsp;    (classLikeType.toClassSymbol(session)?.fir as? FirRegularClass)
+&nbsp;        ?.takeIf { it.classKind == ClassKind.ENUM_CLASS }
+&nbsp;        ?.let(target::add)
+&nbsp;    classLikeType.typeArguments
+&nbsp;        .filterIsInstance&lt;ConeKotlinTypeProjection&gt;()
+&nbsp;        .forEach { projection -&gt; projection.type.collectConcreteEnumLeaves(session, target) }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private fun FirClass.isKPojoClass(session: FirSession): Boolean {
+&nbsp;    val pending = ArrayDeque&lt;FirClass&gt;()
+&nbsp;    val visited = mutableSetOf&lt;ClassId&gt;()
+&nbsp;    pending.add(this)
+&nbsp;
+&nbsp;    while (pending.isNotEmpty()) {
+&nbsp;        val current = pending.removeFirst()
+&nbsp;        current.superTypeRefs
+&nbsp;            .mapNotNull { ref -&gt; (ref as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType }
+&nbsp;            .forEach { type -&gt;
+&nbsp;                val classId = type.lookupTag.classId
+&nbsp;                if (classId == KPojoClassId) return true
+&nbsp;                if (visited.add(classId)) {
+&nbsp;                    type.toClassSymbol(session)?.fir?.let(pending::addLast)
+&nbsp;                }
+&nbsp;            }
+&nbsp;    }
+&nbsp;
+&nbsp;    return false
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

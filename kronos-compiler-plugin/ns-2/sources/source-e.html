@@ -1,0 +1,292 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > SortTransformerKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: SortTransformerKt (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SortTransformerKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.KTableTransformer
+&nbsp;import com.kotlinorm.compiler.core.addSortFieldMethodSymbol
+&nbsp;import com.kotlinorm.compiler.core.ascMethodSymbol
+&nbsp;import com.kotlinorm.compiler.core.buildFieldFromProperty
+&nbsp;import com.kotlinorm.compiler.core.buildFieldFromPropertyAccess
+&nbsp;import com.kotlinorm.compiler.core.descMethodSymbol
+&nbsp;import com.kotlinorm.compiler.core.isColumnType
+&nbsp;import com.kotlinorm.compiler.core.isKSelectableType
+&nbsp;import com.kotlinorm.compiler.core.safeSelectableValueExpression
+&nbsp;import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiver
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiverArgument
+&nbsp;import com.kotlinorm.compiler.utils.funcName
+&nbsp;import com.kotlinorm.compiler.utils.valueArguments
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConst
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrGetValue
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrReturn
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrVararg
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;
+<b class="fc">&nbsp;private val SortDirectionFunctionNames = setOf(&quot;asc&quot;, &quot;desc&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Sort Transformer
+&nbsp; *
+&nbsp; * @author: Jieyao Lu
+&nbsp; *
+&nbsp; * Roughly speaking, the transform will turn the following:
+&nbsp; *
+&nbsp; *     // file: Foo.kt
+&nbsp; *     ```kotlin
+&nbsp; *     fun &lt;T: KPojo&gt; T.foo() {
+&nbsp; *          val action: (KTableSortable&lt;T&gt;.(T) -&gt; Unit) = { it: T -&gt;
+&nbsp; *              [it.username.desc(), it.password.asc(), it.age]
+&nbsp; *          }
+&nbsp; *          KTableSortable&lt;T&gt;().action(this)
+&nbsp; *     }
+&nbsp; *     ```
+&nbsp; *
+&nbsp; * into the following equivalent representation:
+&nbsp; *
+&nbsp; *    // file: Foo.kt
+&nbsp; *    ```kotlin
+&nbsp; *     fun &lt;T: KPojo&gt; foo() {
+&nbsp; *          val action: (KTableSortable&lt;T&gt;.(T) -&gt; Unit) = { it: T -&gt;
+&nbsp; *              addSortField(Field(&quot;username&quot;,...).desc())
+&nbsp; *              addSortField(Field(&quot;password&quot;,...).asc())
+&nbsp; *              addSortField(Field(&quot;age&quot;,...))
+&nbsp; *              [it.username.desc(), it.password.asc(), it.age]
+&nbsp; *          }
+&nbsp; *          KTableSortable&lt;T&gt;().action(this)
+&nbsp; *    }
+&nbsp; *    ```
+&nbsp; */
+&nbsp;class SortTransformer(
+&nbsp;    private val pluginContext: IrPluginContext,
+&nbsp;    irFunction: IrFunction,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;) : KTableTransformer(irFunction, errorReporter) {
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitReturn(expression: IrReturn): IrExpression {
+&nbsp;        if (!shouldProcessReturn(expression)) {
+&nbsp;            return super.visitReturn(expression)
+&nbsp;        }
+&nbsp;
+&nbsp;        return with(pluginContext) {
+&nbsp;            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+&nbsp;                val receiver = irFunction.parameters.extensionReceiver
+&nbsp;                    ?: return@irBlock run { +expression }
+&nbsp;                val fields = collectSortFields(irFunction, expression.value)
+&nbsp;                fields.forEach { (fieldExpr, asc) -&gt;
+&nbsp;                    val sortedField = irCall(if (asc) ascMethodSymbol else descMethodSymbol).apply {
+&nbsp;                        dispatchReceiver = irGet(receiver)
+&nbsp;                        arguments[1] = fieldExpr
+&nbsp;                    }
+&nbsp;                    +irCall(addSortFieldMethodSymbol).apply {
+&nbsp;                        dispatchReceiver = irGet(receiver)
+&nbsp;                        arguments[1] = sortedField
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                if (fields.isEmpty()) +expression
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    context(context: IrPluginContext, builder: IrBlockBuilder)
+&nbsp;    private fun collectSortFields(
+&nbsp;        irFunction: IrFunction,
+&nbsp;        expression: IrExpression
+&nbsp;    ): List&lt;Pair&lt;IrExpression, Boolean&gt;&gt; {
+&nbsp;        val result = mutableListOf&lt;Pair&lt;IrExpression, Boolean&gt;&gt;()
+&nbsp;        when {
+&nbsp;            expression is IrCall &amp;&amp; expression.symbol.owner.name.asString() in DslCollectionFunctionNames -&gt; {
+&nbsp;                expression.valueArguments.filterIsInstance&lt;IrExpression&gt;().forEach { arg -&gt;
+&nbsp;                    result += collectSortArgument(irFunction, arg)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            expression is IrCall &amp;&amp; expression.funcName() in SortDirectionFunctionNames -&gt; {
+&nbsp;                val asc = expression.funcName() == &quot;asc&quot;
+&nbsp;                val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiver ?: return result
+&nbsp;                val valueReceiver = receiver.safeSelectableValueExpression()
+&nbsp;                when {
+&nbsp;                    valueReceiver is IrCall &amp;&amp; valueReceiver.origin == IrStatementOrigin.GET_PROPERTY -&gt;
+&nbsp;                        result += buildFieldFromPropertyAccess(valueReceiver, errorReporter) to asc
+&nbsp;                    valueReceiver is IrConst &amp;&amp; valueReceiver.value is String -&gt;
+&nbsp;                        result += valueReceiver to asc
+&nbsp;                    valueReceiver.type.isKSelectableType() -&gt;
+&nbsp;                        result += valueReceiver to asc
+&nbsp;                }
+&nbsp;            }
+&nbsp;            expression is IrCall &amp;&amp; expression.origin == IrStatementOrigin.GET_PROPERTY -&gt; {
+&nbsp;                result += buildFieldFromPropertyAccess(expression, errorReporter) to true
+&nbsp;            }
+&nbsp;            expression is IrConst &amp;&amp; expression.value is String -&gt; {
+&nbsp;                result += expression to true
+&nbsp;            }
+&nbsp;            expression.safeSelectableValueExpression().type.isKSelectableType() -&gt; {
+&nbsp;                result += expression.safeSelectableValueExpression() to true
+&nbsp;            }
+&nbsp;            expression is IrGetValue -&gt; {
+&nbsp;                // bare `it` -&gt; all columns asc
+&nbsp;                val irClass = expression.type.classOrNull?.owner ?: return result
+&nbsp;                irClass.properties.filter { it.isColumnType() }.forEach { prop -&gt;
+&nbsp;                    result += buildFieldFromProperty(prop) to true
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return result
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: IrPluginContext, builder: IrBlockBuilder)
+&nbsp;    private fun collectSortArgument(irFunction: IrFunction, expression: IrExpression): List&lt;Pair&lt;IrExpression, Boolean&gt;&gt; =
+&nbsp;        if (expression is IrVararg) {
+&nbsp;            expression.elements.filterIsInstance&lt;IrExpression&gt;().flatMap { collectSortFields(irFunction, it) }
+&nbsp;        } else {
+&nbsp;            collectSortFields(irFunction, expression)
+&nbsp;        }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

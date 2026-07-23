@@ -1,0 +1,530 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > PrettySqlRendererKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: PrettySqlRendererKt (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PrettySqlRendererKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (38/38)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.group.SqlGroup
+&nbsp;import com.kotlinorm.syntax.group.SqlGroupingItem
+&nbsp;import com.kotlinorm.syntax.order.SqlNullsOrdering
+&nbsp;import com.kotlinorm.syntax.order.SqlOrdering
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlInsertMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlUpsertAction
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinCondition
+&nbsp;import com.kotlinorm.syntax.table.SqlTableAlias
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;
+&nbsp;class PrettySqlRenderer(
+&nbsp;    dialect: SqlDialect = SqlDialect.Standard,
+&nbsp;    private val indent: String = &quot;  &quot;
+&nbsp;) : StandardSqlRenderer(dialect) {
+&nbsp;    private val compactRenderer: SqlRenderer = sqlRenderer(dialect)
+&nbsp;
+&nbsp;    override fun renderStatement(statement: SqlStatement): String = when (statement) {
+&nbsp;        is SqlQuery -&gt; renderQuery(statement)
+&nbsp;        is SqlDmlStatement.Upsert -&gt; renderPrettyUpsert(statement)
+&nbsp;        is SqlDmlStatement.Insert -&gt; renderPrettyInsert(statement)
+&nbsp;        is SqlDmlStatement.Update -&gt; renderPrettyUpdate(statement)
+&nbsp;        is SqlDmlStatement.Delete -&gt; renderPrettyDelete(statement)
+&nbsp;        is SqlDmlStatement.Truncate -&gt; super.renderStatement(statement)
+&nbsp;        is SqlDdlStatement -&gt; super.renderStatement(statement)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderQuery(query: SqlQuery): String = when (query) {
+&nbsp;        is SqlQuery.Select -&gt; renderPrettySelect(query)
+&nbsp;        is SqlQuery.Set -&gt; renderPrettySet(query)
+&nbsp;        is SqlQuery.Values -&gt; super.renderQuery(query)
+&nbsp;        is SqlQuery.With -&gt; renderPrettyWith(query)
+&nbsp;    }.let { sql -&gt;
+&nbsp;        query.lock?.let { &quot;$sql\n${renderLock(it)}&quot; } ?: sql
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettySelect(query: SqlQuery.Select): String = buildString {
+&nbsp;        append(&quot;SELECT&quot;)
+&nbsp;        query.quantifier?.let { append(&quot; ${renderQuantifier(it)}&quot;) }
+&nbsp;        append(&quot;\n&quot;)
+&nbsp;        val selectItems = if (query.select.isEmpty()) listOf(&quot;*&quot;) else query.select.map { renderSelectItemPretty(it) }
+&nbsp;        append(selectItems.joinToString(&quot;,\n&quot;) { &quot;${renderIndent(1)}$it&quot; })
+&nbsp;        if (query.from.isNotEmpty()) {
+&nbsp;            append(&quot;\nFROM\n&quot;)
+&nbsp;            append(query.from.joinToString(&quot;,\n&quot;) { &quot;${renderIndent(1)}${renderTablePretty(it, 1)}&quot; })
+&nbsp;        }
+&nbsp;        query.where?.let {
+&nbsp;            append(&quot;\nWHERE\n&quot;)
+&nbsp;            append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;        }
+&nbsp;        query.groupBy?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderGroupPretty(it))
+&nbsp;        }
+&nbsp;        query.having?.let {
+&nbsp;            append(&quot;\nHAVING\n&quot;)
+&nbsp;            append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;        }
+&nbsp;        if (query.window.isNotEmpty()) {
+&nbsp;            append(&quot;\nWINDOW\n&quot;)
+&nbsp;            append(query.window.joinToString(&quot;,\n&quot;) { &quot;${renderIndent(1)}${compactRenderer.renderWindowItemForPretty(it)}&quot; })
+&nbsp;        }
+&nbsp;        query.qualify?.let {
+&nbsp;            append(&quot;\nQUALIFY\n&quot;)
+&nbsp;            append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;        }
+&nbsp;        if (query.orderBy.isNotEmpty()) {
+&nbsp;            append(&quot;\nORDER BY\n&quot;)
+&nbsp;            append(query.orderBy.joinToString(&quot;,\n&quot;) { &quot;${renderIndent(1)}${renderOrderingItemPretty(it)}&quot; })
+&nbsp;        }
+&nbsp;        query.limit?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderLimit(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettySet(query: SqlQuery.Set): String = buildString {
+&nbsp;        append(&quot;(\n&quot;)
+&nbsp;        append(renderQuery(query.left).prependIndent(indent))
+&nbsp;        append(&quot;\n)\n&quot;)
+&nbsp;        append(renderSetOperator(query.operator))
+&nbsp;        append(&quot;\n(\n&quot;)
+&nbsp;        append(renderQuery(query.right).prependIndent(indent))
+&nbsp;        append(&quot;\n)&quot;)
+&nbsp;        if (query.orderBy.isNotEmpty()) {
+&nbsp;            append(&quot;\nORDER BY\n&quot;)
+&nbsp;            append(query.orderBy.joinToString(&quot;,\n&quot;) { &quot;${renderIndent(1)}${renderOrderingItemPretty(it)}&quot; })
+&nbsp;        }
+&nbsp;        query.limit?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderLimit(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyWith(query: SqlQuery.With): String = buildString {
+&nbsp;        append(&quot;WITH&quot;)
+&nbsp;        if (query.withRecursive) append(&quot; RECURSIVE&quot;)
+&nbsp;        append(&quot;\n&quot;)
+&nbsp;        append(query.withItems.joinToString(&quot;,\n&quot;) { item -&gt;
+&nbsp;            &quot;${renderIndent(1)}${quoteIdent(item.name)}&quot; +
+&nbsp;                item.columnNames.takeIf { it.isNotEmpty() }?.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { quoteIdent(it) }.orEmpty() +
+&nbsp;                &quot; AS (\n${renderQuery(item.query).prependIndent(renderIndent(2))}\n${renderIndent(1)})&quot;
+&nbsp;        })
+&nbsp;        append(&quot;\n&quot;)
+&nbsp;        append(renderQuery(query.query))
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyInsert(statement: SqlDmlStatement.Insert): String = buildString {
+&nbsp;        append(&quot;INSERT INTO &quot;)
+&nbsp;        append(renderTablePretty(statement.table, 0))
+&nbsp;        if (statement.columns.isNotEmpty()) {
+&nbsp;            append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;        }
+&nbsp;        when (val mode = statement.mode) {
+&nbsp;            is SqlInsertMode.Values -&gt; {
+&nbsp;                append(&quot;\nVALUES\n&quot;)
+&nbsp;                append(mode.values.joinToString(&quot;,\n&quot;) { row -&gt;
+&nbsp;                    row.joinToString(&quot;, &quot;, &quot;${renderIndent(1)}(&quot;, &quot;)&quot;) { renderExprPretty(it) }
+&nbsp;                })
+&nbsp;            }
+&nbsp;            is SqlInsertMode.Subquery -&gt; {
+&nbsp;                append(&quot;\n&quot;)
+&nbsp;                append(renderQuery(mode.query))
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyUpdate(statement: SqlDmlStatement.Update): String = buildString {
+&nbsp;        append(&quot;UPDATE &quot;)
+&nbsp;        append(renderTablePretty(statement.table, 0))
+&nbsp;        append(&quot;\nSET\n&quot;)
+&nbsp;        append(statement.setPairs.joinToString(&quot;,\n&quot;) {
+&nbsp;            &quot;${renderIndent(1)}${renderAssignmentTarget(it.target)} = ${renderExprPretty(it.value)}&quot;
+&nbsp;        })
+&nbsp;        statement.where?.let {
+&nbsp;            append(&quot;\nWHERE\n&quot;)
+&nbsp;            append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;        }
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyDelete(statement: SqlDmlStatement.Delete): String = buildString {
+&nbsp;        append(&quot;DELETE FROM &quot;)
+&nbsp;        append(renderTablePretty(statement.table, 0))
+&nbsp;        statement.where?.let {
+&nbsp;            append(&quot;\nWHERE\n&quot;)
+&nbsp;            append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;        }
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(
+&nbsp;            when (dialect.family) {
+&nbsp;                SqlDialectFamily.MySql -&gt; renderPrettyMysqlUpsert(statement)
+&nbsp;                SqlDialectFamily.PostgreSql -&gt; renderPrettyPostgresqlUpsert(statement)
+&nbsp;                SqlDialectFamily.SQLite -&gt; renderPrettySqliteUpsert(statement)
+&nbsp;                SqlDialectFamily.Standard,
+&nbsp;                SqlDialectFamily.Oracle,
+&nbsp;                SqlDialectFamily.SqlServer -&gt; renderPrettyMergeUpsert(statement)
+&nbsp;            }
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderTablePretty(table: SqlTable, depth: Int): String = when (table) {
+&nbsp;        is SqlTable.Subquery -&gt; buildString {
+&nbsp;            if (table.matchRecognize != null) {
+&nbsp;                append(renderCompactTable(table))
+&nbsp;                return@buildString
+&nbsp;            }
+&nbsp;            if (table.withLateral) append(&quot;LATERAL &quot;)
+&nbsp;            append(&quot;(\n&quot;)
+&nbsp;            append(renderQuery(table.query).prependIndent(renderIndent(depth + 1)))
+&nbsp;            append(&quot;\n${renderIndent(depth)})&quot;)
+&nbsp;            table.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }
+&nbsp;        }
+&nbsp;        is SqlTable.Join -&gt; buildString {
+&nbsp;            append(renderTablePretty(table.left, depth))
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderIndent(depth))
+&nbsp;            append(&quot;${renderJoinType(table.joinType)} JOIN &quot;)
+&nbsp;            append(if (table.right is SqlTable.Join) &quot;(${renderTablePretty(table.right, depth + 1)})&quot; else renderTablePretty(table.right, depth))
+&nbsp;            table.condition?.let {
+&nbsp;                append(&quot;\n&quot;)
+&nbsp;                append(renderIndent(depth))
+&nbsp;                append(renderJoinConditionPretty(it))
+&nbsp;            }
+&nbsp;        }
+&nbsp;        else -&gt; renderCompactTable(table)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderSelectItemPretty(item: SqlSelectItem): String = when (item) {
+&nbsp;        is SqlSelectItem.Asterisk -&gt; item.qualifier?.let { &quot;${renderIdentifier(it)}.*&quot; } ?: &quot;*&quot;
+&nbsp;        is SqlSelectItem.Expr -&gt; renderExprPretty(item.expr) + (item.alias?.let { &quot; AS ${quoteIdent(it)}&quot; } ?: &quot;&quot;)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderGroupPretty(group: SqlGroup): String = buildString {
+&nbsp;        append(&quot;GROUP BY&quot;)
+&nbsp;        group.quantifier?.let { append(&quot; ${renderQuantifier(it)}&quot;) }
+&nbsp;        append(&quot;\n&quot;)
+&nbsp;        append(group.items.joinToString(&quot;,\n&quot;) { &quot;${renderIndent(1)}${renderGroupingItemPretty(it)}&quot; })
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderGroupingItemPretty(item: SqlGroupingItem): String = when (item) {
+&nbsp;        SqlGroupingItem.EmptyGroup -&gt; &quot;()&quot;
+&nbsp;        is SqlGroupingItem.Expr -&gt; renderExprPretty(item.item)
+&nbsp;        is SqlGroupingItem.Cube -&gt; item.items.joinToString(&quot;, &quot;, &quot;CUBE(&quot;, &quot;)&quot;) { renderExprPretty(it) }
+&nbsp;        is SqlGroupingItem.Rollup -&gt; item.items.joinToString(&quot;, &quot;, &quot;ROLLUP(&quot;, &quot;)&quot;) { renderExprPretty(it) }
+&nbsp;        is SqlGroupingItem.GroupingSets -&gt; item.items.joinToString(&quot;, &quot;, &quot;GROUPING SETS(&quot;, &quot;)&quot;) { renderGroupingItemPretty(it) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderOrderingItemPretty(item: SqlOrderingItem): String = buildString {
+&nbsp;        append(renderExprPretty(item.expr))
+&nbsp;        append(&quot; &quot;)
+&nbsp;        append((item.ordering ?: SqlOrdering.Asc).name.uppercase())
+&nbsp;        item.nullsOrdering?.let {
+&nbsp;            append(&quot; NULLS &quot;)
+&nbsp;            append(when (it) {
+&nbsp;                SqlNullsOrdering.First -&gt; &quot;FIRST&quot;
+&nbsp;                SqlNullsOrdering.Last -&gt; &quot;LAST&quot;
+&nbsp;            })
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderJoinConditionPretty(condition: SqlJoinCondition): String = when (condition) {
+&nbsp;        is SqlJoinCondition.On -&gt; &quot;ON ${renderPredicatePretty(condition.condition)}&quot;
+&nbsp;        is SqlJoinCondition.Using -&gt; condition.columnNames.joinToString(&quot;, &quot;, &quot;USING (&quot;, &quot;)&quot;) { quoteIdent(it) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyMergeUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(&quot;MERGE INTO &quot;)
+&nbsp;        append(renderCompactTable(statement.table.copy(alias = SqlTableAlias(&quot;t1&quot;))))
+&nbsp;        append(&quot;\nUSING (\n&quot;)
+&nbsp;        append(&quot;SELECT\n&quot;)
+&nbsp;        append(statement.values.zip(statement.columns).joinToString(&quot;,\n&quot;) { (value, column) -&gt;
+&nbsp;            &quot;${renderIndent(1)}${renderExprPretty(value)} AS ${renderIdentifier(column)}&quot;
+&nbsp;        })
+&nbsp;        append(&quot;\n) &quot;)
+&nbsp;        append(renderTableAlias(SqlTableAlias(&quot;t2&quot;)))
+&nbsp;        append(&quot;\nON (&quot;)
+&nbsp;        append(statement.primaryKeys.joinToString(&quot; AND &quot;) {
+&nbsp;            &quot;${quoteIdent(&quot;t1&quot;)}.${renderIdentifier(it)} = ${quoteIdent(&quot;t2&quot;)}.${renderIdentifier(it)}&quot;
+&nbsp;        })
+&nbsp;        append(&quot;)&quot;)
+&nbsp;        when (val action = statement.action) {
+&nbsp;            SqlUpsertAction.DoNothing -&gt; {}
+&nbsp;            is SqlUpsertAction.Update -&gt; {
+&nbsp;                append(&quot;\nWHEN MATCHED THEN UPDATE SET\n&quot;)
+&nbsp;                append(action.setPairs.joinToString(&quot;,\n&quot;) {
+&nbsp;                    &quot;${renderIndent(1)}${renderQualifiedAssignmentTarget(it.target, SqlIdentifier.of(&quot;t1&quot;))} = ${renderPrettyMergeSourceExpr(it.value)}&quot;
+&nbsp;                })
+&nbsp;                action.where?.let {
+&nbsp;                    append(&quot;\nWHERE\n&quot;)
+&nbsp;                    append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        append(&quot;\nWHEN NOT MATCHED THEN INSERT &quot;)
+&nbsp;        append(renderColumnList(statement.columns))
+&nbsp;        append(&quot;\nVALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExprPretty(it) })
+&nbsp;        append(&quot;)&quot;)
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyMysqlUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(&quot;INSERT INTO &quot;)
+&nbsp;        append(renderCompactTable(statement.table))
+&nbsp;        append(&quot; &quot;)
+&nbsp;        append(renderColumnList(statement.columns))
+&nbsp;        append(&quot;\nVALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExprPretty(it) })
+&nbsp;        append(&quot;)\nON DUPLICATE KEY UPDATE\n&quot;)
+&nbsp;        when (val action = statement.action) {
+&nbsp;            SqlUpsertAction.DoNothing -&gt; {
+&nbsp;                val column = statement.primaryKeys.firstOrNull() ?: statement.columns.first()
+&nbsp;                append(&quot;${renderIndent(1)}${renderIdentifier(column)} = ${renderIdentifier(column)}&quot;)
+&nbsp;            }
+&nbsp;            is SqlUpsertAction.Update -&gt; {
+&nbsp;                append(action.setPairs.joinToString(&quot;,\n&quot;) {
+&nbsp;                    val value = when (val expr = it.value) {
+&nbsp;                        is SqlExpr.ExcludedColumn -&gt; &quot;VALUES (${renderIdentifier(expr.identifier)})&quot;
+&nbsp;                        else -&gt; renderExprPretty(expr)
+&nbsp;                    }
+&nbsp;                    &quot;${renderIndent(1)}${renderAssignmentTarget(it.target)} = $value&quot;
+&nbsp;                })
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettyPostgresqlUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(&quot;INSERT INTO &quot;)
+&nbsp;        append(renderCompactTable(statement.table))
+&nbsp;        append(&quot; &quot;)
+&nbsp;        append(renderColumnList(statement.columns))
+&nbsp;        append(&quot;\nVALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExprPretty(it) })
+&nbsp;        append(&quot;)\nON CONFLICT &quot;)
+&nbsp;        val target = statement.conflictTarget
+&nbsp;        if (target.constraintName != null) {
+&nbsp;            append(&quot;ON CONSTRAINT ${renderIdentifier(target.constraintName)}&quot;)
+&nbsp;        } else {
+&nbsp;            val columns = if (target.columns.isNotEmpty()) target.columns else statement.primaryKeys
+&nbsp;            append(columns.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;            target.where?.let { append(&quot; WHERE ${renderPredicatePretty(it)}&quot;) }
+&nbsp;        }
+&nbsp;        when (val action = statement.action) {
+&nbsp;            SqlUpsertAction.DoNothing -&gt; append(&quot; DO NOTHING&quot;)
+&nbsp;            is SqlUpsertAction.Update -&gt; {
+&nbsp;                append(&quot; DO UPDATE SET\n&quot;)
+&nbsp;                append(action.setPairs.joinToString(&quot;,\n&quot;) {
+&nbsp;                    &quot;${renderIndent(1)}${renderAssignmentTarget(it.target)} = ${renderExprPretty(it.value)}&quot;
+&nbsp;                })
+&nbsp;                action.where?.let {
+&nbsp;                    append(&quot;\nWHERE\n&quot;)
+&nbsp;                    append(&quot;${renderIndent(1)}${renderPredicatePretty(it)}&quot;)
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPrettySqliteUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(&quot;INSERT OR REPLACE INTO &quot;)
+&nbsp;        append(renderCompactTable(statement.table))
+&nbsp;        append(&quot; &quot;)
+&nbsp;        append(renderColumnList(statement.columns))
+&nbsp;        append(&quot;\nVALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExprPretty(it) })
+&nbsp;        append(&quot;)&quot;)
+&nbsp;        statement.returning?.let {
+&nbsp;            append(&quot;\n&quot;)
+&nbsp;            append(renderReturning(it))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderColumnList(columns: List&lt;SqlIdentifier&gt;): String =
+&nbsp;        columns.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderIdentifier(it) }
+&nbsp;
+&nbsp;    private fun renderQualifiedAssignmentTarget(
+&nbsp;        target: com.kotlinorm.syntax.statement.SqlAssignmentTarget,
+&nbsp;        qualifier: SqlIdentifier
+&nbsp;    ): String = when (target) {
+&nbsp;        is com.kotlinorm.syntax.statement.SqlAssignmentTarget.Column -&gt;
+&nbsp;            renderQualifiedIdentifier(target.qualifier ?: qualifier, target.identifier)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun SqlRenderer.renderWindowItemForPretty(item: com.kotlinorm.syntax.expr.SqlWindowItem): String =
+&nbsp;        renderQuery(SqlQuery.Select(window = listOf(item))).removePrefix(&quot;SELECT * WINDOW &quot;)
+&nbsp;
+&nbsp;    private fun renderPrettyMergeSourceExpr(expr: SqlExpr): String = when (expr) {
+&nbsp;        is SqlExpr.ExcludedColumn -&gt; renderQualifiedIdentifier(SqlIdentifier.of(&quot;t2&quot;), expr.identifier)
+&nbsp;        else -&gt; renderExprPretty(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderExprPretty(expr: SqlExpr): String =
+&nbsp;        compactRenderer.renderExpr(expr)
+&nbsp;
+&nbsp;    private fun renderPredicatePretty(expr: SqlExpr): String =
+&nbsp;        compactRenderer.renderPredicate(expr)
+&nbsp;
+&nbsp;    private fun renderCompactTable(table: SqlTable): String =
+&nbsp;        compactRenderer.renderTable(table)
+&nbsp;
+&nbsp;    private fun renderIndent(depth: Int): String =
+&nbsp;        indent.repeat(depth)
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;fun SqlStatement.toPrettySql(dialect: SqlDialect = SqlDialect.Standard): String =</b>
+<b class="fc">&nbsp;    PrettySqlRenderer(dialect).renderStatement(this)</b>
+&nbsp;
+<b class="fc">&nbsp;fun SqlQuery.toPrettySql(dialect: SqlDialect = SqlDialect.Standard): String =</b>
+<b class="fc">&nbsp;    PrettySqlRenderer(dialect).renderQuery(this)</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

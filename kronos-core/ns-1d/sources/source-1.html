@@ -1,0 +1,194 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > OrmSyntaxFactoryKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.sql</a>
+</div>
+
+<h1>Coverage Summary for Class: OrmSyntaxFactoryKt (com.kotlinorm.orm.sql)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">OrmSyntaxFactoryKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (26/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (34/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (259/259)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.sql
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemAliasMetadata
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemSource
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;
+<b class="fc">&nbsp;internal fun Field.toSqlExpr(useTableAlias: Boolean = false): SqlExpr {</b>
+<b class="fc">&nbsp;    return SqlExpr.Column(</b>
+<b class="fc">&nbsp;        tableName = tableName.takeIf { useTableAlias &amp;&amp; it.isNotBlank() },</b>
+<b class="fc">&nbsp;        columnName = columnName</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;internal fun Field.toSqlParameterEq(parameterName: String, useTableAlias: Boolean = false): SqlExpr =</b>
+<b class="fc">&nbsp;    SqlExpr.Binary(</b>
+<b class="fc">&nbsp;        toSqlExpr(useTableAlias),</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.Equal,</b>
+<b class="fc">&nbsp;        SqlExpr.Parameter(SqlParameter.Named(parameterName))</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;internal fun Field.toSqlSelectItem(useTableAlias: Boolean = false): SqlSelectItem.Expr {</b>
+<b class="fc">&nbsp;    val expr = toSqlExpr(useTableAlias)</b>
+<b class="fc">&nbsp;    val alias = when {</b>
+<b class="fc">&nbsp;        name != columnName -&gt; name</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return SqlSelectItem.Expr(</b>
+<b class="fc">&nbsp;        expr = expr,</b>
+<b class="fc">&nbsp;        alias = alias,</b>
+<b class="fc">&nbsp;        metadata = SqlSelectItemAliasMetadata(</b>
+<b class="fc">&nbsp;            outputName = alias ?: columnName,</b>
+<b class="fc">&nbsp;            expression = expr,</b>
+<b class="fc">&nbsp;            scope = if (alias == null) SqlSelectItemSourceScope.Source else SqlSelectItemSourceScope.Selected,</b>
+<b class="fc">&nbsp;            source = SqlSelectItemSource(tableName = tableName.takeIf { useTableAlias &amp;&amp; it.isNotBlank() }, columnName = columnName),</b>
+<b class="fc">&nbsp;            userReferenceable = true</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;internal fun totalCountSelectItem(): SqlSelectItem.Expr =
+<b class="fc">&nbsp;    SqlSelectItem.Expr(</b>
+<b class="fc">&nbsp;        expr = SqlExpr.NumberLiteral(&quot;1&quot;),</b>
+<b class="fc">&nbsp;        alias = &quot;count_value&quot;</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;internal fun Any?.toSqlLiteralExpr(): SqlExpr = when (this) {</b>
+<b class="fc">&nbsp;    null -&gt; SqlExpr.NullLiteral</b>
+<b class="fc">&nbsp;    is SqlExpr -&gt; this</b>
+<b class="fc">&nbsp;    is String -&gt; SqlExpr.StringLiteral(this)</b>
+<b class="fc">&nbsp;    is Boolean -&gt; SqlExpr.BooleanLiteral(this)</b>
+<b class="fc">&nbsp;    is Number -&gt; SqlExpr.NumberLiteral(toString())</b>
+<b class="fc">&nbsp;    is Char -&gt; SqlExpr.StringLiteral(toString())</b>
+<b class="fc">&nbsp;    else -&gt; SqlExpr.StringLiteral(toString())</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

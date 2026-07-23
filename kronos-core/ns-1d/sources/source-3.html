@@ -1,0 +1,228 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SqlQueryPlan</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.sql</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlQueryPlan (com.kotlinorm.orm.sql)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlQueryPlan</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.sql
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlInRightOperand
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.inspect.SqlNodeRewriter
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;
+&nbsp;internal data class SqlQueryPlan(
+<b class="fc">&nbsp;    val query: SqlQuery,</b>
+<b class="fc">&nbsp;    val parameters: Map&lt;String, Any?&gt;,</b>
+<b class="fc">&nbsp;    val parameterFields: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;)
+&nbsp;
+&nbsp;internal fun KSelectable&lt;*&gt;.materializeSqlQuery(
+&nbsp;    parameterValues: MutableMap&lt;String, Any?&gt;,
+&nbsp;    parameterCounter: MutableMap&lt;String, Int&gt; = mutableMapOf(),
+&nbsp;    wrapper: KronosDataSourceWrapper? = null,
+&nbsp;    parameterFields: MutableMap&lt;String, Field&gt; = mutableMapOf()
+&nbsp;): SqlQuery {
+&nbsp;    val plan = toSqlQueryPlan(wrapper)
+&nbsp;    if (plan.parameters.isEmpty()) return plan.query
+&nbsp;
+&nbsp;    val renames = mutableMapOf&lt;String, String&gt;()
+&nbsp;    plan.parameters.forEach { (name, value) -&gt;
+&nbsp;        val uniqueName = uniqueParameterName(name, parameterValues, parameterCounter)
+&nbsp;        parameterValues[uniqueName] = value
+&nbsp;        plan.parameterFields[name]?.let { parameterFields[uniqueName] = it }
+&nbsp;        if (uniqueName != name) {
+&nbsp;            renames[name] = uniqueName
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    return plan.query.renameNamedParameters(renames)
+&nbsp;}
+&nbsp;
+&nbsp;private fun uniqueParameterName(
+&nbsp;    name: String,
+&nbsp;    parameterValues: Map&lt;String, Any?&gt;,
+&nbsp;    parameterCounter: MutableMap&lt;String, Int&gt;
+&nbsp;): String {
+&nbsp;    val (baseName, existingSuffix) = splitParameterSuffix(name)
+&nbsp;    if (name !in parameterValues) {
+&nbsp;        parameterCounter[baseName] = maxOf(parameterCounter.getOrDefault(baseName, 0), existingSuffix ?: 0)
+&nbsp;        return name
+&nbsp;    }
+&nbsp;
+&nbsp;    var count = maxOf(parameterCounter.getOrDefault(baseName, 0), existingSuffix ?: 0)
+&nbsp;    var candidate: String
+&nbsp;    do {
+&nbsp;        count++
+&nbsp;        candidate = &quot;$baseName@$count&quot;
+&nbsp;    } while (candidate in parameterValues)
+&nbsp;    parameterCounter[baseName] = count
+&nbsp;    return candidate
+&nbsp;}
+&nbsp;
+&nbsp;private val parameterSuffixRegex = Regex(&quot;&quot;&quot;^(.+)@(\d+)$&quot;&quot;&quot;)
+&nbsp;
+&nbsp;private fun splitParameterSuffix(name: String): Pair&lt;String, Int?&gt; {
+&nbsp;    val match = parameterSuffixRegex.matchEntire(name) ?: return name to null
+&nbsp;    return match.groupValues[1] to match.groupValues[2].toInt()
+&nbsp;}
+&nbsp;
+&nbsp;internal fun SqlQuery.renameNamedParameters(renames: Map&lt;String, String&gt;): SqlQuery {
+&nbsp;    if (renames.isEmpty()) return this
+&nbsp;    return namedParameterRenamer(renames).rewriteQuery(this)
+&nbsp;}
+&nbsp;
+&nbsp;internal fun SqlExpr.renameNamedParameters(renames: Map&lt;String, String&gt;): SqlExpr {
+&nbsp;    if (renames.isEmpty()) return this
+&nbsp;    return namedParameterRenamer(renames).rewriteExpr(this)
+&nbsp;}
+&nbsp;
+&nbsp;private fun namedParameterRenamer(renames: Map&lt;String, String&gt;): SqlNodeRewriter =
+&nbsp;    object : SqlNodeRewriter {
+&nbsp;        override fun rewriteExpr(expr: SqlExpr): SqlExpr =
+&nbsp;            when (expr) {
+&nbsp;                is SqlExpr.Parameter -&gt; {
+&nbsp;                    val named = expr.parameter as? SqlParameter.Named
+&nbsp;                    val newName = named?.let { renames[it.name] }
+&nbsp;                    if (newName == null) {
+&nbsp;                        expr
+&nbsp;                    } else {
+&nbsp;                        expr.copy(parameter = SqlParameter.Named(newName))
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                is SqlExpr.In -&gt; expr.copy(
+&nbsp;                    expr = rewriteExpr(expr.expr),
+&nbsp;                    `in` = when (val operand = expr.`in`) {
+&nbsp;                        is SqlInRightOperand.Values -&gt; operand.copy(items = operand.items.map(::rewriteExpr))
+&nbsp;                        is SqlInRightOperand.Subquery -&gt; operand.copy(query = rewriteQuery(operand.query))
+&nbsp;                    }
+&nbsp;                )
+&nbsp;                else -&gt; super.rewriteExpr(expr)
+&nbsp;            }
+&nbsp;    }
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

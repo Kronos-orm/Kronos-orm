@@ -1,0 +1,379 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UpdateClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.update</a>
+</div>
+
+<h1>Coverage Summary for Class: UpdateClause (com.kotlinorm.orm.update)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UpdateClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.2%
+  </span>
+  <span class="absValue">
+    (13/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    61.4%
+  </span>
+  <span class="absValue">
+    (27/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.1%
+  </span>
+  <span class="absValue">
+    (128/142)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87%
+  </span>
+  <span class="absValue">
+    (721/829)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.update
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.task.JdbcParameterTypeHints
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.cascade.CascadeUpdateClause
+&nbsp;import com.kotlinorm.orm.sql.materializeSqlQuery
+&nbsp;import com.kotlinorm.orm.sql.toSqlExpr
+&nbsp;import com.kotlinorm.orm.sql.toSqlParameterEq
+&nbsp;import com.kotlinorm.orm.statement.OrmContext
+&nbsp;import com.kotlinorm.orm.statement.OrmDmlRenderer
+&nbsp;import com.kotlinorm.orm.statement.ParameterSource
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.statement.SqlAssignmentTarget
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.types.ToSet
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.resolveRuntimeMetadata
+&nbsp;import com.kotlinorm.utils.toLinkedSet
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;class UpdateClause&lt;T : KPojo&gt;(
+&nbsp;    pojo: T,
+<b class="fc">&nbsp;    private val targetType: KType,</b>
+<b class="nc">&nbsp;    setUpdateFields: ToSelect&lt;T, Any?&gt; = null</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private val metadata = pojo.resolveRuntimeMetadata()</b>
+<b class="fc">&nbsp;    internal val context = OrmContext(</b>
+<b class="fc">&nbsp;        pojo = pojo,</b>
+<b class="fc">&nbsp;        kType = metadata.kType,</b>
+<b class="fc">&nbsp;        tableName = metadata.tableName,</b>
+<b class="pc">&nbsp;        declaredTableName = metadata.allColumns.firstOrNull { it.tableName.isNotBlank() }?.tableName</b>
+<b class="nc">&nbsp;            ?: metadata.tableName,</b>
+<b class="fc">&nbsp;        operationType = KOperationType.UPDATE,</b>
+<b class="fc">&nbsp;        fields = metadata.allColumns,</b>
+<b class="fc">&nbsp;        allFields = metadata.allFields.toList(),</b>
+<b class="fc">&nbsp;        fieldMap = metadata.fieldMap,</b>
+<b class="fc">&nbsp;        createTimeStrategy = metadata.createTimeStrategy,</b>
+<b class="fc">&nbsp;        updateTimeStrategy = metadata.updateTimeStrategy,</b>
+<b class="fc">&nbsp;        logicDeleteStrategy = metadata.logicDeleteStrategy,</b>
+<b class="fc">&nbsp;        optimisticLockStrategy = metadata.optimisticLockStrategy</b>
+&nbsp;    )
+<b class="fc">&nbsp;    private val planner = UpdatePlanner(context)</b>
+<b class="fc">&nbsp;    private val assignmentParameterCounter = mutableMapOf&lt;String, Int&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        if (setUpdateFields != null) {</b>
+<b class="fc">&nbsp;            context.pojo.afterSelect { selectTable -&gt;</b>
+<b class="fc">&nbsp;                setUpdateFields(selectTable)</b>
+<b class="fc">&nbsp;                fields.forEach { field -&gt;</b>
+<b class="fc">&nbsp;                    val parameterName = &quot;${field.name}New&quot;</b>
+<b class="fc">&nbsp;                    context.bind(parameterName, context.sourceValues[field.name], field, ParameterSource.Assignment)</b>
+<b class="fc">&nbsp;                    context.set(field, SqlExpr.Parameter(SqlParameter.Named(parameterName)))</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    fun set(newValue: ToSet&lt;T, Unit&gt;): UpdateClause&lt;T&gt; {
+<b class="pc">&nbsp;        newValue ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.pojo.afterSet {</b>
+<b class="fc">&nbsp;            newValue(it)</b>
+<b class="fc">&nbsp;            val plusAssignMap = plusAssignFields.toMap()</b>
+<b class="fc">&nbsp;            val minusAssignMap = minusAssignFields.toMap()</b>
+<b class="fc">&nbsp;            fields.toList().forEach { field -&gt;</b>
+<b class="fc">&nbsp;                when {</b>
+<b class="fc">&nbsp;                    plusAssignMap.containsKey(field) -&gt; {</b>
+<b class="fc">&nbsp;                        val parameterName = &quot;${field.name}2PlusNew&quot;</b>
+<b class="fc">&nbsp;                        context.bind(parameterName, plusAssignMap[field], field, ParameterSource.Assignment)</b>
+<b class="fc">&nbsp;                        context.set(</b>
+<b class="fc">&nbsp;                            field,</b>
+<b class="fc">&nbsp;                            SqlExpr.Binary(</b>
+<b class="fc">&nbsp;                                field.toSqlExpr(false),</b>
+<b class="fc">&nbsp;                                SqlBinaryOperator.Plus,</b>
+<b class="fc">&nbsp;                                SqlExpr.Parameter(SqlParameter.Named(parameterName))</b>
+&nbsp;                            )
+&nbsp;                        )
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    minusAssignMap.containsKey(field) -&gt; {</b>
+<b class="fc">&nbsp;                        val parameterName = &quot;${field.name}2MinusNew&quot;</b>
+<b class="fc">&nbsp;                        context.bind(parameterName, minusAssignMap[field], field, ParameterSource.Assignment)</b>
+<b class="fc">&nbsp;                        context.set(</b>
+<b class="fc">&nbsp;                            field,</b>
+<b class="fc">&nbsp;                            SqlExpr.Binary(</b>
+<b class="fc">&nbsp;                                field.toSqlExpr(false),</b>
+<b class="fc">&nbsp;                                SqlBinaryOperator.Minus,</b>
+<b class="fc">&nbsp;                                SqlExpr.Parameter(SqlParameter.Named(parameterName))</b>
+&nbsp;                            )
+&nbsp;                        )
+&nbsp;                    }
+&nbsp;
+&nbsp;                    else -&gt; {
+<b class="fc">&nbsp;                        val parameterName = &quot;${field.name}New&quot;</b>
+<b class="fc">&nbsp;                        val value = fieldParamMap[field]</b>
+<b class="fc">&nbsp;                        context.set(field, assignmentValueExpression(value, parameterName, ParameterSource.Assignment))</b>
+<b class="fc">&nbsp;                        context.bindValueIfNeeded(parameterName, value, field, ParameterSource.Assignment)</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): UpdateClause&lt;T&gt; {
+<b class="fc">&nbsp;        context.cascadeEnabled = enabled</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(someFields: ToReference&lt;T, Any?&gt;): UpdateClause&lt;T&gt; {
+<b class="nc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        context.cascadeEnabled = true</b>
+<b class="nc">&nbsp;        context.pojo.afterReference {</b>
+<b class="nc">&nbsp;            someFields(it)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            context.cascadeAllowed = fields.toSet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun by(someFields: ToSelect&lt;T, Any?&gt;): UpdateClause&lt;T&gt; {
+<b class="pc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.pojo.afterSelect {</b>
+<b class="fc">&nbsp;            someFields(it)</b>
+<b class="pc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            context.andWhereAll(fields.map { field -&gt;</b>
+<b class="fc">&nbsp;                context.bind(field.name, context.sourceValues[field.name], field, ParameterSource.Condition)</b>
+<b class="fc">&nbsp;                field.toSqlParameterEq(field.name)</b>
+&nbsp;            })
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun where(updateCondition: ToFilter&lt;T, Boolean?&gt;? = null): UpdateClause&lt;T&gt; {</b>
+<b class="pc">&nbsp;        if (updateCondition == null) return this</b>
+<b class="fc">&nbsp;        context.pojo.afterFilter(context.sourceBinding) filter@ { filterTable -&gt;</b>
+<b class="fc">&nbsp;            with(context) {</b>
+<b class="fc">&nbsp;                this@filter.sourceValues = sourceValues.toMutableMap()</b>
+<b class="fc">&nbsp;                this@filter.operationType = operationType</b>
+<b class="fc">&nbsp;                updateCondition(filterTable)</b>
+<b class="fc">&nbsp;                    this@filter.sqlExpr?.let { expr -&gt;</b>
+<b class="fc">&nbsp;                        context.andWhere(expr)</b>
+<b class="fc">&nbsp;                        this@filter.parameterValues.forEach { (name, value) -&gt;</b>
+<b class="fc">&nbsp;                            bind(name, value, this@filter.parameterFields[name], ParameterSource.Condition)</b>
+<b class="fc">&nbsp;                        }</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): UpdateClause&lt;T&gt; {
+<b class="fc">&nbsp;        pairs.forEach { (fieldName, value) -&gt;</b>
+<b class="pc">&nbsp;            val field = context.fields.firstOrNull { it.name == fieldName || it.columnName == fieldName } ?: return@forEach</b>
+<b class="fc">&nbsp;            val parameterName = &quot;${field.name}New&quot;</b>
+<b class="fc">&nbsp;            context.set(field, assignmentValueExpression(value, parameterName, ParameterSource.Patch))</b>
+<b class="fc">&nbsp;            context.bindValueIfNeeded(parameterName, value, field, ParameterSource.Patch)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun assignmentValueExpression(value: Any?, parameterName: String, source: ParameterSource): SqlExpr {
+<b class="fc">&nbsp;        if (value !is KSelectable&lt;*&gt;) return context.valueExpression(value, parameterName)</b>
+&nbsp;
+<b class="fc">&nbsp;        val parameters = linkedMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;        parameters.putAll(context.parameterValues())</b>
+<b class="fc">&nbsp;        val existingNames = parameters.keys.toSet()</b>
+<b class="fc">&nbsp;        val parameterFields = linkedMapOf&lt;String, Field&gt;()</b>
+<b class="fc">&nbsp;        val query = value.materializeSqlQuery(</b>
+<b class="fc">&nbsp;            parameters,</b>
+<b class="fc">&nbsp;            assignmentParameterCounter,</b>
+<b class="fc">&nbsp;            parameterFields = parameterFields</b>
+&nbsp;        )
+<b class="fc">&nbsp;        parameters.forEach { (name, parameterValue) -&gt;</b>
+<b class="pc">&nbsp;            if (name !in existingNames) {</b>
+<b class="fc">&nbsp;                context.bind(name, parameterValue, parameterFields[name], source)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return SqlExpr.Subquery(query)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="fc">&nbsp;        val sqlStatement = planner.plan(dataSource)</b>
+<b class="fc">&nbsp;        val rendered = OrmDmlRenderer.render(context, wrapper, sqlStatement)</b>
+<b class="fc">&nbsp;        val (sql, paramMap, jdbcTypeHints) = rendered</b>
+<b class="fc">&nbsp;        val toUpdateFields = context.setPairs.mapNotNull { pair -&gt;</b>
+<b class="pc">&nbsp;            val column = (pair.target as? SqlAssignmentTarget.Column)?.identifier?.last ?: return@mapNotNull null</b>
+<b class="pc">&nbsp;            context.fields.find { it.columnName == column }</b>
+<b class="fc">&nbsp;        }.toLinkedSet()</b>
+<b class="fc">&nbsp;        val rootTask = KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;            sql,</b>
+<b class="fc">&nbsp;            paramMap,</b>
+<b class="fc">&nbsp;            operationType = KOperationType.UPDATE,</b>
+<b class="fc">&nbsp;            statement = sqlStatement,</b>
+<b class="fc">&nbsp;            stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),</b>
+<b class="fc">&nbsp;            listParameterOccurrences = rendered.listParameterOccurrences</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        return CascadeUpdateClause.build(</b>
+<b class="fc">&nbsp;            context.cascadeEnabled,</b>
+<b class="fc">&nbsp;            context.cascadeAllowed,</b>
+<b class="fc">&nbsp;            context.pojo,</b>
+<b class="fc">&nbsp;            targetType,</b>
+<b class="fc">&nbsp;            paramMap,</b>
+<b class="fc">&nbsp;            toUpdateFields,</b>
+<b class="fc">&nbsp;            context.where,</b>
+<b class="fc">&nbsp;            rootTask</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="nc">&nbsp;        return build(wrapper).execute(wrapper)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

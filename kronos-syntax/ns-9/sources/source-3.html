@@ -1,0 +1,398 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlColumnPosition</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.statement</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlColumnPosition (com.kotlinorm.syntax.statement)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+  <tr>
+    <td class="name">SqlColumnPosition$After</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlColumnPosition$First</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.statement
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;
+&nbsp;sealed interface SqlDdlStatement : SqlStatement {
+&nbsp;    data class CreateTable(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val columns: List&lt;SqlColumnDefinition&gt;,
+&nbsp;        val indexes: List&lt;SqlIndexDefinition&gt; = emptyList(),
+&nbsp;        val comment: String? = null,
+&nbsp;        val ifNotExists: Boolean = false
+&nbsp;    ) : SqlDdlStatement {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;CREATE TABLE requires at least one column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class CreateTableAsSelect(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val query: SqlQuery,
+&nbsp;        val ifNotExists: Boolean = true
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    sealed interface AlterTable : SqlDdlStatement {
+&nbsp;        val tableName: SqlIdentifier
+&nbsp;
+&nbsp;        data class AddColumn(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val column: SqlColumnDefinition,
+&nbsp;            val position: SqlColumnPosition? = null
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class DropColumn(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val columnName: SqlIdentifier
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class ModifyColumn(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val column: SqlColumnDefinition,
+&nbsp;            val position: SqlColumnPosition? = null
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class RenameColumn(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val oldName: SqlIdentifier,
+&nbsp;            val newName: SqlIdentifier
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class RenameTable(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val newName: SqlIdentifier
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class AlterColumnDefault(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val columnName: SqlIdentifier,
+&nbsp;            val defaultValue: SqlExpr?
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class AlterColumnNullable(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val columnName: SqlIdentifier,
+&nbsp;            val nullable: Boolean
+&nbsp;        ) : AlterTable
+&nbsp;
+&nbsp;        data class SetTableComment(
+&nbsp;            override val tableName: SqlIdentifier,
+&nbsp;            val comment: String?
+&nbsp;        ) : AlterTable
+&nbsp;    }
+&nbsp;
+&nbsp;    data class DropTable(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val ifExists: Boolean = false
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class CreateIndex(
+&nbsp;        val indexName: SqlIdentifier,
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val columns: List&lt;SqlIdentifier&gt;,
+&nbsp;        val unique: Boolean = false,
+&nbsp;        val method: String? = null,
+&nbsp;        val type: String? = null,
+&nbsp;        val concurrently: Boolean = false,
+&nbsp;        val ifNotExists: Boolean = false
+&nbsp;    ) : SqlDdlStatement {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;CREATE INDEX requires at least one column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class DropIndex(
+&nbsp;        val indexName: SqlIdentifier,
+&nbsp;        val tableName: SqlIdentifier? = null,
+&nbsp;        val ifExists: Boolean = false,
+&nbsp;        val concurrently: Boolean = false
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class AddConstraint(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val constraint: SqlTableConstraint
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class DropConstraint(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val constraintName: SqlIdentifier
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class CommentOnTable(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val comment: String?
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class CommentOnColumn(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val columnName: SqlIdentifier,
+&nbsp;        val comment: String?
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class Vacuum(
+&nbsp;        val schemaName: SqlIdentifier? = null,
+&nbsp;        val into: SqlExpr? = null
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;    data class SqlServerExtendedPropertyComment(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val columnName: SqlIdentifier? = null,
+&nbsp;        val comment: String?,
+&nbsp;        val schemaName: SqlIdentifier? = null,
+&nbsp;        val propertyName: String = &quot;MS_Description&quot;,
+&nbsp;        val operation: SqlServerExtendedPropertyOperation = SqlServerExtendedPropertyOperation.Add
+&nbsp;    ) : SqlDdlStatement {
+&nbsp;        init {
+&nbsp;            require(propertyName.isNotBlank()) { &quot;SQL Server extended property name must not be blank.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class SqlServerDropDefaultConstraint(
+&nbsp;        val tableName: SqlIdentifier,
+&nbsp;        val columnName: SqlIdentifier,
+&nbsp;        val schemaName: SqlIdentifier? = null
+&nbsp;    ) : SqlDdlStatement
+&nbsp;
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlServerExtendedPropertyOperation {
+&nbsp;    Add,
+&nbsp;    Update,
+&nbsp;    Drop
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlColumnPosition : SqlNode {
+<b class="fc">&nbsp;    object First : SqlColumnPosition</b>
+&nbsp;
+<b class="fc">&nbsp;    data class After(val columnName: SqlIdentifier) : SqlColumnPosition</b>
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlColumnDefinition(
+&nbsp;    val name: SqlIdentifier,
+&nbsp;    val type: SqlType,
+&nbsp;    val nullable: Boolean = true,
+&nbsp;    val primaryKey: SqlPrimaryKeyMode = SqlPrimaryKeyMode.NotPrimary,
+&nbsp;    val defaultValue: SqlExpr? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlIndexDefinition(
+&nbsp;    val name: SqlIdentifier,
+&nbsp;    val columns: List&lt;SqlIdentifier&gt;,
+&nbsp;    val unique: Boolean = false,
+&nbsp;    val method: String? = null
+&nbsp;) : SqlNode {
+&nbsp;    init {
+&nbsp;        require(columns.isNotEmpty()) { &quot;Index definition requires at least one column.&quot; }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlTableConstraint : SqlNode {
+&nbsp;    val name: SqlIdentifier?
+&nbsp;
+&nbsp;    data class PrimaryKey(
+&nbsp;        override val name: SqlIdentifier? = null,
+&nbsp;        val columns: List&lt;SqlIdentifier&gt;
+&nbsp;    ) : SqlTableConstraint {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;PRIMARY KEY constraint requires at least one column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Unique(
+&nbsp;        override val name: SqlIdentifier? = null,
+&nbsp;        val columns: List&lt;SqlIdentifier&gt;
+&nbsp;    ) : SqlTableConstraint {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;UNIQUE constraint requires at least one column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Check(
+&nbsp;        override val name: SqlIdentifier? = null,
+&nbsp;        val condition: SqlExpr
+&nbsp;    ) : SqlTableConstraint
+&nbsp;
+&nbsp;    data class ForeignKey(
+&nbsp;        override val name: SqlIdentifier? = null,
+&nbsp;        val columns: List&lt;SqlIdentifier&gt;,
+&nbsp;        val referencedTable: SqlIdentifier,
+&nbsp;        val referencedColumns: List&lt;SqlIdentifier&gt;
+&nbsp;    ) : SqlTableConstraint {
+&nbsp;        init {
+&nbsp;            require(columns.isNotEmpty()) { &quot;FOREIGN KEY constraint requires at least one column.&quot; }
+&nbsp;            require(referencedColumns.isNotEmpty()) { &quot;FOREIGN KEY constraint requires at least one referenced column.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlPrimaryKeyMode {
+&nbsp;    NotPrimary,
+&nbsp;    Primary,
+&nbsp;    Identity,
+&nbsp;    Uuid,
+&nbsp;    Snowflake
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

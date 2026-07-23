@@ -1,0 +1,275 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlRowPattern</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.table</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlRowPattern (com.kotlinorm.syntax.table)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlRowPattern</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (47/47)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.table
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;
+&nbsp;data class SqlMatchRecognize(
+&nbsp;    val partitionBy: List&lt;SqlExpr&gt; = emptyList(),
+&nbsp;    val orderBy: List&lt;SqlOrderingItem&gt; = emptyList(),
+&nbsp;    val measures: List&lt;SqlRecognizeMeasureItem&gt; = emptyList(),
+&nbsp;    val rowsMode: SqlRecognizePatternRowsMode? = null,
+&nbsp;    val rowPattern: SqlRowPattern,
+&nbsp;    val alias: SqlTableAlias? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlRecognizeMeasureItem(
+&nbsp;    val expr: SqlExpr,
+&nbsp;    val alias: String
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;sealed interface SqlRecognizePatternRowsMode : SqlNode {
+&nbsp;    object OneRow : SqlRecognizePatternRowsMode
+&nbsp;
+&nbsp;    data class AllRows(
+&nbsp;        val emptyMatchMode: SqlRecognizePatternEmptyMatchMode? = null
+&nbsp;    ) : SqlRecognizePatternRowsMode
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlRecognizePatternEmptyMatchMode {
+&nbsp;    ShowEmptyMatches,
+&nbsp;    OmitEmptyMatches,
+&nbsp;    WithUnmatchedRows
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlRowPattern(
+<b class="fc">&nbsp;    val afterMatchMode: SqlRowPatternSkipMode? = null,</b>
+<b class="fc">&nbsp;    val strategy: SqlRowPatternStrategy? = null,</b>
+<b class="fc">&nbsp;    val pattern: SqlRowPatternTerm,</b>
+<b class="fc">&nbsp;    val subset: List&lt;SqlRowPatternSubsetItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    val define: List&lt;SqlRowPatternDefineItem&gt;</b>
+&nbsp;) : SqlNode {
+<b class="fc">&nbsp;    init {</b>
+<b class="pc">&nbsp;        require(define.isNotEmpty()) { &quot;MATCH_RECOGNIZE DEFINE requires at least one item.&quot; }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlRowPatternSkipMode : SqlNode {
+&nbsp;    object ToNextRow : SqlRowPatternSkipMode
+&nbsp;
+&nbsp;    object PastLastRow : SqlRowPatternSkipMode
+&nbsp;
+&nbsp;    data class ToFirst(val name: String) : SqlRowPatternSkipMode
+&nbsp;
+&nbsp;    data class ToLast(val name: String) : SqlRowPatternSkipMode
+&nbsp;
+&nbsp;    data class To(val name: String) : SqlRowPatternSkipMode
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlRowPatternStrategy {
+&nbsp;    Initial,
+&nbsp;    Seek
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlRowPatternQuantifier : SqlNode {
+&nbsp;    val withQuestion: Boolean
+&nbsp;
+&nbsp;    data class Asterisk(override val withQuestion: Boolean = false) : SqlRowPatternQuantifier
+&nbsp;
+&nbsp;    data class Plus(override val withQuestion: Boolean = false) : SqlRowPatternQuantifier
+&nbsp;
+&nbsp;    data class Question(override val withQuestion: Boolean = false) : SqlRowPatternQuantifier
+&nbsp;
+&nbsp;    data class Between(
+&nbsp;        val start: SqlExpr? = null,
+&nbsp;        val end: SqlExpr? = null,
+&nbsp;        override val withQuestion: Boolean = false
+&nbsp;    ) : SqlRowPatternQuantifier
+&nbsp;
+&nbsp;    data class Quantity(val quantity: SqlExpr) : SqlRowPatternQuantifier {
+&nbsp;        override val withQuestion: Boolean = false
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlRowPatternTerm : SqlNode {
+&nbsp;    val quantifier: SqlRowPatternQuantifier?
+&nbsp;
+&nbsp;    data class Pattern(
+&nbsp;        val name: String,
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm
+&nbsp;
+&nbsp;    data class Circumflex(
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm
+&nbsp;
+&nbsp;    data class Dollar(
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm
+&nbsp;
+&nbsp;    data class Exclusion(
+&nbsp;        val term: SqlRowPatternTerm,
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm
+&nbsp;
+&nbsp;    data class Permute(
+&nbsp;        val terms: List&lt;SqlRowPatternTerm&gt;,
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm {
+&nbsp;        init {
+&nbsp;            require(terms.isNotEmpty()) { &quot;PERMUTE requires at least one row pattern term.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Then(
+&nbsp;        val left: SqlRowPatternTerm,
+&nbsp;        val right: SqlRowPatternTerm,
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm
+&nbsp;
+&nbsp;    data class Or(
+&nbsp;        val left: SqlRowPatternTerm,
+&nbsp;        val right: SqlRowPatternTerm,
+&nbsp;        override val quantifier: SqlRowPatternQuantifier? = null
+&nbsp;    ) : SqlRowPatternTerm
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlRowPatternDefineItem(
+&nbsp;    val name: String,
+&nbsp;    val expr: SqlExpr
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlRowPatternSubsetItem(
+&nbsp;    val name: String,
+&nbsp;    val patternNames: List&lt;String&gt;
+&nbsp;) : SqlNode {
+&nbsp;    init {
+&nbsp;        require(patternNames.isNotEmpty()) { &quot;SUBSET requires at least one pattern name.&quot; }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

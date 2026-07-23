@@ -1,0 +1,293 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlJsonOutputFormat</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.expr</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlJsonOutputFormat (com.kotlinorm.syntax.expr)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlJsonOutputFormat</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.expr
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;
+&nbsp;sealed interface SqlInRightOperand : SqlNode {
+&nbsp;    data class Values(val items: List&lt;SqlExpr&gt;) : SqlInRightOperand {
+&nbsp;        init {
+&nbsp;            require(items.isNotEmpty()) { &quot;IN values require at least one expression.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Subquery(val query: SqlQuery) : SqlInRightOperand
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlCaseBranch(
+&nbsp;    val `when`: SqlExpr,
+&nbsp;    val then: SqlExpr
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlTrim(
+&nbsp;    val mode: SqlTrimMode? = null,
+&nbsp;    val value: SqlExpr? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;enum class SqlTrimMode {
+&nbsp;    Leading,
+&nbsp;    Trailing,
+&nbsp;    Both
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlEncoding : SqlNode {
+&nbsp;    object Utf8 : SqlEncoding
+&nbsp;
+&nbsp;    object Utf16 : SqlEncoding
+&nbsp;
+&nbsp;    object Utf32 : SqlEncoding
+&nbsp;
+&nbsp;    data class UnsafeCustom(val tokens: List&lt;com.kotlinorm.syntax.token.SqlUnsafeToken&gt;) : SqlEncoding
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlJsonNodeType {
+&nbsp;    Value,
+&nbsp;    Object,
+&nbsp;    Array,
+&nbsp;    Scalar
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlJsonUniquenessMode {
+&nbsp;    With,
+&nbsp;    Without
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlJsonPassing(
+&nbsp;    val expr: SqlExpr,
+&nbsp;    val alias: String
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;enum class SqlJsonNullConstructor {
+&nbsp;    Null,
+&nbsp;    Absent
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlJsonQueryWrapperBehavior : SqlNode {
+&nbsp;    data class With(
+&nbsp;        val mode: SqlJsonQueryWrapperBehaviorMode? = null,
+&nbsp;        val withArray: Boolean = false
+&nbsp;    ) : SqlJsonQueryWrapperBehavior
+&nbsp;
+&nbsp;    data class Without(
+&nbsp;        val withArray: Boolean = false
+&nbsp;    ) : SqlJsonQueryWrapperBehavior
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlJsonQueryWrapperBehaviorMode {
+&nbsp;    Conditional,
+&nbsp;    Unconditional
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlJsonQueryQuotesBehavior(
+&nbsp;    val mode: SqlJsonQueryQuotesBehaviorMode,
+&nbsp;    val withOnScalarString: Boolean = false
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;enum class SqlJsonQueryQuotesBehaviorMode {
+&nbsp;    Keep,
+&nbsp;    Omit
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlJsonQueryEmptyBehavior : SqlNode {
+&nbsp;    object Error : SqlJsonQueryEmptyBehavior
+&nbsp;    object Null : SqlJsonQueryEmptyBehavior
+&nbsp;    object EmptyObject : SqlJsonQueryEmptyBehavior
+&nbsp;    object EmptyArray : SqlJsonQueryEmptyBehavior
+&nbsp;    data class Default(val expr: SqlExpr) : SqlJsonQueryEmptyBehavior
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlJsonQueryErrorBehavior : SqlNode {
+&nbsp;    object Error : SqlJsonQueryErrorBehavior
+&nbsp;    object Null : SqlJsonQueryErrorBehavior
+&nbsp;    object EmptyObject : SqlJsonQueryErrorBehavior
+&nbsp;    object EmptyArray : SqlJsonQueryErrorBehavior
+&nbsp;    data class Default(val expr: SqlExpr) : SqlJsonQueryErrorBehavior
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlJsonValueEmptyBehavior : SqlNode {
+&nbsp;    object Error : SqlJsonValueEmptyBehavior
+&nbsp;    object Null : SqlJsonValueEmptyBehavior
+&nbsp;    data class Default(val expr: SqlExpr) : SqlJsonValueEmptyBehavior
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlJsonValueErrorBehavior : SqlNode {
+&nbsp;    object Error : SqlJsonValueErrorBehavior
+&nbsp;    object Null : SqlJsonValueErrorBehavior
+&nbsp;    data class Default(val expr: SqlExpr) : SqlJsonValueErrorBehavior
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlJsonExistsErrorBehavior {
+&nbsp;    Error,
+&nbsp;    True,
+&nbsp;    False,
+&nbsp;    Unknown
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlJsonInput(
+&nbsp;    val encoding: SqlEncoding? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlJsonOutputFormat(
+<b class="fc">&nbsp;    val encoding: SqlEncoding? = null</b>
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlJsonOutput(
+&nbsp;    val type: SqlType,
+&nbsp;    val format: SqlJsonOutputFormat? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlJsonObjectItem(
+&nbsp;    val key: SqlExpr,
+&nbsp;    val value: SqlExpr
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;data class SqlJsonArrayItem(
+&nbsp;    val value: SqlExpr,
+&nbsp;    val input: SqlJsonInput? = null
+&nbsp;) : SqlNode
+&nbsp;
+&nbsp;enum class SqlListAggCountMode {
+&nbsp;    With,
+&nbsp;    Without
+&nbsp;}
+&nbsp;
+&nbsp;sealed interface SqlListAggOnOverflow : SqlNode {
+&nbsp;    object Error : SqlListAggOnOverflow
+&nbsp;
+&nbsp;    data class Truncate(
+&nbsp;        val filler: SqlExpr? = null,
+&nbsp;        val countMode: SqlListAggCountMode? = null
+&nbsp;    ) : SqlListAggOnOverflow
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlMatchPhase {
+&nbsp;    Final,
+&nbsp;    Running
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

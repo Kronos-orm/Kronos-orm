@@ -1,0 +1,247 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosIrClassTransformer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosIrClassTransformer (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosIrClassTransformer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.5%
+  </span>
+  <span class="absValue">
+    (21/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (41/41)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (406/406)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.utils.AnnotationFqNames
+&nbsp;import com.kotlinorm.compiler.utils.set
+&nbsp;import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.IrStatement
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addDefaultGetter
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addDefaultSetter
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.util.parentAsClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos IR Class Transformer
+&nbsp; *
+&nbsp; * Transforms classes that implement the `KPojo` interface by replacing their
+&nbsp; * fake-override functions and properties with real, compiler-generated implementations.
+&nbsp; *
+&nbsp; * The following methods/properties are generated for each KPojo class:
+&nbsp; * - `__kType` — property holding the concrete KType for static KPojo classes.
+&nbsp; * - `__columns` — property holding the list of [Field] descriptors for all column properties.
+&nbsp; * - `__tableName` — property holding the table name (from `@Table` annotation or class name).
+&nbsp; * - `__tableComment` — property holding the table comment.
+&nbsp; * - `__tableIndexes` — property holding the list of table indexes.
+&nbsp; * - `__createTime` / `__updateTime` / `__logicDelete` / `__optimisticLock`
+&nbsp; *   — properties holding the special-purpose strategies annotated on the class.
+&nbsp; * - `toDataMap()` — serializes the instance to a `MutableMap&lt;String, Any?&gt;`.
+&nbsp; * - `get(name)` / `set(name, value)` — dynamic property access by column name.
+&nbsp; * - `fromMapData()` / `safeFromMapData()` — populates the instance from a map.
+&nbsp; */
+&nbsp;class KronosIrClassTransformer(
+<b class="fc">&nbsp;    private val pluginContext: IrPluginContext,</b>
+<b class="fc">&nbsp;    private val irClass: IrClass,</b>
+<b class="fc">&nbsp;    @Suppress(&quot;unused&quot;) private val errorReporter: ErrorReporter,</b>
+<b class="fc">&nbsp;    private val metadataClass: IrClass = irClass</b>
+&nbsp;) : IrElementTransformerVoidWithContext() {
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+<b class="fc">&nbsp;        if (declaration !is IrSimpleFunction || !declaration.isFakeOverride) {</b>
+<b class="fc">&nbsp;            return super.visitFunctionNew(declaration)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun replaceFakeBody(bodyFactory: DeclarationIrBuilder.() -&gt; IrBlockBody) {
+<b class="fc">&nbsp;            declaration.isFakeOverride = false</b>
+<b class="fc">&nbsp;            declaration[IrParameterKind.DispatchReceiver] = irClass.thisReceiver</b>
+<b class="fc">&nbsp;            declaration.body = DeclarationIrBuilder(pluginContext, declaration.symbol).bodyFactory()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        with(pluginContext) {</b>
+<b class="fc">&nbsp;            when (declaration.name.asString()) {</b>
+<b class="fc">&nbsp;                &quot;toDataMap&quot; -&gt; replaceFakeBody { createToDataMap(irClass, declaration) }</b>
+<b class="fc">&nbsp;                &quot;get&quot; -&gt; replaceFakeBody { createPropertyGetter(irClass, declaration) }</b>
+<b class="fc">&nbsp;                &quot;set&quot; -&gt; replaceFakeBody { createPropertySetter(irClass, declaration) }</b>
+<b class="fc">&nbsp;                &quot;fromMapData&quot; -&gt; replaceFakeBody { createFromMapData(irClass, declaration) }</b>
+<b class="fc">&nbsp;                &quot;safeFromMapData&quot; -&gt; replaceFakeBody { createSafeFromMapData(irClass, declaration) }</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        return super.visitFunctionNew(declaration)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitPropertyNew(declaration: IrProperty): IrStatement {
+<b class="pc">&nbsp;        if (declaration.isFakeOverride &amp;&amp; declaration.backingField == null) {</b>
+&nbsp;            fun replaceFakeProp(initializer: () -&gt; IrExpressionBody) {
+<b class="fc">&nbsp;                declaration.isFakeOverride = false</b>
+<b class="fc">&nbsp;                declaration.addBackingField { type = declaration.getter!!.returnType }</b>
+<b class="fc">&nbsp;                declaration.backingField!!.initializer = initializer()</b>
+<b class="fc">&nbsp;                declaration.getter = null</b>
+<b class="fc">&nbsp;                declaration.setter = null</b>
+<b class="fc">&nbsp;                declaration.addDefaultGetter(declaration.parentAsClass, pluginContext.irBuiltIns)</b>
+<b class="fc">&nbsp;                declaration.addDefaultSetter(declaration.parentAsClass, pluginContext.irBuiltIns)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {</b>
+<b class="fc">&nbsp;                with(pluginContext) {</b>
+<b class="pc">&nbsp;                    when (declaration.name.asString()) {</b>
+<b class="fc">&nbsp;                        &quot;__kType&quot; -&gt; replaceFakeProp { createKTypeProperty(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;__columns&quot; -&gt; replaceFakeProp { createColumns(irClass, metadataClass) }</b>
+<b class="fc">&nbsp;                        &quot;__tableName&quot; -&gt; replaceFakeProp { createTableName(metadataClass) }</b>
+<b class="fc">&nbsp;                        &quot;__tableComment&quot; -&gt; replaceFakeProp { createTableComment(metadataClass) }</b>
+<b class="fc">&nbsp;                        &quot;__tableIndexes&quot; -&gt; replaceFakeProp { createTableIndexes(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;__createTime&quot; -&gt; replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.CreateTime) }</b>
+<b class="fc">&nbsp;                        &quot;__updateTime&quot; -&gt; replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.UpdateTime) }</b>
+<b class="fc">&nbsp;                        &quot;__logicDelete&quot; -&gt; replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.LogicDelete) }</b>
+<b class="fc">&nbsp;                        &quot;__optimisticLock&quot; -&gt; replaceFakeProp { createKronosSpecialField(irClass, AnnotationFqNames.Version) }</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return super.visitPropertyNew(declaration)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

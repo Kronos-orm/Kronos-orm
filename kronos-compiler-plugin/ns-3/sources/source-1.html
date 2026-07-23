@@ -1,0 +1,1745 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ConditionAnalysisKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.core</a>
+</div>
+
+<h1>Coverage Summary for Class: ConditionAnalysisKt (com.kotlinorm.compiler.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ConditionAnalysisKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.6%
+  </span>
+  <span class="absValue">
+    (71/72)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (510/714)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.5%
+  </span>
+  <span class="absValue">
+    (749/801)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (4401/4844)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ConditionAnalysisKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    98.6%
+  </span>
+  <span class="absValue">
+    (71/72)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (510/714)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.5%
+  </span>
+  <span class="absValue">
+    (749/801)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (4401/4844)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:Suppress(&quot;TooManyFunctions&quot;)
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.core
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.ErrorMessages
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.WindowOverFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.dispatchReceiverArgument
+&nbsp;import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiver
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiverArgument
+&nbsp;import com.kotlinorm.compiler.utils.funcName
+&nbsp;import com.kotlinorm.compiler.utils.getValueArgumentSafe
+&nbsp;import com.kotlinorm.compiler.utils.irListOf
+&nbsp;import com.kotlinorm.compiler.utils.isKronosFunction
+&nbsp;import com.kotlinorm.compiler.utils.isKronosConditionValueAccess
+&nbsp;import com.kotlinorm.compiler.utils.kotlinSqlFunctionRuleOrNull
+&nbsp;import com.kotlinorm.compiler.utils.valueArguments
+&nbsp;import com.kotlinorm.compiler.utils.valueParameters
+&nbsp;import com.kotlinorm.compiler.backend.transformers.getTableNameExpr
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+&nbsp;import org.jetbrains.kotlin.ir.IrElement
+&nbsp;import org.jetbrains.kotlin.ir.IrStatement
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBoolean
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irElseBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGetObject
+&nbsp;import org.jetbrains.kotlin.ir.builders.irIfThenElse
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irReturn
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.builders.irWhen
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrVariable
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlock
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConst
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConstKind
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrGetValue
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrReturn
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrWhen
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.makeNullable
+&nbsp;import org.jetbrains.kotlin.ir.types.typeWith
+&nbsp;import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+&nbsp;import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
+&nbsp;import org.jetbrains.kotlin.ir.util.kotlinFqName
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;
+&nbsp;/**
+&nbsp; * Condition analysis and construction
+&nbsp; *
+&nbsp; * Analyzes condition expressions and directly constructs SqlExpr IR nodes.
+&nbsp;  */
+&nbsp;
+&nbsp;/**
+&nbsp; * Analyzes a condition element and builds a SqlExpr IR expression.
+&nbsp; */
+&nbsp;private sealed interface ConditionBuildKind
+&nbsp;
+&nbsp;private enum class ConditionLogicalKind : ConditionBuildKind {
+&nbsp;    And,
+&nbsp;    Or,
+&nbsp;    Root
+&nbsp;}
+&nbsp;
+&nbsp;private enum class IterablePredicateKind {
+&nbsp;    Any,
+&nbsp;    All,
+&nbsp;    None
+&nbsp;}
+&nbsp;
+&nbsp;private enum class ConditionExpressionKind : ConditionBuildKind {
+&nbsp;    RawSql,
+&nbsp;    IsNull,
+&nbsp;    Equal,
+&nbsp;    GreaterThan,
+&nbsp;    GreaterThanOrEqual,
+&nbsp;    LessThan,
+&nbsp;    LessThanOrEqual,
+&nbsp;    Like,
+&nbsp;    StartsWith,
+&nbsp;    EndsWith,
+&nbsp;    Contains,
+&nbsp;    Regexp,
+&nbsp;    In,
+&nbsp;    Between
+&nbsp;}
+&nbsp;
+&nbsp;private enum class ConditionComparisonKind(
+&nbsp;    val condition: ConditionExpressionKind,
+&nbsp;    val diagnosticName: String
+&nbsp;) {
+&nbsp;    GreaterThan(ConditionExpressionKind.GreaterThan, &quot;GT&quot;),
+&nbsp;    GreaterThanOrEqual(ConditionExpressionKind.GreaterThanOrEqual, &quot;GE&quot;),
+&nbsp;    LessThan(ConditionExpressionKind.LessThan, &quot;LT&quot;),
+&nbsp;    LessThanOrEqual(ConditionExpressionKind.LessThanOrEqual, &quot;LE&quot;);
+&nbsp;
+&nbsp;    fun reversed(): ConditionComparisonKind =
+&nbsp;        ReversedComparisonKinds.getValue(this)
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private val ReversedComparisonKinds = mapOf(</b>
+<b class="fc">&nbsp;    ConditionComparisonKind.GreaterThan to ConditionComparisonKind.LessThan,</b>
+<b class="fc">&nbsp;    ConditionComparisonKind.GreaterThanOrEqual to ConditionComparisonKind.LessThanOrEqual,</b>
+<b class="fc">&nbsp;    ConditionComparisonKind.LessThan to ConditionComparisonKind.GreaterThan,</b>
+<b class="fc">&nbsp;    ConditionComparisonKind.LessThanOrEqual to ConditionComparisonKind.GreaterThanOrEqual,</b>
+&nbsp;)
+&nbsp;
+<b class="fc">&nbsp;private val NoArgComparisonByFunctionName = mapOf(</b>
+<b class="fc">&nbsp;    &quot;gt&quot; to ConditionComparisonKind.GreaterThan,</b>
+<b class="fc">&nbsp;    &quot;ge&quot; to ConditionComparisonKind.GreaterThanOrEqual,</b>
+<b class="fc">&nbsp;    &quot;lt&quot; to ConditionComparisonKind.LessThan,</b>
+<b class="fc">&nbsp;    &quot;le&quot; to ConditionComparisonKind.LessThanOrEqual,</b>
+&nbsp;)
+&nbsp;
+<b class="fc">&nbsp;private val StringMatchFunctionNames = setOf(&quot;like&quot;, &quot;notLike&quot;, &quot;startsWith&quot;, &quot;endsWith&quot;, &quot;contains&quot;, &quot;regexp&quot;, &quot;notRegexp&quot;)</b>
+<b class="fc">&nbsp;private val KotlinIterableFqName = FqName(&quot;kotlin.collections.Iterable&quot;)</b>
+<b class="fc">&nbsp;private val KotlinIterablePredicateKinds = mapOf(</b>
+<b class="fc">&nbsp;    FqName(&quot;kotlin.collections.any&quot;) to IterablePredicateKind.Any,</b>
+<b class="fc">&nbsp;    FqName(&quot;kotlin.collections.all&quot;) to IterablePredicateKind.All,</b>
+<b class="fc">&nbsp;    FqName(&quot;kotlin.collections.none&quot;) to IterablePredicateKind.None</b>
+&nbsp;)
+&nbsp;
+&nbsp;private data class ConditionOperand(
+&nbsp;    val expression: IrExpression,
+&nbsp;    val field: IrExpression?,
+&nbsp;    val sqlExpr: IrExpression?
+&nbsp;)
+&nbsp;
+&nbsp;private data class KotlinSqlFunctionSource(
+&nbsp;    val functionName: String,
+&nbsp;    val source: IrExpression
+&nbsp;)
+&nbsp;
+&nbsp;private data class NullGuard(
+&nbsp;    val subject: IrExpression,
+&nbsp;    val isNullWhenTrue: Boolean
+&nbsp;) {
+&nbsp;    fun inverted(): NullGuard = copy(isNullWhenTrue = !isNullWhenTrue)
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;fun analyzeAndBuildSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    element: IrElement,
+&nbsp;    errorReporter: ErrorReporter,
+<b class="fc">&nbsp;    setNot: Boolean = false</b>
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    return when (element) {</b>
+<b class="fc">&nbsp;        is IrCall -&gt; analyzeCallSqlExpr(irFunction, element, errorReporter, setNot)</b>
+<b class="fc">&nbsp;        is IrWhen -&gt; analyzeWhenSqlExpr(irFunction, element, errorReporter, setNot)</b>
+<b class="fc">&nbsp;        is IrReturn -&gt; analyzeAndBuildSqlExpr(irFunction, element.value, errorReporter, setNot)</b>
+<b class="fc">&nbsp;        is IrBlock -&gt; buildBlockSqlExpr(irFunction, element.statements, errorReporter, setNot)</b>
+<b class="fc">&nbsp;        is IrBlockBody -&gt; buildBlockSqlExpr(irFunction, element.statements, errorReporter, setNot)</b>
+<b class="pc">&nbsp;        is IrExpression -&gt; {</b>
+<b class="fc">&nbsp;            errorReporter.reportWarning(</b>
+<b class="fc">&nbsp;                element,</b>
+<b class="fc">&nbsp;                ErrorMessages.unsupportedConditionExprType(element::class.simpleName, element.dumpKotlinLike())</b>
+&nbsp;            )
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun analyzeCallSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    return when (call.origin) {</b>
+<b class="fc">&nbsp;        IrStatementOrigin.EQEQ -&gt; {</b>
+<b class="pc">&nbsp;            val left = call.getValueArgumentSafe(0) ?: return null</b>
+<b class="pc">&nbsp;            val right = call.getValueArgumentSafe(1) ?: return null</b>
+<b class="fc">&nbsp;            buildEqualSqlExpr(irFunction, left, right, not = setNot, errorReporter = errorReporter)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        IrStatementOrigin.EXCLEQ -&gt; {</b>
+&nbsp;            // In K2 IR, `a != b` is lowered to `EQEQ(a, b).not()` with EXCLEQ origin on BOTH calls.
+&nbsp;            // The outer not() has 1 arg (the inner EQEQ), the inner EQEQ has 2 args.
+<b class="fc">&nbsp;            val funcName = call.symbol.owner.name.asString()</b>
+<b class="pc">&nbsp;            if (funcName == &quot;EQEQ&quot; || funcName == &quot;ieee754equals&quot;) {</b>
+&nbsp;                // This is the inner equality call — extract operands directly
+<b class="pc">&nbsp;                val left = call.getValueArgumentSafe(0) ?: return null</b>
+<b class="pc">&nbsp;                val right = call.getValueArgumentSafe(1) ?: return null</b>
+<b class="fc">&nbsp;                buildEqualSqlExpr(irFunction, left, right, not = !setNot, errorReporter = errorReporter)</b>
+&nbsp;            } else {
+&nbsp;                // This is the outer not() call — delegate to the inner EQEQ without flipping not
+&nbsp;                // (the inner EQEQ branch above handles the negation)
+<b class="pc">&nbsp;                val inner = call.arguments.firstOrNull { it != null } as? IrCall</b>
+<b class="pc">&nbsp;                if (inner != null) {</b>
+<b class="fc">&nbsp;                    analyzeCallSqlExpr(irFunction, inner, errorReporter, setNot)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    errorReporter.reportError(call, ErrorMessages.MISSING_LEFT_OPERAND_NEQ)</b>
+<b class="nc">&nbsp;                    null</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        IrStatementOrigin.ANDAND -&gt; buildLogicalCallSqlExpr(irFunction, call, errorReporter, setNot, ConditionLogicalKind.And)</b>
+<b class="pc">&nbsp;        IrStatementOrigin.OROR -&gt; buildLogicalCallSqlExpr(irFunction, call, errorReporter, setNot, ConditionLogicalKind.Or)</b>
+<b class="pc">&nbsp;        IrStatementOrigin.EXCL -&gt; {</b>
+<b class="nc">&nbsp;            val arg = call.conditionReceiver()</b>
+<b class="nc">&nbsp;            analyzeAndBuildSqlExpr(irFunction, arg, errorReporter, !setNot)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        IrStatementOrigin.GT -&gt; buildBinaryComparisonSqlExpr(irFunction, call, ConditionComparisonKind.GreaterThan, setNot, errorReporter)</b>
+<b class="fc">&nbsp;        IrStatementOrigin.LT -&gt; buildBinaryComparisonSqlExpr(irFunction, call, ConditionComparisonKind.LessThan, setNot, errorReporter)</b>
+<b class="fc">&nbsp;        IrStatementOrigin.GTEQ -&gt; buildBinaryComparisonSqlExpr(irFunction, call, ConditionComparisonKind.GreaterThanOrEqual, setNot, errorReporter)</b>
+<b class="fc">&nbsp;        IrStatementOrigin.LTEQ -&gt; buildBinaryComparisonSqlExpr(irFunction, call, ConditionComparisonKind.LessThanOrEqual, setNot, errorReporter)</b>
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            analyzeMethodSqlExpr(irFunction, call, errorReporter, setNot)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildBlockSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    statements: List&lt;IrStatement&gt;,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val children = statements.mapNotNull {</b>
+<b class="fc">&nbsp;        analyzeAndBuildSqlExpr(irFunction, it, errorReporter, setNot)</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (children.isEmpty()) return null</b>
+<b class="fc">&nbsp;    return buildConditionSqlExpr(irFunction, kind = ConditionLogicalKind.Root, not = false, children = children)</b>
+&nbsp;}
+&nbsp;
+<b class="nc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildLogicalCallSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean,
+&nbsp;    kind: ConditionLogicalKind
+&nbsp;): IrExpression {
+<b class="nc">&nbsp;    val children = call.valueArguments</b>
+<b class="nc">&nbsp;        .take(2)</b>
+<b class="nc">&nbsp;        .filterNotNull()</b>
+<b class="nc">&nbsp;        .mapNotNull { analyzeAndBuildSqlExpr(irFunction, it, errorReporter, setNot) }</b>
+<b class="nc">&nbsp;    val actualKind = when {</b>
+<b class="nc">&nbsp;        !setNot -&gt; kind</b>
+<b class="nc">&nbsp;        kind == ConditionLogicalKind.And -&gt; ConditionLogicalKind.Or</b>
+<b class="nc">&nbsp;        else -&gt; ConditionLogicalKind.And</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return buildConditionSqlExpr(irFunction, kind = actualKind, not = false, children = children)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun analyzeMethodSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val funcName = call.funcName()</b>
+<b class="fc">&nbsp;    val extensionReceiver = call.extensionReceiverArgument</b>
+<b class="fc">&nbsp;    val dispatchReceiver = call.dispatchReceiverArgument</b>
+&nbsp;
+<b class="fc">&nbsp;    call.kotlinIterablePredicateKindOrNull()?.let { kind -&gt;</b>
+<b class="fc">&nbsp;        return buildIterablePredicateSqlExpr(irFunction, call, kind, errorReporter, setNot)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return when (funcName) {</b>
+<b class="fc">&nbsp;        &quot;run&quot; -&gt; {</b>
+<b class="pc">&nbsp;            val lambda = call.valueArguments.firstNotNullOfOrNull { it as? IrFunctionExpression } ?: return null</b>
+<b class="pc">&nbsp;            analyzeAndBuildSqlExpr(irFunction, lambda.function.body ?: return null, errorReporter, setNot)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;not&quot; -&gt; {</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            analyzeAndBuildSqlExpr(irFunction, receiver, errorReporter, !setNot)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;isNull&quot; -&gt; {</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="pc">&nbsp;            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null</b>
+<b class="fc">&nbsp;            buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                irFunction,</b>
+<b class="fc">&nbsp;                field = fieldExpr,</b>
+<b class="fc">&nbsp;                kind = ConditionExpressionKind.IsNull,</b>
+<b class="fc">&nbsp;                not = setNot,</b>
+<b class="fc">&nbsp;                tableName = extractTableNameExpr(receiver)</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;notNull&quot; -&gt; {</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="pc">&nbsp;            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null</b>
+<b class="fc">&nbsp;            buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                irFunction,</b>
+<b class="fc">&nbsp;                field = fieldExpr,</b>
+<b class="fc">&nbsp;                kind = ConditionExpressionKind.IsNull,</b>
+<b class="fc">&nbsp;                not = !setNot,</b>
+<b class="fc">&nbsp;                tableName = extractTableNameExpr(receiver)</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        in NoArgComparisonByFunctionName -&gt; {</b>
+<b class="fc">&nbsp;            if (call.getValueArgumentSafe(0) != null) {</b>
+<b class="fc">&nbsp;                errorReporter.reportWarning(call, ErrorMessages.parameterizedConditionFunctionUnsupported(funcName))</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val comparisonKind = NoArgComparisonByFunctionName.getValue(funcName)</b>
+<b class="fc">&nbsp;            buildNoArgComparisonSqlExpr(irFunction, call, comparisonKind, setNot, errorReporter)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;eq&quot; -&gt; {</b>
+<b class="pc">&nbsp;            val receiver = extensionReceiver ?: call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val arg = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (arg != null) {</b>
+<b class="fc">&nbsp;                errorReporter.reportWarning(call, ErrorMessages.parameterizedConditionFunctionUnsupported(funcName))</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            buildKPojoOrFieldEq(irFunction, call, receiver, not = setNot, errorReporter = errorReporter)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;neq&quot; -&gt; {</b>
+<b class="pc">&nbsp;            val receiver = extensionReceiver ?: call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val arg = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (arg != null) {</b>
+<b class="fc">&nbsp;                errorReporter.reportWarning(call, ErrorMessages.parameterizedConditionFunctionUnsupported(funcName))</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            buildKPojoOrFieldEq(irFunction, call, receiver, not = !setNot, errorReporter = errorReporter)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;between&quot;, &quot;notBetween&quot; -&gt; {</b>
+<b class="fc">&nbsp;            val withNot = setNot xor (funcName == &quot;notBetween&quot;)</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="pc">&nbsp;            val range = call.getValueArgumentSafe(0) ?: return null</b>
+<b class="pc">&nbsp;            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null</b>
+<b class="fc">&nbsp;            buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                irFunction,</b>
+<b class="fc">&nbsp;                field = fieldExpr,</b>
+<b class="fc">&nbsp;                kind = ConditionExpressionKind.Between,</b>
+<b class="fc">&nbsp;                not = withNot,</b>
+<b class="fc">&nbsp;                value = range,</b>
+<b class="fc">&nbsp;                tableName = extractTableNameExpr(receiver)</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;exists&quot; -&gt; {</b>
+<b class="pc">&nbsp;            val query = call.getValueArgumentSafe(0) ?: return null</b>
+<b class="fc">&nbsp;            buildExistsSqlExpr(irFunction, query, not = setNot)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        in StringMatchFunctionNames -&gt;</b>
+<b class="fc">&nbsp;            analyzeStringMatchSqlExpr(irFunction, call, funcName, errorReporter, setNot)</b>
+<b class="fc">&nbsp;        &quot;asSql&quot; -&gt; {</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                irFunction,</b>
+<b class="fc">&nbsp;                field = null,</b>
+<b class="fc">&nbsp;                kind = ConditionExpressionKind.RawSql,</b>
+<b class="fc">&nbsp;                not = false,</b>
+<b class="fc">&nbsp;                value = receiver</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        &quot;takeIf&quot;, &quot;takeUnless&quot; -&gt; {</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="pc">&nbsp;            val predicate = call.getValueArgumentSafe(0) ?: return null</b>
+<b class="pc">&nbsp;            val sqlExpr = analyzeAndBuildSqlExpr(irFunction, receiver, errorReporter, setNot) ?: return null</b>
+<b class="fc">&nbsp;            if (funcName == &quot;takeIf&quot;) {</b>
+<b class="fc">&nbsp;                builder.irIfThenElse(</b>
+<b class="fc">&nbsp;                    sqlExpr.type.makeNullable(),</b>
+<b class="fc">&nbsp;                    predicate,</b>
+<b class="fc">&nbsp;                    sqlExpr,</b>
+<b class="fc">&nbsp;                    builder.irNull()</b>
+&nbsp;                )
+&nbsp;            } else {
+<b class="fc">&nbsp;                builder.irIfThenElse(</b>
+<b class="fc">&nbsp;                    sqlExpr.type.makeNullable(),</b>
+<b class="fc">&nbsp;                    predicate,</b>
+<b class="fc">&nbsp;                    builder.irNull(),</b>
+<b class="fc">&nbsp;                    sqlExpr</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            errorReporter.reportWarning(</b>
+<b class="fc">&nbsp;                call,</b>
+<b class="fc">&nbsp;                ErrorMessages.unrecognizedConditionFunction(funcName)</b>
+&nbsp;            )
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildIterablePredicateSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    kind: IterablePredicateKind,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="pc">&nbsp;    val values = call.extensionReceiverArgument ?: return null</b>
+<b class="pc">&nbsp;    val lambda = call.getValueArgumentSafe(0) as? IrFunctionExpression ?: return null</b>
+<b class="fc">&nbsp;    val predicate = lambda.function</b>
+<b class="pc">&nbsp;    val parameter = predicate.parameters.singleOrNull { it.kind == IrParameterKind.Regular } ?: return null</b>
+<b class="fc">&nbsp;    val predicateNot = when (kind) {</b>
+<b class="fc">&nbsp;        IterablePredicateKind.None -&gt; !setNot</b>
+<b class="fc">&nbsp;        else -&gt; setNot</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val sqlExpr = analyzeAndBuildSqlExpr(irFunction, predicate.body ?: return null, errorReporter, predicateNot) ?: return null</b>
+<b class="fc">&nbsp;    val sqlExprType = expressionClassSymbol.defaultType.makeNullable()</b>
+&nbsp;
+<b class="fc">&nbsp;    predicate.returnType = sqlExprType</b>
+<b class="fc">&nbsp;    predicate.body = context.irBuiltIns.createIrBuilder(predicate.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;        +irReturn(sqlExpr)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    val predicateType = context.irBuiltIns.functionN(1).typeWith(parameter.type, sqlExprType)</b>
+<b class="fc">&nbsp;    val sqlPredicate = IrFunctionExpressionImpl(</b>
+<b class="fc">&nbsp;        UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;        UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;        predicateType,</b>
+<b class="fc">&nbsp;        predicate,</b>
+<b class="fc">&nbsp;        IrStatementOrigin.LAMBDA</b>
+&nbsp;    )
+<b class="fc">&nbsp;    val receiver = irFunction.parameters.extensionReceiver</b>
+<b class="nc">&nbsp;        ?: error(&quot;KTableForCondition extension receiver not found for Iterable predicate generation.&quot;)</b>
+<b class="fc">&nbsp;    val methodSymbol = when (kind) {</b>
+<b class="fc">&nbsp;        IterablePredicateKind.Any -&gt; iterableAnyConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        IterablePredicateKind.All -&gt; iterableAllConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        IterablePredicateKind.None -&gt; iterableNoneConditionExprMethodSymbol</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return builder.irCall(methodSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = builder.irGet(receiver)</b>
+<b class="fc">&nbsp;        typeArguments[0] = parameter.type</b>
+<b class="fc">&nbsp;        arguments[1] = values</b>
+<b class="fc">&nbsp;        arguments[2] = sqlPredicate</b>
+<b class="fc">&nbsp;        arguments[3] = builder.irBoolean(setNot)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrCall.kotlinIterablePredicateKindOrNull(): IterablePredicateKind? {
+<b class="fc">&nbsp;    val function = symbol.owner</b>
+<b class="fc">&nbsp;    val kind = KotlinIterablePredicateKinds[function.kotlinFqName] ?: return null</b>
+<b class="fc">&nbsp;    return kind.takeIf {</b>
+<b class="pc">&nbsp;        function.parameters.extensionReceiver?.type?.classFqName == KotlinIterableFqName &amp;&amp;</b>
+<b class="fc">&nbsp;        function.parameters.valueParameters.size == 1 &amp;&amp;</b>
+<b class="fc">&nbsp;        valueArguments.singleOrNull() is IrFunctionExpression</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildExistsSqlExpr( 
+&nbsp;    irFunction: IrFunction,
+&nbsp;    query: IrExpression,
+&nbsp;    not: Boolean
+&nbsp;): IrExpression {
+<b class="pc">&nbsp;    val receiver = irFunction.parameters.extensionReceiver</b>
+<b class="nc">&nbsp;        ?: error(&quot;KTableForCondition extension receiver not found for EXISTS generation.&quot;)</b>
+<b class="fc">&nbsp;    return builder.irCall(existsExprMethodSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = builder.irGet(receiver)</b>
+<b class="fc">&nbsp;        arguments[1] = query</b>
+<b class="fc">&nbsp;        arguments[2] = builder.irBoolean(not)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Handles string-matching condition functions: like, notLike, startsWith, endsWith, contains, regexp, notRegexp.
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun analyzeStringMatchSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    funcName: String,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="pc">&nbsp;    return when (funcName) {</b>
+&nbsp;        &quot;like&quot;, &quot;notLike&quot; -&gt; {
+<b class="fc">&nbsp;            val withNot = setNot xor (funcName == &quot;notLike&quot;)</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val pattern = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (pattern != null) {</b>
+<b class="fc">&nbsp;                buildStringMatchConditionWithValue(</b>
+<b class="fc">&nbsp;                    irFunction, receiver, ConditionExpressionKind.Like, withNot, errorReporter</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    resolveValueExpression(irFunction, pattern, errorReporter)</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                buildNoArgLikeSqlExpr(irFunction, call, not = withNot, errorReporter = errorReporter)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        &quot;startsWith&quot; -&gt; {
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val prefix = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (prefix != null) {</b>
+<b class="fc">&nbsp;                buildStringMatchConditionWithValue(</b>
+<b class="fc">&nbsp;                    irFunction, receiver, ConditionExpressionKind.StartsWith, setNot, errorReporter</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    prefix</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                buildNoArgStartsWithSqlExpr(irFunction, call, setNot, errorReporter)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        &quot;endsWith&quot; -&gt; {
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val suffix = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (suffix != null) {</b>
+<b class="fc">&nbsp;                buildStringMatchConditionWithValue(</b>
+<b class="fc">&nbsp;                    irFunction, receiver, ConditionExpressionKind.EndsWith, setNot, errorReporter</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    suffix</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                buildNoArgEndsWithSqlExpr(irFunction, call, setNot, errorReporter)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        &quot;contains&quot; -&gt; {
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val arg = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (arg != null) {</b>
+<b class="fc">&nbsp;                if (receiver.type.isKSelectableType()) {</b>
+<b class="fc">&nbsp;                    buildInSubquerySqlExpr(irFunction, query = receiver, value = arg, not = setNot, errorReporter = errorReporter)</b>
+<b class="pc">&nbsp;                } else if (receiver.type.classFqName?.asString() == &quot;kotlin.String&quot;) {</b>
+<b class="fc">&nbsp;                    buildStringMatchConditionWithValue(</b>
+<b class="fc">&nbsp;                        irFunction, receiver, ConditionExpressionKind.Contains, setNot, errorReporter</b>
+<b class="fc">&nbsp;                    ) { arg }</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    val fieldExpr = extractFieldExpression(irFunction, arg, errorReporter)</b>
+<b class="fc">&nbsp;                    val sqlExpr = extractSqlExpression(irFunction, arg, errorReporter)</b>
+<b class="pc">&nbsp;                    if (fieldExpr == null &amp;&amp; sqlExpr == null) return null</b>
+<b class="fc">&nbsp;                    buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                        irFunction,</b>
+<b class="fc">&nbsp;                        field = fieldExpr ?: functionMetadataField(irFunction, arg, errorReporter),</b>
+<b class="fc">&nbsp;                        sqlExpr = sqlExpr,</b>
+<b class="fc">&nbsp;                        kind = ConditionExpressionKind.In,</b>
+<b class="fc">&nbsp;                        not = setNot,</b>
+<b class="fc">&nbsp;                        value = receiver,</b>
+<b class="fc">&nbsp;                        tableName = extractTableNameExpr(arg)</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                buildNoArgContainsSqlExpr(irFunction, call, setNot, errorReporter)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        &quot;regexp&quot;, &quot;notRegexp&quot; -&gt; {
+<b class="fc">&nbsp;            val withNot = setNot xor (funcName == &quot;notRegexp&quot;)</b>
+<b class="fc">&nbsp;            val receiver = call.conditionReceiver()</b>
+<b class="fc">&nbsp;            val arg = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;            if (arg != null) {</b>
+<b class="fc">&nbsp;                buildStringMatchConditionWithValue(</b>
+<b class="fc">&nbsp;                    irFunction, receiver, ConditionExpressionKind.Regexp, withNot, errorReporter</b>
+<b class="fc">&nbsp;                ) { arg }</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                buildNoArgRegexpSqlExpr(irFunction, call, not = withNot, errorReporter = errorReporter)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildInSubquerySqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    query: IrExpression,
+&nbsp;    value: IrExpression,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val tupleFields = buildTupleFieldList(irFunction, value, errorReporter)</b>
+<b class="fc">&nbsp;    val fieldExpr = if (tupleFields == null) {</b>
+<b class="fc">&nbsp;        extractFieldExpression(irFunction, value, errorReporter)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val functionSqlExpr = if (tupleFields == null) {</b>
+<b class="fc">&nbsp;        extractSqlExpression(irFunction, value, errorReporter)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        null</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (tupleFields == null &amp;&amp; fieldExpr == null &amp;&amp; functionSqlExpr == null) return null</b>
+<b class="fc">&nbsp;    val tupleExpr = tupleFields?.let {</b>
+<b class="pc">&nbsp;        val receiver = irFunction.parameters.extensionReceiver</b>
+<b class="nc">&nbsp;            ?: error(&quot;KTableForCondition extension receiver not found for tuple IN generation.&quot;)</b>
+<b class="fc">&nbsp;        builder.irCall(tupleExprMethodSymbol).apply {</b>
+<b class="fc">&nbsp;            dispatchReceiver = builder.irGet(receiver)</b>
+<b class="fc">&nbsp;            arguments[1] = it</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return buildConditionSqlExpr(irFunction, </b>
+<b class="fc">&nbsp;        field = if (tupleExpr == null) fieldExpr ?: functionMetadataField(irFunction, value, errorReporter) else null,</b>
+<b class="fc">&nbsp;        sqlExpr = tupleExpr ?: functionSqlExpr,</b>
+<b class="fc">&nbsp;        kind = ConditionExpressionKind.In,</b>
+<b class="fc">&nbsp;        not = not,</b>
+<b class="fc">&nbsp;        value = query,</b>
+<b class="fc">&nbsp;        tableName = if (tupleExpr == null) extractTableNameExpr(value) else null</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildTupleFieldList(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    expression: IrExpression,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val fields = analyzeAndBuildFields(irFunction, expression, errorReporter)</b>
+<b class="fc">&nbsp;    if (fields.size &lt;= 1) {</b>
+<b class="pc">&nbsp;        if (fields.size == 1 &amp;&amp; expression is IrCall &amp;&amp; expression.symbol.owner.name.asString() in DslCollectionFunctionNames) {</b>
+<b class="nc">&nbsp;        errorReporter.reportError(</b>
+<b class="nc">&nbsp;            expression,</b>
+<b class="nc">&nbsp;            &quot;Tuple IN requires at least two fields. Use `field in query` for a single-field subquery.&quot;</b>
+&nbsp;        )
+&nbsp;        }
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return com.kotlinorm.compiler.utils.irListOf(fieldClassSymbol.defaultType, fields)</b>
+&nbsp;}
+&nbsp;
+&nbsp;// In K2 IR, &amp;&amp; and || are lowered to IrWhen:
+&nbsp;//   a &amp;&amp; b  →  when(ANDAND) { a -&gt; b; else -&gt; false }
+&nbsp;//   a || b  →  when(OROR)   { a -&gt; true; else -&gt; b }
+&nbsp;// We process both condition and result of each branch, skipping boolean constants.
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun analyzeWhenSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    expression: IrWhen,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    if (expression.origin != IrStatementOrigin.ANDAND &amp;&amp; expression.origin != IrStatementOrigin.OROR) {</b>
+<b class="fc">&nbsp;        return analyzeRuntimeWhenSqlExpr(irFunction, expression, errorReporter, setNot)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Determine logical operator from origin, applying De Morgan&#39;s when negated.
+<b class="fc">&nbsp;    val logicalOp = when (expression.origin) {</b>
+<b class="fc">&nbsp;        IrStatementOrigin.OROR -&gt; if (setNot) ConditionLogicalKind.And else ConditionLogicalKind.Or</b>
+<b class="pc">&nbsp;        IrStatementOrigin.ANDAND -&gt; if (setNot) ConditionLogicalKind.Or else ConditionLogicalKind.And</b>
+<b class="nc">&nbsp;        else -&gt; error(&quot;Runtime if/when must be handled before logical condition lowering.&quot;)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val children = mutableListOf&lt;IrExpression&gt;()</b>
+<b class="fc">&nbsp;    for (branch in expression.branches) {</b>
+<b class="fc">&nbsp;        val cond = branch.condition</b>
+<b class="fc">&nbsp;        val result = branch.result</b>
+&nbsp;        // Skip boolean constants (true/false) that K2 inserts as lowering artifacts
+<b class="pc">&nbsp;        if (cond !is IrConst || cond.value !is Boolean) {</b>
+<b class="pc">&nbsp;            analyzeAndBuildSqlExpr(irFunction, cond, errorReporter, setNot)?.let { children.add(it) }</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (result !is IrConst || result.value !is Boolean) {</b>
+<b class="pc">&nbsp;            analyzeAndBuildSqlExpr(irFunction, result, errorReporter, setNot)?.let { children.add(it) }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (children.isEmpty()) return null</b>
+<b class="pc">&nbsp;    if (children.size == 1) return children.first()</b>
+<b class="fc">&nbsp;    return buildConditionSqlExpr(irFunction, kind = logicalOp, not = false, children = children)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun analyzeRuntimeWhenSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    expression: IrWhen,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    setNot: Boolean
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val analyzedBranches = expression.branches.map { branch -&gt;</b>
+<b class="fc">&nbsp;        val branchResult = branch.result</b>
+<b class="pc">&nbsp;        val result = if (branchResult is IrConst &amp;&amp; branchResult.value is Boolean) {</b>
+<b class="fc">&nbsp;            null</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            analyzeAndBuildSqlExpr(irFunction, branchResult, errorReporter, setNot)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        branch to result</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (analyzedBranches.all { it.second == null }) return null</b>
+&nbsp;
+<b class="fc">&nbsp;    val sqlExprType = expressionClassSymbol.defaultType.makeNullable()</b>
+<b class="fc">&nbsp;    return builder.irWhen(</b>
+<b class="fc">&nbsp;        sqlExprType,</b>
+<b class="fc">&nbsp;        analyzedBranches.map { (branch, result) -&gt;</b>
+<b class="pc">&nbsp;            val sqlResult = result ?: builder.irNull(sqlExprType)</b>
+<b class="fc">&nbsp;            val branchCondition = branch.condition</b>
+<b class="pc">&nbsp;            if (branchCondition is IrConst &amp;&amp; branchCondition.value == true) {</b>
+<b class="fc">&nbsp;                builder.irElseBranch(sqlResult)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                builder.irBranch(branchCondition, sqlResult)</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;    ).apply {</b>
+<b class="fc">&nbsp;        origin = expression.origin</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Field extraction
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;internal fun extractFieldExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return when (expression) {</b>
+<b class="fc">&nbsp;        is IrCall -&gt; when {</b>
+<b class="fc">&nbsp;            expression.isKronosSourcePropertyAccess() -&gt; buildFieldFromPropertyAccess(expression, errorReporter)</b>
+<b class="fc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is IrPropertyReference -&gt; buildFieldFromPropertyRef(expression, errorReporter)</b>
+<b class="fc">&nbsp;        is IrBlock -&gt; expression.safeCallNullGuardedFieldExpression()</b>
+<b class="fc">&nbsp;            ?.let { extractFieldExpression(irFunction, it, errorReporter) }</b>
+<b class="fc">&nbsp;        is IrWhen -&gt; expression.explicitNullGuardedFieldExpression()</b>
+<b class="pc">&nbsp;            ?.let { extractFieldExpression(irFunction, it, errorReporter) }</b>
+&nbsp;        // Handle !! (not-null assertion) — unwrap and extract from the inner expression
+<b class="fc">&nbsp;        is IrTypeOperatorCall -&gt; extractFieldExpression(irFunction, expression.argument, errorReporter)</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun extractSqlExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    expression.kotlinSqlFunctionSourceForConditionOrNull()?.let { source -&gt;</b>
+<b class="fc">&nbsp;        return buildKotlinSqlFunctionExpression(irFunction, source, errorReporter)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return when (expression) {</b>
+<b class="fc">&nbsp;        is IrCall -&gt; when {</b>
+<b class="fc">&nbsp;            expression.isKronosFunction() || expression.operatorFunctionName() != null -&gt; {</b>
+<b class="fc">&nbsp;                builder.irCall(kronosFunctionExprGetterSymbol).apply {</b>
+<b class="fc">&nbsp;                    dispatchReceiver = buildKronosFunctionExpr(irFunction, expression, errorReporter)</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+<b class="fc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is IrBlock -&gt; expression.safeCallKotlinSqlFunctionSourceOrNull()</b>
+<b class="pc">&nbsp;            ?.let { buildKotlinSqlFunctionExpression(irFunction, it, errorReporter) }</b>
+<b class="fc">&nbsp;        is IrTypeOperatorCall -&gt; extractSqlExpression(irFunction, expression.argument, errorReporter)</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildKotlinSqlFunctionExpression(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    source: KotlinSqlFunctionSource,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val field = extractFieldExpression(irFunction, source.source, errorReporter) ?: return null</b>
+<b class="fc">&nbsp;    val function = builder.irCall(kronosFunctionCallWindowArgsSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = builder.irGetObject(kronosFunctionExpressionsSymbol)</b>
+<b class="fc">&nbsp;        arguments[1] = builder.irString(source.functionName)</b>
+<b class="fc">&nbsp;        arguments[2] = irListOf(context.irBuiltIns.anyNType, listOf(field))</b>
+<b class="fc">&nbsp;        arguments[3] = builder.irNull()</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    return builder.irCall(kronosFunctionExprGetterSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = function</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun functionMetadataField(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    expression: IrExpression,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    expression.kotlinSqlFunctionSourceForConditionOrNull()</b>
+<b class="fc">&nbsp;        ?.let { extractFieldExpression(irFunction, it.source, errorReporter) }</b>
+<b class="pc">&nbsp;        ?.let { return it }</b>
+<b class="pc">&nbsp;    val call = expression as? IrCall ?: return null</b>
+<b class="pc">&nbsp;    val receiverCall = (call.extensionReceiverArgument ?: call.dispatchReceiverArgument) as? IrCall</b>
+<b class="pc">&nbsp;    val sourceCall = if (call.funcName() == WindowOverFunctionName &amp;&amp; receiverCall != null) receiverCall else call</b>
+<b class="fc">&nbsp;    val functionName = sourceCall.operatorFunctionName() ?: sourceCall.funcName()</b>
+<b class="fc">&nbsp;    return builder.irCall(fieldConstructorSymbol).apply {</b>
+<b class="fc">&nbsp;        arguments[0] = builder.irString(functionName)</b>
+<b class="fc">&nbsp;        arguments[1] = builder.irString(functionName)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Extracts the table name expression from a field-producing expression.
+&nbsp; * For property access (it.age), gets the table name from the dispatch receiver&#39;s class.
+&nbsp; * For Kronos function calls (f.length(it.username)), extracts from the first field argument.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
+<b class="fc">&nbsp;    expression.kotlinSqlFunctionSourceForConditionOrNull()?.let { source -&gt;</b>
+<b class="fc">&nbsp;        return extractTableNameExpr(source.source)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return when (expression) {</b>
+<b class="fc">&nbsp;        is IrCall -&gt; when {</b>
+<b class="fc">&nbsp;            expression.origin == IrStatementOrigin.GET_PROPERTY -&gt; {</b>
+<b class="fc">&nbsp;                val receiver = expression.dispatchReceiverArgument ?: return null</b>
+<b class="fc">&nbsp;                if (!receiver.type.isKronosSqlSourceType()) return null</b>
+<b class="pc">&nbsp;                val irClass = receiver.type.classOrNull?.owner ?: return null</b>
+<b class="fc">&nbsp;                if (irClass.isGeneratedProjectionClass()) {</b>
+<b class="fc">&nbsp;                    return builder.irString(&quot;&quot;)</b>
+&nbsp;                }
+<b class="pc">&nbsp;                if (receiver.type.isKPojoType()) {</b>
+<b class="fc">&nbsp;                    buildSourceScopedTableNameExpr(receiver, irClass)</b>
+<b class="nc">&nbsp;                } else null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            expression.isKronosFunction() -&gt; {</b>
+&nbsp;                // For function calls, try to extract table name from the first field argument
+<b class="fc">&nbsp;                expression.valueArguments.filterNotNull()</b>
+<b class="fc">&nbsp;                    .mapNotNull { arg -&gt; extractTableNameExpr(arg) }</b>
+<b class="fc">&nbsp;                    .firstOrNull()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            expression.operatorFunctionName() != null -&gt; {</b>
+<b class="fc">&nbsp;                expression.operatorOperands()</b>
+<b class="fc">&nbsp;                    .mapNotNull { arg -&gt; extractTableNameExpr(arg) }</b>
+<b class="fc">&nbsp;                    .firstOrNull()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is IrBlock -&gt; expression.safeCallNullGuardedFieldExpression()?.let { extractTableNameExpr(it) }</b>
+<b class="pc">&nbsp;        is IrWhen -&gt; expression.explicitNullGuardedFieldExpression()?.let { extractTableNameExpr(it) }</b>
+<b class="fc">&nbsp;        is IrTypeOperatorCall -&gt; extractTableNameExpr(expression.argument)</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrExpression.kotlinSqlFunctionSourceOrNull(): KotlinSqlFunctionSource? {
+<b class="fc">&nbsp;    val call = this as? IrCall ?: return null</b>
+<b class="fc">&nbsp;    val rule = call.kotlinSqlFunctionRuleOrNull() ?: return null</b>
+<b class="pc">&nbsp;    val receiver = call.extensionReceiverArgument ?: return null</b>
+<b class="fc">&nbsp;    if (receiver is IrCall &amp;&amp; receiver.isKronosConditionValueAccess()) return null</b>
+<b class="fc">&nbsp;    return KotlinSqlFunctionSource(rule.sqlFunctionName, receiver)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrExpression.kotlinSqlFunctionSourceForConditionOrNull(): KotlinSqlFunctionSource? =
+<b class="fc">&nbsp;    kotlinSqlFunctionSourceOrNull() ?: (this as? IrBlock)?.safeCallKotlinSqlFunctionSourceOrNull()</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrBlock.safeCallKotlinSqlFunctionSourceOrNull(): KotlinSqlFunctionSource? {
+<b class="pc">&nbsp;    if (origin != IrStatementOrigin.SAFE_CALL) return null</b>
+<b class="pc">&nbsp;    val whenExpression = statements.lastOrNull() as? IrWhen ?: return null</b>
+<b class="pc">&nbsp;    if (whenExpression.branches.size != 2) return null</b>
+&nbsp;
+<b class="pc">&nbsp;    val nullBranch = whenExpression.branches.singleOrNull { it.result.isLiteralNullExpression() } ?: return null</b>
+<b class="pc">&nbsp;    val functionBranch = whenExpression.branches.singleOrNull { it !== nullBranch } ?: return null</b>
+<b class="fc">&nbsp;    val functionCall = functionBranch.result.kotlinSqlFunctionCallOrNull() ?: return null</b>
+<b class="pc">&nbsp;    val receiver = functionCall.extensionReceiverArgument ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;    val nullGuard = nullBranch.condition.nullGuard()</b>
+<b class="fc">&nbsp;    val functionGuard = functionBranch.condition.nullGuard()</b>
+<b class="pc">&nbsp;    val hasNullGuard = nullGuard?.isNullWhenTrue == true</b>
+<b class="pc">&nbsp;    val hasFunctionGuard = functionGuard?.isNullWhenTrue == false</b>
+<b class="fc">&nbsp;    val matchesGuard = when {</b>
+<b class="pc">&nbsp;        hasNullGuard &amp;&amp;</b>
+<b class="pc">&nbsp;            functionBranch.condition.isTrueConst() &amp;&amp;</b>
+<b class="pc">&nbsp;            receiver.matchesGuardSubject(nullGuard.subject) -&gt; true</b>
+&nbsp;
+<b class="nc">&nbsp;        hasFunctionGuard &amp;&amp;</b>
+<b class="nc">&nbsp;            nullBranch.condition.isTrueConst() &amp;&amp;</b>
+<b class="nc">&nbsp;            receiver.matchesGuardSubject(functionGuard.subject) -&gt; true</b>
+&nbsp;
+<b class="nc">&nbsp;        hasNullGuard &amp;&amp;</b>
+<b class="nc">&nbsp;            hasFunctionGuard &amp;&amp;</b>
+<b class="nc">&nbsp;            nullGuard.subject.structurallyMatches(functionGuard.subject) &amp;&amp;</b>
+<b class="nc">&nbsp;            receiver.matchesGuardSubject(nullGuard.subject) -&gt; true</b>
+&nbsp;
+<b class="nc">&nbsp;        else -&gt; false</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (!matchesGuard) return null</b>
+&nbsp;
+<b class="pc">&nbsp;    val source = receiver.safeCallTemporarySource() ?: receiver</b>
+<b class="pc">&nbsp;    return KotlinSqlFunctionSource(functionCall.kotlinSqlFunctionRuleOrNull()?.sqlFunctionName ?: return null, source)</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrExpression.kotlinSqlFunctionCallOrNull(): IrCall? =
+<b class="fc">&nbsp;    when (this) {</b>
+<b class="pc">&nbsp;        is IrCall -&gt; takeIf { kotlinSqlFunctionRuleOrNull() != null }</b>
+<b class="nc">&nbsp;        is IrTypeOperatorCall -&gt; argument.kotlinSqlFunctionCallOrNull()</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrExpression.safeCallTemporarySource(): IrExpression? {
+<b class="pc">&nbsp;    val temporary = unwrapFieldChainWrapper() as? IrGetValue ?: return null</b>
+<b class="pc">&nbsp;    return (temporary.symbol.owner as? IrVariable)?.initializer</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrExpression.isLiteralNullExpression(): Boolean =
+<b class="fc">&nbsp;    when (this) {</b>
+<b class="pc">&nbsp;        is IrConst -&gt; kind == IrConstKind.Null || value == null</b>
+<b class="fc">&nbsp;        is IrTypeOperatorCall -&gt; argument.isLiteralNullExpression()</b>
+<b class="fc">&nbsp;        else -&gt; false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;private fun IrBlock.safeCallNullGuardedFieldExpression(): IrExpression? {
+<b class="pc">&nbsp;    if (origin != IrStatementOrigin.SAFE_CALL) return null</b>
+<b class="pc">&nbsp;    val whenExpression = statements.lastOrNull() as? IrWhen ?: return null</b>
+<b class="fc">&nbsp;    return whenExpression.nullGuardedFieldExpression()</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrWhen.explicitNullGuardedFieldExpression(): IrExpression? {
+<b class="pc">&nbsp;    if (origin != IrStatementOrigin.IF &amp;&amp; origin != IrStatementOrigin.WHEN) return null</b>
+<b class="fc">&nbsp;    return nullGuardedFieldExpression()</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrWhen.nullGuardedFieldExpression(): IrExpression? {
+<b class="pc">&nbsp;    if (branches.size != 2) return null</b>
+&nbsp;
+<b class="pc">&nbsp;    val nullBranch = branches.singleOrNull { it.result.isLiteralNullExpression() } ?: return null</b>
+<b class="pc">&nbsp;    val fieldBranch = branches.singleOrNull { it !== nullBranch } ?: return null</b>
+<b class="fc">&nbsp;    val fieldExpression = fieldBranch.result.directFieldGetterExpression() ?: return null</b>
+<b class="pc">&nbsp;    val fieldReceiver = fieldExpression.fieldReceiver() ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;    val nullGuard = nullBranch.condition.nullGuard()</b>
+<b class="fc">&nbsp;    val fieldGuard = fieldBranch.condition.nullGuard()</b>
+<b class="pc">&nbsp;    val hasNullGuard = nullGuard?.isNullWhenTrue == true</b>
+<b class="pc">&nbsp;    val hasFieldGuard = fieldGuard?.isNullWhenTrue == false</b>
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        hasNullGuard &amp;&amp;</b>
+<b class="pc">&nbsp;            fieldBranch.condition.isTrueConst() &amp;&amp;</b>
+<b class="pc">&nbsp;            fieldReceiver.matchesGuardSubject(nullGuard.subject) -&gt; fieldExpression</b>
+&nbsp;
+<b class="pc">&nbsp;        hasFieldGuard &amp;&amp;</b>
+<b class="pc">&nbsp;            nullBranch.condition.isTrueConst() &amp;&amp;</b>
+<b class="pc">&nbsp;            fieldReceiver.matchesGuardSubject(fieldGuard.subject) -&gt; fieldExpression</b>
+&nbsp;
+<b class="nc">&nbsp;        hasNullGuard &amp;&amp;</b>
+<b class="nc">&nbsp;            hasFieldGuard &amp;&amp;</b>
+<b class="nc">&nbsp;            nullGuard.subject.structurallyMatches(fieldGuard.subject) &amp;&amp;</b>
+<b class="nc">&nbsp;            fieldReceiver.matchesGuardSubject(nullGuard.subject) -&gt; fieldExpression</b>
+&nbsp;
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrExpression.directFieldGetterExpression(): IrCall? =
+<b class="fc">&nbsp;    when (this) {</b>
+<b class="pc">&nbsp;        is IrCall -&gt; {</b>
+<b class="fc">&nbsp;            if (origin == IrStatementOrigin.GET_PROPERTY) this else null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        is IrTypeOperatorCall -&gt; argument.directFieldGetterExpression()</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;private fun IrExpression.isTrueConst(): Boolean =
+<b class="pc">&nbsp;    this is IrConst &amp;&amp; value == true</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrExpression.nullGuard(): NullGuard? {
+<b class="fc">&nbsp;    return when (this) {</b>
+<b class="fc">&nbsp;        is IrCall -&gt; when (origin) {</b>
+<b class="fc">&nbsp;            IrStatementOrigin.EQEQ -&gt; nullGuardFromEquality(isNullWhenTrue = true)</b>
+<b class="fc">&nbsp;            IrStatementOrigin.EXCLEQ -&gt; {</b>
+<b class="fc">&nbsp;                if (isEqualityFunction()) {</b>
+<b class="fc">&nbsp;                    nullGuardFromEquality(isNullWhenTrue = false)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    nullGuardFromExclEqWrapper()</b>
+&nbsp;                }
+&nbsp;            }
+<b class="pc">&nbsp;            else -&gt; if (origin == IrStatementOrigin.EXCL || funcName() == &quot;not&quot;) {</b>
+<b class="pc">&nbsp;                singleNullGuardArgument()?.nullGuard()?.inverted()</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                null</b>
+&nbsp;            }
+&nbsp;        }
+<b class="pc">&nbsp;        is IrTypeOperatorCall -&gt; argument.nullGuard()</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrCall.singleNullGuardArgument(): IrExpression? =
+<b class="fc">&nbsp;    arguments.filterNotNull().singleOrNull()</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrCall.nullGuardFromExclEqWrapper(): NullGuard? {
+<b class="pc">&nbsp;    val inner = arguments.filterNotNull().singleOrNull() ?: return null</b>
+<b class="pc">&nbsp;    val guard = inner.nullGuard() ?: return null</b>
+<b class="pc">&nbsp;    return if (inner is IrCall &amp;&amp; inner.origin == IrStatementOrigin.EXCLEQ &amp;&amp; inner.isEqualityFunction()) {</b>
+<b class="fc">&nbsp;        guard</b>
+&nbsp;    } else {
+<b class="nc">&nbsp;        guard.inverted()</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrCall.nullGuardFromEquality(isNullWhenTrue: Boolean): NullGuard? {
+<b class="pc">&nbsp;    val left = getValueArgumentSafe(0) ?: return null</b>
+<b class="pc">&nbsp;    val right = getValueArgumentSafe(1) ?: return null</b>
+<b class="fc">&nbsp;    return when {</b>
+<b class="pc">&nbsp;        left.isLiteralNullExpression() &amp;&amp; !right.isLiteralNullExpression() -&gt;</b>
+<b class="fc">&nbsp;            NullGuard(right, isNullWhenTrue)</b>
+<b class="pc">&nbsp;        right.isLiteralNullExpression() &amp;&amp; !left.isLiteralNullExpression() -&gt;</b>
+<b class="fc">&nbsp;            NullGuard(left, isNullWhenTrue)</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrCall.isEqualityFunction(): Boolean {
+<b class="fc">&nbsp;    val functionName = symbol.owner.name.asString()</b>
+<b class="fc">&nbsp;    return functionName == &quot;EQEQ&quot; || functionName == &quot;ieee754equals&quot;</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrExpression.matchesGuardSubject(subject: IrExpression): Boolean =
+<b class="fc">&nbsp;    unwrapFieldChainWrapper().structurallyMatches(subject)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrExpression.structurallyMatches(other: IrExpression): Boolean {
+<b class="fc">&nbsp;    val left = unwrapFieldChainWrapper()</b>
+<b class="fc">&nbsp;    val right = other.unwrapFieldChainWrapper()</b>
+<b class="fc">&nbsp;    return when {</b>
+<b class="pc">&nbsp;        left is IrGetValue &amp;&amp; right is IrGetValue -&gt; left.symbol == right.symbol</b>
+<b class="pc">&nbsp;        left is IrCall &amp;&amp; right is IrCall -&gt; {</b>
+<b class="pc">&nbsp;            if (left.origin != IrStatementOrigin.GET_PROPERTY || right.origin != IrStatementOrigin.GET_PROPERTY) return false</b>
+<b class="pc">&nbsp;            if (left.symbol != right.symbol) return false</b>
+<b class="pc">&nbsp;            val leftReceiver = left.fieldReceiver() ?: return false</b>
+<b class="pc">&nbsp;            val rightReceiver = right.fieldReceiver() ?: return false</b>
+<b class="fc">&nbsp;            leftReceiver.structurallyMatches(rightReceiver)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        else -&gt; false</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrExpression.unwrapFieldChainWrapper(): IrExpression =
+<b class="fc">&nbsp;    when (this) {</b>
+<b class="fc">&nbsp;        is IrTypeOperatorCall -&gt; argument.unwrapFieldChainWrapper()</b>
+<b class="fc">&nbsp;        else -&gt; this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrCall.fieldReceiver(): IrExpression? =
+<b class="pc">&nbsp;    dispatchReceiverArgument ?: extensionReceiverArgument</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrClass.isGeneratedProjectionClass(): Boolean =
+<b class="fc">&nbsp;    kotlinFqName.parent() == GeneratedProjectionPackageFqName</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves a value expression: property access becomes Field and Kronos function calls
+&nbsp; * become KronosFunctionExpr; otherwise the original expression is preserved.
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun resolveValueExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression {
+<b class="fc">&nbsp;    val valueExpression = expression.safeSelectableValueExpression()</b>
+<b class="pc">&nbsp;    if (valueExpression is IrCall &amp;&amp; (valueExpression.isKronosFunction() || valueExpression.operatorFunctionName() != null)) {</b>
+<b class="fc">&nbsp;        return buildKronosFunctionExpr(irFunction, valueExpression, errorReporter)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return extractFieldExpression(irFunction, valueExpression, errorReporter) ?: valueExpression</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Equal SQL expressions (handles KPojo object comparison too)
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildEqualSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    left: IrExpression,
+&nbsp;    right: IrExpression,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    buildLiteralNullSqlExpr(irFunction, left, right, not, errorReporter)?.let { return it }</b>
+&nbsp;
+<b class="fc">&nbsp;    val leftField = extractFieldExpression(irFunction, left, errorReporter)</b>
+<b class="fc">&nbsp;    val rightField = extractFieldExpression(irFunction, right, errorReporter)</b>
+<b class="fc">&nbsp;    val leftSql = extractSqlExpression(irFunction, left, errorReporter)</b>
+<b class="fc">&nbsp;    val rightSql = extractSqlExpression(irFunction, right, errorReporter)</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        leftSql != null -&gt; buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;            irFunction,</b>
+<b class="fc">&nbsp;            field = functionMetadataField(irFunction, left, errorReporter),</b>
+<b class="fc">&nbsp;            sqlExpr = leftSql,</b>
+<b class="fc">&nbsp;            kind = ConditionExpressionKind.Equal,</b>
+<b class="fc">&nbsp;            not = not,</b>
+<b class="fc">&nbsp;            value = resolveValueExpression(irFunction, right, errorReporter),</b>
+<b class="fc">&nbsp;            tableName = extractTableNameExpr(left)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        rightSql != null -&gt; buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;            irFunction,</b>
+<b class="fc">&nbsp;            field = functionMetadataField(irFunction, right, errorReporter),</b>
+<b class="fc">&nbsp;            sqlExpr = rightSql,</b>
+<b class="fc">&nbsp;            kind = ConditionExpressionKind.Equal,</b>
+<b class="fc">&nbsp;            not = not,</b>
+<b class="fc">&nbsp;            value = resolveValueExpression(irFunction, left, errorReporter),</b>
+<b class="fc">&nbsp;            tableName = extractTableNameExpr(right)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        leftField != null -&gt; buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;            irFunction,</b>
+<b class="fc">&nbsp;            field = leftField,</b>
+<b class="fc">&nbsp;            kind = ConditionExpressionKind.Equal,</b>
+<b class="fc">&nbsp;            not = not,</b>
+<b class="fc">&nbsp;            value = resolveValueExpression(irFunction, right, errorReporter),</b>
+<b class="fc">&nbsp;            tableName = extractTableNameExpr(left)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        rightField != null -&gt; buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;            irFunction,</b>
+<b class="fc">&nbsp;            field = rightField,</b>
+<b class="fc">&nbsp;            kind = ConditionExpressionKind.Equal,</b>
+<b class="fc">&nbsp;            not = not,</b>
+<b class="fc">&nbsp;            value = resolveValueExpression(irFunction, left, errorReporter),</b>
+<b class="fc">&nbsp;            tableName = extractTableNameExpr(right)</b>
+&nbsp;        )
+<b class="fc">&nbsp;        left.type.isKPojoType() -&gt; buildKPojoEqualSqlExpr(irFunction, left, right, not, errorReporter)</b>
+<b class="pc">&nbsp;        right.type.isKPojoType() -&gt; buildKPojoEqualSqlExpr(irFunction, right, left, not, errorReporter)</b>
+&nbsp;        else -&gt; {
+&nbsp;            // Neither side is a field or KPojo — this is a pure runtime expression (e.g., 1 == another.id.value)
+&nbsp;            // Generate a SQL &quot;true&quot; / &quot;false&quot; expression so it appears in the WHERE clause
+<b class="fc">&nbsp;            buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                irFunction,</b>
+<b class="fc">&nbsp;                field = null,</b>
+<b class="fc">&nbsp;                kind = ConditionExpressionKind.RawSql,</b>
+<b class="fc">&nbsp;                not = false,</b>
+<b class="fc">&nbsp;                value = builder.irBoolean(!not)</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildLiteralNullSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    left: IrExpression,
+&nbsp;    right: IrExpression,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val fieldSource = when {</b>
+<b class="pc">&nbsp;        left.isLiteralNullExpression() &amp;&amp; !right.isLiteralNullExpression() -&gt; right</b>
+<b class="pc">&nbsp;        right.isLiteralNullExpression() &amp;&amp; !left.isLiteralNullExpression() -&gt; left</b>
+<b class="fc">&nbsp;        else -&gt; return null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val fieldExpr = extractFieldExpression(irFunction, fieldSource, errorReporter)</b>
+<b class="fc">&nbsp;    val sqlExpr = extractSqlExpression(irFunction, fieldSource, errorReporter)</b>
+<b class="pc">&nbsp;    if (fieldExpr == null &amp;&amp; sqlExpr == null) return null</b>
+&nbsp;
+<b class="fc">&nbsp;    return buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;        irFunction,</b>
+<b class="fc">&nbsp;        field = fieldExpr ?: functionMetadataField(irFunction, fieldSource, errorReporter),</b>
+<b class="fc">&nbsp;        sqlExpr = sqlExpr,</b>
+<b class="fc">&nbsp;        kind = ConditionExpressionKind.IsNull,</b>
+<b class="fc">&nbsp;        not = not,</b>
+<b class="fc">&nbsp;        tableName = extractTableNameExpr(fieldSource)</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildKPojoEqualSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    kpojoExpr: IrExpression,
+&nbsp;    valueExpr: IrExpression,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="pc">&nbsp;    val irClass = kpojoExpr.type.classOrNull?.owner ?: run {</b>
+<b class="nc">&nbsp;        errorReporter.reportError(kpojoExpr, ErrorMessages.CANNOT_RESOLVE_KPOJO_CLASS)</b>
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val columnProps = irClass.properties.filter { it.isColumnType() }.toList()</b>
+<b class="fc">&nbsp;    if (columnProps.isEmpty()) {</b>
+<b class="fc">&nbsp;        errorReporter.reportWarning(kpojoExpr, ErrorMessages.kpojoNoColumnProperties(irClass.name))</b>
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val children = columnProps.mapNotNull { prop -&gt;</b>
+<b class="fc">&nbsp;        val fieldExpr = buildFieldFromProperty(prop)</b>
+<b class="pc">&nbsp;        val getter = prop.getter ?: return@mapNotNull null</b>
+<b class="fc">&nbsp;        val getterCall = builder.irCall(getter.symbol).apply { dispatchReceiver = valueExpr.freshValueExpression() }</b>
+<b class="fc">&nbsp;        buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;            irFunction,</b>
+<b class="fc">&nbsp;            field = fieldExpr,</b>
+<b class="fc">&nbsp;            kind = ConditionExpressionKind.Equal,</b>
+<b class="fc">&nbsp;            not = not,</b>
+<b class="fc">&nbsp;            value = getterCall,</b>
+<b class="fc">&nbsp;            tableName = builder.getTableNameExpr(irClass)</b>
+<b class="fc">&nbsp;        )</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return buildConditionSqlExpr(irFunction, kind = ConditionLogicalKind.And, not = false, children = children)</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)
+&nbsp;private fun IrExpression.freshValueExpression(): IrExpression =
+<b class="pc">&nbsp;    if (this is IrGetValue) builder.irGet(symbol.owner) else deepCopyWithSymbols()</b>
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Binary comparison SQL expressions (for `it.age &lt; 18` and `18 &gt; it.age` forms)
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildBinaryComparisonSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    operator: ConditionComparisonKind,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+&nbsp;    // In K2 IR, `it.age &lt; 18` is represented as:
+&nbsp;    //   IrCall(funcName=&quot;less&quot;, valueArguments=[compareTo(it.age, 18), 0])
+&nbsp;    //
+&nbsp;    // The compareTo call is in valueArguments[0], with structure:
+&nbsp;    //   compareTo(dispatchReceiver=$this$where, extensionReceiver=it.&lt;get-age&gt;(), valueArgument[0]=18)
+&nbsp;    //
+&nbsp;    // For comparison, we need to extract extensionReceiver (field access) and valueArgument[0] (value)
+&nbsp;
+<b class="fc">&nbsp;    val directLeft = call.getValueArgumentSafe(0)</b>
+<b class="fc">&nbsp;    val directRight = call.getValueArgumentSafe(1)</b>
+<b class="pc">&nbsp;    if (directLeft != null &amp;&amp; directRight != null) {</b>
+<b class="fc">&nbsp;        buildComparisonSqlExpr(irFunction, directLeft, directRight, operator, not, errorReporter)</b>
+<b class="fc">&nbsp;            ?.let { return it }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Try to find compareTo call in valueArguments
+<b class="fc">&nbsp;    val compareToCall = call.valueArguments.filterIsInstance&lt;IrCall&gt;().firstOrNull { it.symbol.owner.name.asString() == &quot;compareTo&quot; }</b>
+<b class="pc">&nbsp;    if (compareToCall != null) {</b>
+&nbsp;        // In K2, the field access is typically in extensionReceiver for Comparable.compareTo
+<b class="fc">&nbsp;        val compareValue = compareToCall.getValueArgumentSafe(0)</b>
+&nbsp;
+&nbsp;        // Try extensionReceiver as field access first, then dispatchReceiver
+<b class="pc">&nbsp;        val fieldAccess = compareToCall.extensionReceiverArgument ?: compareToCall.dispatchReceiverArgument</b>
+<b class="pc">&nbsp;        if (fieldAccess != null &amp;&amp; compareValue != null) {</b>
+<b class="fc">&nbsp;            buildComparisonSqlExpr(irFunction, fieldAccess, compareValue, operator, not, errorReporter)</b>
+<b class="pc">&nbsp;                ?.let { return it }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    errorReporter.reportError(call, ErrorMessages.missingOperandFor(operator.diagnosticName))</b>
+<b class="nc">&nbsp;    return null</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildComparisonSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    left: IrExpression,
+&nbsp;    right: IrExpression,
+&nbsp;    operator: ConditionComparisonKind,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    comparisonOperand(irFunction, left, errorReporter)?.let { operand -&gt;</b>
+<b class="fc">&nbsp;        return operand.buildComparison(irFunction, operator, not, right, errorReporter)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    comparisonOperand(irFunction, right, errorReporter)?.let { operand -&gt;</b>
+<b class="fc">&nbsp;        return operand.buildComparison(irFunction, operator.reversed(), not, left, errorReporter)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return null</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun comparisonOperand(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    expression: IrExpression,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): ConditionOperand? {
+<b class="fc">&nbsp;    val sqlExpr = extractSqlExpression(irFunction, expression, errorReporter)</b>
+<b class="fc">&nbsp;    if (sqlExpr != null) {</b>
+<b class="fc">&nbsp;        return ConditionOperand(expression, functionMetadataField(irFunction, expression, errorReporter), sqlExpr)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val field = extractFieldExpression(irFunction, expression, errorReporter) ?: return null</b>
+<b class="fc">&nbsp;    return ConditionOperand(expression, field, null)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun ConditionOperand.buildComparison(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    operator: ConditionComparisonKind,
+&nbsp;    not: Boolean,
+&nbsp;    value: IrExpression,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression {
+<b class="fc">&nbsp;    return buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;        irFunction,</b>
+<b class="fc">&nbsp;        field = field,</b>
+<b class="fc">&nbsp;        sqlExpr = sqlExpr,</b>
+<b class="fc">&nbsp;        kind = operator.condition,</b>
+<b class="fc">&nbsp;        not = not,</b>
+<b class="fc">&nbsp;        value = resolveValueExpression(irFunction, value, errorReporter),</b>
+<b class="fc">&nbsp;        tableName = extractTableNameExpr(expression)</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Handles comparison operators from IR origins (GT, LT, GTEQ, LTEQ).
+&nbsp; * Supports both `it.age &gt; 18` and `18 &lt; it.age` (reversed) forms.
+&nbsp; *
+&nbsp; * In K2 IR, `it.age &lt; 18` is lowered to:
+&nbsp; *   IrCall(origin=LT, value_arg_0 = compareTo(this=it.age, other=18))
+&nbsp; * So we need to look inside the compareTo call to find the field and value.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun getNoArgValue(irFunction: IrFunction, call: IrCall): IrExpression? {
+<b class="pc">&nbsp;    val receiver = (call.extensionReceiverArgument ?: call.dispatchReceiverArgument) as? IrCall ?: return null</b>
+<b class="fc">&nbsp;    val propName = receiver.symbol.owner.correspondingPropertySymbol!!.owner.name.asString()</b>
+&nbsp;    // The KTableForCondition instance is the extension receiver of the lambda, not the User instance
+<b class="fc">&nbsp;    val tableParam = irFunction.parameters.extensionReceiver!!</b>
+<b class="fc">&nbsp;    return builder.irCall(sourceValueByFieldNameMethodSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = builder.irGet(tableParam)</b>
+<b class="fc">&nbsp;        arguments[1] = builder.irString(propName)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgEqualSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Equal, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Handles no-arg `.eq` / `.neq` on either a single field or a KPojo (with optional minus).
+&nbsp; * - `it.age.eq` → single field equal SQL expression
+&nbsp; * - `it.eq` or `(it - it.gender).eq` → AND SQL expression for all (non-excluded) column properties
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildKPojoOrFieldEq(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    receiver: IrExpression,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+&nbsp;    // Check if receiver is a KPojo or a MINUS expression on a KPojo
+<b class="fc">&nbsp;    val (kPojoExpr, excludes) = analyzeKPojoOrMinus(receiver)</b>
+<b class="fc">&nbsp;    if (kPojoExpr != null) {</b>
+<b class="pc">&nbsp;        val irClass = kPojoExpr.type.classOrNull?.owner ?: return null</b>
+<b class="fc">&nbsp;        val columnProps = irClass.properties.filter { it.isColumnType() &amp;&amp; it.name.asString() !in excludes }.toList()</b>
+<b class="fc">&nbsp;        if (columnProps.isEmpty()) return null</b>
+<b class="pc">&nbsp;        val tableParam = irFunction.parameters.extensionReceiver</b>
+<b class="nc">&nbsp;            ?: error(&quot;KTableForCondition extension receiver not found for KPojo equality generation.&quot;)</b>
+<b class="fc">&nbsp;        val children = columnProps.map { prop -&gt;</b>
+<b class="fc">&nbsp;            val fieldExpr = buildFieldFromProperty(prop)</b>
+<b class="fc">&nbsp;            val propName = prop.name.asString()</b>
+<b class="fc">&nbsp;            val valueExpr = builder.irCall(sourceValueByFieldNameMethodSymbol).apply {</b>
+<b class="fc">&nbsp;                dispatchReceiver = builder.irGet(tableParam)</b>
+<b class="fc">&nbsp;                arguments[1] = builder.irString(propName)</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;                irFunction,</b>
+<b class="fc">&nbsp;                field = fieldExpr,</b>
+<b class="fc">&nbsp;                kind = ConditionExpressionKind.Equal,</b>
+<b class="fc">&nbsp;                not = not,</b>
+<b class="fc">&nbsp;                value = valueExpr,</b>
+<b class="fc">&nbsp;                tableName = builder.getTableNameExpr(irClass)</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (children.size == 1) return children.first()</b>
+<b class="fc">&nbsp;        return buildConditionSqlExpr(irFunction, kind = ConditionLogicalKind.And, not = false, children = children)</b>
+&nbsp;    }
+&nbsp;    // Not a KPojo — fall back to single field eq
+<b class="fc">&nbsp;    return buildNoArgEqualSqlExpr(irFunction, call, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Analyzes an expression to determine if it&#39;s a KPojo or a MINUS expression on a KPojo.
+&nbsp; * Returns the KPojo expression and the list of excluded field names.
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun analyzeKPojoOrMinus(expression: IrExpression): Pair&lt;IrExpression?, List&lt;String&gt;&gt; {
+<b class="fc">&nbsp;    if (expression.type.isKPojoType()) {</b>
+<b class="pc">&nbsp;        if (expression is IrCall &amp;&amp; expression.origin == IrStatementOrigin.MINUS) {</b>
+<b class="fc">&nbsp;            val (base, excludes) = collectMinusExcludes(expression)</b>
+<b class="fc">&nbsp;            return base to excludes</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return expression to emptyList()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return null to emptyList()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Recursively collects excluded field names from chained minus expressions.
+&nbsp; * `(it - it.gender - it.age)` → base=it, excludes=[&quot;gender&quot;, &quot;age&quot;]
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun collectMinusExcludes(call: IrCall): Pair&lt;IrExpression, List&lt;String&gt;&gt; {
+<b class="fc">&nbsp;    val excludes = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;    val arg = call.getValueArgumentSafe(0)</b>
+<b class="pc">&nbsp;    if (arg is IrCall &amp;&amp; arg.origin == IrStatementOrigin.GET_PROPERTY) {</b>
+<b class="fc">&nbsp;        excludes.add(arg.symbol.owner.correspondingPropertySymbol!!.owner.name.asString())</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument</b>
+<b class="pc">&nbsp;    return if (receiver is IrCall &amp;&amp; receiver.origin == IrStatementOrigin.MINUS) {</b>
+<b class="fc">&nbsp;        val (base, innerExcludes) = collectMinusExcludes(receiver)</b>
+<b class="fc">&nbsp;        base to (innerExcludes + excludes)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        receiver!! to excludes</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgComparisonSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    operator: ConditionComparisonKind,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, operator.condition, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgFieldConditionSqlExpr(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    call: IrCall,
+&nbsp;    kind: ConditionExpressionKind,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter,
+<b class="fc">&nbsp;    valueTransform: (IrExpression) -&gt; IrExpression = { it }</b>
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val receiver = call.conditionReceiver()</b>
+<b class="pc">&nbsp;    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null</b>
+<b class="fc">&nbsp;    val valueExpr = valueTransform(getNoArgValue(irFunction, call)!!)</b>
+<b class="fc">&nbsp;    return buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;        irFunction,</b>
+<b class="fc">&nbsp;        field = fieldExpr,</b>
+<b class="fc">&nbsp;        kind = kind,</b>
+<b class="fc">&nbsp;        not = not,</b>
+<b class="fc">&nbsp;        value = valueExpr,</b>
+<b class="fc">&nbsp;        tableName = extractTableNameExpr(receiver)</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgLikeSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Like, not, errorReporter) { rawValue -&gt;</b>
+<b class="fc">&nbsp;        concatIrString(builder.irString(&quot;&quot;), rawValue)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrCall.conditionReceiver(): IrExpression =
+<b class="pc">&nbsp;    extensionReceiverArgument ?: dispatchReceiverArgument ?: error(&quot;Kronos condition DSL receiver is missing.&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildStringMatchConditionWithValue(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    receiver: IrExpression,
+&nbsp;    kind: ConditionExpressionKind,
+&nbsp;    not: Boolean,
+&nbsp;    errorReporter: ErrorReporter,
+&nbsp;    value: () -&gt; IrExpression
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter)</b>
+<b class="fc">&nbsp;    val sqlExpr = extractSqlExpression(irFunction, receiver, errorReporter)</b>
+<b class="pc">&nbsp;    if (fieldExpr == null &amp;&amp; sqlExpr == null) return null</b>
+<b class="fc">&nbsp;    return buildConditionSqlExpr(</b>
+<b class="fc">&nbsp;        irFunction,</b>
+<b class="fc">&nbsp;        field = fieldExpr ?: functionMetadataField(irFunction, receiver, errorReporter),</b>
+<b class="fc">&nbsp;        sqlExpr = sqlExpr,</b>
+<b class="fc">&nbsp;        kind = kind,</b>
+<b class="fc">&nbsp;        not = not,</b>
+<b class="fc">&nbsp;        value = value(),</b>
+<b class="fc">&nbsp;        tableName = extractTableNameExpr(receiver)</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgStartsWithSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.StartsWith, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgEndsWithSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.EndsWith, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgContainsSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Contains, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildNoArgRegexpSqlExpr(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+<b class="fc">&nbsp;    return buildNoArgFieldConditionSqlExpr(irFunction, call, ConditionExpressionKind.Regexp, not, errorReporter)</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Core condition SQL expression builder.
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;private fun buildConditionSqlExpr(
+&nbsp;    irFunction: IrFunction,
+<b class="fc">&nbsp;    field: IrExpression? = null,</b>
+<b class="fc">&nbsp;    sqlExpr: IrExpression? = null,</b>
+&nbsp;    kind: ConditionBuildKind,
+&nbsp;    not: Boolean,
+<b class="fc">&nbsp;    value: IrExpression? = null,</b>
+<b class="fc">&nbsp;    children: List&lt;IrExpression&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    noValueStrategyType: IrExpression? = null,</b>
+<b class="fc">&nbsp;    tableName: IrExpression? = null</b>
+&nbsp;): IrExpression {
+<b class="pc">&nbsp;    val receiver = irFunction.parameters.extensionReceiver</b>
+<b class="nc">&nbsp;        ?: error(&quot;KTableForCondition extension receiver not found for condition SQL expression generation.&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;    if (children.isNotEmpty()) {</b>
+<b class="fc">&nbsp;        val method = when (kind) {</b>
+<b class="fc">&nbsp;            ConditionLogicalKind.Or -&gt; orExprMethodSymbol</b>
+<b class="fc">&nbsp;            ConditionLogicalKind.And,</b>
+<b class="pc">&nbsp;            ConditionLogicalKind.Root -&gt; andExprMethodSymbol</b>
+<b class="nc">&nbsp;            is ConditionExpressionKind -&gt; error(&quot;Condition &#39;$kind&#39; cannot contain child expressions.&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return builder.irCall(method).apply {</b>
+<b class="fc">&nbsp;            dispatchReceiver = builder.irGet(receiver)</b>
+<b class="fc">&nbsp;            arguments[1] = irListOf(children.first().type, children)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    if (kind is ConditionLogicalKind) {</b>
+<b class="nc">&nbsp;        return builder.irNull()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val expressionKind = kind as ConditionExpressionKind</b>
+<b class="fc">&nbsp;    val method = conditionExprMethodSymbol(expressionKind)</b>
+<b class="fc">&nbsp;    return builder.irCall(method).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = builder.irGet(receiver)</b>
+<b class="fc">&nbsp;        arguments[1] = field ?: builder.irNull()</b>
+<b class="fc">&nbsp;        arguments[2] = sqlExpr ?: builder.irNull()</b>
+<b class="fc">&nbsp;        arguments[3] = builder.irBoolean(not)</b>
+<b class="fc">&nbsp;        arguments[4] = value ?: builder.irNull()</b>
+<b class="fc">&nbsp;        arguments[5] = tableName ?: builder.irNull()</b>
+<b class="pc">&nbsp;        arguments[6] = noValueStrategyType ?: builder.irNull()</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;private fun conditionExprMethodSymbol(kind: ConditionExpressionKind): IrSimpleFunctionSymbol =
+<b class="fc">&nbsp;    when (kind) {</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.RawSql -&gt; rawConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.IsNull -&gt; isNullConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.Equal -&gt; equalConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.GreaterThan -&gt; greaterThanConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.GreaterThanOrEqual -&gt; greaterThanOrEqualConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.LessThan -&gt; lessThanConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.LessThanOrEqual -&gt; lessThanOrEqualConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.Like -&gt; likeConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.StartsWith -&gt; startsWithConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.EndsWith -&gt; endsWithConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.Contains -&gt; containsConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.Regexp -&gt; regexpConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.In -&gt; inConditionExprMethodSymbol</b>
+<b class="fc">&nbsp;        ConditionExpressionKind.Between -&gt; betweenConditionExprMethodSymbol</b>
+&nbsp;    }
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// String concat helper
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext, builder: IrBlockBuilder)</b>
+&nbsp;internal fun concatIrString(left: IrExpression, right: IrExpression): IrExpression =
+<b class="fc">&nbsp;    builder.irCall(stringPlusSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = left</b>
+<b class="fc">&nbsp;        arguments[1] = right</b>
+<b class="fc">&nbsp;    }</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

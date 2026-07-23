@@ -1,0 +1,325 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > EnumValueCodecKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils.codec</a>
+</div>
+
+<h1>Coverage Summary for Class: EnumValueCodecKt (com.kotlinorm.utils.codec)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">EnumValueCodecKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.6%
+  </span>
+  <span class="absValue">
+    (55/70)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.4%
+  </span>
+  <span class="absValue">
+    (63/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (343/374)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.utils.codec
+&nbsp;
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.exceptions.MissingEnumMetadata
+&nbsp;import com.kotlinorm.exceptions.InvalidEnumOrdinal
+&nbsp;import com.kotlinorm.exceptions.UnknownEnumValue
+&nbsp;import com.kotlinorm.interfaces.ValueCodecContext
+&nbsp;import com.kotlinorm.utils.GeneratedTypeMetadataSnapshot
+&nbsp;import com.kotlinorm.utils.generatedTypeMetadata
+&nbsp;import java.math.BigDecimal
+&nbsp;import java.math.BigInteger
+&nbsp;
+<b class="fc">&nbsp;private val ordinalColumnTypes = setOf(</b>
+<b class="fc">&nbsp;    KColumnType.TINYINT,</b>
+<b class="fc">&nbsp;    KColumnType.SMALLINT,</b>
+<b class="fc">&nbsp;    KColumnType.INT,</b>
+<b class="fc">&nbsp;    KColumnType.MEDIUMINT,</b>
+<b class="fc">&nbsp;    KColumnType.SERIAL,</b>
+<b class="fc">&nbsp;    KColumnType.BIGINT</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Encodes ordinary enum values with [Enum.name] for string-compatible fields
+&nbsp; * and with the declaration ordinal for explicitly integer fields. Both forms
+&nbsp; * decode through compiler-generated enum metadata.
+&nbsp; *
+&nbsp; * The codec is gated to non-serialized storage. It never uses reflection or
+&nbsp; * `toString`; missing metadata, invalid ordinals and unknown names become
+&nbsp; * contextual mapping failures.
+&nbsp; */
+&nbsp;internal object EnumValueCodec : RegistryCodec {
+&nbsp;    override val description: String = &quot;enum ValueCodec&quot;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Matches an enum runtime value for ENCODE or a concrete enum target for
+&nbsp;     * DECODE. Collection and serialized requests are not matched here.
+&nbsp;     *
+&nbsp;     * @param value non-null source value
+&nbsp;     * @param request request whose direction and exact target determine matching
+&nbsp;     * @param context logical request context
+&nbsp;     * @return whether enum name/ordinal encoding or generated decoding applies
+&nbsp;     */
+&nbsp;    override fun supports(value: Any, request: ValueConversionRequest, context: ValueCodecContext): Boolean =
+&nbsp;        (request.direction == ValueCodecDirection.ENCODE &amp;&amp; value is Enum&lt;*&gt;) ||
+&nbsp;            (request.direction == ValueCodecDirection.DECODE &amp;&amp; request.targetType.isConcreteEnumType())
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Encodes exactly once with `Enum.name` or `Enum.ordinal` according to the
+&nbsp;     * physical field type, or decodes a name/ordinal through the
+&nbsp;     * compiler-generated factory. Missing metadata, invalid ordinals and
+&nbsp;     * unknown names are explicit errors.
+&nbsp;     *
+&nbsp;     * @param value enum value on encode or persisted name/ordinal on decode
+&nbsp;     * @param request exact enum target and failure context
+&nbsp;     * @param context logical request context
+&nbsp;     * @param generatedTypes optional deterministic metadata snapshot
+&nbsp;     * @return persisted enum name or generated enum entry
+&nbsp;     * @throws MissingEnumMetadata when no generated decoder exists for the target
+&nbsp;     * @throws UnknownEnumValue when the persisted name is not a declared entry
+&nbsp;     * @throws InvalidEnumOrdinal when an integer field contains an invalid ordinal
+&nbsp;     */
+&nbsp;    override fun convert(
+&nbsp;        value: Any,
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        context: ValueCodecContext,
+&nbsp;        generatedTypes: GeneratedTypeMetadataSnapshot?
+&nbsp;    ): Any {
+&nbsp;        if (request.direction == ValueCodecDirection.ENCODE) {
+&nbsp;            val enumValue = value as Enum&lt;*&gt;
+&nbsp;            return if (request.usesOrdinalStorage()) enumValue.ordinal else enumValue.name
+&nbsp;        }
+&nbsp;
+&nbsp;        if (request.targetType.accepts(value, request.sourceType)) return value
+&nbsp;        val metadata = (generatedTypes ?: generatedTypeMetadata()).enumMetadata(request.targetType)
+&nbsp;            ?: throw request.missingEnumMetadata()
+&nbsp;        if (request.usesOrdinalStorage()) {
+&nbsp;            val ordinal = (value as? Number)?.toEnumOrdinal()
+&nbsp;            if (ordinal == null || ordinal &lt; 0 || ordinal &gt;= metadata.entryNames.size) {
+&nbsp;                throw request.invalidEnumOrdinal(value, metadata.entryNames.size)
+&nbsp;            }
+&nbsp;            val name = metadata.entryNames[ordinal]
+&nbsp;            return metadata.factory.create(name)
+&nbsp;                ?: throw request.unknownEnumValue(name)
+&nbsp;        }
+&nbsp;        if (value !is String) {
+&nbsp;            throw request.failure(&quot;enum decoding requires a String source, got ${value::class.qualifiedName}&quot;)
+&nbsp;        }
+&nbsp;        return metadata.factory.create(value)
+&nbsp;            ?: throw request.unknownEnumValue(value)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun ValueConversionRequest.usesOrdinalStorage(): Boolean =
+<b class="fc">&nbsp;    field?.type in ordinalColumnTypes</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns an exact Int only for an integer-valued Number within Int range.
+&nbsp; */
+<b class="fc">&nbsp;private fun Number.toEnumOrdinal(): Int? = when (this) {</b>
+<b class="fc">&nbsp;    is Byte -&gt; toInt()</b>
+<b class="fc">&nbsp;    is Short -&gt; toInt()</b>
+<b class="fc">&nbsp;    is Int -&gt; this</b>
+<b class="fc">&nbsp;    is Long -&gt; toIntOrNull()</b>
+<b class="fc">&nbsp;    is BigInteger -&gt; toIntOrNull()</b>
+<b class="fc">&nbsp;    is BigDecimal -&gt; toIntOrNull()</b>
+<b class="fc">&nbsp;    is Float -&gt; toBigDecimalOrNull()?.toIntOrNull()</b>
+<b class="fc">&nbsp;    is Double -&gt; toBigDecimalOrNull()?.toIntOrNull()</b>
+&nbsp;    else -&gt; try {
+<b class="fc">&nbsp;        BigDecimal(toString()).toIntOrNull()</b>
+&nbsp;    } catch (_: NumberFormatException) {
+<b class="fc">&nbsp;        null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="pc">&nbsp;private fun Long.toIntOrNull(): Int? = takeIf { it in Int.MIN_VALUE..Int.MAX_VALUE }?.toInt()</b>
+&nbsp;
+&nbsp;private fun BigInteger.toIntOrNull(): Int? = try {
+<b class="fc">&nbsp;    intValueExact()</b>
+&nbsp;} catch (_: ArithmeticException) {
+<b class="fc">&nbsp;    null</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun BigDecimal.toIntOrNull(): Int? = try {
+<b class="fc">&nbsp;    toBigIntegerExact().intValueExact()</b>
+&nbsp;} catch (_: ArithmeticException) {
+<b class="fc">&nbsp;    null</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private fun Number.toBigDecimalOrNull(): BigDecimal? = when (this) {</b>
+<b class="fc">&nbsp;    is Float -&gt; takeIf { it.isFinite() }?.let { BigDecimal.valueOf(it.toDouble()) }</b>
+<b class="pc">&nbsp;    is Double -&gt; takeIf { it.isFinite() }?.let { BigDecimal.valueOf(it) }</b>
+<b class="nc">&nbsp;    else -&gt; null</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private fun ValueConversionRequest.missingEnumMetadata() = MissingEnumMetadata(</b>
+<b class="fc">&nbsp;    direction,</b>
+<b class="fc">&nbsp;    origin,</b>
+<b class="fc">&nbsp;    sourceType,</b>
+<b class="fc">&nbsp;    runtimeSourceType,</b>
+<b class="fc">&nbsp;    targetType,</b>
+<b class="pc">&nbsp;    field?.name,</b>
+<b class="pc">&nbsp;    field?.columnName,</b>
+<b class="fc">&nbsp;    valueName,</b>
+<b class="pc">&nbsp;    dialect?.family?.name,</b>
+<b class="fc">&nbsp;    batchIndex</b>
+&nbsp;)
+&nbsp;
+<b class="fc">&nbsp;private fun ValueConversionRequest.unknownEnumValue(rawValue: String) = UnknownEnumValue(</b>
+<b class="fc">&nbsp;    direction,</b>
+<b class="fc">&nbsp;    origin,</b>
+<b class="fc">&nbsp;    sourceType,</b>
+<b class="fc">&nbsp;    runtimeSourceType,</b>
+<b class="fc">&nbsp;    targetType,</b>
+<b class="fc">&nbsp;    field?.name,</b>
+<b class="fc">&nbsp;    field?.columnName,</b>
+<b class="fc">&nbsp;    valueName,</b>
+<b class="pc">&nbsp;    dialect?.family?.name,</b>
+<b class="fc">&nbsp;    batchIndex,</b>
+<b class="fc">&nbsp;    rawValue</b>
+&nbsp;)
+&nbsp;
+&nbsp;private fun ValueConversionRequest.invalidEnumOrdinal(
+&nbsp;    rawValue: Any,
+&nbsp;    entryCount: Int
+<b class="fc">&nbsp;) = InvalidEnumOrdinal(</b>
+<b class="fc">&nbsp;    direction,</b>
+<b class="fc">&nbsp;    origin,</b>
+<b class="fc">&nbsp;    sourceType,</b>
+<b class="fc">&nbsp;    runtimeSourceType,</b>
+<b class="fc">&nbsp;    targetType,</b>
+<b class="pc">&nbsp;    field?.name,</b>
+<b class="pc">&nbsp;    field?.columnName,</b>
+<b class="fc">&nbsp;    valueName,</b>
+<b class="pc">&nbsp;    dialect?.family?.name,</b>
+<b class="fc">&nbsp;    batchIndex,</b>
+<b class="fc">&nbsp;    rawValue.toString(),</b>
+<b class="fc">&nbsp;    entryCount</b>
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

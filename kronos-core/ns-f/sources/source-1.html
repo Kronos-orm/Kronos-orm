@@ -1,0 +1,395 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SqliteStatements</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database.sqlite</a>
+</div>
+
+<h1>Coverage Summary for Class: SqliteStatements (com.kotlinorm.database.sqlite)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqliteStatements</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (60/72)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (122/129)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (1152/1256)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SqliteStatements$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (60/72)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (122/129)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (1152/1256)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database.sqlite
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.database.DatabaseCreateTable
+&nbsp;import com.kotlinorm.database.DatabaseStatements
+&nbsp;import com.kotlinorm.database.DatabaseSyncTable
+&nbsp;import com.kotlinorm.database.asInt
+&nbsp;import com.kotlinorm.database.cell
+&nbsp;import com.kotlinorm.database.sameColumnAttributesAs
+&nbsp;import com.kotlinorm.database.toColumnDefinition
+&nbsp;import com.kotlinorm.database.toCreateIndexStatement
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.KColumnType.*
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlInsertMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.table.SqlTableAlias
+&nbsp;import com.kotlinorm.utils.extractNumberInParentheses
+&nbsp;
+&nbsp;object SqliteStatements : DatabaseStatements() {
+<b class="fc">&nbsp;    override val defaultIndexType: String = &quot;NORMAL&quot;</b>
+<b class="fc">&nbsp;    override val defaultIndexMethod: String = &quot;&quot;</b>
+&nbsp;
+&nbsp;    override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
+<b class="pc">&nbsp;        getColumnType(expected.type, expected.length, expected.scale) ==</b>
+<b class="fc">&nbsp;            getColumnType(current.type, current.length, current.scale) &amp;&amp;</b>
+<b class="fc">&nbsp;            expected.sameColumnAttributesAs(current, compareComment = false)</b>
+&nbsp;
+&nbsp;    override fun databaseName(wrapper: KronosDataSourceWrapper): String =
+<b class="fc">&nbsp;        wrapper.url.substringAfter(&quot;//&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;    override fun tableExists(): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;COUNT(*)&quot;))),</b>
+<b class="fc">&nbsp;        from = listOf(SqlTable.Ident(&quot;sqlite_master&quot;)),</b>
+<b class="fc">&nbsp;        where = SqlExpr.Binary(</b>
+<b class="fc">&nbsp;            SqlExpr.Binary(SqlExpr.UnsafeRaw(&quot;type&quot;), SqlBinaryOperator.Equal, SqlExpr.StringLiteral(&quot;table&quot;)),</b>
+<b class="fc">&nbsp;            SqlBinaryOperator.And,</b>
+<b class="fc">&nbsp;            SqlExpr.Binary(SqlExpr.UnsafeRaw(&quot;name&quot;), SqlBinaryOperator.Equal, SqlExpr.Parameter(SqlParameter.Named(&quot;tableName&quot;)))</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override fun tableColumns(tableName: String): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;p.name&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;p.type&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;p.\&quot;notnull\&quot;&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;p.dflt_value&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;p.pk&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;m.sql AS table_sql&quot;))</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        from = listOf(</b>
+<b class="fc">&nbsp;            SqlTable.Func(name = &quot;pragma_table_info&quot;, args = listOf(SqlExpr.Parameter(SqlParameter.Named(&quot;tableName&quot;))), alias = SqlTableAlias(&quot;p&quot;)),</b>
+<b class="fc">&nbsp;            SqlTable.Ident(&quot;sqlite_master&quot;, alias = SqlTableAlias(&quot;m&quot;))</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        where = SqlExpr.Binary(</b>
+<b class="fc">&nbsp;            SqlExpr.Binary(SqlExpr.UnsafeRaw(&quot;m.type&quot;), SqlBinaryOperator.Equal, SqlExpr.StringLiteral(&quot;table&quot;)),</b>
+<b class="fc">&nbsp;            SqlBinaryOperator.And,</b>
+<b class="fc">&nbsp;            SqlExpr.Binary(SqlExpr.UnsafeRaw(&quot;m.tbl_name&quot;), SqlBinaryOperator.Equal, SqlExpr.Parameter(SqlParameter.Named(&quot;tableName&quot;)))</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override fun tableIndexes(tableName: String): SqlQuery = SqlQuery.Select(</b>
+<b class="fc">&nbsp;        select = listOf(</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;name&quot;)),</b>
+<b class="fc">&nbsp;            SqlSelectItem.Expr(SqlExpr.UnsafeRaw(&quot;sql&quot;))</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        from = listOf(SqlTable.Ident(&quot;sqlite_master&quot;)),</b>
+<b class="fc">&nbsp;        where = SqlExpr.UnsafeRaw(&quot;type = &#39;index&#39; AND tbl_name = :tableName AND sql IS NOT NULL&quot;)</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    override fun mapColumns(tableName: String, rows: List&lt;Map&lt;String, Any&gt;&gt;): List&lt;Field&gt; =
+<b class="fc">&nbsp;        rows.map {</b>
+<b class="fc">&nbsp;            val (length, scale) = extractNumberInParentheses(it.cell(&quot;type&quot;).toString())</b>
+<b class="fc">&nbsp;            val columnName = it.cell(&quot;name&quot;).toString()</b>
+<b class="fc">&nbsp;            val identity = it.cell(&quot;pk&quot;).asInt() == 1 &amp;&amp;</b>
+<b class="fc">&nbsp;                Regex(&quot;&quot;&quot;(&quot;?\w+&quot;?)\s+INTEGER\s+NOT\s+NULL\s+PRIMARY\s+KEY\s+AUTOINCREMENT&quot;&quot;&quot;, RegexOption.IGNORE_CASE)</b>
+<b class="pc">&nbsp;                    .find(it.cell(&quot;table_sql&quot;)?.toString().orEmpty())</b>
+<b class="pc">&nbsp;                    ?.groupValues</b>
+<b class="pc">&nbsp;                    ?.getOrNull(1)</b>
+<b class="pc">&nbsp;                    ?.trim(&#39;&quot;&#39;) == columnName</b>
+<b class="fc">&nbsp;            Field(</b>
+<b class="fc">&nbsp;                columnName = columnName,</b>
+<b class="fc">&nbsp;                type = getKColumnType(it.cell(&quot;type&quot;).toString().substringBefore(&quot;(&quot;), length, scale),</b>
+<b class="fc">&nbsp;                length = length,</b>
+<b class="fc">&nbsp;                scale = scale,</b>
+<b class="fc">&nbsp;                tableName = tableName,</b>
+<b class="fc">&nbsp;                nullable = it.cell(&quot;notnull&quot;).asInt() == 0,</b>
+<b class="fc">&nbsp;                primaryKey = when {</b>
+<b class="fc">&nbsp;                    it.cell(&quot;pk&quot;).asInt() == 0 -&gt; PrimaryKeyType.NOT</b>
+<b class="pc">&nbsp;                    identity -&gt; PrimaryKeyType.IDENTITY</b>
+<b class="nc">&nbsp;                    else -&gt; PrimaryKeyType.DEFAULT</b>
+&nbsp;                },
+<b class="fc">&nbsp;                defaultValue = it.cell(&quot;dflt_value&quot;) as String?</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    override fun mapIndexes(tableName: String, rows: List&lt;Map&lt;String, Any&gt;&gt;): List&lt;KTableIndex&gt; =
+<b class="fc">&nbsp;        rows.map {</b>
+<b class="pc">&nbsp;            val sql = it.cell(&quot;sql&quot;)?.toString().orEmpty()</b>
+<b class="fc">&nbsp;            KTableIndex(</b>
+<b class="fc">&nbsp;                name = it.cell(&quot;name&quot;).toString(),</b>
+<b class="fc">&nbsp;                columns = sqliteIndexColumns(sql),</b>
+<b class="fc">&nbsp;                type = if (sql.startsWith(&quot;CREATE UNIQUE INDEX&quot;, ignoreCase = true)) &quot;UNIQUE&quot; else &quot;NORMAL&quot;,</b>
+<b class="fc">&nbsp;                method = &quot;&quot;</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun sqliteIndexColumns(sql: String): Array&lt;String&gt; =
+<b class="fc">&nbsp;        sql.substringAfterLast(&quot;(&quot;, &quot;&quot;)</b>
+<b class="fc">&nbsp;            .substringBeforeLast(&quot;)&quot;, &quot;&quot;)</b>
+<b class="fc">&nbsp;            .split(&#39;,&#39;)</b>
+<b class="fc">&nbsp;            .map { spec -&gt;</b>
+<b class="fc">&nbsp;                Regex(&quot;\\s+COLLATE\\s+&quot;, RegexOption.IGNORE_CASE)</b>
+<b class="fc">&nbsp;                    .split(spec.trim(), limit = 2)</b>
+<b class="fc">&nbsp;                    .first()</b>
+<b class="fc">&nbsp;                    .trim(&#39;`&#39;, &#39;&quot;&#39;, &#39;[&#39;, &#39;]&#39;, &#39; &#39;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            .filter { it.isNotBlank() }</b>
+<b class="fc">&nbsp;            .toTypedArray()</b>
+&nbsp;
+&nbsp;    override fun createTable(input: DatabaseCreateTable): List&lt;SqlStatement&gt; {
+<b class="fc">&nbsp;        val table = SqlIdentifier.of(input.tableName)</b>
+<b class="fc">&nbsp;        return listOf(</b>
+<b class="fc">&nbsp;            SqlDdlStatement.CreateTable(</b>
+<b class="fc">&nbsp;                tableName = table,</b>
+<b class="fc">&nbsp;                columns = input.columns.map { it.toColumnDefinition(::getColumnType) },</b>
+<b class="fc">&nbsp;                ifNotExists = true</b>
+&nbsp;            )
+<b class="fc">&nbsp;        ) + input.indexes.map { it.toCreateIndexStatement(table, ifNotExists = true) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun dropTable(tableName: String, ifExists: Boolean): List&lt;SqlStatement&gt; =
+<b class="fc">&nbsp;        listOf(SqlDdlStatement.DropTable(SqlIdentifier.of(tableName), ifExists))</b>
+&nbsp;
+&nbsp;    override fun truncateTable(tableName: String, restartIdentity: Boolean): List&lt;SqlStatement&gt; =
+<b class="fc">&nbsp;        listOf(SqlDmlStatement.Delete(SqlTable.Ident(tableName)))</b>
+&nbsp;
+&nbsp;    override fun syncTable(input: DatabaseSyncTable): List&lt;SqlStatement&gt; {
+<b class="fc">&nbsp;        val table = SqlIdentifier.of(input.tableName)</b>
+<b class="pc">&nbsp;        val rebuildRequired = input.columns.toModified.isNotEmpty() || input.columns.toDelete.isNotEmpty()</b>
+<b class="pc">&nbsp;        if (rebuildRequired) {</b>
+<b class="fc">&nbsp;            return rebuildTable(input)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return buildList {</b>
+<b class="nc">&nbsp;            addAll(input.indexes.toDelete.map { SqlDdlStatement.DropIndex(SqlIdentifier.of(it.name), ifExists = true) })</b>
+<b class="nc">&nbsp;            addAll(input.columns.toAdd.map {</b>
+<b class="nc">&nbsp;                SqlDdlStatement.AlterTable.AddColumn(table, it.first.toColumnDefinition(::getColumnType))</b>
+&nbsp;            })
+<b class="nc">&nbsp;            addAll(input.indexes.toAdd.map { it.toCreateIndexStatement(table) })</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun rebuildTable(input: DatabaseSyncTable): List&lt;SqlStatement&gt; {
+<b class="fc">&nbsp;        val originalTable = SqlIdentifier.of(input.tableName)</b>
+<b class="fc">&nbsp;        val temporaryTableName = &quot;${input.tableName}__kronos_tmp&quot;</b>
+<b class="fc">&nbsp;        val temporaryTable = SqlIdentifier.of(temporaryTableName)</b>
+<b class="fc">&nbsp;        val currentColumnNames = input.currentColumns.map { it.columnName.lowercase() }.toSet()</b>
+<b class="fc">&nbsp;        val copiedColumns = input.expectedColumns</b>
+<b class="fc">&nbsp;            .filter { it.columnName.lowercase() in currentColumnNames }</b>
+<b class="fc">&nbsp;            .map { SqlIdentifier.of(it.columnName) }</b>
+&nbsp;
+<b class="fc">&nbsp;        return buildList {</b>
+<b class="fc">&nbsp;            addAll(input.currentIndexes.map { SqlDdlStatement.DropIndex(SqlIdentifier.of(it.name), ifExists = true) })</b>
+<b class="fc">&nbsp;            add(</b>
+<b class="fc">&nbsp;                SqlDdlStatement.CreateTable(</b>
+<b class="fc">&nbsp;                    tableName = temporaryTable,</b>
+<b class="fc">&nbsp;                    columns = input.expectedColumns.map { it.toColumnDefinition(::getColumnType) }</b>
+&nbsp;                )
+&nbsp;            )
+<b class="pc">&nbsp;            if (copiedColumns.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                add(</b>
+<b class="fc">&nbsp;                    SqlDmlStatement.Insert(</b>
+<b class="fc">&nbsp;                        table = SqlTable.Ident(temporaryTableName),</b>
+<b class="fc">&nbsp;                        columns = copiedColumns,</b>
+<b class="fc">&nbsp;                        mode = SqlInsertMode.Subquery(</b>
+<b class="fc">&nbsp;                            SqlQuery.Select(</b>
+<b class="fc">&nbsp;                                select = copiedColumns.map { SqlSelectItem.Expr(SqlExpr.Column(columnName = it.canonical)) },</b>
+<b class="fc">&nbsp;                                from = listOf(SqlTable.Ident(input.tableName))</b>
+&nbsp;                            )
+&nbsp;                        )
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            add(SqlDdlStatement.DropTable(originalTable, ifExists = true))</b>
+<b class="fc">&nbsp;            add(SqlDdlStatement.AlterTable.RenameTable(temporaryTable, originalTable))</b>
+<b class="fc">&nbsp;            addAll(input.expectedIndexes.map { it.toCreateIndexStatement(originalTable) })</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun getColumnType(type: KColumnType, length: Int, scale: Int): String = when (type) {</b>
+<b class="fc">&nbsp;        BIT, TINYINT, SMALLINT, INT, MEDIUMINT, BIGINT, SERIAL, YEAR, SET -&gt; &quot;INTEGER&quot;</b>
+<b class="fc">&nbsp;        REAL, FLOAT, DOUBLE -&gt; &quot;REAL&quot;</b>
+<b class="fc">&nbsp;        DECIMAL, NUMERIC -&gt; &quot;NUMERIC&quot;</b>
+&nbsp;        CHAR,
+&nbsp;        VARCHAR,
+&nbsp;        TEXT,
+&nbsp;        MEDIUMTEXT,
+&nbsp;        LONGTEXT,
+&nbsp;        DATE,
+&nbsp;        TIME,
+&nbsp;        DATETIME,
+&nbsp;        TIMESTAMP,
+&nbsp;        CLOB,
+&nbsp;        JSON,
+&nbsp;        ENUM,
+&nbsp;        NVARCHAR,
+&nbsp;        NCHAR,
+&nbsp;        NCLOB,
+&nbsp;        UUID,
+&nbsp;        GEOMETRY,
+&nbsp;        POINT,
+&nbsp;        LINESTRING,
+<b class="fc">&nbsp;        XML -&gt; &quot;TEXT&quot;</b>
+<b class="fc">&nbsp;        BINARY, VARBINARY, LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -&gt; &quot;BLOB&quot;</b>
+<b class="fc">&nbsp;        else -&gt; &quot;NOT&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun getKColumnType(type: String, length: Int, scale: Int): KColumnType = when (type.uppercase()) {</b>
+<b class="fc">&nbsp;        &quot;INTEGER&quot; -&gt; INT</b>
+<b class="fc">&nbsp;        else -&gt; KColumnType.fromString(type)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

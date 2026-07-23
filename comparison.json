@@ -1,0 +1,154 @@
+{
+  "baselineDir": ".coverage-baseline",
+  "failed": false,
+  "modules": [
+    {
+      "baseline": {
+        "branch": {
+          "covered": 2426,
+          "missed": 882,
+          "percent": 73.33736396614269,
+          "total": 3308
+        },
+        "line": {
+          "covered": 3858,
+          "missed": 303,
+          "percent": 92.71809661139149,
+          "total": 4161
+        }
+      },
+      "current": {
+        "branch": {
+          "covered": 2426,
+          "missed": 882,
+          "percent": 73.33736396614269,
+          "total": 3308
+        },
+        "line": {
+          "covered": 3858,
+          "missed": 303,
+          "percent": 92.71809661139149,
+          "total": 4161
+        }
+      },
+      "delta": {
+        "branch": 0.0,
+        "line": 0.0
+      },
+      "errors": [],
+      "module": "kronos-syntax",
+      "status": "PASS"
+    },
+    {
+      "baseline": {
+        "branch": {
+          "covered": 241,
+          "missed": 48,
+          "percent": 83.39100346020761,
+          "total": 289
+        },
+        "line": {
+          "covered": 345,
+          "missed": 20,
+          "percent": 94.52054794520548,
+          "total": 365
+        }
+      },
+      "current": {
+        "branch": {
+          "covered": 241,
+          "missed": 48,
+          "percent": 83.39100346020761,
+          "total": 289
+        },
+        "line": {
+          "covered": 345,
+          "missed": 20,
+          "percent": 94.52054794520548,
+          "total": 365
+        }
+      },
+      "delta": {
+        "branch": 0.0,
+        "line": 0.0
+      },
+      "errors": [],
+      "module": "kronos-codegen",
+      "status": "PASS"
+    },
+    {
+      "baseline": {
+        "branch": {
+          "covered": 4143,
+          "missed": 1202,
+          "percent": 77.51169317118803,
+          "total": 5345
+        },
+        "line": {
+          "covered": 8031,
+          "missed": 632,
+          "percent": 92.70460579475932,
+          "total": 8663
+        }
+      },
+      "current": {
+        "branch": {
+          "covered": 4143,
+          "missed": 1202,
+          "percent": 77.51169317118803,
+          "total": 5345
+        },
+        "line": {
+          "covered": 8031,
+          "missed": 632,
+          "percent": 92.70460579475932,
+          "total": 8663
+        }
+      },
+      "delta": {
+        "branch": 0.0,
+        "line": 0.0
+      },
+      "errors": [],
+      "module": "kronos-core",
+      "status": "PASS"
+    },
+    {
+      "baseline": {
+        "branch": {
+          "covered": 2682,
+          "missed": 964,
+          "percent": 73.56006582556226,
+          "total": 3646
+        },
+        "line": {
+          "covered": 4637,
+          "missed": 175,
+          "percent": 96.36325852036575,
+          "total": 4812
+        }
+      },
+      "current": {
+        "branch": {
+          "covered": 2682,
+          "missed": 964,
+          "percent": 73.56006582556226,
+          "total": 3646
+        },
+        "line": {
+          "covered": 4637,
+          "missed": 175,
+          "percent": 96.36325852036575,
+          "total": 4812
+        }
+      },
+      "delta": {
+        "branch": 0.0,
+        "line": 0.0
+      },
+      "errors": [],
+      "module": "kronos-compiler-plugin",
+      "status": "PASS"
+    }
+  ]
+}

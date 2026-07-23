@@ -1,0 +1,353 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KPojoFactories</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: KPojoFactories (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KPojoFactories</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (8/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.6%
+  </span>
+  <span class="absValue">
+    (137/139)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KPojoFactories$register$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.2%
+  </span>
+  <span class="absValue">
+    (69/71)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (13/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.1%
+  </span>
+  <span class="absValue">
+    (206/210)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.exceptions.InvalidKPojoFactoryResult
+&nbsp;import com.kotlinorm.exceptions.KPojoConstructionException
+&nbsp;import com.kotlinorm.exceptions.MissingKPojoFactory
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import java.util.concurrent.CancellationException
+&nbsp;import java.util.concurrent.atomic.AtomicBoolean
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a fresh, empty instance for one complete logical KPojo [KType].
+&nbsp; *
+&nbsp; * A factory only constructs the object; field assignment and value conversion
+&nbsp; * remain in the normal mapper/ValueCodec flow. Implementations must return a
+&nbsp; * type-compatible fresh instance and may not use reflection as a fallback.
+&nbsp; */
+&nbsp;fun interface KPojoFactory {
+&nbsp;    /**
+&nbsp;     * Creates one fresh instance for the exact complete [type].
+&nbsp;     *
+&nbsp;     * @param type exact requested KPojo type; generic KPojo types are rejected
+&nbsp;     * @return fresh KPojo matching [type], ignoring only top-level nullability
+&nbsp;     */
+&nbsp;    fun create(type: KType): KPojo
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Registration handle for one exact KPojo factory override.
+&nbsp; *
+&nbsp; * Closing is idempotent and removes only this registration. The next older
+&nbsp; * user registration or generated factory becomes visible after close.
+&nbsp; */
+&nbsp;interface KPojoFactoryRegistration : AutoCloseable {
+&nbsp;    /**
+&nbsp;     * Removes this override from future exact-type lookups.
+&nbsp;     * Repeated calls have no effect.
+&nbsp;     */
+&nbsp;    override fun close()
+&nbsp;}
+&nbsp;
+&nbsp;private data class UserFactoryEntry(
+&nbsp;    val id: Long,
+&nbsp;    val factory: KPojoFactory
+&nbsp;)
+&nbsp;
+&nbsp;private object KPojoFactories {
+<b class="fc">&nbsp;    private val lock = Any()</b>
+<b class="fc">&nbsp;    private val userFactories = mutableMapOf&lt;KTypeKey, MutableList&lt;UserFactoryEntry&gt;&gt;()</b>
+&nbsp;    private var nextId = 0L
+&nbsp;
+&nbsp;    fun register(type: KType, factory: KPojoFactory): KPojoFactoryRegistration {
+<b class="fc">&nbsp;        val key = type.normalizedKPojoType()</b>
+<b class="fc">&nbsp;        val entry = synchronized(lock) {</b>
+<b class="fc">&nbsp;            UserFactoryEntry(++nextId, factory).also { userFactories.getOrPut(key, ::mutableListOf) += it }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return object : KPojoFactoryRegistration {</b>
+<b class="fc">&nbsp;            private val closed = AtomicBoolean(false)</b>
+&nbsp;
+&nbsp;            override fun close() {
+<b class="fc">&nbsp;                if (!closed.compareAndSet(false, true)) return</b>
+<b class="fc">&nbsp;                synchronized(lock) {</b>
+<b class="pc">&nbsp;                    userFactories[key]?.let { entries -&gt;</b>
+<b class="fc">&nbsp;                        entries.removeAll { it.id == entry.id }</b>
+<b class="fc">&nbsp;                        if (entries.isEmpty()) userFactories.remove(key)</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun create(type: KType): KPojo {
+<b class="fc">&nbsp;        val key = type.normalizedKPojoType()</b>
+<b class="pc">&nbsp;        val userFactory = synchronized(lock) { userFactories[key]?.lastOrNull()?.factory }</b>
+<b class="fc">&nbsp;        val result = if (userFactory != null) {</b>
+<b class="fc">&nbsp;            invokeFactory(type, userFactory)</b>
+&nbsp;        } else {
+<b class="pc">&nbsp;            val generatedFactory = generatedTypeMetadata().kPojoFactory(type)?.factory</b>
+<b class="fc">&nbsp;                ?: throw MissingKPojoFactory(type)</b>
+<b class="fc">&nbsp;            invokeFactory(type, generatedFactory)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return result.validateFactoryResult(type)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;TooGenericExceptionCaught&quot;)
+&nbsp;    private fun invokeFactory(type: KType, factory: KPojoFactory): KPojo = try {
+<b class="fc">&nbsp;        factory.create(type)</b>
+&nbsp;    } catch (cause: CancellationException) {
+&nbsp;        throw cause
+&nbsp;    } catch (cause: Error) {
+&nbsp;        throw cause
+&nbsp;    } catch (cause: Throwable) {
+<b class="fc">&nbsp;        throw KPojoConstructionException(type, cause)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun KPojo.validateFactoryResult(requestedType: KType): KPojo {
+&nbsp;    val actualType = __kType
+&nbsp;    val requestedKey = KTypeKey.from(requestedType, ignoreTopLevelNullability = true)
+&nbsp;    val actualKey = KTypeKey.from(actualType, ignoreTopLevelNullability = true)
+&nbsp;    if (actualKey != requestedKey) {
+&nbsp;        throw InvalidKPojoFactoryResult(
+&nbsp;            requestedType,
+&nbsp;            actualType,
+&nbsp;            &quot;expected complete KType $requestedType, ignoring only top-level nullability, got $actualType&quot;
+&nbsp;        )
+&nbsp;    }
+&nbsp;    return this
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Registers one exact KPojo factory override in the process-wide registry.
+&nbsp; *
+&nbsp; * @param type complete, concrete and currently non-generic KPojo type
+&nbsp; * @param factory fresh-instance constructor for [type]
+&nbsp; * @return idempotent registration handle scoped to this override
+&nbsp; */
+&nbsp;internal fun registerKPojoFactory(type: KType, factory: KPojoFactory): KPojoFactoryRegistration =
+&nbsp;    KPojoFactories.register(type, factory)
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a fresh KPojo through the highest-priority exact factory.
+&nbsp; *
+&nbsp; * @param type complete, concrete and currently non-generic KPojo type
+&nbsp; * @return type-validated fresh instance
+&nbsp; */
+&nbsp;internal fun createKPojo(type: KType): KPojo = KPojoFactories.create(type)
+&nbsp;
+&nbsp;/**
+&nbsp; * Registers a factory override for exact [T]. Later registrations win, and
+&nbsp; * closing the returned handle restores the previous user or generated factory.
+&nbsp; *
+&nbsp; * @param factory fresh-instance constructor for [T]
+&nbsp; * @return idempotent exact-type registration handle
+&nbsp; * @throws com.kotlinorm.exceptions.UnsupportedType when [T] is unsupported
+&nbsp; */
+&nbsp;inline fun &lt;reified T : KPojo&gt; registerKPojo(noinline factory: () -&gt; T): KPojoFactoryRegistration =
+&nbsp;    Kronos.registerKPojoFactory(typeOf&lt;T&gt;(), KPojoFactory { factory() })
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a fresh [T] through the exact generated or highest-priority user
+&nbsp; * factory registered for its complete reified KType.
+&nbsp; *
+&nbsp; * @return fresh type-validated [T]
+&nbsp; * @throws com.kotlinorm.exceptions.KPojoFactoryException when construction fails
+&nbsp; */
+&nbsp;inline fun &lt;reified T : KPojo&gt; createKPojo(): T = Kronos.createKPojo(typeOf&lt;T&gt;()) as T
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

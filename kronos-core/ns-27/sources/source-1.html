@@ -1,0 +1,220 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosGeneratedTypeProvider_cdb543b416913daf</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.generated.factory</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosGeneratedTypeProvider_cdb543b416913daf (com.kotlinorm.generated.factory)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosGeneratedTypeProvider_cdb543b416913daf</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm
+&nbsp;
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.config.LineHumpNamingStrategy
+&nbsp;import com.kotlinorm.beans.config.NoneNamingStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
+&nbsp;import com.kotlinorm.beans.parser.NoneDataSourceWrapper
+&nbsp;import com.kotlinorm.beans.task.TransactionScope
+&nbsp;import com.kotlinorm.enums.KLoggerType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.enums.TransactionIsolation
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.interfaces.KronosNamingStrategy
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.ValueCodec
+&nbsp;import com.kotlinorm.interfaces.ValueCodecRegistration
+&nbsp;import com.kotlinorm.types.KLoggerFactory
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.KPojoFactory
+&nbsp;import com.kotlinorm.utils.KPojoFactoryRegistration
+&nbsp;import com.kotlinorm.utils.codec.ValueCodecRegistry
+&nbsp;import com.kotlinorm.utils.createKPojo as createRegisteredKPojo
+&nbsp;import com.kotlinorm.utils.registerKPojoFactory as registerExactKPojoFactory
+&nbsp;import java.time.ZoneId
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;object Kronos {
+&nbsp;    /**
+&nbsp;     * Registers one bidirectional value codec at highest priority.
+&nbsp;     *
+&nbsp;     * The returned handle is idempotent; closing it removes only this codec and
+&nbsp;     * restores the previous matching registration. SQL `NULL` is handled by the
+&nbsp;     * registry, and codec failures include direction/origin/field context.
+&nbsp;     *
+&nbsp;     * @param codec stateless matcher/converter to install at highest current priority
+&nbsp;     * @return an idempotent handle that removes only this registration on close
+&nbsp;     */
+&nbsp;    fun registerValueCodec(codec: ValueCodec): ValueCodecRegistration = ValueCodecRegistry.register(codec)
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers a user KPojo factory for the exact complete [type].
+&nbsp;     * Later registrations have priority; the returned handle removes only this
+&nbsp;     * registration and restores the previous user or generated factory on close.
+&nbsp;     *
+&nbsp;     * @param type concrete, non-generic KPojo type for this release
+&nbsp;     * @param factory fresh-instance constructor that must return a type-compatible KPojo
+&nbsp;     * @return an idempotent handle that restores the previous exact-type factory on close
+&nbsp;     * @throws com.kotlinorm.exceptions.UnsupportedType when [type] is not a supported concrete KPojo
+&nbsp;     */
+&nbsp;    fun registerKPojoFactory(type: KType, factory: KPojoFactory): KPojoFactoryRegistration =
+&nbsp;        registerExactKPojoFactory(type, factory)
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a fresh KPojo through the highest-priority user factory for [type],
+&nbsp;     * falling back to compiler-generated metadata. Missing or incompatible
+&nbsp;     * factories fail with a contextual construction exception.
+&nbsp;     *
+&nbsp;     * @param type exact concrete KPojo type; top-level nullability is ignored for lookup
+&nbsp;     * @return a fresh instance whose generated `__kType` matches [type]
+&nbsp;     * @throws com.kotlinorm.exceptions.KPojoFactoryException when construction metadata is missing or invalid
+&nbsp;     */
+&nbsp;    fun createKPojo(type: KType): KPojo = createRegisteredKPojo(type)
+&nbsp;
+&nbsp;    // 默认日志适配器
+&nbsp;    var defaultLogger: KLoggerFactory =
+&nbsp;        {
+&nbsp;            BundledSimpleLoggerAdapter(
+&nbsp;                it as? String ?: it::class.simpleName!!
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;    // 日志类型
+&nbsp;    var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
+&nbsp;
+&nbsp;    // 日志路径
+&nbsp;    var logPath = [&quot;console&quot;]
+&nbsp;
+&nbsp;    // 数据源
+&nbsp;    var dataSource: () -&gt; KronosDataSourceWrapper = { NoneDataSourceWrapper }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes a block of code within a database transaction.
+&nbsp;     *
+&nbsp;     * @param wrapper The data source wrapper to use, or `null` to use the default data source.
+&nbsp;     * @param isolation The transaction isolation level, or `null` to use the connection default.
+&nbsp;     * @param timeout The transaction timeout in seconds, or `null` for no timeout.
+&nbsp;     * @param block The block of code to execute within the transaction, with [TransactionScope] as receiver.
+&nbsp;     * @return The result of the block execution.
+&nbsp;     */
+&nbsp;    fun transact(
+&nbsp;        wrapper: KronosDataSourceWrapper? = null,
+&nbsp;        isolation: TransactionIsolation? = null,
+&nbsp;        timeout: Int? = null,
+&nbsp;        block: TransactionScope.() -&gt; Any?
+&nbsp;    ) = wrapper.orDefault().transact(isolation, timeout, block)
+&nbsp;
+&nbsp;    // 严格模式（将提高性能，但当数据库类型与字段类型不匹配时会抛出异常，而不是尝试进行转换）
+&nbsp;    var strictSetValue = false
+&nbsp;
+&nbsp;    // 当前时区
+&nbsp;    var timeZone: ZoneId = ZoneId.systemDefault()
+&nbsp;
+&nbsp;    val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
+&nbsp;
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+&nbsp;    val noneNamingStrategy by lazy { NoneNamingStrategy() }
+&nbsp;
+&nbsp;    // 列名策略
+&nbsp;    var fieldNamingStrategy: KronosNamingStrategy = noneNamingStrategy
+&nbsp;
+&nbsp;    // 表名策略
+&nbsp;    var tableNamingStrategy: KronosNamingStrategy = noneNamingStrategy
+&nbsp;
+&nbsp;    // 主键策略
+&nbsp;    var primaryKeyStrategy = KronosCommonStrategy(false, Field(&quot;id&quot;, &quot;id&quot;, primaryKey = PrimaryKeyType.IDENTITY))
+&nbsp;
+&nbsp;    // 更新时间策略
+&nbsp;    var updateTimeStrategy = KronosCommonStrategy(false, Field(&quot;update_time&quot;, &quot;updateTime&quot;))
+&nbsp;
+&nbsp;    // 创建时间策略
+&nbsp;    var createTimeStrategy = KronosCommonStrategy(false, Field(&quot;create_time&quot;, &quot;createTime&quot;))
+&nbsp;
+&nbsp;    // 逻辑删除策略
+&nbsp;    var logicDeleteStrategy = KronosCommonStrategy(false, Field(&quot;deleted&quot;))
+&nbsp;
+&nbsp;    var optimisticLockStrategy = KronosCommonStrategy(false, Field(&quot;version&quot;))
+&nbsp;
+&nbsp;    // 默认日期格式
+&nbsp;    var defaultDateFormat = &quot;yyyy-MM-dd HH:mm:ss&quot;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

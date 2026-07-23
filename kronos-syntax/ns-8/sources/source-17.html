@@ -1,0 +1,1724 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > StandardSqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: StandardSqlRenderer (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StandardSqlRenderer</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.4%
+  </span>
+  <span class="absValue">
+    (162/168)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.9%
+  </span>
+  <span class="absValue">
+    (840/1201)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.5%
+  </span>
+  <span class="absValue">
+    (1027/1123)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.5%
+  </span>
+  <span class="absValue">
+    (10708/11964)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">StandardSqlRenderer$renderMergeSourceExpr$rewritten$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    10%
+  </span>
+  <span class="absValue">
+    (1/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    37.5%
+  </span>
+  <span class="absValue">
+    (3/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.8%
+  </span>
+  <span class="absValue">
+    (25/74)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">StandardSqlRenderer$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    96.5%
+  </span>
+  <span class="absValue">
+    (164/170)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.4%
+  </span>
+  <span class="absValue">
+    (841/1211)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.1%
+  </span>
+  <span class="absValue">
+    (1030/1131)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.2%
+  </span>
+  <span class="absValue">
+    (10733/12038)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.*
+&nbsp;import com.kotlinorm.syntax.group.SqlGroup
+&nbsp;import com.kotlinorm.syntax.group.SqlGroupingItem
+&nbsp;import com.kotlinorm.syntax.inspect.SqlNodeRewriter
+&nbsp;import com.kotlinorm.syntax.inspect.SqlTreeRewriter
+&nbsp;import com.kotlinorm.syntax.limit.SqlFetch
+&nbsp;import com.kotlinorm.syntax.limit.SqlFetchMode
+&nbsp;import com.kotlinorm.syntax.limit.SqlFetchUnit
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.order.SqlNullsOrdering
+&nbsp;import com.kotlinorm.syntax.order.SqlOrdering
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.quantifier.SqlQuantifier
+&nbsp;import com.kotlinorm.syntax.statement.*
+&nbsp;import com.kotlinorm.syntax.table.*
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;open class StandardSqlRenderer(
+<b class="fc">&nbsp;    protected val dialect: SqlDialect = SqlDialect.Standard</b>
+&nbsp;) : SqlPrinter {
+<b class="fc">&nbsp;    override fun renderStatement(statement: SqlStatement): String = when (statement) {</b>
+<b class="fc">&nbsp;        is SqlQuery -&gt; renderQuery(statement)</b>
+<b class="fc">&nbsp;        is SqlDmlStatement -&gt; renderDml(statement)</b>
+<b class="fc">&nbsp;        is SqlDdlStatement -&gt; renderDdl(statement)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderQuery(query: SqlQuery): String {
+<b class="fc">&nbsp;        val sql = when (query) {</b>
+<b class="fc">&nbsp;            is SqlQuery.Select -&gt; renderSelect(query)</b>
+<b class="fc">&nbsp;            is SqlQuery.Set -&gt; renderSetQuery(query)</b>
+<b class="fc">&nbsp;            is SqlQuery.Values -&gt; renderValuesQuery(query)</b>
+<b class="fc">&nbsp;            is SqlQuery.With -&gt; renderWithQuery(query)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        return query.lock?.let { &quot;$sql ${renderLock(it)}&quot; } ?: sql</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    override fun renderExpr(expr: SqlExpr): String = when (expr) {</b>
+<b class="fc">&nbsp;        is SqlExpr.Column -&gt; renderColumn(expr)</b>
+<b class="fc">&nbsp;        SqlExpr.NullLiteral -&gt; &quot;NULL&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.StringLiteral -&gt; quoteString(expr.string)</b>
+<b class="fc">&nbsp;        is SqlExpr.NumberLiteral -&gt; expr.number</b>
+<b class="fc">&nbsp;        is SqlExpr.BooleanLiteral -&gt; if (expr.boolean) &quot;TRUE&quot; else &quot;FALSE&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.TimeLiteral -&gt; &quot;${renderTimeType(expr.type)} ${quoteString(expr.time)}&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.IntervalLiteral -&gt; &quot;INTERVAL ${quoteString(expr.value)} ${renderIntervalField(expr.field)}&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.Tuple -&gt; expr.items.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;        is SqlExpr.Array -&gt; expr.items.joinToString(&quot;, &quot;, &quot;ARRAY[&quot;, &quot;]&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;        is SqlExpr.Parameter -&gt; renderParameter(expr.parameter)</b>
+<b class="fc">&nbsp;        is SqlExpr.Unary -&gt; renderUnary(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.Binary -&gt; renderBinary(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonTest -&gt; renderJsonTest(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.In -&gt; renderIn(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.Between -&gt; renderBetween(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.Like -&gt; renderLike(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.SimilarTo -&gt; renderSimilarTo(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.Case -&gt; renderCase(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.SimpleCase -&gt; renderSimpleCase(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.Coalesce -&gt; expr.items.joinToString(&quot;, &quot;, &quot;COALESCE(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;        is SqlExpr.NullIf -&gt; &quot;NULLIF(${renderExpr(expr.expr)}, ${renderExpr(expr.test)})&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.Cast -&gt; &quot;CAST(${renderExpr(expr.expr)} AS ${renderType(expr.type)})&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.Window -&gt; renderWindowExpr(expr)</b>
+<b class="pc">&nbsp;        is SqlExpr.Subquery -&gt; &quot;(${renderQuery(expr.query)})&quot;</b>
+<b class="pc">&nbsp;        is SqlExpr.ExistsPredicate -&gt; &quot;${if (expr.withNot) &quot;NOT &quot; else &quot;&quot;}EXISTS (${renderQuery(expr.query)})&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.QuantifiedComparisonPredicate -&gt; {</b>
+<b class="fc">&nbsp;            &quot;${renderExpr(expr.expr)} ${renderQuantifiedComparisonOperator(expr.operator)} ${expr.quantifier.name.uppercase()} (${renderQuery(expr.query)})&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlExpr.Grouping -&gt; expr.items.joinToString(&quot;, &quot;, &quot;GROUPING(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;        is SqlExpr.IdentFunc -&gt; safeUnquotedIdent(expr.name)</b>
+<b class="fc">&nbsp;        is SqlExpr.Function -&gt; renderFunction(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.ExcludedColumn -&gt; &quot;EXCLUDED.${renderIdentifier(expr.identifier)}&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.SourceColumn -&gt; renderQualifiedIdentifier(expr.qualifier, expr.identifier)</b>
+<b class="fc">&nbsp;        is SqlExpr.SubstringFunc -&gt; renderSubstring(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.TrimFunc -&gt; renderTrim(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.OverlayFunc -&gt; renderOverlay(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.PositionFunc -&gt; &quot;POSITION(${renderExpr(expr.expr)} IN ${renderExpr(expr.inExpr)})&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.ExtractFunc -&gt; &quot;EXTRACT(${expr.unit.name.uppercase()} FROM ${renderExpr(expr.expr)})&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonSerializeFunc -&gt; renderJsonSerialize(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonParseFunc -&gt; renderJsonParse(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonQueryFunc -&gt; renderJsonQuery(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonValueFunc -&gt; renderJsonValue(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonObjectFunc -&gt; renderJsonObject(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonArrayFunc -&gt; renderJsonArray(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonExistsFunc -&gt; renderJsonExists(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.CountAsteriskFunc -&gt; renderCountAsterisk(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonObjectAggFunc -&gt; renderJsonObjectAgg(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.JsonArrayAggFunc -&gt; renderJsonArrayAgg(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.ListAggFunc -&gt; renderListAgg(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.NullsTreatmentFunc -&gt; renderNullsTreatmentFunc(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.NthValueFunc -&gt; renderNthValue(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.MatchPhase -&gt; &quot;${expr.phase.name.uppercase()} ${renderExpr(expr.expr)}&quot;</b>
+<b class="fc">&nbsp;        is SqlExpr.UnsafeCustom -&gt; expr.tokens.joinToString(&quot; &quot;, &quot;(&quot;, &quot;)&quot;) { renderUnsafeToken(it) }</b>
+<b class="fc">&nbsp;        is SqlExpr.UnsafeRaw -&gt; expr.sql</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    override fun renderPredicate(expr: SqlExpr): String = when (expr) {</b>
+<b class="fc">&nbsp;        is SqlExpr.BooleanLiteral -&gt; renderPredicateBooleanLiteral(expr.boolean)</b>
+<b class="fc">&nbsp;        is SqlExpr.Unary -&gt; renderPredicateUnary(expr)</b>
+<b class="fc">&nbsp;        is SqlExpr.Binary -&gt; renderPredicateBinary(expr)</b>
+<b class="fc">&nbsp;        else -&gt; renderExpr(expr)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    override fun renderTable(table: SqlTable): String = when (table) {</b>
+<b class="fc">&nbsp;        is SqlTable.Ident -&gt; renderIdentTable(table)</b>
+<b class="fc">&nbsp;        is SqlTable.Func -&gt; renderFuncTable(table)</b>
+<b class="fc">&nbsp;        is SqlTable.Subquery -&gt; renderSubqueryTable(table)</b>
+<b class="fc">&nbsp;        is SqlTable.Join -&gt; renderJoinTable(table)</b>
+<b class="fc">&nbsp;        is SqlTable.Json -&gt; renderJsonTable(table)</b>
+<b class="fc">&nbsp;        is SqlTable.Graph -&gt; renderGraphTable(table)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderSelect(query: SqlQuery.Select): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;SELECT&quot;)</b>
+<b class="fc">&nbsp;        query.quantifier?.let { append(&quot; ${renderQuantifier(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot; &quot;)</b>
+<b class="fc">&nbsp;        append(if (query.select.isEmpty()) &quot;*&quot; else query.select.joinToString(&quot;, &quot;) { renderSelectItem(it) })</b>
+<b class="fc">&nbsp;        if (query.from.isNotEmpty()) append(query.from.joinToString(&quot;, &quot;, &quot; FROM &quot;) { renderTable(it) })</b>
+<b class="fc">&nbsp;        query.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;        query.groupBy?.let { append(&quot; ${renderGroup(it)}&quot;) }</b>
+<b class="fc">&nbsp;        query.having?.let { append(&quot; HAVING ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;        if (query.window.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(query.window.joinToString(&quot;, &quot;, &quot; WINDOW &quot;) { renderWindowItem(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        query.qualify?.let { append(&quot; QUALIFY ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;        if (query.orderBy.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(query.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        query.limit?.let { append(&quot; ${renderLimit(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderSetQuery(query: SqlQuery.Set): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;(${renderQuery(query.left)}) ${renderSetOperator(query.operator)} (${renderQuery(query.right)})&quot;)</b>
+<b class="pc">&nbsp;        if (query.orderBy.isNotEmpty()) {</b>
+<b class="nc">&nbsp;            append(query.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })</b>
+&nbsp;        }
+<b class="pc">&nbsp;        query.limit?.let { append(&quot; ${renderLimit(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    protected open fun renderValuesQuery(query: SqlQuery.Values): String =
+<b class="fc">&nbsp;        query.values.joinToString(&quot;, &quot;, &quot;VALUES &quot;) { row -&gt;</b>
+<b class="fc">&nbsp;            row.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderWithQuery(query: SqlQuery.With): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;WITH&quot;)</b>
+<b class="pc">&nbsp;        if (query.withRecursive) append(&quot; RECURSIVE&quot;)</b>
+<b class="fc">&nbsp;        append(query.withItems.joinToString(&quot;, &quot;, &quot; &quot;) { renderWithItem(it) })</b>
+<b class="fc">&nbsp;        append(&quot; ${renderQuery(query.query)}&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderDml(statement: SqlDmlStatement): String = when (statement) {</b>
+<b class="fc">&nbsp;        is SqlDmlStatement.Delete -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;DELETE FROM ${renderTable(statement.table)}&quot;)</b>
+<b class="pc">&nbsp;            statement.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;            statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlDmlStatement.Insert -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;INSERT INTO ${renderTable(statement.table)}&quot;)</b>
+<b class="fc">&nbsp;            if (statement.columns.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+&nbsp;            }
+<b class="fc">&nbsp;            append(&quot; ${renderInsertMode(statement.mode)}&quot;)</b>
+<b class="fc">&nbsp;            statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlDmlStatement.Update -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;UPDATE ${renderTable(statement.table)} SET &quot;)</b>
+<b class="fc">&nbsp;            append(statement.setPairs.joinToString(&quot;, &quot;) { &quot;${renderAssignmentTarget(it.target)} = ${renderExpr(it.value)}&quot; })</b>
+<b class="fc">&nbsp;            statement.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;            statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlDmlStatement.Truncate -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;TRUNCATE TABLE ${renderTable(statement.table)}&quot;)</b>
+<b class="pc">&nbsp;            if (statement.restartIdentity) append(&quot; RESTART IDENTITY&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlDmlStatement.Upsert -&gt; renderUpsert(statement)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderDdl(statement: SqlDdlStatement): String = when (statement) {</b>
+<b class="fc">&nbsp;        is SqlDdlStatement.CreateTable -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;CREATE TABLE &quot;)</b>
+<b class="fc">&nbsp;            if (statement.ifNotExists) append(&quot;IF NOT EXISTS &quot;)</b>
+<b class="fc">&nbsp;            append(renderIdentifier(statement.tableName))</b>
+<b class="fc">&nbsp;            append(&quot; (&quot;)</b>
+<b class="fc">&nbsp;            val definitions = statement.columns.map { renderColumnDefinition(it) } +</b>
+<b class="fc">&nbsp;                statement.indexes.map { renderIndexDefinition(it) }</b>
+<b class="fc">&nbsp;            append(definitions.joinToString(&quot;, &quot;))</b>
+<b class="fc">&nbsp;            append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;            statement.comment?.let { append(&quot; COMMENT ${quoteString(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlDdlStatement.CreateTableAsSelect -&gt; {</b>
+<b class="pc">&nbsp;            &quot;CREATE TABLE ${if (statement.ifNotExists) &quot;IF NOT EXISTS &quot; else &quot;&quot;}${renderIdentifier(statement.tableName)} AS ${renderQuery(statement.query)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.AlterTable.AddColumn -&gt; {</b>
+<b class="fc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ADD COLUMN ${renderColumnDefinition(statement.column)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.AlterTable.DropColumn -&gt; {</b>
+<b class="fc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} DROP COLUMN ${renderIdentifier(statement.columnName)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.AlterTable.ModifyColumn -&gt; {</b>
+<b class="fc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderColumnDefinition(statement.column)}&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is SqlDdlStatement.AlterTable.RenameColumn -&gt; {</b>
+<b class="nc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} RENAME COLUMN ${renderIdentifier(statement.oldName)} TO ${renderIdentifier(statement.newName)}&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is SqlDdlStatement.AlterTable.RenameTable -&gt; {</b>
+<b class="nc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} RENAME TO ${renderIdentifier(statement.newName)}&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is SqlDdlStatement.AlterTable.AlterColumnDefault -&gt; {</b>
+<b class="nc">&nbsp;            val action = statement.defaultValue?.let { &quot;SET DEFAULT ${renderExpr(it)}&quot; } ?: &quot;DROP DEFAULT&quot;</b>
+<b class="nc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderIdentifier(statement.columnName)} $action&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is SqlDdlStatement.AlterTable.AlterColumnNullable -&gt; {</b>
+<b class="nc">&nbsp;            val action = if (statement.nullable) &quot;DROP NOT NULL&quot; else &quot;SET NOT NULL&quot;</b>
+<b class="nc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderIdentifier(statement.columnName)} $action&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.AlterTable.SetTableComment -&gt; {</b>
+<b class="fc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} COMMENT = ${renderCommentValue(statement.comment)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.DropTable -&gt; {</b>
+<b class="pc">&nbsp;            &quot;DROP TABLE ${if (statement.ifExists) &quot;IF EXISTS &quot; else &quot;&quot;}${renderIdentifier(statement.tableName)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.CreateIndex -&gt; {</b>
+<b class="fc">&nbsp;            buildString {</b>
+<b class="fc">&nbsp;                append(&quot;CREATE&quot;)</b>
+<b class="pc">&nbsp;                if (statement.unique) append(&quot; UNIQUE&quot;)</b>
+<b class="pc">&nbsp;                statement.type?.takeIf { it.isNotBlank() }?.let { append(&quot; $it&quot;) }</b>
+<b class="fc">&nbsp;                append(&quot; INDEX&quot;)</b>
+<b class="pc">&nbsp;                if (statement.concurrently) append(&quot; CONCURRENTLY&quot;)</b>
+<b class="pc">&nbsp;                if (statement.ifNotExists) append(&quot; IF NOT EXISTS&quot;)</b>
+<b class="fc">&nbsp;                append(&quot; ${renderIdentifier(statement.indexName)} ON ${renderIdentifier(statement.tableName)}&quot;)</b>
+<b class="pc">&nbsp;                statement.method?.let { append(&quot; USING $it&quot;) }</b>
+<b class="fc">&nbsp;                append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.DropIndex -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;DROP INDEX&quot;)</b>
+<b class="pc">&nbsp;            if (statement.concurrently) append(&quot; CONCURRENTLY&quot;)</b>
+<b class="pc">&nbsp;            if (statement.ifExists) append(&quot; IF EXISTS&quot;)</b>
+<b class="fc">&nbsp;            append(&quot; ${renderIdentifier(statement.indexName)}&quot;)</b>
+<b class="pc">&nbsp;            statement.tableName?.let { append(&quot; ON ${renderIdentifier(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="pc">&nbsp;        is SqlDdlStatement.AddConstraint -&gt; {</b>
+<b class="nc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ADD ${renderTableConstraint(statement.constraint)}&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is SqlDdlStatement.DropConstraint -&gt; {</b>
+<b class="nc">&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} DROP CONSTRAINT ${renderIdentifier(statement.constraintName)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.CommentOnTable -&gt; {</b>
+<b class="fc">&nbsp;            &quot;COMMENT ON TABLE ${renderIdentifier(statement.tableName)} IS ${renderCommentValue(statement.comment)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlDdlStatement.CommentOnColumn -&gt; {</b>
+<b class="fc">&nbsp;            &quot;COMMENT ON COLUMN ${renderCommentColumnTarget(statement.tableName, statement.columnName)} IS ${renderCommentValue(statement.comment)}&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        is SqlDdlStatement.Vacuum -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;VACUUM&quot;)</b>
+<b class="pc">&nbsp;            statement.schemaName?.let { append(&quot; ${renderIdentifier(it)}&quot;) }</b>
+<b class="pc">&nbsp;            statement.into?.let { append(&quot; INTO ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="nc">&nbsp;        is SqlDdlStatement.SqlServerExtendedPropertyComment -&gt; renderSqlServerExtendedPropertyComment(statement)</b>
+<b class="nc">&nbsp;        is SqlDdlStatement.SqlServerDropDefaultConstraint -&gt; renderSqlServerDropDefaultConstraint(statement)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderInsertMode(mode: SqlInsertMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        is SqlInsertMode.Values -&gt; mode.values.joinToString(&quot;, &quot;, &quot;VALUES &quot;) { row -&gt;</b>
+<b class="fc">&nbsp;            row.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlInsertMode.Subquery -&gt; renderQuery(mode.query)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderUpsert(statement: SqlDmlStatement.Upsert): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;MERGE INTO &quot;)</b>
+<b class="fc">&nbsp;        append(renderTable(statement.table.copy(alias = SqlTableAlias(&quot;t1&quot;))))</b>
+<b class="fc">&nbsp;        append(&quot; USING (SELECT &quot;)</b>
+<b class="fc">&nbsp;        append(statement.values.zip(statement.columns).joinToString(&quot;, &quot;) { (value, column) -&gt;</b>
+<b class="fc">&nbsp;            &quot;${renderExpr(value)} AS ${renderIdentifier(column)}&quot;</b>
+&nbsp;        })
+<b class="fc">&nbsp;        append(&quot;) ${renderTableAlias(SqlTableAlias(&quot;t2&quot;))}&quot;)</b>
+<b class="fc">&nbsp;        append(&quot; ON (&quot;)</b>
+<b class="fc">&nbsp;        append(statement.primaryKeys.joinToString(&quot; AND &quot;) {</b>
+<b class="fc">&nbsp;            &quot;${quoteIdent(&quot;t1&quot;)}.${renderIdentifier(it)} = ${quoteIdent(&quot;t2&quot;)}.${renderIdentifier(it)}&quot;</b>
+&nbsp;        })
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;        when (val action = statement.action) {</b>
+<b class="fc">&nbsp;            SqlUpsertAction.DoNothing -&gt; {}</b>
+<b class="fc">&nbsp;            is SqlUpsertAction.Update -&gt; {</b>
+<b class="fc">&nbsp;                append(&quot; WHEN MATCHED THEN UPDATE SET &quot;)</b>
+<b class="fc">&nbsp;                append(action.setPairs.joinToString(&quot;, &quot;) {</b>
+<b class="fc">&nbsp;                    &quot;${renderAssignmentTarget(qualifyAssignmentTarget(it.target, SqlIdentifier.of(&quot;t1&quot;)))} = ${renderMergeSourceExpr(it.value, statement.table.identifier)}&quot;</b>
+&nbsp;                })
+<b class="fc">&nbsp;                action.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        append(&quot; WHEN NOT MATCHED THEN INSERT (&quot;)</b>
+<b class="fc">&nbsp;        append(statement.columns.joinToString(&quot;, &quot;) { renderIdentifier(it) })</b>
+<b class="fc">&nbsp;        append(&quot;) VALUES (&quot;)</b>
+<b class="fc">&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExpr(it) })</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="pc">&nbsp;        statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun renderColumn(expr: SqlExpr.Column): String =
+<b class="fc">&nbsp;        renderQualifiedIdentifier(expr.qualifier, expr.identifier)</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderUnary(expr: SqlExpr.Unary): String = when (expr.operator) {</b>
+<b class="pc">&nbsp;        SqlUnaryOperator.Positive -&gt; &quot;+${renderExpr(expr.expr)}&quot;</b>
+<b class="fc">&nbsp;        SqlUnaryOperator.Negative -&gt; &quot;-${renderExpr(expr.expr)}&quot;</b>
+<b class="fc">&nbsp;        SqlUnaryOperator.Not -&gt; &quot;NOT(${renderExpr(expr.expr)})&quot;</b>
+<b class="fc">&nbsp;        SqlUnaryOperator.BitwiseNot -&gt; &quot;~${renderExpr(expr.expr)}&quot;</b>
+<b class="fc">&nbsp;        is SqlUnaryOperator.UnsafeCustom -&gt; &quot;${renderUnaryOperator(expr.operator)}(${renderExpr(expr.expr)})&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected open fun renderPredicateBooleanLiteral(value: Boolean): String =
+<b class="fc">&nbsp;        renderExpr(SqlExpr.BooleanLiteral(value))</b>
+&nbsp;
+&nbsp;    private fun renderPredicateUnary(expr: SqlExpr.Unary): String =
+<b class="fc">&nbsp;        when (expr.operator) {</b>
+<b class="pc">&nbsp;            SqlUnaryOperator.Not -&gt; &quot;NOT(${renderPredicate(expr.expr)})&quot;</b>
+<b class="nc">&nbsp;            else -&gt; renderExpr(expr)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun renderPredicateBinary(expr: SqlExpr.Binary): String =
+<b class="fc">&nbsp;        when (expr.operator) {</b>
+<b class="fc">&nbsp;            SqlBinaryOperator.And,</b>
+<b class="fc">&nbsp;            SqlBinaryOperator.Or -&gt; {</b>
+<b class="fc">&nbsp;                val left = renderPredicateBinaryOperand(expr.left, expr.operator)</b>
+<b class="fc">&nbsp;                val right = renderPredicateBinaryOperand(expr.right, expr.operator)</b>
+<b class="fc">&nbsp;                &quot;$left ${renderBinaryOperator(expr.operator)} $right&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            else -&gt; renderExpr(expr)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun renderPredicateBinaryOperand(child: SqlExpr, parent: SqlBinaryOperator): String {
+<b class="fc">&nbsp;        val rendered = renderPredicate(child)</b>
+<b class="fc">&nbsp;        val childPrecedence = exprPrecedence(child) ?: return rendered</b>
+<b class="fc">&nbsp;        val needsParens = when {</b>
+<b class="pc">&nbsp;            childPrecedence &lt; parent.precedence -&gt; true</b>
+<b class="pc">&nbsp;            childPrecedence &gt; parent.precedence -&gt; parent === SqlBinaryOperator.Or &amp;&amp;</b>
+<b class="nc">&nbsp;                child is SqlExpr.Binary &amp;&amp;</b>
+<b class="nc">&nbsp;                child.operator === SqlBinaryOperator.And</b>
+<b class="nc">&nbsp;            child !is SqlExpr.Binary -&gt; false</b>
+<b class="nc">&nbsp;            parent.isAssociativeWith(child.operator) -&gt; false</b>
+<b class="nc">&nbsp;            else -&gt; true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        return if (needsParens) &quot;($rendered)&quot; else rendered</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected open fun renderBinary(expr: SqlExpr.Binary): String {
+<b class="fc">&nbsp;        val left = renderBinaryOperand(expr.left, expr.operator, isRight = false)</b>
+<b class="fc">&nbsp;        val right = renderBinaryOperand(expr.right, expr.operator, isRight = true)</b>
+<b class="fc">&nbsp;        return &quot;$left ${renderBinaryOperator(expr.operator)} $right&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderBinaryOperand(child: SqlExpr, parent: SqlBinaryOperator, isRight: Boolean): String {
+<b class="fc">&nbsp;        val rendered = renderExpr(child)</b>
+<b class="fc">&nbsp;        val childPrecedence = exprPrecedence(child) ?: return rendered</b>
+<b class="fc">&nbsp;        val needsParens = when {</b>
+<b class="fc">&nbsp;            childPrecedence &lt; parent.precedence -&gt; true</b>
+<b class="pc">&nbsp;            childPrecedence &gt; parent.precedence -&gt; (parent === SqlBinaryOperator.Or &amp;&amp; child is SqlExpr.Binary &amp;&amp; child.operator === SqlBinaryOperator.And) ||</b>
+<b class="pc">&nbsp;                (parent.isComparison() &amp;&amp; requiresComparisonOperandParens(child))</b>
+<b class="nc">&nbsp;            child !is SqlExpr.Binary -&gt; false</b>
+<b class="nc">&nbsp;            parent.isAssociativeWith(child.operator) -&gt; false</b>
+<b class="nc">&nbsp;            else -&gt; true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return if (needsParens) &quot;($rendered)&quot; else rendered</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun SqlBinaryOperator.isAssociativeWith(child: SqlBinaryOperator): Boolean =
+<b class="nc">&nbsp;        (this === SqlBinaryOperator.And &amp;&amp; child === SqlBinaryOperator.And) ||</b>
+<b class="nc">&nbsp;            (this === SqlBinaryOperator.Or &amp;&amp; child === SqlBinaryOperator.Or)</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun SqlBinaryOperator.isComparison(): Boolean = when (this) {</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Equal,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.NotEqual,</b>
+<b class="pc">&nbsp;        is SqlBinaryOperator.IsDistinctFrom,</b>
+<b class="pc">&nbsp;        is SqlBinaryOperator.Is,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.GreaterThan,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.GreaterThanEqual,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.LessThan,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.LessThanEqual,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Overlaps,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Regexp,</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.NotRegexp -&gt; true</b>
+<b class="fc">&nbsp;        else -&gt; false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected open fun requiresComparisonOperandParens(expr: SqlExpr): Boolean =
+<b class="nc">&nbsp;        expr.isArithmeticBinary()</b>
+&nbsp;
+&nbsp;    private fun SqlExpr.isArithmeticBinary(): Boolean =
+<b class="nc">&nbsp;        this is SqlExpr.Binary &amp;&amp; when (operator) {</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.Times,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.Div,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.Mod,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.Plus,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.Minus,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.Concat,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.BitwiseAnd,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.BitwiseOr,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.BitwiseXor,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.BitwiseLeftShift,</b>
+<b class="nc">&nbsp;            SqlBinaryOperator.BitwiseRightShift -&gt; true</b>
+<b class="nc">&nbsp;            else -&gt; false</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;    private fun exprPrecedence(expr: SqlExpr): Int? = when (expr) {</b>
+<b class="fc">&nbsp;        is SqlExpr.Binary -&gt; expr.operator.precedence</b>
+<b class="pc">&nbsp;        is SqlExpr.In,</b>
+<b class="pc">&nbsp;        is SqlExpr.Between,</b>
+<b class="pc">&nbsp;        is SqlExpr.Like,</b>
+<b class="pc">&nbsp;        is SqlExpr.SimilarTo,</b>
+<b class="pc">&nbsp;        is SqlExpr.QuantifiedComparisonPredicate -&gt; SqlBinaryOperator.Equal.precedence</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonTest(expr: SqlExpr.JsonTest): String = buildString {</b>
+<b class="fc">&nbsp;        append(renderExpr(expr.expr))</b>
+<b class="fc">&nbsp;        append(&quot; IS &quot;)</b>
+<b class="pc">&nbsp;        if (expr.withNot) append(&quot;NOT &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;JSON&quot;)</b>
+<b class="pc">&nbsp;        expr.nodeType?.let { append(&quot; ${it.name.uppercase()}&quot;) }</b>
+<b class="pc">&nbsp;        expr.uniquenessMode?.let { append(&quot; ${renderJsonUniquenessMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun renderIn(expr: SqlExpr.In): String {
+<b class="fc">&nbsp;        val right = when (val operand = expr.`in`) {</b>
+<b class="fc">&nbsp;            is SqlInRightOperand.Values -&gt; operand.items.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;            is SqlInRightOperand.Subquery -&gt; &quot;(${renderQuery(operand.query)})&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        return &quot;${renderExpr(expr.expr)} ${if (expr.withNot) &quot;NOT &quot; else &quot;&quot;}IN $right&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderBetween(expr: SqlExpr.Between): String =
+<b class="pc">&nbsp;        &quot;${renderExpr(expr.expr)} ${if (expr.withNot) &quot;NOT &quot; else &quot;&quot;}BETWEEN ${renderExpr(expr.start)} AND ${renderExpr(expr.end)}&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderLike(expr: SqlExpr.Like): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;${renderExpr(expr.expr)} &quot;)</b>
+<b class="pc">&nbsp;        if (expr.withNot) append(&quot;NOT &quot;)</b>
+<b class="pc">&nbsp;        append(if (expr.caseInsensitive) &quot;ILIKE&quot; else &quot;LIKE&quot;)</b>
+<b class="fc">&nbsp;        append(&quot; ${renderExpr(expr.pattern)}&quot;)</b>
+<b class="pc">&nbsp;        expr.escape?.let { append(&quot; ESCAPE ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderSimilarTo(expr: SqlExpr.SimilarTo): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;${renderExpr(expr.expr)} &quot;)</b>
+<b class="pc">&nbsp;        if (expr.withNot) append(&quot;NOT &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;SIMILAR TO ${renderExpr(expr.pattern)}&quot;)</b>
+<b class="pc">&nbsp;        expr.escape?.let { append(&quot; ESCAPE ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderCase(expr: SqlExpr.Case): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;CASE &quot;)</b>
+<b class="fc">&nbsp;        append(expr.branches.joinToString(&quot; &quot;) { &quot;WHEN ${renderPredicate(it.`when`)} THEN ${renderExpr(it.then)}&quot; })</b>
+<b class="pc">&nbsp;        expr.default?.let { append(&quot; ELSE ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot; END&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderSimpleCase(expr: SqlExpr.SimpleCase): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;CASE ${renderExpr(expr.expr)} &quot;)</b>
+<b class="fc">&nbsp;        append(expr.branches.joinToString(&quot; &quot;) { &quot;WHEN ${renderExpr(it.`when`)} THEN ${renderExpr(it.then)}&quot; })</b>
+<b class="pc">&nbsp;        expr.default?.let { append(&quot; ELSE ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot; END&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderSubstring(expr: SqlExpr.SubstringFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;SUBSTRING(${renderExpr(expr.expr)} FROM ${renderExpr(expr.from)}&quot;)</b>
+<b class="pc">&nbsp;        expr.`for`?.let { append(&quot; FOR ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderTrim(expr: SqlExpr.TrimFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;TRIM(&quot;)</b>
+<b class="pc">&nbsp;        expr.trim?.let { trim -&gt;</b>
+<b class="pc">&nbsp;            trim.mode?.let { append(&quot;${it.name.uppercase()} &quot;) }</b>
+<b class="pc">&nbsp;            trim.value?.let { append(&quot;${renderExpr(it)} FROM &quot;) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(renderExpr(expr.expr))</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderOverlay(expr: SqlExpr.OverlayFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;OVERLAY(${renderExpr(expr.expr)} PLACING ${renderExpr(expr.placing)} FROM ${renderExpr(expr.from)}&quot;)</b>
+<b class="pc">&nbsp;        expr.`for`?.let { append(&quot; FOR ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonSerialize(expr: SqlExpr.JsonSerializeFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_SERIALIZE(${renderExpr(expr.expr)}&quot;)</b>
+<b class="pc">&nbsp;        expr.output?.let { append(&quot; ${renderJsonOutput(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonParse(expr: SqlExpr.JsonParseFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON(${renderExpr(expr.expr)}&quot;)</b>
+<b class="pc">&nbsp;        expr.input?.let { append(&quot; ${renderJsonInput(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.uniquenessMode?.let { append(&quot; ${renderJsonUniquenessMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonQuery(expr: SqlExpr.JsonQueryFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_QUERY(${renderExpr(expr.expr)}, ${renderExpr(expr.path)}&quot;)</b>
+<b class="fc">&nbsp;        if (expr.passingItems.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(expr.passingItems.joinToString(&quot;, &quot;, &quot; PASSING &quot;) { renderJsonPassing(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        expr.output?.let { append(&quot; ${renderJsonOutput(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.wrapper?.let { append(&quot; ${renderJsonQueryWrapperBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        expr.quotes?.let { append(&quot; ${renderJsonQueryQuotesBehavior(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.onEmpty?.let { append(&quot; ${renderJsonQueryEmptyBehavior(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.onError?.let { append(&quot; ${renderJsonQueryErrorBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonValue(expr: SqlExpr.JsonValueFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_VALUE(${renderExpr(expr.expr)}, ${renderExpr(expr.path)}&quot;)</b>
+<b class="pc">&nbsp;        if (expr.passingItems.isNotEmpty()) {</b>
+<b class="nc">&nbsp;            append(expr.passingItems.joinToString(&quot;, &quot;, &quot; PASSING &quot;) { renderJsonPassing(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        expr.output?.let { append(&quot; ${renderJsonOutput(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.onEmpty?.let { append(&quot; ${renderJsonValueEmptyBehavior(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.onError?.let { append(&quot; ${renderJsonValueErrorBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonObject(expr: SqlExpr.JsonObjectFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_OBJECT(&quot;)</b>
+<b class="fc">&nbsp;        append(expr.items.joinToString(&quot;, &quot;) { renderJsonObjectItem(it) })</b>
+<b class="pc">&nbsp;        expr.nullConstructor?.let { appendSeparatedOption(this, expr.items.isNotEmpty(), renderJsonNullConstructor(it)) }</b>
+<b class="fc">&nbsp;        expr.uniquenessMode?.let { appendSeparatedOption(this, isNotEmptyAfterOpen(&quot;JSON_OBJECT(&quot;), renderJsonUniquenessMode(it)) }</b>
+<b class="fc">&nbsp;        expr.output?.let { appendSeparatedOption(this, isNotEmptyAfterOpen(&quot;JSON_OBJECT(&quot;), renderJsonOutput(it)) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonArray(expr: SqlExpr.JsonArrayFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_ARRAY(&quot;)</b>
+<b class="fc">&nbsp;        append(expr.items.joinToString(&quot;, &quot;) { renderJsonArrayItem(it) })</b>
+<b class="fc">&nbsp;        expr.nullConstructor?.let { appendSeparatedOption(this, expr.items.isNotEmpty(), renderJsonNullConstructor(it)) }</b>
+<b class="pc">&nbsp;        expr.output?.let { appendSeparatedOption(this, isNotEmptyAfterOpen(&quot;JSON_ARRAY(&quot;), renderJsonOutput(it)) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonExists(expr: SqlExpr.JsonExistsFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_EXISTS(${renderExpr(expr.expr)}, ${renderExpr(expr.path)}&quot;)</b>
+<b class="pc">&nbsp;        if (expr.passingItems.isNotEmpty()) {</b>
+<b class="nc">&nbsp;            append(expr.passingItems.joinToString(&quot;, &quot;, &quot; PASSING &quot;) { renderJsonPassing(it) })</b>
+&nbsp;        }
+<b class="pc">&nbsp;        expr.onError?.let { append(&quot; ${renderJsonExistsErrorBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderCountAsterisk(expr: SqlExpr.CountAsteriskFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;COUNT(&quot;)</b>
+<b class="fc">&nbsp;        expr.tableName?.let { append(&quot;${quoteIdent(it)}.&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;*)&quot;)</b>
+<b class="fc">&nbsp;        expr.filter?.let { append(&quot; ${renderFilter(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonObjectAgg(expr: SqlExpr.JsonObjectAggFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_OBJECTAGG(${renderJsonObjectItem(expr.item)}&quot;)</b>
+<b class="pc">&nbsp;        expr.nullConstructor?.let { append(&quot; ${renderJsonNullConstructor(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.uniquenessMode?.let { append(&quot; ${renderJsonUniquenessMode(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.output?.let { append(&quot; ${renderJsonOutput(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="pc">&nbsp;        expr.filter?.let { append(&quot; ${renderFilter(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonArrayAgg(expr: SqlExpr.JsonArrayAggFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;JSON_ARRAYAGG(${renderJsonArrayItem(expr.item)}&quot;)</b>
+<b class="pc">&nbsp;        if (expr.orderBy.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(expr.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })</b>
+&nbsp;        }
+<b class="pc">&nbsp;        expr.nullConstructor?.let { append(&quot; ${renderJsonNullConstructor(it)}&quot;) }</b>
+<b class="pc">&nbsp;        expr.output?.let { append(&quot; ${renderJsonOutput(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="pc">&nbsp;        expr.filter?.let { append(&quot; ${renderFilter(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderListAgg(expr: SqlExpr.ListAggFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;LISTAGG(&quot;)</b>
+<b class="pc">&nbsp;        expr.quantifier?.let { append(&quot;${renderQuantifier(it)} &quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;${renderExpr(expr.expr)}, ${renderExpr(expr.separator)}&quot;)</b>
+<b class="pc">&nbsp;        expr.onOverflow?.let { append(&quot; ${renderListAggOnOverflow(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="pc">&nbsp;        if (expr.withinGroup.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(expr.withinGroup.joinToString(&quot;, &quot;, &quot; WITHIN GROUP (ORDER BY &quot;, &quot;)&quot;) { renderOrderingItem(it) })</b>
+&nbsp;        }
+<b class="pc">&nbsp;        expr.filter?.let { append(&quot; ${renderFilter(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderNullsTreatmentFunc(expr: SqlExpr.NullsTreatmentFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(safeUnquotedIdent(expr.name))</b>
+<b class="fc">&nbsp;        append(expr.args.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderExpr(it) })</b>
+<b class="pc">&nbsp;        expr.nullsMode?.let { append(&quot; ${renderWindowNullsMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderNthValue(expr: SqlExpr.NthValueFunc): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;NTH_VALUE(${renderExpr(expr.expr)}, ${renderExpr(expr.row)})&quot;)</b>
+<b class="pc">&nbsp;        expr.fromMode?.let { append(&quot; FROM ${it.name.uppercase()}&quot;) }</b>
+<b class="pc">&nbsp;        expr.nullsMode?.let { append(&quot; ${renderWindowNullsMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderFunction(expr: SqlExpr.Function): String = buildString {</b>
+<b class="fc">&nbsp;        append(renderFunctionName(expr.name))</b>
+<b class="fc">&nbsp;        append(&quot;(&quot;)</b>
+<b class="pc">&nbsp;        expr.quantifier?.let {</b>
+<b class="nc">&nbsp;            append(renderQuantifier(it))</b>
+<b class="nc">&nbsp;            if (expr.args.isNotEmpty()) append(&quot; &quot;)</b>
+<b class="nc">&nbsp;        }</b>
+<b class="fc">&nbsp;        append(expr.args.joinToString(&quot;, &quot;) { renderExpr(it) })</b>
+<b class="fc">&nbsp;        if (expr.orderBy.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(expr.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;        if (expr.withinGroup.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(expr.withinGroup.joinToString(&quot;, &quot;, &quot; WITHIN GROUP (ORDER BY &quot;, &quot;)&quot;) { renderOrderingItem(it) })</b>
+&nbsp;        }
+<b class="pc">&nbsp;        expr.filter?.let { append(&quot; ${renderFilter(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun StringBuilder.isNotEmptyAfterOpen(prefix: String): Boolean = length &gt; prefix.length</b>
+&nbsp;
+&nbsp;    private fun appendSeparatedOption(builder: StringBuilder, hasPrevious: Boolean, option: String) {
+<b class="fc">&nbsp;        if (hasPrevious) builder.append(&quot; &quot;) else Unit</b>
+<b class="fc">&nbsp;        builder.append(option)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderWindowExpr(expr: SqlExpr.Window): String {
+<b class="fc">&nbsp;        val window = expr.window</b>
+<b class="fc">&nbsp;        return if (window.isNameOnly()) {</b>
+<b class="fc">&nbsp;            &quot;${renderExpr(expr.expr)} OVER ${renderIdentifier(window.existingWindowName!!)}&quot;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            &quot;${renderExpr(expr.expr)} OVER (${renderWindow(window)})&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderWindowItem(item: SqlWindowItem): String =
+<b class="fc">&nbsp;        &quot;${renderIdentifier(item.name)} AS (${renderWindow(item.window)})&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderWindow(window: SqlWindow): String = listOfNotNull(</b>
+<b class="pc">&nbsp;        window.existingWindowName?.let { renderIdentifier(it) },</b>
+<b class="fc">&nbsp;        window.partitionBy.takeIf { it.isNotEmpty() }?.joinToString(&quot;, &quot;, &quot;PARTITION BY &quot;) { renderExpr(it) },</b>
+<b class="fc">&nbsp;        window.orderBy.takeIf { it.isNotEmpty() }?.joinToString(&quot;, &quot;, &quot;ORDER BY &quot;) { renderOrderingItem(it) },</b>
+<b class="fc">&nbsp;        window.frame?.let { renderWindowFrame(it) }</b>
+<b class="fc">&nbsp;    ).joinToString(&quot; &quot;)</b>
+&nbsp;
+&nbsp;    private fun SqlWindow.isNameOnly(): Boolean =
+<b class="pc">&nbsp;        existingWindowName != null &amp;&amp; partitionBy.isEmpty() &amp;&amp; orderBy.isEmpty() &amp;&amp; frame == null</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderWindowFrame(frame: SqlWindowFrame): String = when (frame) {</b>
+<b class="fc">&nbsp;        is SqlWindowFrame.Start -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;${frame.unit.name.uppercase()} ${renderFrameBound(frame.start)}&quot;)</b>
+<b class="pc">&nbsp;            frame.excludeMode?.let { append(&quot; EXCLUDE ${renderFrameExclude(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlWindowFrame.Between -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;${frame.unit.name.uppercase()} BETWEEN ${renderFrameBound(frame.start)} AND ${renderFrameBound(frame.end)}&quot;)</b>
+<b class="fc">&nbsp;            frame.excludeMode?.let { append(&quot; EXCLUDE ${renderFrameExclude(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderFrameBound(bound: SqlWindowFrameBound): String = when (bound) {</b>
+<b class="fc">&nbsp;        SqlWindowFrameBound.CurrentRow -&gt; &quot;CURRENT ROW&quot;</b>
+<b class="fc">&nbsp;        SqlWindowFrameBound.UnboundedPreceding -&gt; &quot;UNBOUNDED PRECEDING&quot;</b>
+<b class="pc">&nbsp;        is SqlWindowFrameBound.Preceding -&gt; &quot;${renderExpr(bound.n)} PRECEDING&quot;</b>
+<b class="nc">&nbsp;        SqlWindowFrameBound.UnboundedFollowing -&gt; &quot;UNBOUNDED FOLLOWING&quot;</b>
+<b class="nc">&nbsp;        is SqlWindowFrameBound.Following -&gt; &quot;${renderExpr(bound.n)} FOLLOWING&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderFrameExclude(mode: SqlWindowFrameExcludeMode): String = when (mode) {</b>
+<b class="nc">&nbsp;        SqlWindowFrameExcludeMode.CurrentRow -&gt; &quot;CURRENT ROW&quot;</b>
+<b class="nc">&nbsp;        SqlWindowFrameExcludeMode.Group -&gt; &quot;GROUP&quot;</b>
+<b class="fc">&nbsp;        SqlWindowFrameExcludeMode.Ties -&gt; &quot;TIES&quot;</b>
+<b class="nc">&nbsp;        SqlWindowFrameExcludeMode.NoOthers -&gt; &quot;NO OTHERS&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderIdentTable(table: SqlTable.Ident): String = buildString {</b>
+<b class="fc">&nbsp;        append(renderIdentifier(table.identifier))</b>
+<b class="fc">&nbsp;        table.periodForMode?.let { append(&quot; ${renderTablePeriod(it)}&quot;) }</b>
+<b class="fc">&nbsp;        table.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }</b>
+<b class="fc">&nbsp;        table.matchRecognize?.let { append(&quot; ${renderMatchRecognize(it)}&quot;) }</b>
+<b class="fc">&nbsp;        table.sample?.let { append(&quot; ${renderTableSample(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderFuncTable(table: SqlTable.Func): String = buildString {</b>
+<b class="pc">&nbsp;        if (table.withLateral) append(&quot;LATERAL &quot;)</b>
+<b class="fc">&nbsp;        append(safeUnquotedIdent(table.name))</b>
+<b class="fc">&nbsp;        append(table.args.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderExpr(it) })</b>
+<b class="pc">&nbsp;        if (table.withOrdinality) append(&quot; WITH ORDINALITY&quot;)</b>
+<b class="pc">&nbsp;        table.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }</b>
+<b class="pc">&nbsp;        table.matchRecognize?.let { append(&quot; ${renderMatchRecognize(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderSubqueryTable(table: SqlTable.Subquery): String = buildString {</b>
+<b class="pc">&nbsp;        if (table.withLateral) append(&quot;LATERAL &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;(${renderQuery(table.query)})&quot;)</b>
+<b class="pc">&nbsp;        table.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }</b>
+<b class="pc">&nbsp;        table.matchRecognize?.let { append(&quot; ${renderMatchRecognize(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJoinTable(table: SqlTable.Join): String = buildString {</b>
+<b class="fc">&nbsp;        append(renderTable(table.left))</b>
+<b class="fc">&nbsp;        append(&quot; ${renderJoinType(table.joinType)} JOIN &quot;)</b>
+<b class="fc">&nbsp;        append(if (table.right is SqlTable.Join) &quot;(${renderTable(table.right)})&quot; else renderTable(table.right))</b>
+<b class="fc">&nbsp;        table.condition?.let { append(&quot; ${renderJoinCondition(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonTable(table: SqlTable.Json): String = buildString {</b>
+<b class="pc">&nbsp;        if (table.withLateral) append(&quot;LATERAL &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;JSON_TABLE(${renderExpr(table.expr)}, ${renderExpr(table.path)}&quot;)</b>
+<b class="pc">&nbsp;        table.pathAlias?.let { append(&quot; AS ${quoteIdent(it)}&quot;) }</b>
+<b class="pc">&nbsp;        if (table.passingItems.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(table.passingItems.joinToString(&quot;, &quot;, &quot; PASSING &quot;) { renderJsonPassing(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(table.columns.joinToString(&quot;, &quot;, &quot; COLUMNS (&quot;, &quot;)&quot;) { renderJsonColumn(it) })</b>
+<b class="pc">&nbsp;        table.onError?.let { append(&quot; ${renderJsonErrorBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="pc">&nbsp;        table.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }</b>
+<b class="pc">&nbsp;        table.matchRecognize?.let { append(&quot; ${renderMatchRecognize(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphTable(table: SqlTable.Graph): String = buildString {</b>
+<b class="fc">&nbsp;        if (table.withLateral) append(&quot;LATERAL &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;GRAPH_TABLE(${quoteIdent(table.name)} MATCH&quot;)</b>
+<b class="fc">&nbsp;        table.matchMode?.let { append(&quot; ${renderGraphMatchMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot; &quot;)</b>
+<b class="fc">&nbsp;        append(table.patterns.joinToString(&quot;, &quot;) { renderGraphPattern(it) })</b>
+<b class="fc">&nbsp;        table.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }</b>
+<b class="pc">&nbsp;        table.rowsMode?.let { append(&quot; ${renderGraphRowsMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(table.columns.joinToString(&quot;, &quot;, &quot; COLUMNS (&quot;, &quot;)&quot;) { renderSelectItem(it) })</b>
+<b class="pc">&nbsp;        table.exportMode?.let { append(&quot; ${renderGraphExportMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;        table.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }</b>
+<b class="pc">&nbsp;        table.matchRecognize?.let { append(&quot; ${renderMatchRecognize(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderSelectItem(item: SqlSelectItem): String = when (item) {</b>
+<b class="pc">&nbsp;        is SqlSelectItem.Asterisk -&gt; item.qualifier?.let { &quot;${renderIdentifier(it)}.*&quot; } ?: &quot;*&quot;</b>
+<b class="fc">&nbsp;        is SqlSelectItem.Expr -&gt; renderSelectItemExpr(item.expr) + (item.alias?.let {</b>
+<b class="fc">&nbsp;            &quot; AS ${renderSelectItemAlias(it, item.metadata)}&quot;</b>
+<b class="fc">&nbsp;        } ?: &quot;&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected open fun renderSelectItemAlias(alias: String, metadata: SqlSelectItemAliasMetadata?): String =
+<b class="fc">&nbsp;        if (shouldQuoteSelectItemAlias(metadata)) quoteIdent(alias) else safeUnquotedIdent(alias)</b>
+&nbsp;
+&nbsp;    protected open fun shouldQuoteSelectItemAlias(metadata: SqlSelectItemAliasMetadata?): Boolean =
+<b class="pc">&nbsp;        when (metadata?.scope) {</b>
+&nbsp;            SqlSelectItemSourceScope.Aggregate,
+<b class="nc">&nbsp;            SqlSelectItemSourceScope.Window -&gt; false</b>
+<b class="nc">&nbsp;            SqlSelectItemSourceScope.Selected -&gt; true</b>
+<b class="pc">&nbsp;            else -&gt; metadata?.source != null</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    protected open fun renderSelectItemExpr(expr: SqlExpr): String =
+<b class="pc">&nbsp;        if (expr is SqlExpr.Binary) &quot;(${renderExpr(expr)})&quot; else renderExpr(expr)</b>
+&nbsp;
+&nbsp;    protected open fun renderReturning(returning: SqlReturning): String =
+<b class="fc">&nbsp;        returning.items.joinToString(&quot;, &quot;, &quot;RETURNING &quot;) { renderSelectItem(it) }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderWithItem(item: SqlWithItem): String = buildString {</b>
+<b class="fc">&nbsp;        append(quoteIdent(item.name))</b>
+<b class="pc">&nbsp;        if (item.columnNames.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(item.columnNames.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { quoteIdent(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(&quot; AS (${renderQuery(item.query)})&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderGroup(group: SqlGroup): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;GROUP BY&quot;)</b>
+<b class="fc">&nbsp;        group.quantifier?.let { append(&quot; ${renderQuantifier(it)}&quot;) }</b>
+<b class="fc">&nbsp;        append(group.items.joinToString(&quot;, &quot;, &quot; &quot;) { renderGroupingItem(it) })</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderGroupingItem(item: SqlGroupingItem): String = when (item) {</b>
+<b class="fc">&nbsp;        SqlGroupingItem.EmptyGroup -&gt; &quot;()&quot;</b>
+<b class="fc">&nbsp;        is SqlGroupingItem.Expr -&gt; renderExpr(item.item)</b>
+<b class="fc">&nbsp;        is SqlGroupingItem.Cube -&gt; item.items.joinToString(&quot;, &quot;, &quot;CUBE(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;        is SqlGroupingItem.Rollup -&gt; item.items.joinToString(&quot;, &quot;, &quot;ROLLUP(&quot;, &quot;)&quot;) { renderExpr(it) }</b>
+<b class="fc">&nbsp;        is SqlGroupingItem.GroupingSets -&gt; item.items.joinToString(&quot;, &quot;, &quot;GROUPING SETS(&quot;, &quot;)&quot;) { renderGroupingItem(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderOrderingItem(item: SqlOrderingItem): String = buildString {</b>
+<b class="fc">&nbsp;        append(renderExpr(item.expr))</b>
+<b class="fc">&nbsp;        append(&quot; &quot;)</b>
+<b class="fc">&nbsp;        append((item.ordering ?: SqlOrdering.Asc).name.uppercase())</b>
+<b class="fc">&nbsp;        item.nullsOrdering?.let {</b>
+<b class="fc">&nbsp;            append(&quot; NULLS &quot;)</b>
+<b class="pc">&nbsp;            append(when (it) {</b>
+<b class="nc">&nbsp;                SqlNullsOrdering.First -&gt; &quot;FIRST&quot;</b>
+<b class="fc">&nbsp;                SqlNullsOrdering.Last -&gt; &quot;LAST&quot;</b>
+&nbsp;            })
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="pc">&nbsp;    protected open fun renderLimit(limit: SqlLimit): String = when (dialect.limitStyle) {</b>
+<b class="fc">&nbsp;        SqlLimitStyle.Fetch -&gt; buildString {</b>
+<b class="fc">&nbsp;            limit.offset?.let { append(&quot;OFFSET ${renderExpr(it)} ROWS&quot;) }</b>
+<b class="pc">&nbsp;            limit.fetch?.let {</b>
+<b class="fc">&nbsp;                if (isNotEmpty()) append(&quot; &quot;)</b>
+<b class="fc">&nbsp;                append(renderFetch(it))</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="nc">&nbsp;        SqlLimitStyle.LimitOffset -&gt; buildString {</b>
+<b class="nc">&nbsp;            limit.fetch?.let { append(&quot;LIMIT ${renderExpr(it.limit)}&quot;) }</b>
+<b class="nc">&nbsp;            limit.offset?.let {</b>
+<b class="nc">&nbsp;                if (isEmpty()) append(&quot;LIMIT -1&quot;)</b>
+<b class="nc">&nbsp;                append(&quot; OFFSET ${renderExpr(it)}&quot;)</b>
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderFetch(fetch: SqlFetch): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;FETCH NEXT ${renderExpr(fetch.limit)} &quot;)</b>
+<b class="fc">&nbsp;        append(when (fetch.unit) {</b>
+<b class="fc">&nbsp;            SqlFetchUnit.RowCount -&gt; &quot;ROWS&quot;</b>
+<b class="fc">&nbsp;            SqlFetchUnit.Percentage -&gt; &quot;PERCENT ROWS&quot;</b>
+&nbsp;        })
+<b class="fc">&nbsp;        append(&quot; &quot;)</b>
+<b class="fc">&nbsp;        append(when (fetch.mode) {</b>
+<b class="fc">&nbsp;            SqlFetchMode.Only -&gt; &quot;ONLY&quot;</b>
+<b class="fc">&nbsp;            SqlFetchMode.WithTies -&gt; &quot;WITH TIES&quot;</b>
+&nbsp;        })
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderLock(lock: SqlLock): String = buildString {</b>
+<b class="fc">&nbsp;        append(when (lock) {</b>
+<b class="fc">&nbsp;            is SqlLock.Update -&gt; &quot;FOR UPDATE&quot;</b>
+<b class="fc">&nbsp;            is SqlLock.Share -&gt; &quot;FOR SHARE&quot;</b>
+&nbsp;        })
+<b class="fc">&nbsp;        if (lock.targets.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(lock.targets.joinToString(&quot;, &quot;, &quot; OF &quot;) { renderIdentifier(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        lock.waitMode?.let {</b>
+<b class="fc">&nbsp;            append(&quot; &quot;)</b>
+<b class="fc">&nbsp;            append(when (it) {</b>
+<b class="fc">&nbsp;                SqlLockWaitMode.NoWait -&gt; &quot;NOWAIT&quot;</b>
+<b class="fc">&nbsp;                SqlLockWaitMode.SkipLocked -&gt; &quot;SKIP LOCKED&quot;</b>
+&nbsp;            })
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderTableAlias(alias: SqlTableAlias): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;AS ${renderIdentifier(alias.identifier)}&quot;)</b>
+<b class="fc">&nbsp;        if (alias.columnIdentifiers.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(alias.columnIdentifiers.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderTablePeriod(period: SqlTablePeriodForMode): String = when (period) {</b>
+<b class="fc">&nbsp;        is SqlTablePeriodForMode.SystemTimeAsOf -&gt; &quot;FOR SYSTEM_TIME AS OF ${renderExpr(period.expr)}&quot;</b>
+<b class="fc">&nbsp;        is SqlTablePeriodForMode.SystemTimeBetween -&gt; {</b>
+<b class="pc">&nbsp;            val mode = period.mode?.name?.uppercase()?.let { &quot;$it &quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;            &quot;FOR SYSTEM_TIME BETWEEN $mode${renderExpr(period.start)} AND ${renderExpr(period.end)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlTablePeriodForMode.SystemTimeFrom -&gt; &quot;FOR SYSTEM_TIME FROM ${renderExpr(period.from)} TO ${renderExpr(period.to)}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderTableSample(sample: SqlTableSample): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;TABLESAMPLE ${sample.mode.name.uppercase()} (${renderExpr(sample.percentage)})&quot;)</b>
+<b class="pc">&nbsp;        sample.repeatable?.let { append(&quot; REPEATABLE (${renderExpr(it)})&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderJoinType(type: SqlJoinType): String = when (type) {</b>
+<b class="fc">&nbsp;        SqlJoinType.Inner -&gt; &quot;INNER&quot;</b>
+<b class="fc">&nbsp;        SqlJoinType.Left -&gt; &quot;LEFT&quot;</b>
+<b class="fc">&nbsp;        SqlJoinType.Right -&gt; &quot;RIGHT&quot;</b>
+<b class="pc">&nbsp;        SqlJoinType.Full -&gt; &quot;FULL&quot;</b>
+<b class="pc">&nbsp;        SqlJoinType.Cross -&gt; &quot;CROSS&quot;</b>
+<b class="nc">&nbsp;        is SqlJoinType.UnsafeCustom -&gt; type.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderJoinCondition(condition: SqlJoinCondition): String = when (condition) {</b>
+<b class="fc">&nbsp;        is SqlJoinCondition.On -&gt; &quot;ON ${renderPredicate(condition.condition)}&quot;</b>
+<b class="fc">&nbsp;        is SqlJoinCondition.Using -&gt; condition.columnNames.joinToString(&quot;, &quot;, &quot;USING (&quot;, &quot;)&quot;) { quoteIdent(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonColumn(column: SqlJsonColumn): String = when (column) {</b>
+<b class="fc">&nbsp;        is SqlJsonColumn.Ordinality -&gt; &quot;${quoteIdent(column.name)} FOR ORDINALITY&quot;</b>
+<b class="fc">&nbsp;        is SqlJsonColumn.Column -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;${quoteIdent(column.name)} ${renderType(column.type)}&quot;)</b>
+<b class="fc">&nbsp;            column.format?.let { append(&quot; ${renderJsonOutputFormat(it)}&quot;) }</b>
+<b class="pc">&nbsp;            column.path?.let { append(&quot; PATH ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;            column.wrapper?.let { append(&quot; ${renderJsonQueryWrapperBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;            column.quotes?.let { append(&quot; ${renderJsonQueryQuotesBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;            column.onEmpty?.let { append(&quot; ${renderJsonQueryEmptyBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;            column.onError?.let { append(&quot; ${renderJsonQueryErrorBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlJsonColumn.Exists -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;${quoteIdent(column.name)} ${renderType(column.type)} EXISTS&quot;)</b>
+<b class="pc">&nbsp;            column.path?.let { append(&quot; PATH ${renderExpr(it)}&quot;) }</b>
+<b class="pc">&nbsp;            column.onError?.let { append(&quot; ${renderJsonExistsErrorBehavior(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlJsonColumn.Nested -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;NESTED PATH ${renderExpr(column.path)}&quot;)</b>
+<b class="fc">&nbsp;            column.pathAlias?.let { append(&quot; AS ${quoteIdent(it)}&quot;) }</b>
+<b class="fc">&nbsp;            append(column.columns.joinToString(&quot;, &quot;, &quot; COLUMNS (&quot;, &quot;)&quot;) { renderJsonColumn(it) })</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderColumnDefinition(column: SqlColumnDefinition): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;${renderIdentifier(column.name)} ${renderType(column.type)}&quot;)</b>
+<b class="fc">&nbsp;        if (!column.nullable) append(&quot; NOT NULL&quot;)</b>
+<b class="pc">&nbsp;        when (column.primaryKey) {</b>
+&nbsp;            SqlPrimaryKeyMode.NotPrimary -&gt; {}
+<b class="nc">&nbsp;            SqlPrimaryKeyMode.Primary -&gt; append(&quot; PRIMARY KEY&quot;)</b>
+<b class="fc">&nbsp;            SqlPrimaryKeyMode.Identity -&gt; append(&quot; PRIMARY KEY GENERATED ALWAYS AS IDENTITY&quot;)</b>
+&nbsp;            SqlPrimaryKeyMode.Uuid,
+<b class="nc">&nbsp;            SqlPrimaryKeyMode.Snowflake -&gt; append(&quot; PRIMARY KEY&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        column.defaultValue?.let { append(&quot; DEFAULT ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderIndexDefinition(index: SqlIndexDefinition): String = buildString {</b>
+<b class="pc">&nbsp;        if (index.unique) append(&quot;UNIQUE &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;INDEX ${renderIdentifier(index.name)}&quot;)</b>
+<b class="pc">&nbsp;        index.method?.let { append(&quot; USING $it&quot;) }</b>
+<b class="fc">&nbsp;        append(index.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="nc">&nbsp;    protected open fun renderTableConstraint(constraint: SqlTableConstraint): String = buildString {</b>
+<b class="nc">&nbsp;        constraint.name?.let { append(&quot;CONSTRAINT ${renderIdentifier(it)} &quot;) }</b>
+<b class="nc">&nbsp;        when (constraint) {</b>
+<b class="nc">&nbsp;            is SqlTableConstraint.PrimaryKey -&gt; {</b>
+<b class="nc">&nbsp;                append(constraint.columns.joinToString(&quot;, &quot;, &quot;PRIMARY KEY (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is SqlTableConstraint.Unique -&gt; {</b>
+<b class="nc">&nbsp;                append(constraint.columns.joinToString(&quot;, &quot;, &quot;UNIQUE (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is SqlTableConstraint.Check -&gt; {</b>
+<b class="nc">&nbsp;                append(&quot;CHECK (${renderPredicate(constraint.condition)})&quot;)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is SqlTableConstraint.ForeignKey -&gt; {</b>
+<b class="nc">&nbsp;                append(constraint.columns.joinToString(&quot;, &quot;, &quot;FOREIGN KEY (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+<b class="nc">&nbsp;                append(&quot; REFERENCES ${renderIdentifier(constraint.referencedTable)}&quot;)</b>
+<b class="nc">&nbsp;                append(constraint.referencedColumns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    protected fun renderCommentValue(comment: String?): String =
+<b class="pc">&nbsp;        comment?.let { renderExpr(SqlExpr.StringLiteral(it)) } ?: &quot;NULL&quot;</b>
+&nbsp;
+&nbsp;    protected fun renderCommentColumnTarget(tableName: SqlIdentifier, columnName: SqlIdentifier): String =
+<b class="fc">&nbsp;        renderIdentifier(SqlIdentifier.of(tableName.parts + columnName.parts))</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderSqlServerExtendedPropertyComment(statement: SqlDdlStatement.SqlServerExtendedPropertyComment): String = buildString {</b>
+<b class="fc">&nbsp;        val procedure = when (statement.operation) {</b>
+<b class="fc">&nbsp;            SqlServerExtendedPropertyOperation.Add -&gt; &quot;sp_addextendedproperty&quot;</b>
+<b class="fc">&nbsp;            SqlServerExtendedPropertyOperation.Update -&gt; &quot;sp_updateextendedproperty&quot;</b>
+<b class="fc">&nbsp;            SqlServerExtendedPropertyOperation.Drop -&gt; &quot;sp_dropextendedproperty&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(&quot;EXEC sys.$procedure &quot;)</b>
+<b class="fc">&nbsp;        append(&quot;@name = ${renderExpr(SqlExpr.StringLiteral(statement.propertyName))}&quot;)</b>
+<b class="fc">&nbsp;        if (statement.operation != SqlServerExtendedPropertyOperation.Drop) {</b>
+<b class="fc">&nbsp;            append(&quot;, @value = ${renderCommentValue(statement.comment)}&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(&quot;, @level0type = ${renderExpr(SqlExpr.StringLiteral(&quot;SCHEMA&quot;))}&quot;)</b>
+<b class="fc">&nbsp;        append(&quot;, @level0name = ${renderExpr(SqlExpr.StringLiteral(sqlServerExtendedPropertySchemaName(statement)))}&quot;)</b>
+<b class="fc">&nbsp;        append(&quot;, @level1type = ${renderExpr(SqlExpr.StringLiteral(&quot;TABLE&quot;))}&quot;)</b>
+<b class="fc">&nbsp;        append(&quot;, @level1name = ${renderExpr(SqlExpr.StringLiteral(sqlServerExtendedPropertyTableName(statement)))}&quot;)</b>
+<b class="fc">&nbsp;        statement.columnName?.let {</b>
+<b class="fc">&nbsp;            append(&quot;, @level2type = ${renderExpr(SqlExpr.StringLiteral(&quot;COLUMN&quot;))}&quot;)</b>
+<b class="fc">&nbsp;            append(&quot;, @level2name = ${renderExpr(SqlExpr.StringLiteral(it.last))}&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun sqlServerExtendedPropertySchemaName(statement: SqlDdlStatement.SqlServerExtendedPropertyComment): String =
+<b class="pc">&nbsp;        statement.schemaName?.last ?: statement.tableName.parts.dropLast(1).lastOrNull() ?: &quot;dbo&quot;</b>
+&nbsp;
+&nbsp;    private fun sqlServerExtendedPropertyTableName(statement: SqlDdlStatement.SqlServerExtendedPropertyComment): String =
+<b class="fc">&nbsp;        statement.tableName.last</b>
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderType(type: SqlType): String = when (type) {</b>
+<b class="pc">&nbsp;        is SqlType.Varchar -&gt; &quot;VARCHAR${type.maxLength?.let { &quot;($it)&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="fc">&nbsp;        SqlType.Int -&gt; &quot;INTEGER&quot;</b>
+<b class="pc">&nbsp;        SqlType.Long -&gt; &quot;BIGINT&quot;</b>
+<b class="pc">&nbsp;        SqlType.Float -&gt; &quot;REAL&quot;</b>
+<b class="pc">&nbsp;        SqlType.Double -&gt; &quot;DOUBLE PRECISION&quot;</b>
+<b class="pc">&nbsp;        is SqlType.Decimal -&gt; &quot;DECIMAL${type.precision?.let { &quot;(${it.first}, ${it.second})&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="fc">&nbsp;        SqlType.Date -&gt; &quot;DATE&quot;</b>
+<b class="pc">&nbsp;        is SqlType.Timestamp -&gt; &quot;TIMESTAMP${type.mode?.let { &quot; ${renderTimeZoneMode(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="pc">&nbsp;        is SqlType.Time -&gt; &quot;TIME${type.mode?.let { &quot; ${renderTimeZoneMode(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="fc">&nbsp;        SqlType.Json -&gt; &quot;JSON&quot;</b>
+<b class="fc">&nbsp;        SqlType.Boolean -&gt; &quot;BOOLEAN&quot;</b>
+<b class="pc">&nbsp;        SqlType.Interval -&gt; &quot;INTERVAL&quot;</b>
+<b class="pc">&nbsp;        SqlType.Geometry -&gt; &quot;GEOMETRY&quot;</b>
+<b class="fc">&nbsp;        SqlType.Point -&gt; &quot;POINT&quot;</b>
+<b class="pc">&nbsp;        SqlType.LineString -&gt; &quot;LINESTRING&quot;</b>
+<b class="pc">&nbsp;        SqlType.Polygon -&gt; &quot;POLYGON&quot;</b>
+<b class="pc">&nbsp;        SqlType.MultiPoint -&gt; &quot;MULTIPOINT&quot;</b>
+<b class="pc">&nbsp;        SqlType.MultiLineString -&gt; &quot;MULTILINESTRING&quot;</b>
+<b class="pc">&nbsp;        SqlType.MultiPolygon -&gt; &quot;MULTIPOLYGON&quot;</b>
+<b class="pc">&nbsp;        SqlType.GeometryCollection -&gt; &quot;GEOMETRYCOLLECTION&quot;</b>
+<b class="fc">&nbsp;        is SqlType.Array -&gt; &quot;${renderType(type.type)}[]&quot;</b>
+<b class="fc">&nbsp;        is SqlType.Named -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(type.name)</b>
+<b class="pc">&nbsp;            if (type.arguments.isNotEmpty()) append(type.arguments.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;))</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlType.UnsafeCustom -&gt; type.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderColumnPosition(position: SqlColumnPosition): String = when (position) {</b>
+<b class="fc">&nbsp;        SqlColumnPosition.First -&gt; &quot;FIRST&quot;</b>
+<b class="fc">&nbsp;        is SqlColumnPosition.After -&gt; &quot;AFTER ${renderIdentifier(position.columnName)}&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected open fun renderSqlServerDropDefaultConstraint(statement: SqlDdlStatement.SqlServerDropDefaultConstraint): String {
+<b class="pc">&nbsp;        val schemaName = statement.schemaName?.last ?: statement.tableName.parts.dropLast(1).lastOrNull() ?: &quot;dbo&quot;</b>
+<b class="fc">&nbsp;        val tableName = statement.tableName.last</b>
+<b class="fc">&nbsp;        val columnName = statement.columnName.last</b>
+<b class="fc">&nbsp;        return &quot;&quot;&quot;</b>
+&nbsp;            DECLARE @ConstraintName NVARCHAR(128);
+&nbsp;            SET @ConstraintName = (
+&nbsp;                SELECT dc.name
+&nbsp;                FROM sys.default_constraints dc
+&nbsp;                INNER JOIN sys.columns c ON c.default_object_id = dc.object_id
+&nbsp;                INNER JOIN sys.tables t ON t.object_id = c.object_id
+&nbsp;                INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+<b class="fc">&nbsp;                WHERE s.name = ${renderExpr(SqlExpr.StringLiteral(schemaName))}</b>
+<b class="fc">&nbsp;                    AND t.name = ${renderExpr(SqlExpr.StringLiteral(tableName))}</b>
+<b class="fc">&nbsp;                    AND c.name = ${renderExpr(SqlExpr.StringLiteral(columnName))}</b>
+&nbsp;            );
+&nbsp;            IF @ConstraintName IS NOT NULL
+&nbsp;                BEGIN
+<b class="fc">&nbsp;                    DECLARE @DropStmt NVARCHAR(MAX) = N&#39;ALTER TABLE ${quoteIdent(schemaName)}.${quoteIdent(tableName)} DROP CONSTRAINT &#39; + QUOTENAME(@ConstraintName);</b>
+&nbsp;                    EXEC sp_executesql @DropStmt;
+&nbsp;                END
+<b class="fc">&nbsp;        &quot;&quot;&quot;.trimIndent().replace(Regex(&quot;\\s+\\n&quot;), &quot;\n&quot;)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonInput(input: SqlJsonInput): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;FORMAT JSON&quot;)</b>
+<b class="fc">&nbsp;        input.encoding?.let { append(&quot; ENCODING ${renderEncoding(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonOutputFormat(format: SqlJsonOutputFormat): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;FORMAT JSON&quot;)</b>
+<b class="pc">&nbsp;        format.encoding?.let { append(&quot; ENCODING ${renderEncoding(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonOutput(output: SqlJsonOutput): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;RETURNING ${renderType(output.type)}&quot;)</b>
+<b class="fc">&nbsp;        output.format?.let { append(&quot; ${renderJsonOutputFormat(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderEncoding(encoding: SqlEncoding): String = when (encoding) {</b>
+<b class="fc">&nbsp;        SqlEncoding.Utf8 -&gt; &quot;UTF8&quot;</b>
+<b class="pc">&nbsp;        SqlEncoding.Utf16 -&gt; &quot;UTF16&quot;</b>
+<b class="nc">&nbsp;        SqlEncoding.Utf32 -&gt; &quot;UTF32&quot;</b>
+<b class="nc">&nbsp;        is SqlEncoding.UnsafeCustom -&gt; encoding.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderJsonPassing(passing: SqlJsonPassing): String =
+<b class="fc">&nbsp;        &quot;${renderExpr(passing.expr)} AS ${quoteIdent(passing.alias)}&quot;</b>
+&nbsp;
+&nbsp;    private fun renderJsonObjectItem(item: SqlJsonObjectItem): String =
+<b class="fc">&nbsp;        &quot;${renderExpr(item.key)} VALUE ${renderExpr(item.value)}&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonArrayItem(item: SqlJsonArrayItem): String = buildString {</b>
+<b class="fc">&nbsp;        append(renderExpr(item.value))</b>
+<b class="fc">&nbsp;        item.input?.let { append(&quot; ${renderJsonInput(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonNullConstructor(constructor: SqlJsonNullConstructor): String = when (constructor) {</b>
+<b class="fc">&nbsp;        SqlJsonNullConstructor.Null -&gt; &quot;NULL ON NULL&quot;</b>
+<b class="fc">&nbsp;        SqlJsonNullConstructor.Absent -&gt; &quot;ABSENT ON NULL&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonUniquenessMode(mode: SqlJsonUniquenessMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlJsonUniquenessMode.With -&gt; &quot;WITH UNIQUE KEYS&quot;</b>
+<b class="fc">&nbsp;        SqlJsonUniquenessMode.Without -&gt; &quot;WITHOUT UNIQUE KEYS&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonQueryWrapperBehavior(behavior: SqlJsonQueryWrapperBehavior): String = when (behavior) {</b>
+<b class="fc">&nbsp;        is SqlJsonQueryWrapperBehavior.With -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;WITH&quot;)</b>
+<b class="pc">&nbsp;            behavior.mode?.let { append(&quot; ${renderJsonQueryWrapperBehaviorMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;            if (behavior.withArray) append(&quot; ARRAY&quot;)</b>
+<b class="fc">&nbsp;            append(&quot; WRAPPER&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlJsonQueryWrapperBehavior.Without -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;WITHOUT&quot;)</b>
+<b class="fc">&nbsp;            if (behavior.withArray) append(&quot; ARRAY&quot;)</b>
+<b class="fc">&nbsp;            append(&quot; WRAPPER&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonQueryWrapperBehaviorMode(mode: SqlJsonQueryWrapperBehaviorMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlJsonQueryWrapperBehaviorMode.Conditional -&gt; &quot;CONDITIONAL&quot;</b>
+<b class="fc">&nbsp;        SqlJsonQueryWrapperBehaviorMode.Unconditional -&gt; &quot;UNCONDITIONAL&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonQueryQuotesBehavior(behavior: SqlJsonQueryQuotesBehavior): String = buildString {</b>
+<b class="fc">&nbsp;        append(when (behavior.mode) {</b>
+<b class="fc">&nbsp;            SqlJsonQueryQuotesBehaviorMode.Keep -&gt; &quot;KEEP&quot;</b>
+<b class="fc">&nbsp;            SqlJsonQueryQuotesBehaviorMode.Omit -&gt; &quot;OMIT&quot;</b>
+&nbsp;        })
+<b class="fc">&nbsp;        append(&quot; QUOTES&quot;)</b>
+<b class="fc">&nbsp;        if (behavior.withOnScalarString) append(&quot; ON SCALAR STRING&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun renderJsonQueryEmptyBehavior(behavior: SqlJsonQueryEmptyBehavior): String =
+<b class="fc">&nbsp;        &quot;${renderJsonQueryBehaviorValue(behavior)} ON EMPTY&quot;</b>
+&nbsp;
+&nbsp;    private fun renderJsonQueryErrorBehavior(behavior: SqlJsonQueryErrorBehavior): String =
+<b class="fc">&nbsp;        &quot;${renderJsonQueryBehaviorValue(behavior)} ON ERROR&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonQueryBehaviorValue(behavior: SqlJsonQueryEmptyBehavior): String = when (behavior) {</b>
+<b class="pc">&nbsp;        SqlJsonQueryEmptyBehavior.Error -&gt; &quot;ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonQueryEmptyBehavior.Null -&gt; &quot;NULL&quot;</b>
+<b class="fc">&nbsp;        SqlJsonQueryEmptyBehavior.EmptyObject -&gt; &quot;EMPTY OBJECT&quot;</b>
+<b class="fc">&nbsp;        SqlJsonQueryEmptyBehavior.EmptyArray -&gt; &quot;EMPTY ARRAY&quot;</b>
+<b class="fc">&nbsp;        is SqlJsonQueryEmptyBehavior.Default -&gt; &quot;DEFAULT ${renderExpr(behavior.expr)}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonQueryBehaviorValue(behavior: SqlJsonQueryErrorBehavior): String = when (behavior) {</b>
+<b class="fc">&nbsp;        SqlJsonQueryErrorBehavior.Error -&gt; &quot;ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonQueryErrorBehavior.Null -&gt; &quot;NULL&quot;</b>
+<b class="fc">&nbsp;        SqlJsonQueryErrorBehavior.EmptyObject -&gt; &quot;EMPTY OBJECT&quot;</b>
+<b class="pc">&nbsp;        SqlJsonQueryErrorBehavior.EmptyArray -&gt; &quot;EMPTY ARRAY&quot;</b>
+<b class="fc">&nbsp;        is SqlJsonQueryErrorBehavior.Default -&gt; &quot;DEFAULT ${renderExpr(behavior.expr)}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonValueEmptyBehavior(behavior: SqlJsonValueEmptyBehavior): String = when (behavior) {</b>
+<b class="fc">&nbsp;        SqlJsonValueEmptyBehavior.Error -&gt; &quot;ERROR ON EMPTY&quot;</b>
+<b class="pc">&nbsp;        SqlJsonValueEmptyBehavior.Null -&gt; &quot;NULL ON EMPTY&quot;</b>
+<b class="fc">&nbsp;        is SqlJsonValueEmptyBehavior.Default -&gt; &quot;DEFAULT ${renderExpr(behavior.expr)} ON EMPTY&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderJsonValueErrorBehavior(behavior: SqlJsonValueErrorBehavior): String = when (behavior) {</b>
+<b class="pc">&nbsp;        SqlJsonValueErrorBehavior.Error -&gt; &quot;ERROR ON ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonValueErrorBehavior.Null -&gt; &quot;NULL ON ERROR&quot;</b>
+<b class="fc">&nbsp;        is SqlJsonValueErrorBehavior.Default -&gt; &quot;DEFAULT ${renderExpr(behavior.expr)} ON ERROR&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderJsonExistsErrorBehavior(behavior: SqlJsonExistsErrorBehavior): String = when (behavior) {</b>
+<b class="nc">&nbsp;        SqlJsonExistsErrorBehavior.Error -&gt; &quot;ERROR ON ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonExistsErrorBehavior.True -&gt; &quot;TRUE ON ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonExistsErrorBehavior.False -&gt; &quot;FALSE ON ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonExistsErrorBehavior.Unknown -&gt; &quot;UNKNOWN ON ERROR&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderJsonErrorBehavior(behavior: SqlJsonErrorBehavior): String = when (behavior) {</b>
+<b class="nc">&nbsp;        SqlJsonErrorBehavior.Error -&gt; &quot;ERROR ON ERROR&quot;</b>
+<b class="nc">&nbsp;        SqlJsonErrorBehavior.Empty -&gt; &quot;EMPTY ON ERROR&quot;</b>
+<b class="fc">&nbsp;        SqlJsonErrorBehavior.EmptyArray -&gt; &quot;EMPTY ARRAY ON ERROR&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderGraphPattern(pattern: SqlGraphPattern): String =
+<b class="pc">&nbsp;        pattern.name?.let { &quot;${quoteIdent(it)} = ${renderGraphPatternTerm(pattern.term)}&quot; }</b>
+<b class="fc">&nbsp;            ?: renderGraphPatternTerm(pattern.term)</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphPatternTerm(term: SqlGraphPatternTerm): String = when (term) {</b>
+<b class="fc">&nbsp;        is SqlGraphPatternTerm.Quantified -&gt; {</b>
+<b class="fc">&nbsp;            val inner = when (term.term) {</b>
+<b class="pc">&nbsp;                is SqlGraphPatternTerm.And,</b>
+<b class="fc">&nbsp;                is SqlGraphPatternTerm.Or,</b>
+<b class="pc">&nbsp;                is SqlGraphPatternTerm.Alternation -&gt; &quot;(${renderGraphPatternTerm(term.term)})&quot;</b>
+<b class="fc">&nbsp;                else -&gt; renderGraphPatternTerm(term.term)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            inner + renderGraphQuantifier(term.quantifier)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlGraphPatternTerm.Vertex -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;(&quot;)</b>
+<b class="fc">&nbsp;            val parts = buildList {</b>
+<b class="pc">&nbsp;                term.name?.let { add(quoteIdent(it)) }</b>
+<b class="pc">&nbsp;                term.label?.let { add(&quot;IS ${renderGraphLabel(it)}&quot;) }</b>
+<b class="pc">&nbsp;                term.where?.let { add(&quot;WHERE ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            append(parts.joinToString(&quot; &quot;))</b>
+<b class="fc">&nbsp;            append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlGraphPatternTerm.Edge -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(renderGraphSymbol(term.leftSymbol))</b>
+<b class="fc">&nbsp;            append(&quot;[&quot;)</b>
+<b class="fc">&nbsp;            val parts = buildList {</b>
+<b class="fc">&nbsp;                term.name?.let { add(quoteIdent(it)) }</b>
+<b class="fc">&nbsp;                term.label?.let { add(&quot;IS ${renderGraphLabel(it)}&quot;) }</b>
+<b class="fc">&nbsp;                term.where?.let { add(&quot;WHERE ${renderPredicate(it)}&quot;) }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            append(parts.joinToString(&quot; &quot;))</b>
+<b class="fc">&nbsp;            append(&quot;]&quot;)</b>
+<b class="fc">&nbsp;            append(renderGraphSymbol(term.rightSymbol))</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlGraphPatternTerm.And -&gt; {</b>
+<b class="fc">&nbsp;            &quot;${renderGraphPatternTermChild(term.left, wrapOr = true, wrapAlternation = true)} ${renderGraphPatternTermChild(term.right, wrapOr = true, wrapAlternation = true)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlGraphPatternTerm.Or -&gt; {</b>
+<b class="fc">&nbsp;            &quot;${renderGraphPatternTermChild(term.left, wrapAlternation = true)} | ${renderGraphPatternTermChild(term.right, wrapAlternation = true)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlGraphPatternTerm.Alternation -&gt; {</b>
+<b class="fc">&nbsp;            &quot;${renderGraphPatternTermChild(term.left, wrapOr = true)} |+| ${renderGraphPatternTermChild(term.right, wrapOr = true)}&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderGraphPatternTermChild(
+&nbsp;        term: SqlGraphPatternTerm,
+<b class="fc">&nbsp;        wrapOr: Boolean = false,</b>
+<b class="fc">&nbsp;        wrapAlternation: Boolean = false</b>
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val rendered = renderGraphPatternTerm(term)</b>
+<b class="pc">&nbsp;        val shouldWrap = (wrapOr &amp;&amp; term is SqlGraphPatternTerm.Or) ||</b>
+<b class="fc">&nbsp;            (wrapAlternation &amp;&amp; term is SqlGraphPatternTerm.Alternation)</b>
+<b class="pc">&nbsp;        return if (shouldWrap) &quot;($rendered)&quot; else rendered</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphQuantifier(quantifier: SqlGraphQuantifier): String = when (quantifier) {</b>
+<b class="pc">&nbsp;        SqlGraphQuantifier.Asterisk -&gt; &quot;*&quot;</b>
+<b class="pc">&nbsp;        SqlGraphQuantifier.Question -&gt; &quot;?&quot;</b>
+<b class="fc">&nbsp;        SqlGraphQuantifier.Plus -&gt; &quot;+&quot;</b>
+<b class="pc">&nbsp;        is SqlGraphQuantifier.Between -&gt; &quot;{${quantifier.start?.let { renderExpr(it) } ?: &quot;&quot;},${quantifier.end?.let { renderExpr(it) } ?: &quot;&quot;}}&quot;</b>
+<b class="nc">&nbsp;        is SqlGraphQuantifier.Quantity -&gt; &quot;{${renderExpr(quantifier.quantity)}}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderGraphSymbol(symbol: SqlGraphSymbol): String = when (symbol) {</b>
+<b class="fc">&nbsp;        SqlGraphSymbol.Dash -&gt; &quot;-&quot;</b>
+<b class="fc">&nbsp;        SqlGraphSymbol.Tilde -&gt; &quot;~&quot;</b>
+<b class="fc">&nbsp;        SqlGraphSymbol.LeftArrow -&gt; &quot;&lt;-&quot;</b>
+<b class="fc">&nbsp;        SqlGraphSymbol.RightArrow -&gt; &quot;-&gt;&quot;</b>
+<b class="nc">&nbsp;        SqlGraphSymbol.LeftTildeArrow -&gt; &quot;&lt;~&quot;</b>
+<b class="nc">&nbsp;        SqlGraphSymbol.RightTildeArrow -&gt; &quot;~&gt;&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphLabel(label: SqlGraphLabel): String = when (label) {</b>
+<b class="fc">&nbsp;        is SqlGraphLabel.Label -&gt; quoteIdent(label.name)</b>
+<b class="fc">&nbsp;        SqlGraphLabel.Percent -&gt; &quot;%&quot;</b>
+<b class="fc">&nbsp;        is SqlGraphLabel.Not -&gt; &quot;!(${renderGraphLabel(label.label)})&quot;</b>
+<b class="fc">&nbsp;        is SqlGraphLabel.And -&gt; {</b>
+<b class="fc">&nbsp;            &quot;${renderGraphLabelChild(label.left, wrapOr = true)} &amp; ${renderGraphLabelChild(label.right, wrapOr = true)}&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        is SqlGraphLabel.Or -&gt; &quot;${renderGraphLabel(label.left)} | ${renderGraphLabel(label.right)}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    private fun renderGraphLabelChild(label: SqlGraphLabel, wrapOr: Boolean = false): String {</b>
+<b class="fc">&nbsp;        val rendered = renderGraphLabel(label)</b>
+<b class="pc">&nbsp;        return if (wrapOr &amp;&amp; label is SqlGraphLabel.Or) &quot;($rendered)&quot; else rendered</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphMatchMode(mode: SqlGraphMatchMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        is SqlGraphMatchMode.Repeatable -&gt; &quot;REPEATABLE ${renderGraphRepeatableMode(mode.mode)}&quot;</b>
+<b class="fc">&nbsp;        is SqlGraphMatchMode.Different -&gt; &quot;DIFFERENT ${renderGraphDifferentMode(mode.mode)}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderGraphRepeatableMode(mode: SqlGraphRepeatableMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlGraphRepeatableMode.Element -&gt; &quot;ELEMENT&quot;</b>
+<b class="nc">&nbsp;        SqlGraphRepeatableMode.ElementBindings -&gt; &quot;ELEMENT BINDINGS&quot;</b>
+<b class="nc">&nbsp;        SqlGraphRepeatableMode.Elements -&gt; &quot;ELEMENTS&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderGraphDifferentMode(mode: SqlGraphDifferentMode): String = when (mode) {</b>
+<b class="nc">&nbsp;        SqlGraphDifferentMode.Edge -&gt; &quot;EDGE&quot;</b>
+<b class="fc">&nbsp;        SqlGraphDifferentMode.EdgeBindings -&gt; &quot;EDGE BINDINGS&quot;</b>
+<b class="nc">&nbsp;        SqlGraphDifferentMode.Edges -&gt; &quot;EDGES&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphRowsMode(mode: SqlGraphRowsMode): String = when (mode) {</b>
+<b class="pc">&nbsp;        SqlGraphRowsMode.Match -&gt; &quot;ONE ROW PER MATCH&quot;</b>
+<b class="fc">&nbsp;        is SqlGraphRowsMode.Vertex -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;ONE ROW PER VERTEX (${quoteIdent(mode.name)})&quot;)</b>
+<b class="fc">&nbsp;            if (mode.inPaths.isNotEmpty()) append(mode.inPaths.joinToString(&quot;, &quot;, &quot; IN (&quot;, &quot;)&quot;) { quoteIdent(it) })</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlGraphRowsMode.Step -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;ONE ROW PER STEP (${quoteIdent(mode.vertex1)}, ${quoteIdent(mode.edge)}, ${quoteIdent(mode.vertex2)})&quot;)</b>
+<b class="fc">&nbsp;            if (mode.inPaths.isNotEmpty()) append(mode.inPaths.joinToString(&quot;, &quot;, &quot; IN (&quot;, &quot;)&quot;) { quoteIdent(it) })</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderGraphExportMode(mode: SqlGraphExportMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        is SqlGraphExportMode.AllSingletons -&gt; mode.exceptPatterns.joinToString(&quot;, &quot;, &quot;EXPORT ALL SINGLETONS EXCEPT (&quot;, &quot;)&quot;) { quoteIdent(it) }</b>
+<b class="fc">&nbsp;        is SqlGraphExportMode.Singletons -&gt; mode.patterns.joinToString(&quot;, &quot;, &quot;EXPORT SINGLETONS (&quot;, &quot;)&quot;) { quoteIdent(it) }</b>
+<b class="fc">&nbsp;        SqlGraphExportMode.NoSingletons -&gt; &quot;EXPORT NO SINGLETONS&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderMatchRecognize(matchRecognize: SqlMatchRecognize): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;MATCH_RECOGNIZE(&quot;)</b>
+<b class="fc">&nbsp;        val clauses = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;        if (matchRecognize.partitionBy.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            clauses += matchRecognize.partitionBy.joinToString(&quot;, &quot;, &quot;PARTITION BY &quot;) { renderExpr(it) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (matchRecognize.orderBy.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            clauses += matchRecognize.orderBy.joinToString(&quot;, &quot;, &quot;ORDER BY &quot;) { renderOrderingItem(it) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (matchRecognize.measures.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            clauses += matchRecognize.measures.joinToString(&quot;, &quot;, &quot;MEASURES &quot;) { renderRecognizeMeasureItem(it) }</b>
+&nbsp;        }
+<b class="pc">&nbsp;        matchRecognize.rowsMode?.let { clauses += renderRecognizeRowsMode(it) }</b>
+<b class="fc">&nbsp;        clauses += renderRowPattern(matchRecognize.rowPattern)</b>
+<b class="fc">&nbsp;        append(clauses.joinToString(&quot; &quot;))</b>
+<b class="fc">&nbsp;        append(&quot;)&quot;)</b>
+<b class="fc">&nbsp;        matchRecognize.alias?.let { append(&quot; ${renderTableAlias(it)}&quot;) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun renderRecognizeMeasureItem(item: SqlRecognizeMeasureItem): String =
+<b class="fc">&nbsp;        &quot;${renderExpr(item.expr)} AS ${quoteIdent(item.alias)}&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun renderRecognizeRowsMode(mode: SqlRecognizePatternRowsMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlRecognizePatternRowsMode.OneRow -&gt; &quot;ONE ROW PER MATCH&quot;</b>
+<b class="fc">&nbsp;        is SqlRecognizePatternRowsMode.AllRows -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;ALL ROWS PER MATCH&quot;)</b>
+<b class="fc">&nbsp;            mode.emptyMatchMode?.let { append(&quot; ${renderRecognizeEmptyMatchMode(it)}&quot;) }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderRecognizeEmptyMatchMode(mode: SqlRecognizePatternEmptyMatchMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlRecognizePatternEmptyMatchMode.ShowEmptyMatches -&gt; &quot;SHOW EMPTY MATCHES&quot;</b>
+<b class="nc">&nbsp;        SqlRecognizePatternEmptyMatchMode.OmitEmptyMatches -&gt; &quot;OMIT EMPTY MATCHES&quot;</b>
+<b class="fc">&nbsp;        SqlRecognizePatternEmptyMatchMode.WithUnmatchedRows -&gt; &quot;WITH UNMATCHED ROWS&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderRowPattern(pattern: SqlRowPattern): String = buildString {</b>
+<b class="fc">&nbsp;        pattern.afterMatchMode?.let { append(&quot;AFTER MATCH ${renderRowPatternSkipMode(it)} &quot;) }</b>
+<b class="fc">&nbsp;        pattern.strategy?.let { append(&quot;${it.name.uppercase()} &quot;) }</b>
+<b class="fc">&nbsp;        append(&quot;PATTERN (${renderRowPatternTerm(pattern.pattern)})&quot;)</b>
+<b class="fc">&nbsp;        if (pattern.subset.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            append(pattern.subset.joinToString(&quot;, &quot;, &quot; SUBSET &quot;) { renderRowPatternSubsetItem(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        append(pattern.define.joinToString(&quot;, &quot;, &quot; DEFINE &quot;) { renderRowPatternDefineItem(it) })</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun renderRowPatternTerm(term: SqlRowPatternTerm): String {
+<b class="fc">&nbsp;        val core = when (term) {</b>
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Pattern -&gt; quoteIdent(term.name)</b>
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Circumflex -&gt; &quot;^&quot;</b>
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Dollar -&gt; &quot;\$&quot;</b>
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Exclusion -&gt; &quot;{-${renderRowPatternTerm(term.term)}-}&quot;</b>
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Permute -&gt; term.terms.joinToString(&quot;, &quot;, &quot;PERMUTE(&quot;, &quot;)&quot;) { renderRowPatternTerm(it) }</b>
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Then -&gt; {</b>
+<b class="fc">&nbsp;                &quot;${renderRowPatternTermChild(term.left, wrapOr = true)} ${renderRowPatternTermChild(term.right, wrapOr = true)}&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SqlRowPatternTerm.Or -&gt; &quot;${renderRowPatternTerm(term.left)} | ${renderRowPatternTerm(term.right)}&quot;</b>
+&nbsp;        }
+<b class="pc">&nbsp;        val quantifiedCore = if (term.quantifier != null &amp;&amp; (term is SqlRowPatternTerm.Then || term is SqlRowPatternTerm.Or)) {</b>
+<b class="nc">&nbsp;            &quot;($core)&quot;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            core</b>
+&nbsp;        }
+<b class="pc">&nbsp;        return quantifiedCore + (term.quantifier?.let { renderRowPatternQuantifier(it) } ?: &quot;&quot;)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    private fun renderRowPatternTermChild(term: SqlRowPatternTerm, wrapOr: Boolean = false): String {</b>
+<b class="fc">&nbsp;        val rendered = renderRowPatternTerm(term)</b>
+<b class="pc">&nbsp;        return if (wrapOr &amp;&amp; term is SqlRowPatternTerm.Or) &quot;($rendered)&quot; else rendered</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderRowPatternQuantifier(quantifier: SqlRowPatternQuantifier): String = when (quantifier) {</b>
+<b class="pc">&nbsp;        is SqlRowPatternQuantifier.Asterisk -&gt; &quot;*&quot; + if (quantifier.withQuestion) &quot;?&quot; else &quot;&quot;</b>
+<b class="pc">&nbsp;        is SqlRowPatternQuantifier.Plus -&gt; &quot;+&quot; + if (quantifier.withQuestion) &quot;?&quot; else &quot;&quot;</b>
+<b class="pc">&nbsp;        is SqlRowPatternQuantifier.Question -&gt; &quot;?&quot; + if (quantifier.withQuestion) &quot;?&quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;        is SqlRowPatternQuantifier.Between -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;{&quot;)</b>
+<b class="pc">&nbsp;            quantifier.start?.let { append(renderExpr(it)) }</b>
+<b class="fc">&nbsp;            append(&quot;,&quot;)</b>
+<b class="pc">&nbsp;            quantifier.end?.let { append(renderExpr(it)) }</b>
+<b class="fc">&nbsp;            append(&quot;}&quot;)</b>
+<b class="pc">&nbsp;            if (quantifier.withQuestion) append(&quot;?&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        is SqlRowPatternQuantifier.Quantity -&gt; &quot;{${renderExpr(quantifier.quantity)}}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderRowPatternSkipMode(mode: SqlRowPatternSkipMode): String = when (mode) {</b>
+<b class="pc">&nbsp;        SqlRowPatternSkipMode.ToNextRow -&gt; &quot;SKIP TO NEXT ROW&quot;</b>
+<b class="pc">&nbsp;        SqlRowPatternSkipMode.PastLastRow -&gt; &quot;SKIP PAST LAST ROW&quot;</b>
+<b class="fc">&nbsp;        is SqlRowPatternSkipMode.ToFirst -&gt; &quot;SKIP TO FIRST ${quoteIdent(mode.name)}&quot;</b>
+<b class="pc">&nbsp;        is SqlRowPatternSkipMode.ToLast -&gt; &quot;SKIP TO LAST ${quoteIdent(mode.name)}&quot;</b>
+<b class="nc">&nbsp;        is SqlRowPatternSkipMode.To -&gt; &quot;SKIP TO ${quoteIdent(mode.name)}&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderRowPatternSubsetItem(item: SqlRowPatternSubsetItem): String =
+<b class="fc">&nbsp;        item.patternNames.joinToString(&quot;, &quot;, &quot;${quoteIdent(item.name)} = (&quot;, &quot;)&quot;) { quoteIdent(it) }</b>
+&nbsp;
+&nbsp;    private fun renderRowPatternDefineItem(item: SqlRowPatternDefineItem): String =
+<b class="fc">&nbsp;        &quot;${quoteIdent(item.name)} AS ${renderPredicate(item.expr)}&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    protected fun renderQuantifier(quantifier: SqlQuantifier): String = when (quantifier) {</b>
+<b class="fc">&nbsp;        SqlQuantifier.All -&gt; &quot;ALL&quot;</b>
+<b class="pc">&nbsp;        SqlQuantifier.Distinct -&gt; &quot;DISTINCT&quot;</b>
+<b class="nc">&nbsp;        is SqlQuantifier.UnsafeCustom -&gt; quantifier.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderSetOperator(operator: SqlSetOperator): String = when (operator) {</b>
+<b class="pc">&nbsp;        is SqlSetOperator.Union -&gt; &quot;UNION${operator.quantifier?.let { &quot; ${renderQuantifier(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="pc">&nbsp;        is SqlSetOperator.Except -&gt; &quot;EXCEPT${operator.quantifier?.let { &quot; ${renderQuantifier(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="nc">&nbsp;        is SqlSetOperator.Intersect -&gt; &quot;INTERSECT${operator.quantifier?.let { &quot; ${renderQuantifier(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected open fun renderBinaryOperator(operator: SqlBinaryOperator): String = when (operator) {</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.Times -&gt; &quot;*&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Div -&gt; &quot;/&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Mod -&gt; &quot;%&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.Plus -&gt; &quot;+&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Minus -&gt; &quot;-&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Concat -&gt; &quot;||&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.Equal -&gt; &quot;=&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.NotEqual -&gt; &quot;&lt;&gt;&quot;</b>
+<b class="pc">&nbsp;        is SqlBinaryOperator.IsDistinctFrom -&gt; if (operator.withNot) &quot;IS NOT DISTINCT FROM&quot; else &quot;IS DISTINCT FROM&quot;</b>
+<b class="pc">&nbsp;        is SqlBinaryOperator.Is -&gt; if (operator.withNot) &quot;IS NOT&quot; else &quot;IS&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.GreaterThan -&gt; &quot;&gt;&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.GreaterThanEqual -&gt; &quot;&gt;=&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.LessThan -&gt; &quot;&lt;&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.LessThanEqual -&gt; &quot;&lt;=&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.Overlaps -&gt; &quot;OVERLAPS&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.Regexp -&gt; &quot;REGEXP&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.NotRegexp -&gt; &quot;NOT REGEXP&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.BitwiseAnd -&gt; &quot;&amp;&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.BitwiseOr -&gt; &quot;|&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.BitwiseXor -&gt; &quot;^&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.BitwiseLeftShift -&gt; &quot;&lt;&lt;&quot;</b>
+<b class="pc">&nbsp;        SqlBinaryOperator.BitwiseRightShift -&gt; &quot;&gt;&gt;&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.And -&gt; &quot;AND&quot;</b>
+<b class="fc">&nbsp;        SqlBinaryOperator.Or -&gt; &quot;OR&quot;</b>
+<b class="fc">&nbsp;        is SqlBinaryOperator.UnsafeCustom -&gt; operator.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderUnaryOperator(operator: SqlUnaryOperator): String = when (operator) {</b>
+<b class="pc">&nbsp;        SqlUnaryOperator.Positive -&gt; &quot;+&quot;</b>
+<b class="pc">&nbsp;        SqlUnaryOperator.Negative -&gt; &quot;-&quot;</b>
+<b class="pc">&nbsp;        SqlUnaryOperator.Not -&gt; &quot;NOT&quot;</b>
+<b class="pc">&nbsp;        SqlUnaryOperator.BitwiseNot -&gt; &quot;~&quot;</b>
+<b class="fc">&nbsp;        is SqlUnaryOperator.UnsafeCustom -&gt; operator.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderQuantifiedComparisonOperator(operator: SqlQuantifiedComparisonOperator): String = when (operator) {</b>
+<b class="pc">&nbsp;        SqlQuantifiedComparisonOperator.Equal -&gt; &quot;=&quot;</b>
+<b class="pc">&nbsp;        SqlQuantifiedComparisonOperator.NotEqual -&gt; &quot;&lt;&gt;&quot;</b>
+<b class="fc">&nbsp;        SqlQuantifiedComparisonOperator.GreaterThan -&gt; &quot;&gt;&quot;</b>
+<b class="fc">&nbsp;        SqlQuantifiedComparisonOperator.GreaterThanEqual -&gt; &quot;&gt;=&quot;</b>
+<b class="pc">&nbsp;        SqlQuantifiedComparisonOperator.LessThan -&gt; &quot;&lt;&quot;</b>
+<b class="nc">&nbsp;        SqlQuantifiedComparisonOperator.LessThanEqual -&gt; &quot;&lt;=&quot;</b>
+<b class="nc">&nbsp;        is SqlQuantifiedComparisonOperator.UnsafeCustom -&gt; operator.tokens.joinToString(&quot; &quot;) { renderUnsafeToken(it) }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderParameter(parameter: SqlParameter): String = when (parameter) {</b>
+<b class="fc">&nbsp;        is SqlParameter.Named -&gt; &quot;:${parameter.name}&quot;</b>
+<b class="fc">&nbsp;        is SqlParameter.Positional -&gt; &quot;?&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderTimeType(type: SqlTimeType): String = when (type) {</b>
+<b class="fc">&nbsp;        SqlTimeType.Date -&gt; &quot;DATE&quot;</b>
+<b class="pc">&nbsp;        is SqlTimeType.Time -&gt; &quot;TIME${type.mode?.let { &quot; ${renderTimeZoneMode(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+<b class="pc">&nbsp;        is SqlTimeType.Timestamp -&gt; &quot;TIMESTAMP${type.mode?.let { &quot; ${renderTimeZoneMode(it)}&quot; } ?: &quot;&quot;}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    private fun renderTimeZoneMode(mode: SqlTimeZoneMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlTimeZoneMode.WithTimeZone -&gt; &quot;WITH TIME ZONE&quot;</b>
+<b class="nc">&nbsp;        SqlTimeZoneMode.WithoutTimeZone -&gt; &quot;WITHOUT TIME ZONE&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderIntervalField(field: SqlIntervalField): String = when (field) {</b>
+<b class="pc">&nbsp;        is SqlIntervalField.Single -&gt; field.unit.name.uppercase()</b>
+<b class="fc">&nbsp;        is SqlIntervalField.To -&gt; &quot;${field.start.name.uppercase()} TO ${field.end.name.uppercase()}&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected fun renderListAggOnOverflow(onOverflow: SqlListAggOnOverflow): String = when (onOverflow) {</b>
+<b class="pc">&nbsp;        SqlListAggOnOverflow.Error -&gt; &quot;ON OVERFLOW ERROR&quot;</b>
+<b class="fc">&nbsp;        is SqlListAggOnOverflow.Truncate -&gt; buildString {</b>
+<b class="fc">&nbsp;            append(&quot;ON OVERFLOW TRUNCATE&quot;)</b>
+<b class="pc">&nbsp;            onOverflow.filler?.let { append(&quot; ${renderExpr(it)}&quot;) }</b>
+<b class="fc">&nbsp;            onOverflow.countMode?.let {</b>
+<b class="fc">&nbsp;                append(&quot; &quot;)</b>
+<b class="pc">&nbsp;                append(when (it) {</b>
+<b class="fc">&nbsp;                    SqlListAggCountMode.With -&gt; &quot;WITH COUNT&quot;</b>
+<b class="nc">&nbsp;                    SqlListAggCountMode.Without -&gt; &quot;WITHOUT COUNT&quot;</b>
+&nbsp;                })
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun renderWindowNullsMode(mode: SqlWindowNullsMode): String = when (mode) {</b>
+<b class="fc">&nbsp;        SqlWindowNullsMode.Respect -&gt; &quot;RESPECT NULLS&quot;</b>
+<b class="fc">&nbsp;        SqlWindowNullsMode.Ignore -&gt; &quot;IGNORE NULLS&quot;</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected fun renderFilter(expr: SqlExpr): String = &quot;FILTER (WHERE ${renderPredicate(expr)})&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    protected fun renderUnsafeToken(token: SqlUnsafeToken): String = when (token) {</b>
+<b class="fc">&nbsp;        is SqlUnsafeToken.Text -&gt; token.value</b>
+<b class="fc">&nbsp;        is SqlUnsafeToken.Identifier -&gt; quoteIdent(token.value)</b>
+<b class="fc">&nbsp;        is SqlUnsafeToken.Expr -&gt; renderExpr(token.value)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    protected fun renderAssignmentTarget(target: SqlAssignmentTarget): String = when (target) {</b>
+<b class="fc">&nbsp;        is SqlAssignmentTarget.Column -&gt; renderQualifiedIdentifier(target.qualifier, target.identifier)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun qualifyAssignmentTarget(target: SqlAssignmentTarget, qualifier: SqlIdentifier): SqlAssignmentTarget = when (target) {</b>
+<b class="fc">&nbsp;        is SqlAssignmentTarget.Column -&gt; target.copy(qualifier = target.qualifier ?: qualifier)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderMergeSourceExpr(expr: SqlExpr, targetTable: SqlIdentifier): String {
+<b class="fc">&nbsp;        val rewritten = object : SqlNodeRewriter {</b>
+<b class="fc">&nbsp;            override fun rewriteExpr(expr: SqlExpr): SqlExpr = when (expr) {</b>
+<b class="pc">&nbsp;                is SqlExpr.ExcludedColumn -&gt; SqlExpr.SourceColumn(expr.identifier, SqlIdentifier.of(&quot;t2&quot;))</b>
+<b class="nc">&nbsp;                is SqlExpr.Column -&gt; if (expr.qualifier != null &amp;&amp; expr.qualifier.last == targetTable.last) {</b>
+<b class="nc">&nbsp;                    expr.copy(qualifier = SqlIdentifier.of(&quot;t1&quot;))</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    expr</b>
+&nbsp;                }
+<b class="nc">&nbsp;                is SqlExpr.Subquery -&gt; expr</b>
+<b class="nc">&nbsp;                else -&gt; SqlTreeRewriter.rewriteExpr(expr, this)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }.rewriteExpr(expr)</b>
+<b class="fc">&nbsp;        return renderExpr(rewritten)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderFunctionName(name: SqlIdentifier): String =
+<b class="fc">&nbsp;        name.parts.joinToString(&quot;.&quot;) { safeUnquotedIdent(it) }</b>
+&nbsp;
+&nbsp;    protected open fun quoteIdent(identifier: String): String =
+<b class="fc">&nbsp;        dialect.leftQuote + identifier.replace(dialect.rightQuote, dialect.rightQuote + dialect.rightQuote) + dialect.rightQuote</b>
+&nbsp;
+&nbsp;    protected fun renderIdentifier(identifier: SqlIdentifier): String =
+<b class="fc">&nbsp;        identifier.parts.joinToString(&quot;.&quot;) { quoteIdent(it) }</b>
+&nbsp;
+&nbsp;    protected fun renderQualifiedIdentifier(qualifier: SqlIdentifier?, identifier: SqlIdentifier): String =
+<b class="fc">&nbsp;        (qualifier?.parts.orEmpty() + identifier.parts).joinToString(&quot;.&quot;) { quoteIdent(it) }</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun quoteString(value: String): String = buildString {</b>
+<b class="fc">&nbsp;        append(&quot;&#39;&quot;)</b>
+<b class="fc">&nbsp;        value.forEach { char -&gt;</b>
+<b class="fc">&nbsp;            if (char == &#39;\&#39;&#39;) append(&#39;\&#39;&#39;)</b>
+<b class="pc">&nbsp;            if (char == &#39;\\&#39; &amp;&amp; !dialect.standardEscapeStrings) append(&#39;\\&#39;)</b>
+<b class="fc">&nbsp;            append(char)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        append(&quot;&#39;&quot;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    protected fun safeUnquotedIdent(identifier: String): String =
+<b class="pc">&nbsp;        identifier.filter { it.isLetterOrDigit() || it == &#39;_&#39; }</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

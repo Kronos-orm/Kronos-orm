@@ -1,0 +1,232 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > GeneratedTypeProviderConfigurationKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin</a>
+</div>
+
+<h1>Coverage Summary for Class: GeneratedTypeProviderConfigurationKt (com.kotlinorm.compiler.plugin)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GeneratedTypeProviderConfigurationKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (102/102)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedFactoryPackageFqName
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfiguration
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfigurationKey
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler option carrying the stable module identity for generated metadata.
+&nbsp; */
+&nbsp;internal const val GENERATED_PROVIDER_ID_OPTION_NAME = &quot;generated-provider-id&quot;
+&nbsp;/**
+&nbsp; * Compiler option carrying the generated provider&#39;s fully qualified class name.
+&nbsp; */
+&nbsp;internal const val GENERATED_PROVIDER_FQ_NAME_OPTION_NAME = &quot;generated-provider-fq-name&quot;
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler key storing [GENERATED_PROVIDER_ID_OPTION_NAME].
+&nbsp; */
+<b class="fc">&nbsp;internal val GeneratedProviderIdKey = CompilerConfigurationKey&lt;String&gt;(</b>
+<b class="fc">&nbsp;    &quot;stable id of the module-local Kronos generated type provider&quot;</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler key storing [GENERATED_PROVIDER_FQ_NAME_OPTION_NAME].
+&nbsp; */
+<b class="fc">&nbsp;internal val GeneratedProviderFqNameKey = CompilerConfigurationKey&lt;String&gt;(</b>
+<b class="fc">&nbsp;    &quot;fully qualified name of the module-local Kronos generated type provider&quot;</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Validated identity for the module-local generated type provider.
+&nbsp; *
+&nbsp; * The fully qualified name must place the provider directly in the generated factory package,
+&nbsp; * and its short name must be a legal Kotlin identifier. The stable [id] identifies provider
+&nbsp; * content at runtime and must be unique for the compilation module.
+&nbsp; *
+&nbsp; * @property id non-blank, stable module identity used for duplicate-provider detection
+&nbsp; * @property fqName fully qualified class name emitted by the IR generator
+&nbsp; * @throws IllegalArgumentException when either identity invariant is violated
+&nbsp; */
+&nbsp;internal data class GeneratedTypeProviderConfiguration(
+&nbsp;    val id: String,
+&nbsp;    val fqName: FqName
+&nbsp;) {
+&nbsp;    init {
+&nbsp;        require(id.isNotBlank()) { &quot;Generated type provider id must not be blank&quot; }
+&nbsp;        require(!fqName.isRoot) { &quot;Generated type provider fq-name must not be blank&quot; }
+&nbsp;        require(fqName.parent() == GeneratedFactoryPackageFqName) {
+&nbsp;            &quot;Generated type provider must be in ${GeneratedFactoryPackageFqName.asString()}: ${fqName.asString()}&quot;
+&nbsp;        }
+&nbsp;        require(fqName.shortName().asString().matches(KotlinIdentifier)) {
+&nbsp;            &quot;Generated type provider class name must be a valid Kotlin identifier: ${fqName.shortName()}&quot;
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private val KotlinIdentifier = Regex(&quot;[A-Za-z_][A-Za-z0-9_]*&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads and validates both generated-provider options for callers that require provider generation.
+&nbsp; *
+&nbsp; * @return validated provider configuration
+&nbsp; * @throws IllegalStateException when either compiler option is absent
+&nbsp; * @throws IllegalArgumentException when a supplied identity is invalid
+&nbsp; */
+&nbsp;internal fun CompilerConfiguration.generatedTypeProviderConfiguration(): GeneratedTypeProviderConfiguration {
+<b class="fc">&nbsp;    val id = get(GeneratedProviderIdKey)</b>
+<b class="fc">&nbsp;        ?: error(&quot;Missing compiler option &#39;$GENERATED_PROVIDER_ID_OPTION_NAME&#39;&quot;)</b>
+<b class="fc">&nbsp;    val fqName = get(GeneratedProviderFqNameKey)</b>
+<b class="fc">&nbsp;        ?: error(&quot;Missing compiler option &#39;$GENERATED_PROVIDER_FQ_NAME_OPTION_NAME&#39;&quot;)</b>
+<b class="fc">&nbsp;    return GeneratedTypeProviderConfiguration(id, FqName(fqName))</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads generated-provider options when this compilation is configured to emit a provider.
+&nbsp; *
+&nbsp; * @return `null` when neither option is present, otherwise the validated configuration
+&nbsp; * @throws IllegalArgumentException when only one option is present or an identity is invalid
+&nbsp; */
+&nbsp;internal fun CompilerConfiguration.generatedTypeProviderConfigurationOrNull(): GeneratedTypeProviderConfiguration? {
+<b class="fc">&nbsp;    val id = get(GeneratedProviderIdKey)</b>
+<b class="fc">&nbsp;    val fqName = get(GeneratedProviderFqNameKey)</b>
+<b class="fc">&nbsp;    if (id == null &amp;&amp; fqName == null) return null</b>
+<b class="fc">&nbsp;    requireNotNull(id) { &quot;Missing compiler option &#39;$GENERATED_PROVIDER_ID_OPTION_NAME&#39;&quot; }</b>
+<b class="fc">&nbsp;    requireNotNull(fqName) { &quot;Missing compiler option &#39;$GENERATED_PROVIDER_FQ_NAME_OPTION_NAME&#39;&quot; }</b>
+<b class="fc">&nbsp;    return GeneratedTypeProviderConfiguration(id, FqName(fqName))</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,213 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > InvalidKPojoFactoryResult</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.exceptions</a>
+</div>
+
+<h1>Coverage Summary for Class: InvalidKPojoFactoryResult (com.kotlinorm.exceptions)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">InvalidKPojoFactoryResult</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (33/33)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.exceptions
+&nbsp;
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/**
+&nbsp; * Base failure for generated or user-supplied KPojo factory resolution.
+&nbsp; *
+&nbsp; * @param message complete factory failure description
+&nbsp; * @param cause wrapped non-control-flow construction failure, when present
+&nbsp; */
+&nbsp;sealed class KPojoFactoryException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause)
+&nbsp;
+&nbsp;/**
+&nbsp; * Indicates that no generated or user factory exists for an exact KPojo type.
+&nbsp; *
+&nbsp; * @property targetType complete requested KPojo type
+&nbsp; */
+&nbsp;class MissingKPojoFactory(val targetType: KType) : KPojoFactoryException(
+&nbsp;    &quot;No generated or registered KPojo factory matched $targetType&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Wraps an ordinary exception thrown while invoking a KPojo factory.
+&nbsp; *
+&nbsp; * Errors and cancellation are control-flow signals and are never represented
+&nbsp; * by this exception.
+&nbsp; *
+&nbsp; * @property targetType complete requested KPojo type
+&nbsp; * @param cause original business construction failure
+&nbsp; */
+&nbsp;class KPojoConstructionException(
+&nbsp;    val targetType: KType,
+&nbsp;    cause: Throwable
+&nbsp;) : KPojoFactoryException(&quot;KPojo factory failed while constructing $targetType&quot;, cause)
+&nbsp;
+&nbsp;/**
+&nbsp; * Indicates that a factory returned a KPojo whose complete type is incompatible.
+&nbsp; *
+&nbsp; * @property targetType complete requested KPojo type
+&nbsp; * @property actualType complete type reported by the returned KPojo
+&nbsp; * @param reason validation detail included in the failure message
+&nbsp; */
+<b class="fc">&nbsp;class InvalidKPojoFactoryResult(</b>
+<b class="fc">&nbsp;    val targetType: KType,</b>
+<b class="fc">&nbsp;    val actualType: KType,</b>
+&nbsp;    reason: String
+<b class="fc">&nbsp;) : KPojoFactoryException(&quot;KPojo factory returned an invalid result for $targetType: $reason (actual type: $actualType)&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Indicates that a requested factory type is outside the supported KPojo set.
+&nbsp; *
+&nbsp; * @property targetType complete rejected type
+&nbsp; * @param reason unsupported classifier or generic-shape detail
+&nbsp; */
+&nbsp;class UnsupportedType(
+&nbsp;    val targetType: KType,
+&nbsp;    reason: String
+&nbsp;) : IllegalArgumentException(&quot;Unsupported KPojo type $targetType: $reason&quot;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Indicates conflicting generated factories for one exact KPojo type.
+&nbsp; *
+&nbsp; * @property targetType complete conflicting KPojo type
+&nbsp; */
+&nbsp;class ConflictingGeneratedKPojoFactory(val targetType: KType) : KPojoFactoryException(
+&nbsp;    &quot;Conflicting generated KPojo factories were registered for $targetType&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Indicates that duplicate generated provider ids contributed different metadata.
+&nbsp; *
+&nbsp; * @property providerId stable duplicated provider identity
+&nbsp; */
+&nbsp;class ConflictingGeneratedProvider(val providerId: String) : KPojoFactoryException(
+&nbsp;    &quot;Generated type provider &#39;$providerId&#39; contributed conflicting metadata&quot;
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

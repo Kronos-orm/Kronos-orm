@@ -1,0 +1,237 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SerializableKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.serialize</a>
+</div>
+
+<h1>Coverage Summary for Class: SerializableKt (com.kotlinorm.beans.serialize)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SerializableKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.serialize
+&nbsp;
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.ValueCodecOrigin
+&nbsp;import com.kotlinorm.enums.ValueStorage
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.utils.codec.ValueCodecRegistry
+&nbsp;import com.kotlinorm.utils.codec.ValueConversionRequest
+&nbsp;import kotlin.properties.ReadWriteProperty
+&nbsp;import kotlin.reflect.KProperty
+&nbsp;import kotlin.reflect.KProperty0
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a nullable typed property backed by the supplied `String?` KPojo property.
+&nbsp; *
+&nbsp; * The nullable form of the complete reified [T] type, including nested generic
+&nbsp; * arguments, is retained for both directions. A null backing value is returned
+&nbsp; * directly; non-null reads and writes each enter the ValueCodec registry exactly
+&nbsp; * once with `origin = DELEGATE` and `storage = SERIALIZED`.
+&nbsp; *
+&nbsp; * @param toSerialize reference to the persisted `String?` backing property
+&nbsp; * @return a delegate retaining the complete nullable reified [T] for both directions
+&nbsp; * @throws com.kotlinorm.exceptions.MissingSerializedCodec when no registered codec accepts serialized storage
+&nbsp; * @throws com.kotlinorm.exceptions.ValueMappingException when conversion fails or returns an incompatible value
+&nbsp; */
+&nbsp;@OptIn(ExperimentalStdlibApi::class)
+&nbsp;inline fun &lt;reified T&gt; serialize(toSerialize: KProperty0&lt;String?&gt;): Serialize&lt;T?&gt; {
+<b class="fc">&nbsp;    return Serialize(toSerialize.name, typeOf&lt;T?&gt;())</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Exposes a typed property backed by a serialized `String?` KPojo field.
+&nbsp; *
+&nbsp; * Both reads and writes use the single ValueCodec registry with the complete
+&nbsp; * declaration [targetKType]. The delegate does not own a serializer or keep
+&nbsp; * a second conversion path.
+&nbsp; *
+&nbsp; * @param toSerialize the backing KPojo field name
+&nbsp; * @param targetKType the complete Kotlin type restored by the delegate
+&nbsp; */
+&nbsp;class Serialize&lt;T&gt;(
+&nbsp;    private val toSerialize: String,
+&nbsp;    private val targetKType: KType
+&nbsp;) : ReadWriteProperty&lt;Any, T?&gt; {
+&nbsp;    /**
+&nbsp;     * Returns null for a null backing field; otherwise decodes its text exactly once.
+&nbsp;     * Missing codecs and decode/type failures retain DELEGATE context in their exception.
+&nbsp;     *
+&nbsp;     * @param thisRef KPojo containing the serialized backing field
+&nbsp;     * @param property typed delegated property requested by Kotlin
+&nbsp;     * @return the decoded value, or `null` when the backing field is null
+&nbsp;     * @throws ClassCastException when [thisRef] is not a KPojo
+&nbsp;     * @throws com.kotlinorm.exceptions.ValueMappingException when registry conversion fails
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    override fun getValue(thisRef: Any, property: KProperty&lt;*&gt;): T? {
+&nbsp;        val stored = (thisRef as KPojo)[toSerialize] ?: return null
+&nbsp;        return ValueCodecRegistry.convert(
+&nbsp;            ValueConversionRequest(
+&nbsp;                value = stored,
+&nbsp;                direction = ValueCodecDirection.DECODE,
+&nbsp;                origin = ValueCodecOrigin.DELEGATE,
+&nbsp;                targetType = targetKType,
+&nbsp;                sourceType = typeOf&lt;String&gt;(),
+&nbsp;                storage = ValueStorage.SERIALIZED
+&nbsp;            )
+&nbsp;        ) as T?
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Writes null directly to the backing field, or encodes a non-null value once.
+&nbsp;     * The encoded result is validated as String before assignment; codec failures
+&nbsp;     * retain DELEGATE context in their exception.
+&nbsp;     *
+&nbsp;     * @param thisRef KPojo receiving the serialized backing field
+&nbsp;     * @param property typed delegated property being assigned
+&nbsp;     * @param value logical value to encode, or `null` to clear the backing field
+&nbsp;     * @throws ClassCastException when [thisRef] is not a KPojo
+&nbsp;     * @throws com.kotlinorm.exceptions.ValueMappingException when registry conversion fails
+&nbsp;     */
+&nbsp;    override fun setValue(thisRef: Any, property: KProperty&lt;*&gt;, value: T?) {
+&nbsp;        if (value == null) {
+&nbsp;            (thisRef as KPojo)[toSerialize] = null
+&nbsp;            return
+&nbsp;        }
+&nbsp;        (thisRef as KPojo)[toSerialize] = ValueCodecRegistry.convert(
+&nbsp;            ValueConversionRequest(
+&nbsp;                value = value,
+&nbsp;                direction = ValueCodecDirection.ENCODE,
+&nbsp;                origin = ValueCodecOrigin.DELEGATE,
+&nbsp;                targetType = targetKType,
+&nbsp;                sourceType = targetKType,
+&nbsp;                physicalTargetType = typeOf&lt;String&gt;(),
+&nbsp;                storage = ValueStorage.SERIALIZED
+&nbsp;            )
+&nbsp;        ) as String
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

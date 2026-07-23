@@ -1,0 +1,273 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ErrorMessages</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: ErrorMessages (com.kotlinorm.compiler.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ErrorMessages</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (188/188)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.utils
+&nbsp;
+&nbsp;/**
+&nbsp; * Error and warning message constants for the Kronos compiler plugin.
+&nbsp; *
+&nbsp; * All compiler diagnostic messages are centralized here for consistency and maintainability.
+&nbsp; */
+&nbsp;object ErrorMessages {
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionAnalysis - Missing operands in binary expressions
+&nbsp;    // ========================================================================
+&nbsp;    const val MISSING_LEFT_OPERAND_EQ = &quot;Missing left operand in == expression&quot;
+&nbsp;    const val MISSING_RIGHT_OPERAND_EQ = &quot;Missing right operand in == expression&quot;
+&nbsp;    const val MISSING_LEFT_OPERAND_NEQ = &quot;Missing left operand in != expression&quot;
+&nbsp;    const val MISSING_RIGHT_OPERAND_NEQ = &quot;Missing right operand in != expression&quot;
+&nbsp;    const val MISSING_RECEIVER_NOT = &quot;Missing receiver in ! (not) expression&quot;
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionAnalysis - Field extraction failures
+&nbsp;    // ========================================================================
+&nbsp;    const val CANNOT_EXTRACT_FIELD_ISNULL =
+&nbsp;        &quot;Cannot extract field from &#39;isNull()&#39; receiver. Only KPojo property access is supported.&quot;
+&nbsp;    const val CANNOT_EXTRACT_FIELD_NOTNULL =
+&nbsp;        &quot;Cannot extract field from &#39;notNull()&#39; receiver. Only KPojo property access is supported.&quot;
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionAnalysis - Equality
+&nbsp;    // ========================================================================
+&nbsp;    const val CANNOT_BUILD_EQUALITY =
+&nbsp;        &quot;Cannot build equality condition: neither side is a KPojo property access.\n&quot; +
+&nbsp;        &quot;Suggestion: Use &#39;it.field == value&#39; for explicit values, or &#39;it.field.eq&#39; / &#39;it.eq&#39; for current KPojo values.&quot;
+&nbsp;    const val CANNOT_RESOLVE_KPOJO_CLASS = &quot;Cannot resolve KPojo class for equality comparison.&quot;
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionAnalysis - Missing receivers for method calls
+&nbsp;    // ========================================================================
+&nbsp;    const val MISSING_RECEIVER_NOT_CALL = &quot;Missing receiver for &#39;not()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_ISNULL = &quot;Missing receiver for &#39;isNull()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_NOTNULL = &quot;Missing receiver for &#39;notNull()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_EQ = &quot;Missing receiver for &#39;eq&#39; condition&quot;
+&nbsp;    const val MISSING_RECEIVER_NEQ = &quot;Missing receiver for &#39;neq&#39; condition&quot;
+&nbsp;    const val MISSING_RECEIVER_STARTSWITH = &quot;Missing receiver for &#39;startsWith()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_ENDSWITH = &quot;Missing receiver for &#39;endsWith()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_CONTAINS = &quot;Missing receiver for &#39;contains()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_ASSQL = &quot;Missing receiver for &#39;asSql()&#39; call&quot;
+&nbsp;    const val MISSING_RECEIVER_TAKEIF = &quot;Missing receiver for &#39;takeIf()&#39; call&quot;
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionAnalysis - Parameterized missing receiver/argument messages
+&nbsp;    // ========================================================================
+<b class="fc">&nbsp;    fun missingReceiverFor(funcName: String) = &quot;Missing receiver for &#39;$funcName()&#39; call&quot;</b>
+<b class="fc">&nbsp;    fun missingRangeArgFor(funcName: String) = &quot;Missing range argument for &#39;$funcName()&#39; call&quot;</b>
+&nbsp;    fun cannotExtractFieldFor(funcName: String) =
+<b class="fc">&nbsp;        &quot;Cannot extract field from &#39;$funcName()&#39; receiver. Only KPojo property access is supported.&quot;</b>
+<b class="fc">&nbsp;    fun missingOperandFor(operator: String) = &quot;Missing operand for &#39;$operator&#39; comparison&quot;</b>
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionAnalysis - Warnings
+&nbsp;    // ========================================================================
+&nbsp;    fun unsupportedConditionExprType(typeName: String?, irDump: String) =
+<b class="fc">&nbsp;        &quot;Unsupported condition expression type: $typeName\n&quot; +</b>
+<b class="fc">&nbsp;        &quot;IR dump: $irDump\n&quot; +</b>
+&nbsp;        &quot;Suggestion: Use supported condition operators (==, !=, &amp;&amp;, ||, isNull, between, like, etc.)&quot;
+&nbsp;
+&nbsp;    fun debugAnalyzeCallCondition(origin: Any?, funcName: String) =
+<b class="fc">&nbsp;        &quot;analyzeCallSqlExpr else: origin=$origin, funcName=$funcName&quot;</b>
+&nbsp;
+&nbsp;    fun unrecognizedConditionFunction(funcName: String) =
+<b class="fc">&nbsp;        &quot;Unrecognized condition function &#39;$funcName&#39;. This call will be ignored in the generated SQL.\n&quot; +</b>
+&nbsp;        &quot;Suggestion: Use Kotlin comparison operators (==, !=, &gt;, &gt;=, &lt;, &lt;=), no-arg condition properties (eq, neq, lt, gt, le, ge), or supported condition functions (isNull, notNull, between, like, contains, asSql, etc.)&quot;
+&nbsp;
+&nbsp;    fun parameterizedConditionFunctionUnsupported(funcName: String) =
+<b class="fc">&nbsp;        &quot;Parameterized condition function &#39;$funcName(...)&#39; is not supported.\n&quot; +</b>
+<b class="fc">&nbsp;        &quot;Suggestion: Use Kotlin comparison operators (==, !=, &gt;, &gt;=, &lt;, &lt;=) for explicit values, or &#39;.$funcName&#39; only when comparing with current KPojo values.&quot;</b>
+&nbsp;
+&nbsp;    fun kpojoNoColumnProperties(className: Any?) =
+<b class="fc">&nbsp;        &quot;KPojo class &#39;$className&#39; has no column properties for equality comparison.&quot;</b>
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // FieldAnalysis - Warnings
+&nbsp;    // ========================================================================
+&nbsp;    fun cannotFindClassForProperty(propertyName: String, receiverType: String?) =
+<b class="fc">&nbsp;        &quot;Cannot find class for property access: $propertyName. &quot; +</b>
+<b class="fc">&nbsp;        &quot;Receiver type: ${receiverType ?: &quot;unknown&quot;}. &quot; +</b>
+&nbsp;        &quot;This usually means the property is accessed on a non-KPojo type.&quot;
+&nbsp;
+&nbsp;    fun cannotFindPropertyInClass(propertyName: String, className: String, availableProps: String) =
+<b class="fc">&nbsp;        &quot;Cannot find property &#39;$propertyName&#39; in class $className. &quot; +</b>
+<b class="fc">&nbsp;        &quot;Available properties: $availableProps. &quot; +</b>
+&nbsp;        &quot;Make sure the property exists and is accessible.&quot;
+&nbsp;
+&nbsp;    fun cannotFindClassForMinus(receiverType: String?) =
+<b class="fc">&nbsp;        &quot;Cannot find class for minus operation. &quot; +</b>
+<b class="fc">&nbsp;        &quot;Receiver type: ${receiverType ?: &quot;unknown&quot;}. &quot; +</b>
+&nbsp;        &quot;The minus operation (it - User::field) requires a KPojo instance on the left side.&quot;
+&nbsp;
+&nbsp;    fun noColumnPropertiesForMinus(className: String) =
+<b class="fc">&nbsp;        &quot;No column properties found in class $className for minus operation. &quot; +</b>
+&nbsp;        &quot;Make sure the class has properties annotated as columns.&quot;
+&nbsp;
+&nbsp;    const val UNSUPPORTED_FIELD_OPERATOR =
+&nbsp;        &quot;Operator expressions are no longer supported in Kronos field DSL.&quot;
+&nbsp;
+&nbsp;    const val UNSUPPORTED_FIELD_OPERATOR_FIX =
+&nbsp;        &quot;Use a collection literal for multiple fields, for example: [it.field1, it.field2]. &quot; +
+&nbsp;        &quot;Use a single property directly for one field, for example: it.field1. &quot; +
+&nbsp;        &quot;Use explicit Kronos function APIs instead of binary operators for computed fields.&quot;
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // ConditionTransformer
+&nbsp;    // ========================================================================
+&nbsp;    fun failedToTransformCondition(message: String?) =
+<b class="fc">&nbsp;        &quot;Failed to transform condition expression: $message&quot;</b>
+&nbsp;
+&nbsp;    // ========================================================================
+&nbsp;    // KPojo factory generation
+&nbsp;    // ========================================================================
+&nbsp;    fun kpojoNoNoArgConstructor(fqName: Any?) =
+<b class="fc">&nbsp;        &quot;KPojo class &#39;$fqName&#39; has no no-arg constructor and will be excluded from generated KPojo factories.&quot;</b>
+&nbsp;
+&nbsp;    fun inaccessibleEnumMetadata(fqName: Any?) =
+<b class="fc">&nbsp;        &quot;Required enum metadata for &#39;$fqName&#39; cannot be generated because the enum or one of its containing &quot; +</b>
+&nbsp;            &quot;declarations is not public or internal.&quot;
+&nbsp;
+&nbsp;    const val INACCESSIBLE_KPOJO_FACTORY =
+&nbsp;        &quot;Kronos cannot generate a factory for a private or otherwise inaccessible KPojo; &quot; +
+&nbsp;            &quot;make the KPojo and its containing declarations public or internal&quot;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

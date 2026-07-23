@@ -1,0 +1,722 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > JoinedSelectContext</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.join</a>
+</div>
+
+<h1>Coverage Summary for Class: JoinedSelectContext (com.kotlinorm.orm.join)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">JoinedSelectContext</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.3%
+  </span>
+  <span class="absValue">
+    (53/60)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.1%
+  </span>
+  <span class="absValue">
+    (170/246)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.8%
+  </span>
+  <span class="absValue">
+    (304/331)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.1%
+  </span>
+  <span class="absValue">
+    (2321/2605)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">JoinedSelectContext$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    86.9%
+  </span>
+  <span class="absValue">
+    (53/61)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.1%
+  </span>
+  <span class="absValue">
+    (170/246)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.6%
+  </span>
+  <span class="absValue">
+    (304/332)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.1%
+  </span>
+  <span class="absValue">
+    (2321/2606)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.join
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSort
+&nbsp;import com.kotlinorm.beans.dsl.withUniqueOutputNames
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.orm.pagination.CursorSpec
+&nbsp;import com.kotlinorm.orm.sql.renameNamedParameters
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.order.SqlOrdering
+&nbsp;import com.kotlinorm.syntax.statement.SqlLock
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinType
+&nbsp;import com.kotlinorm.utils.KPojoRuntimeMetadata
+&nbsp;import com.kotlinorm.utils.KTypeKey
+&nbsp;import com.kotlinorm.utils.LinkedHashSet
+&nbsp;import com.kotlinorm.utils.createKPojo
+&nbsp;import com.kotlinorm.utils.resolveRuntimeMetadata
+&nbsp;import com.kotlinorm.utils.toLinkedSet
+&nbsp;import java.util.IdentityHashMap
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+<b class="fc">&nbsp;internal class JoinedSelectContext&lt;Source : KPojo, Selected : KPojo, Context : KPojo&gt;(</b>
+<b class="fc">&nbsp;    val state: JoinSourceState&lt;Source&gt;,</b>
+<b class="fc">&nbsp;    val receiverPojo: Context,</b>
+<b class="fc">&nbsp;    val projectionType: KType,</b>
+<b class="fc">&nbsp;    val nullableProjectionType: KType</b>
+&nbsp;) {
+<b class="fc">&nbsp;    val root: Source = state.root</b>
+<b class="fc">&nbsp;    private val rootMetadata = root.resolveRuntimeMetadata()</b>
+<b class="fc">&nbsp;    private val metadataBySource = IdentityHashMap&lt;KPojo, KPojoRuntimeMetadata&gt;().apply {</b>
+<b class="fc">&nbsp;        state.sources.forEach { source -&gt; put(source, source.resolveRuntimeMetadata()) }</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    private val derivedAliases = IdentityHashMap&lt;KPojo, String&gt;().apply {</b>
+<b class="fc">&nbsp;        state.leaves.filter { it.query != null }.forEachIndexed { index, leaf -&gt;</b>
+<b class="pc">&nbsp;            put(leaf.pojo, if (index == 0) &quot;q&quot; else &quot;q_${index + 1}&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;    /**
+&nbsp;     * Qualifiers emitted while this query&#39;s DSL blocks are captured. A nested
+&nbsp;     * correlated query can allocate an alias for an outer source later, so the
+&nbsp;     * qualifier in an already captured projection/condition/order expression
+&nbsp;     * must remain available as the replacement key.
+&nbsp;     */
+<b class="fc">&nbsp;    private val capturedQualifiers = IdentityHashMap&lt;KPojo, String&gt;().apply {</b>
+<b class="fc">&nbsp;        state.leaves.forEach { leaf -&gt; put(leaf.pojo, state.qualifierFor(leaf.pojo)) }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    val tableName: String = rootMetadata.tableName</b>
+<b class="fc">&nbsp;    val listOfPojo: List&lt;Pair&lt;KType, KPojo&gt;&gt; = state.sources.map { source -&gt;</b>
+<b class="fc">&nbsp;        metadataBySource.getValue(source).kType to source</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val allFields: List&lt;Field&gt; = rootMetadata.allColumns</b>
+<b class="fc">&nbsp;    val allSourceFields: List&lt;Field&gt; = state.sources.flatMap { source -&gt;</b>
+<b class="fc">&nbsp;        metadataBySource.getValue(source).allFields</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val rootLogicDeleteStrategy = rootMetadata.logicDeleteStrategy.takeIf {</b>
+<b class="pc">&nbsp;        state.current.rootLeaf().query == null</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val sourceValues: MutableMap&lt;String, Any?&gt; = linkedMapOf&lt;String, Any?&gt;().also { values -&gt;</b>
+<b class="fc">&nbsp;        state.sources.forEach { values.putAll(it.toDataMap()) }</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val patchValues: MutableMap&lt;String, Any?&gt; = linkedMapOf()</b>
+<b class="fc">&nbsp;    val parameterValues: MutableMap&lt;String, Any?&gt; = linkedMapOf()</b>
+<b class="fc">&nbsp;    val parameterFields: MutableMap&lt;String, Field&gt; = linkedMapOf()</b>
+<b class="fc">&nbsp;    private val parameterNameCounter = mutableMapOf&lt;String, Int&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    var where: SqlExpr? = null</b>
+<b class="fc">&nbsp;    var having: SqlExpr? = null</b>
+<b class="fc">&nbsp;    var selectedFields: LinkedHashSet&lt;Field&gt; = []</b>
+<b class="fc">&nbsp;    var selectAll: Boolean = true</b>
+<b class="fc">&nbsp;    var selectedFieldsByOutputName: Map&lt;String, Field&gt; = emptyMap()</b>
+<b class="fc">&nbsp;    var projectionItems: List&lt;KTableForSelect.ProjectionItem&gt; = emptyList()</b>
+<b class="fc">&nbsp;    var groupByFields: LinkedHashSet&lt;Field&gt; = []</b>
+<b class="fc">&nbsp;    var orderByItems: List&lt;KTableForSort.SortItem&gt; = emptyList()</b>
+<b class="fc">&nbsp;    var distinct: Boolean = false</b>
+<b class="fc">&nbsp;    var limit: SqlLimit? = null</b>
+<b class="fc">&nbsp;    var lock: SqlLock? = null</b>
+<b class="fc">&nbsp;    var cascadeEnabled: Boolean = true</b>
+<b class="fc">&nbsp;    var cascadeAllowed: Set&lt;Field&gt;? = null</b>
+<b class="fc">&nbsp;    var cascadeSelectedProps: Set&lt;Field&gt;? = null</b>
+<b class="fc">&nbsp;    var cursorSpec: CursorSpec? = null</b>
+<b class="fc">&nbsp;    var cursorOnlySelectFields: List&lt;Pair&lt;Field, String&gt;&gt; = emptyList()</b>
+&nbsp;        private set
+<b class="fc">&nbsp;    var operationType: KOperationType = KOperationType.SELECT</b>
+&nbsp;
+<b class="fc">&nbsp;    private val databaseBySource = IdentityHashMap&lt;KPojo, String&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    fun &lt;T&gt; withSourceScope(block: () -&gt; T): T = state.withSourceScope(block)</b>
+&nbsp;
+&nbsp;    fun setDatabase(source: KPojo, databaseName: String) {
+<b class="fc">&nbsp;        databaseBySource[source] = databaseName</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun databaseFor(source: KPojo): String? = databaseBySource[source]</b>
+&nbsp;
+<b class="fc">&nbsp;    fun metadataFor(source: KPojo): KPojoRuntimeMetadata = metadataBySource.getValue(source)</b>
+&nbsp;
+<b class="fc">&nbsp;    fun derivedAliasFor(source: KPojo): String? = derivedAliases[source]</b>
+&nbsp;
+&nbsp;    fun derivedAliasForUnqualifiedColumn(columnName: String): String? =
+<b class="fc">&nbsp;        state.sources.singleOrNull { source -&gt;</b>
+<b class="fc">&nbsp;            metadataFor(source).allFields.any { candidate -&gt;</b>
+<b class="pc">&nbsp;                candidate.name.ifBlank { candidate.columnName } == columnName</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }?.let(::derivedAliasFor)</b>
+&nbsp;
+&nbsp;    fun sourceAliasFor(source: KPojo): String? =
+<b class="pc">&nbsp;        derivedAliasFor(source) ?: state.qualifierFor(source).takeUnless {</b>
+<b class="fc">&nbsp;            it == metadataFor(source).tableName</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    fun qualifierFor(source: KPojo): String {
+<b class="fc">&nbsp;        derivedAliasFor(source)?.let { return it }</b>
+<b class="fc">&nbsp;        val qualifier = state.qualifierFor(source)</b>
+<b class="fc">&nbsp;        val tableName = metadataFor(source).tableName</b>
+<b class="fc">&nbsp;        val database = databaseFor(source)</b>
+<b class="pc">&nbsp;        return if (database != null &amp;&amp; qualifier == tableName) &quot;$database.$tableName&quot; else qualifier</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun qualifierFor(tableNameOrAlias: String): String {
+<b class="fc">&nbsp;        state.sources.firstOrNull { qualifierFor(it) == tableNameOrAlias }?.let { return tableNameOrAlias }</b>
+<b class="fc">&nbsp;        val matches = sourcesMatchingQualifier(tableNameOrAlias)</b>
+<b class="pc">&nbsp;        return matches.singleOrNull()?.let(::qualifierFor) ?: tableNameOrAlias</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun qualifierIdentifierFor(tableNameOrAlias: String): SqlIdentifier {
+<b class="fc">&nbsp;        val source = state.sources.firstOrNull { qualifierFor(it) == tableNameOrAlias }</b>
+<b class="fc">&nbsp;            ?: sourcesMatchingQualifier(tableNameOrAlias).singleOrNull()</b>
+<b class="fc">&nbsp;            ?: return SqlIdentifier.of(tableNameOrAlias)</b>
+<b class="fc">&nbsp;        val database = databaseFor(source)</b>
+<b class="fc">&nbsp;        val tableName = metadataFor(source).tableName</b>
+<b class="pc">&nbsp;        return if (database != null &amp;&amp; derivedAliasFor(source) == null &amp;&amp; state.qualifierFor(source) == tableName) {</b>
+<b class="fc">&nbsp;            SqlIdentifier.of(database, tableName)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            SqlIdentifier.of(qualifierFor(source))</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun conditionExpression(snapshot: JoinConditionSnapshot): SqlExpr {
+<b class="fc">&nbsp;        val replacements = snapshot.qualifiers</b>
+<b class="fc">&nbsp;            .map { captured -&gt; captured.qualifier to qualifierFor(captured.source) }</b>
+<b class="fc">&nbsp;            .filter { (captured, resolved) -&gt; captured != resolved }</b>
+<b class="fc">&nbsp;            .groupBy({ it.first }, { it.second })</b>
+<b class="fc">&nbsp;            .mapNotNull { (captured, resolved) -&gt;</b>
+<b class="pc">&nbsp;                resolved.distinct().singleOrNull()?.let { captured to it }</b>
+&nbsp;            }
+<b class="fc">&nbsp;            .toMap()</b>
+<b class="fc">&nbsp;        return snapshot.expression.rewriteJoinQualifiers(replacements, ::qualifierIdentifierFor)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun runtimeQualifierReplacements(): Map&lt;String, String&gt; =
+<b class="fc">&nbsp;        (state.leaves.mapNotNull { leaf -&gt;</b>
+<b class="pc">&nbsp;            val captured = capturedQualifiers[leaf.pojo] ?: return@mapNotNull null</b>
+<b class="fc">&nbsp;            val resolved = qualifierFor(leaf.pojo)</b>
+<b class="fc">&nbsp;            (captured to resolved).takeIf { captured != resolved }</b>
+<b class="fc">&nbsp;        } + declaredQualifierReplacements()).groupBy({ it.first }, { it.second })</b>
+<b class="fc">&nbsp;            .mapNotNull { (captured, resolved) -&gt;</b>
+<b class="fc">&nbsp;                resolved.distinct().singleOrNull()?.let { captured to it }</b>
+&nbsp;            }
+<b class="fc">&nbsp;            .toMap()</b>
+&nbsp;
+&nbsp;    private fun sourcesMatchingQualifier(tableNameOrAlias: String): List&lt;KPojo&gt; =
+<b class="fc">&nbsp;        state.sources.filter { source -&gt;</b>
+<b class="fc">&nbsp;            val metadata = metadataFor(source)</b>
+<b class="fc">&nbsp;            metadata.tableName == tableNameOrAlias ||</b>
+<b class="pc">&nbsp;                source.__tableName == tableNameOrAlias ||</b>
+<b class="fc">&nbsp;                metadata.allFields.any { field -&gt; field.tableName == tableNameOrAlias }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Rewrite qualifiers emitted from generated Fields (which use the
+&nbsp;     * declaration table name) to the qualifier of the actual source leaf.
+&nbsp;     * Ambiguous self-joins are deliberately omitted; their identity aliases
+&nbsp;     * are captured by SourceIdentityScope and remain authoritative.
+&nbsp;     */
+&nbsp;    private fun declaredQualifierReplacements(): List&lt;Pair&lt;String, String&gt;&gt; =
+<b class="fc">&nbsp;        state.sources.flatMap { source -&gt;</b>
+<b class="fc">&nbsp;            val resolved = qualifierFor(source)</b>
+<b class="fc">&nbsp;            metadataFor(source).allFields</b>
+<b class="fc">&nbsp;                .asSequence()</b>
+<b class="fc">&nbsp;                .map { it.tableName }</b>
+<b class="pc">&nbsp;                .filter { it.isNotBlank() &amp;&amp; it != resolved }</b>
+<b class="fc">&nbsp;                .distinct()</b>
+<b class="fc">&nbsp;                .map { it to resolved }</b>
+<b class="fc">&nbsp;                .toList()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    fun registerProjectionItems(
+&nbsp;        items: List&lt;KTableForSelect.ProjectionItem&gt;,
+&nbsp;        fields: Iterable&lt;Field&gt;
+&nbsp;    ) {
+<b class="fc">&nbsp;        val projectedFields = fields.toList().toLinkedSet()</b>
+<b class="fc">&nbsp;        val cascadeLocalFields = projectedFields</b>
+<b class="fc">&nbsp;            .asSequence()</b>
+<b class="fc">&nbsp;            .filterNot(Field::isColumn)</b>
+<b class="fc">&nbsp;            .flatMap(::cascadeLocalFieldsFor)</b>
+<b class="pc">&nbsp;            .filterNot { local -&gt; projectedFields.any { it.name == local.name &amp;&amp; it.tableName == local.tableName } }</b>
+<b class="fc">&nbsp;            .toList()</b>
+<b class="fc">&nbsp;        selectedFields = (projectedFields + cascadeLocalFields).toLinkedSet()</b>
+<b class="fc">&nbsp;        val hiddenLocalItems = cascadeLocalFields.map { field -&gt;</b>
+<b class="nc">&nbsp;            KTableForSelect.ProjectionItem.FieldItem(field)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        projectionItems = (items + hiddenLocalItems).withUniqueOutputNames()</b>
+<b class="fc">&nbsp;        selectedFieldsByOutputName = projectionItems.mapNotNull { item -&gt;</b>
+<b class="fc">&nbsp;            val fieldItem = item as? KTableForSelect.ProjectionItem.FieldItem ?: return@mapNotNull null</b>
+<b class="pc">&nbsp;            val outputName = fieldItem.outputName ?: fieldItem.field.name.ifBlank { fieldItem.field.columnName }</b>
+<b class="fc">&nbsp;            outputName to fieldItem.field</b>
+<b class="fc">&nbsp;        }.toMap(linkedMapOf())</b>
+<b class="fc">&nbsp;        selectAll = false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the source-table columns required to execute a projected cascade relation.
+&nbsp;     * The relation itself is a result property, never a physical SQL column.
+&nbsp;     */
+&nbsp;    private fun cascadeLocalFieldsFor(field: Field): List&lt;Field&gt; {
+<b class="nc">&nbsp;        val source = state.sources.firstOrNull { source -&gt;</b>
+<b class="nc">&nbsp;            metadataFor(source).tableName == field.tableName || qualifierFor(source) == field.tableName</b>
+<b class="nc">&nbsp;        } ?: return emptyList()</b>
+<b class="nc">&nbsp;        val metadata = metadataFor(source)</b>
+<b class="nc">&nbsp;        val direct = field.cascade?.properties.orEmpty().asSequence()</b>
+<b class="nc">&nbsp;        val reverse = (field.elementKType ?: field.kType)</b>
+<b class="nc">&nbsp;            ?.let { relationType -&gt;</b>
+<b class="nc">&nbsp;                val relationFields = relationType.kPojoInstanceOrNull()?.resolveRuntimeMetadata()?.allFields.orEmpty()</b>
+<b class="nc">&nbsp;                relationFields.asSequence()</b>
+<b class="nc">&nbsp;                    .filter { relation -&gt;</b>
+<b class="nc">&nbsp;                        relation.cascade != null &amp;&amp;</b>
+<b class="nc">&nbsp;                            relation.cascade.targetProperties.all { target -&gt;</b>
+<b class="nc">&nbsp;                                metadata.allFields.any { sourceField -&gt; sourceField.name == target }</b>
+&nbsp;                            } &amp;&amp;
+<b class="nc">&nbsp;                            (relation.elementKType ?: relation.kType)?.sameDeclaredTypeAs(source.__kType) == true</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    .flatMap { relation -&gt; relation.cascade?.targetProperties.orEmpty().asSequence() }</b>
+&nbsp;            }
+<b class="nc">&nbsp;            .orEmpty()</b>
+<b class="nc">&nbsp;        return (direct + reverse)</b>
+<b class="nc">&nbsp;            .distinct()</b>
+<b class="nc">&nbsp;            .mapNotNull { name -&gt; metadata.allFields.firstOrNull { it.name == name } }</b>
+<b class="nc">&nbsp;            .toList()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KType.kPojoInstanceOrNull(): KPojo? =
+<b class="nc">&nbsp;        runCatching { createKPojo(this) }.getOrNull()</b>
+&nbsp;
+&nbsp;    private fun KType.sameDeclaredTypeAs(other: KType): Boolean =
+<b class="nc">&nbsp;        KTypeKey.from(this, ignoreTopLevelNullability = true) ==</b>
+<b class="nc">&nbsp;            KTypeKey.from(other, ignoreTopLevelNullability = true)</b>
+&nbsp;
+&nbsp;    fun fieldsMap(): Map&lt;String, Field&gt; =
+<b class="fc">&nbsp;        allSourceFields.associateBy { it.name } + allSourceFields.associateBy { it.columnName }</b>
+&nbsp;
+&nbsp;    fun sourceValue(field: Field): Any? {
+<b class="fc">&nbsp;        val source = state.sources.firstOrNull { source -&gt; qualifierFor(source) == field.tableName }</b>
+<b class="fc">&nbsp;            ?: sourcesMatchingQualifier(field.tableName).singleOrNull()</b>
+<b class="fc">&nbsp;            ?: root</b>
+<b class="fc">&nbsp;        return source.toDataMap()[field.name]</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun andWhere(
+&nbsp;        expr: SqlExpr?,
+<b class="fc">&nbsp;        parameters: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;        fields: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        where = and(where, mergeParameters(expr, parameters, fields))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun andHaving(
+&nbsp;        expr: SqlExpr?,
+<b class="nc">&nbsp;        parameters: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;        fields: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        having = and(having, mergeParameters(expr, parameters, fields))</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun bindParameter(name: String, value: Any?, field: Field? = null): String {</b>
+<b class="fc">&nbsp;        val uniqueName = uniqueParameterName(name)</b>
+<b class="fc">&nbsp;        parameterValues[uniqueName] = value</b>
+<b class="fc">&nbsp;        field?.let { parameterFields[uniqueName] = it }</b>
+<b class="fc">&nbsp;        return uniqueName</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun and(left: SqlExpr?, right: SqlExpr?): SqlExpr? =
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            left == null -&gt; right</b>
+<b class="fc">&nbsp;            right == null -&gt; left</b>
+<b class="fc">&nbsp;            else -&gt; SqlExpr.Binary(left, SqlBinaryOperator.And, right)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    fun andAll(expressions: Iterable&lt;SqlExpr&gt;): SqlExpr? {
+<b class="fc">&nbsp;        val items = expressions.toList()</b>
+<b class="fc">&nbsp;        return items.drop(1).fold(items.firstOrNull()) { left, right -&gt; and(left, right) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun prepareCursorOrder() {
+<b class="fc">&nbsp;        require(orderByItems.isNotEmpty()) { &quot;Cursor pagination requires orderBy().&quot; }</b>
+<b class="fc">&nbsp;        requireCursorShape()</b>
+<b class="fc">&nbsp;        state.current.requireCursorSafeSourceTree()</b>
+&nbsp;
+<b class="fc">&nbsp;        val cursorOrderItems = orderByItems.map { item -&gt;</b>
+<b class="fc">&nbsp;            require(item is KTableForSort.SortItem.FieldItem) {</b>
+<b class="fc">&nbsp;                &quot;Cursor pagination requires field-based orderBy items.&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            item.normalizeCursorSelectedField()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        orderByItems = cursorOrderItems</b>
+<b class="fc">&nbsp;        val orderedFields = cursorOrderItems.mapTo(mutableListOf()) { it.field }</b>
+<b class="fc">&nbsp;        val orderedKeys = orderedFields.mapTo(mutableSetOf()) { it.resolvedCursorKey() }</b>
+<b class="fc">&nbsp;        state.leaves.forEach { leaf -&gt;</b>
+<b class="fc">&nbsp;            val candidates = stableCursorKeyCandidates(leaf.pojo)</b>
+<b class="fc">&nbsp;            val tieBreaker = candidates.firstOrNull { candidate -&gt;</b>
+<b class="fc">&nbsp;                candidate.all { it.resolvedCursorKey() in orderedKeys }</b>
+<b class="fc">&nbsp;            } ?: candidates.firstOrNull() ?: throw IllegalArgumentException(</b>
+<b class="fc">&nbsp;                &quot;Cursor pagination requires every JOIN base source to define a primary key or non-null unique key; &quot; +</b>
+<b class="fc">&nbsp;                    &quot;source &#39;${metadataFor(leaf.pojo).tableName}&#39; has no stable key.&quot;</b>
+&nbsp;            )
+<b class="fc">&nbsp;            tieBreaker.filterNot { it.resolvedCursorKey() in orderedKeys }.forEach { field -&gt;</b>
+<b class="fc">&nbsp;                orderByItems = orderByItems + KTableForSort.SortItem.FieldItem(</b>
+<b class="fc">&nbsp;                    field = field,</b>
+<b class="fc">&nbsp;                    ordering = SqlOrdering.Asc,</b>
+<b class="fc">&nbsp;                    expr = field.cursorOrderExpr()</b>
+&nbsp;                )
+<b class="fc">&nbsp;                orderedFields += field</b>
+<b class="fc">&nbsp;                orderedKeys += field.resolvedCursorKey()</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        val usedOutputNames = projectionOutputNames().toMutableSet()</b>
+<b class="fc">&nbsp;        cursorOnlySelectFields = orderByItems</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;KTableForSort.SortItem.FieldItem&gt;()</b>
+<b class="fc">&nbsp;            .map { it.field }</b>
+<b class="fc">&nbsp;            .distinctBy { field -&gt; cursorKey(field) }</b>
+<b class="fc">&nbsp;            .filterNot(::isCursorFieldVisible)</b>
+<b class="fc">&nbsp;            .map { field -&gt;</b>
+<b class="pc">&nbsp;                val base = &quot;__kronos_cursor_${field.name.ifBlank { field.columnName }}&quot;</b>
+<b class="fc">&nbsp;                var label = base</b>
+<b class="fc">&nbsp;                var suffix = 0</b>
+<b class="fc">&nbsp;                while (!usedOutputNames.reserveIgnoreCase(label)) {</b>
+<b class="fc">&nbsp;                    label = &quot;${base}_${++suffix}&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;                field to label</b>
+&nbsp;            }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cursorValueLabel(field: Field): String =
+<b class="pc">&nbsp;        cursorOnlySelectFields.firstOrNull { (cursorField, _) -&gt;</b>
+<b class="fc">&nbsp;            cursorField.resolvedCursorKey() == field.resolvedCursorKey()</b>
+&nbsp;        }
+<b class="fc">&nbsp;            ?.second</b>
+<b class="fc">&nbsp;            ?: selectedFieldsByOutputName.entries.firstOrNull { (_, selected) -&gt;</b>
+<b class="fc">&nbsp;                selected.resolvedCursorKey() == field.resolvedCursorKey()</b>
+<b class="fc">&nbsp;            }?.key</b>
+<b class="fc">&nbsp;            ?: field.name</b>
+&nbsp;
+&nbsp;    fun copyStateFrom(source: JoinedSelectContext&lt;Source, Selected, Context&gt;) {
+<b class="fc">&nbsp;        capturedQualifiers.clear()</b>
+<b class="fc">&nbsp;        capturedQualifiers.putAll(source.capturedQualifiers)</b>
+<b class="fc">&nbsp;        sourceValues.clear()</b>
+<b class="fc">&nbsp;        sourceValues.putAll(source.sourceValues)</b>
+<b class="fc">&nbsp;        patchValues.clear()</b>
+<b class="fc">&nbsp;        patchValues.putAll(source.patchValues)</b>
+<b class="fc">&nbsp;        parameterValues.clear()</b>
+<b class="fc">&nbsp;        parameterValues.putAll(source.parameterValues)</b>
+<b class="fc">&nbsp;        parameterFields.clear()</b>
+<b class="fc">&nbsp;        parameterFields.putAll(source.parameterFields)</b>
+<b class="fc">&nbsp;        parameterNameCounter.clear()</b>
+<b class="fc">&nbsp;        parameterNameCounter.putAll(source.parameterNameCounter)</b>
+<b class="fc">&nbsp;        source.databaseBySource.forEach { (key, value) -&gt; databaseBySource[key] = value }</b>
+<b class="fc">&nbsp;        where = source.where</b>
+<b class="fc">&nbsp;        having = source.having</b>
+<b class="fc">&nbsp;        selectedFields = source.selectedFields.toLinkedSet()</b>
+<b class="fc">&nbsp;        selectAll = source.selectAll</b>
+<b class="fc">&nbsp;        selectedFieldsByOutputName = source.selectedFieldsByOutputName.toMap(linkedMapOf())</b>
+<b class="fc">&nbsp;        projectionItems = source.projectionItems.toList()</b>
+<b class="fc">&nbsp;        groupByFields = source.groupByFields.toLinkedSet()</b>
+<b class="fc">&nbsp;        orderByItems = source.orderByItems.toList()</b>
+<b class="fc">&nbsp;        distinct = source.distinct</b>
+<b class="fc">&nbsp;        limit = source.limit</b>
+<b class="fc">&nbsp;        lock = source.lock</b>
+<b class="fc">&nbsp;        cascadeEnabled = source.cascadeEnabled</b>
+<b class="fc">&nbsp;        cascadeAllowed = source.cascadeAllowed?.toSet()</b>
+<b class="fc">&nbsp;        cascadeSelectedProps = source.cascadeSelectedProps?.toSet()</b>
+<b class="pc">&nbsp;        cursorSpec = source.cursorSpec?.copy(values = source.cursorSpec?.values.orEmpty().toMap())</b>
+<b class="fc">&nbsp;        cursorOnlySelectFields = source.cursorOnlySelectFields.toList()</b>
+<b class="fc">&nbsp;        operationType = source.operationType</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isCursorFieldVisible(field: Field): Boolean =
+<b class="fc">&nbsp;        selectAll || selectedFieldsByOutputName.values.any { selected -&gt;</b>
+<b class="fc">&nbsp;            selected.resolvedCursorKey() == field.resolvedCursorKey()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;    fun cursorKey(field: Field): String = field.resolvedCursorKey()</b>
+&nbsp;
+&nbsp;    private fun projectionOutputNames(): Set&lt;String&gt; {
+<b class="pc">&nbsp;        if (selectAll) return allFields.mapTo(linkedSetOf()) { it.name.ifBlank { it.columnName } }</b>
+<b class="fc">&nbsp;        return projectionItems.mapNotNullTo(linkedSetOf()) { item -&gt;</b>
+<b class="fc">&nbsp;            when (item) {</b>
+<b class="fc">&nbsp;                is KTableForSelect.ProjectionItem.FieldItem -&gt;</b>
+<b class="pc">&nbsp;                    item.outputName ?: item.field.name.ifBlank { item.field.columnName }</b>
+<b class="fc">&nbsp;                is KTableForSelect.ProjectionItem.ScalarSubqueryValue -&gt; item.alias</b>
+<b class="fc">&nbsp;                is KTableForSelect.ProjectionItem.SelectItemValue -&gt;</b>
+<b class="fc">&nbsp;                    (item.item as? SqlSelectItem.Expr)?.let { selectItem -&gt;</b>
+<b class="fc">&nbsp;                        selectItem.alias ?: selectItem.metadata?.outputName</b>
+&nbsp;                    }
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun requireCursorShape() {
+<b class="fc">&nbsp;        require(!distinct) { &quot;Cursor pagination does not support DISTINCT queries.&quot; }</b>
+<b class="pc">&nbsp;        require(groupByFields.isEmpty() &amp;&amp; having == null) {</b>
+<b class="fc">&nbsp;            &quot;Cursor pagination does not support GROUP BY or HAVING queries.&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        require(projectionItems.none { it.isAggregateProjection() }) {</b>
+<b class="fc">&nbsp;            &quot;Cursor pagination does not support aggregate projections.&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FromSourceNode.requireCursorSafeSourceTree() {
+<b class="fc">&nbsp;        when (this) {</b>
+<b class="fc">&nbsp;            is FromSourceNode.Leaf -&gt; require(source.query == null) {</b>
+<b class="fc">&nbsp;                &quot;Cursor pagination does not support JOIN derived or union sources because row uniqueness cannot be proven.&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is FromSourceNode.Join -&gt; {</b>
+<b class="fc">&nbsp;                when (joinType) {</b>
+<b class="fc">&nbsp;                    SqlJoinType.Inner,</b>
+<b class="fc">&nbsp;                    SqlJoinType.Cross -&gt; Unit</b>
+<b class="fc">&nbsp;                    SqlJoinType.Left,</b>
+<b class="pc">&nbsp;                    SqlJoinType.Right,</b>
+<b class="pc">&nbsp;                    SqlJoinType.Full -&gt; throw IllegalArgumentException(</b>
+<b class="fc">&nbsp;                        &quot;Cursor pagination does not support outer JOIN sources because row uniqueness cannot be proven.&quot;</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                    is SqlJoinType.UnsafeCustom -&gt; throw IllegalArgumentException(</b>
+<b class="nc">&nbsp;                        &quot;Cursor pagination does not support custom JOIN sources because row uniqueness cannot be proven.&quot;</b>
+&nbsp;                    )
+&nbsp;                }
+<b class="fc">&nbsp;                left.requireCursorSafeSourceTree()</b>
+<b class="fc">&nbsp;                right.requireCursorSafeSourceTree()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun stableCursorKeyCandidates(source: KPojo): List&lt;List&lt;Field&gt;&gt; {
+<b class="fc">&nbsp;        val metadata = metadataFor(source)</b>
+<b class="fc">&nbsp;        val candidates = buildList {</b>
+<b class="fc">&nbsp;            metadata.primaryKey?.let { add(listOf(it.bindCursorSource(source))) }</b>
+<b class="fc">&nbsp;            metadata.tableIndexes</b>
+<b class="fc">&nbsp;                .filter { it.type.equals(&quot;UNIQUE&quot;, ignoreCase = true) || it.method.equals(&quot;UNIQUE&quot;, ignoreCase = true) }</b>
+<b class="fc">&nbsp;                .mapNotNull { index -&gt;</b>
+<b class="fc">&nbsp;                    index.columns</b>
+<b class="fc">&nbsp;                        .map { column -&gt; metadata.allColumns.fieldByNameOrColumn(column) }</b>
+<b class="pc">&nbsp;                        .takeIf { fields -&gt; fields.all { it != null } }</b>
+<b class="pc">&nbsp;                        ?.filterNotNull()</b>
+<b class="pc">&nbsp;                        ?.takeIf { fields -&gt; fields.isNotEmpty() &amp;&amp; fields.all { !it.nullable } }</b>
+<b class="pc">&nbsp;                        ?.map { it.bindCursorSource(source) }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                .forEach(::add)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return candidates.distinctBy { key -&gt; key.joinToString(&quot;|&quot;) { it.resolvedCursorKey() } }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun Field.bindCursorSource(source: KPojo): Field =
+<b class="fc">&nbsp;        copy(tableName = qualifierFor(source))</b>
+&nbsp;
+&nbsp;    private fun List&lt;Field&gt;.fieldByNameOrColumn(name: String): Field? =
+<b class="fc">&nbsp;        firstOrNull { it.name == name || it.columnName == name }</b>
+&nbsp;
+&nbsp;    private fun KTableForSelect.ProjectionItem.isAggregateProjection(): Boolean =
+<b class="fc">&nbsp;        this is KTableForSelect.ProjectionItem.SelectItemValue &amp;&amp;</b>
+<b class="fc">&nbsp;            (item as? SqlSelectItem.Expr)?.metadata?.scope == SqlSelectItemSourceScope.Aggregate</b>
+&nbsp;
+&nbsp;    private fun KTableForSort.SortItem.FieldItem.normalizeCursorSelectedField(): KTableForSort.SortItem.FieldItem {
+<b class="fc">&nbsp;        if (field.tableName.isNotBlank()) return this</b>
+<b class="pc">&nbsp;        val outputName = field.name.ifBlank { field.columnName }</b>
+<b class="pc">&nbsp;        val selectedField = selectedFieldsByOutputName[outputName] ?: return this</b>
+<b class="fc">&nbsp;        return copy(field = selectedField, expr = null)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun Field.cursorOrderExpr(): SqlExpr.Column {
+<b class="fc">&nbsp;        val table = qualifierFor(tableName)</b>
+<b class="fc">&nbsp;        return SqlExpr.Column(</b>
+<b class="fc">&nbsp;            tableName = table,</b>
+<b class="fc">&nbsp;            columnName = columnName,</b>
+<b class="fc">&nbsp;            qualifier = qualifierIdentifierFor(table)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableSet&lt;String&gt;.reserveIgnoreCase(name: String): Boolean {
+<b class="fc">&nbsp;        if (any { existing -&gt; existing.equals(name, ignoreCase = true) }) return false</b>
+<b class="fc">&nbsp;        return add(name)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun Field.resolvedCursorKey(): String = &quot;${qualifierFor(tableName)}.$columnName&quot;</b>
+&nbsp;
+&nbsp;    private fun mergeParameters(
+&nbsp;        expr: SqlExpr?,
+&nbsp;        parameters: Map&lt;String, Any?&gt;,
+&nbsp;        fields: Map&lt;String, Field&gt;
+&nbsp;    ): SqlExpr? {
+<b class="pc">&nbsp;        if (expr == null || parameters.isEmpty()) return expr</b>
+<b class="fc">&nbsp;        val renames = linkedMapOf&lt;String, String&gt;()</b>
+<b class="fc">&nbsp;        parameters.forEach { (name, value) -&gt;</b>
+<b class="fc">&nbsp;            val uniqueName = bindParameter(name, value, fields[name])</b>
+<b class="pc">&nbsp;            if (uniqueName != name) renames[name] = uniqueName</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return expr.renameNamedParameters(renames)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun uniqueParameterName(name: String): String {
+<b class="fc">&nbsp;        val match = parameterSuffixRegex.matchEntire(name)</b>
+<b class="pc">&nbsp;        val baseName = match?.groupValues?.get(1) ?: name</b>
+<b class="pc">&nbsp;        val existingSuffix = match?.groupValues?.get(2)?.toIntOrNull()</b>
+<b class="fc">&nbsp;        if (name !in parameterValues) {</b>
+<b class="fc">&nbsp;            parameterNameCounter[baseName] = maxOf(parameterNameCounter.getOrDefault(baseName, 0), existingSuffix ?: 0)</b>
+<b class="fc">&nbsp;            return name</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var count = maxOf(parameterNameCounter.getOrDefault(baseName, 0), existingSuffix ?: 0)</b>
+<b class="fc">&nbsp;        var candidate: String</b>
+&nbsp;        do {
+<b class="fc">&nbsp;            candidate = &quot;$baseName@${++count}&quot;</b>
+<b class="pc">&nbsp;        } while (candidate in parameterValues)</b>
+<b class="fc">&nbsp;        parameterNameCounter[baseName] = count</b>
+<b class="fc">&nbsp;        return candidate</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private companion object {
+<b class="pc">&nbsp;        val parameterSuffixRegex = Regex(&quot;&quot;&quot;^(.+)@(\d+)$&quot;&quot;&quot;)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,964 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlValidationDiagnostic</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.validate</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlValidationDiagnostic (com.kotlinorm.syntax.validate)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlValidationDiagnostic</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.validate
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlInRightOperand
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonArrayItem
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonObjectItem
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonPassing
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonQueryEmptyBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonQueryErrorBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonValueEmptyBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlJsonValueErrorBehavior
+&nbsp;import com.kotlinorm.syntax.expr.SqlListAggOnOverflow
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindow
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowFrame
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowFrameBound
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowItem
+&nbsp;import com.kotlinorm.syntax.group.SqlGroup
+&nbsp;import com.kotlinorm.syntax.group.SqlGroupingItem
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlColumnDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlIndexDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlInsertMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlAssignmentTarget
+&nbsp;import com.kotlinorm.syntax.table.SqlGraphPatternTerm
+&nbsp;import com.kotlinorm.syntax.table.SqlGraphQuantifier
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinCondition
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinType
+&nbsp;import com.kotlinorm.syntax.table.SqlJsonColumn
+&nbsp;import com.kotlinorm.syntax.table.SqlMatchRecognize
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPattern
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPatternQuantifier
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPatternSkipMode
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPatternSubsetItem
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPatternTerm
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;object SqlSyntaxValidator {
+&nbsp;    fun validate(node: SqlNode): List&lt;SqlValidationDiagnostic&gt; {
+&nbsp;        val diagnostics = mutableListOf&lt;SqlValidationDiagnostic&gt;()
+&nbsp;        validateNode(node, diagnostics)
+&nbsp;        return diagnostics
+&nbsp;    }
+&nbsp;
+&nbsp;    fun validateOrThrow(node: SqlNode) {
+&nbsp;        val errors = validate(node).filter { it.severity == SqlValidationSeverity.Error }
+&nbsp;        if (errors.isNotEmpty()) {
+&nbsp;            throw SqlValidationException(errors)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateNode(node: SqlNode, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (node) {
+&nbsp;            is SqlQuery -&gt; validateQuery(node, diagnostics)
+&nbsp;            is SqlStatement -&gt; validateStatement(node, diagnostics)
+&nbsp;            is SqlTable -&gt; validateTable(node, diagnostics)
+&nbsp;            is SqlExpr -&gt; validateExpr(node, diagnostics)
+&nbsp;            is SqlWindow -&gt; validateWindow(node, diagnostics)
+&nbsp;            is SqlWindowItem -&gt; validateWindowItem(node, diagnostics)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateStatement(statement: SqlStatement, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (statement) {
+&nbsp;            is SqlQuery -&gt; validateQuery(statement, diagnostics)
+&nbsp;            is SqlDmlStatement -&gt; validateDml(statement, diagnostics)
+&nbsp;            is SqlDdlStatement -&gt; validateDdl(statement, diagnostics)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateDml(statement: SqlDmlStatement, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (statement) {
+&nbsp;            is SqlDmlStatement.Insert -&gt; {
+&nbsp;                validateTable(statement.table, diagnostics)
+&nbsp;                validateDuplicateNames(&quot;insert.columns.duplicate&quot;, &quot;INSERT column&quot;, statement.columns.map { it.canonical }, diagnostics)
+&nbsp;                validateInsertMode(statement.columns, statement.mode, diagnostics)
+&nbsp;                statement.returning?.let { validateReturning(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlDmlStatement.Update -&gt; {
+&nbsp;                validateTable(statement.table, diagnostics)
+&nbsp;                validateDuplicateNames(&quot;update.set.duplicate&quot;, &quot;UPDATE SET column&quot;, statement.setPairs.map { it.target.canonicalName }, diagnostics)
+&nbsp;                statement.setPairs.forEach { validateExpr(it.value, diagnostics) }
+&nbsp;                statement.where?.let { validateExpr(it, diagnostics) }
+&nbsp;                statement.returning?.let { validateReturning(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlDmlStatement.Delete -&gt; {
+&nbsp;                validateTable(statement.table, diagnostics)
+&nbsp;                statement.where?.let { validateExpr(it, diagnostics) }
+&nbsp;                statement.returning?.let { validateReturning(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlDmlStatement.Truncate -&gt; validateTable(statement.table, diagnostics)
+&nbsp;            is SqlDmlStatement.Upsert -&gt; validateUpsert(statement, diagnostics)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateDdl(statement: SqlDdlStatement, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (statement) {
+&nbsp;            is SqlDdlStatement.CreateTable -&gt; {
+&nbsp;                val columnNames = statement.columns.map { it.name.canonical }
+&nbsp;                validateDuplicateNames(&quot;ddl.column.duplicate&quot;, &quot;CREATE TABLE column&quot;, columnNames, diagnostics)
+&nbsp;                statement.columns.forEach { validateColumnDefinition(it, diagnostics) }
+&nbsp;                statement.indexes.forEach { validateIndexDefinition(it, columnNames.toSet(), diagnostics) }
+&nbsp;                val primaryColumns = statement.columns.filter { it.primaryKey != SqlPrimaryKeyMode.NotPrimary }
+&nbsp;                if (primaryColumns.size &gt; 1) {
+&nbsp;                    diagnostics.error(
+&nbsp;                        &quot;ddl.primary.multiple&quot;,
+&nbsp;                        &quot;CREATE TABLE has multiple primary-key columns; composite primary keys are not modelled by this node.&quot;
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlDdlStatement.CreateTableAsSelect -&gt; validateQuery(statement.query, diagnostics)
+&nbsp;            is SqlDdlStatement.AlterTable.AddColumn -&gt; validateColumnDefinition(statement.column, diagnostics)
+&nbsp;            is SqlDdlStatement.AlterTable.ModifyColumn -&gt; validateColumnDefinition(statement.column, diagnostics)
+&nbsp;            is SqlDdlStatement.AlterTable.DropColumn -&gt; {}
+&nbsp;            is SqlDdlStatement.AlterTable.RenameColumn -&gt; {}
+&nbsp;            is SqlDdlStatement.AlterTable.RenameTable -&gt; {}
+&nbsp;            is SqlDdlStatement.AlterTable.AlterColumnDefault -&gt; statement.defaultValue?.let { validateExpr(it, diagnostics) }
+&nbsp;            is SqlDdlStatement.AlterTable.AlterColumnNullable -&gt; {}
+&nbsp;            is SqlDdlStatement.AlterTable.SetTableComment -&gt; {}
+&nbsp;            is SqlDdlStatement.DropTable -&gt; {}
+&nbsp;            is SqlDdlStatement.CreateIndex -&gt; validateDuplicateNames(
+&nbsp;                &quot;ddl.index.column.duplicate&quot;,
+&nbsp;                &quot;CREATE INDEX column&quot;,
+&nbsp;                statement.columns.map { it.canonical },
+&nbsp;                diagnostics
+&nbsp;            )
+&nbsp;            is SqlDdlStatement.DropIndex -&gt; {}
+&nbsp;            is SqlDdlStatement.AddConstraint -&gt; validateTableConstraint(statement.constraint, diagnostics)
+&nbsp;            is SqlDdlStatement.DropConstraint -&gt; {}
+&nbsp;            is SqlDdlStatement.CommentOnTable -&gt; {}
+&nbsp;            is SqlDdlStatement.CommentOnColumn -&gt; {}
+&nbsp;            is SqlDdlStatement.Vacuum -&gt; statement.into?.let { validateExpr(it, diagnostics) }
+&nbsp;            is SqlDdlStatement.SqlServerExtendedPropertyComment -&gt; {}
+&nbsp;            is SqlDdlStatement.SqlServerDropDefaultConstraint -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateQuery(query: SqlQuery, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (query) {
+&nbsp;            is SqlQuery.Select -&gt; {
+&nbsp;                query.select.forEach {
+&nbsp;                    if (it is SqlSelectItem.Expr) validateExpr(it.expr, diagnostics)
+&nbsp;                }
+&nbsp;                query.from.forEach { validateTable(it, diagnostics) }
+&nbsp;                query.where?.let { validateExpr(it, diagnostics) }
+&nbsp;                query.groupBy?.let { validateGroup(it, diagnostics) }
+&nbsp;                query.having?.let {
+&nbsp;                    validateExpr(it, diagnostics)
+&nbsp;                    if (query.groupBy == null) {
+&nbsp;                        diagnostics.warning(&quot;select.having.without.group&quot;, &quot;HAVING is present without GROUP BY.&quot;)
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                validateDuplicateNames(&quot;select.window.duplicate&quot;, &quot;WINDOW name&quot;, query.window.map { it.name.canonical }, diagnostics)
+&nbsp;                query.window.forEach { validateWindowItem(it, diagnostics) }
+&nbsp;                query.qualify?.let { validateExpr(it, diagnostics) }
+&nbsp;                validateOrdering(query.orderBy, diagnostics)
+&nbsp;                query.limit?.let { validateLimit(it, &quot;select&quot;, diagnostics) }
+&nbsp;                if (query.limit?.fetch?.mode == com.kotlinorm.syntax.limit.SqlFetchMode.WithTies &amp;&amp; query.orderBy.isEmpty()) {
+&nbsp;                    diagnostics.error(&quot;select.fetch.with.ties.without.order&quot;, &quot;FETCH WITH TIES requires ORDER BY for deterministic ties.&quot;)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlQuery.Set -&gt; {
+&nbsp;                validateQuery(query.left, diagnostics)
+&nbsp;                validateQuery(query.right, diagnostics)
+&nbsp;                validateOrdering(query.orderBy, diagnostics)
+&nbsp;                query.limit?.let { validateLimit(it, &quot;set&quot;, diagnostics) }
+&nbsp;                if (query.limit?.fetch?.mode == com.kotlinorm.syntax.limit.SqlFetchMode.WithTies &amp;&amp; query.orderBy.isEmpty()) {
+&nbsp;                    diagnostics.error(&quot;set.fetch.with.ties.without.order&quot;, &quot;FETCH WITH TIES on a set query requires ORDER BY.&quot;)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlQuery.Values -&gt; {
+&nbsp;                validateRowsArity(&quot;values.row.arity&quot;, &quot;VALUES query&quot;, query.values, diagnostics)
+&nbsp;                query.values.flatten().forEach { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlQuery.With -&gt; {
+&nbsp;                validateDuplicateNames(&quot;with.duplicate.name&quot;, &quot;CTE&quot;, query.withItems.map { it.name }, diagnostics)
+&nbsp;                query.withItems.forEach { item -&gt;
+&nbsp;                    validateDuplicateNames(&quot;with.column.duplicate&quot;, &quot;CTE column&quot;, item.columnNames, diagnostics)
+&nbsp;                    validateQuery(item.query, diagnostics)
+&nbsp;                }
+&nbsp;                validateQuery(query.query, diagnostics)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateInsertMode(
+&nbsp;        columns: List&lt;com.kotlinorm.syntax.SqlIdentifier&gt;,
+&nbsp;        mode: SqlInsertMode,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        when (mode) {
+&nbsp;            is SqlInsertMode.Values -&gt; {
+&nbsp;                if (columns.isNotEmpty()) {
+&nbsp;                    mode.values.forEachIndexed { index, row -&gt;
+&nbsp;                        if (row.size != columns.size) {
+&nbsp;                            diagnostics.error(
+&nbsp;                                &quot;insert.values.arity&quot;,
+&nbsp;                                &quot;INSERT row $index has ${row.size} values but ${columns.size} columns.&quot;
+&nbsp;                            )
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                } else {
+&nbsp;                    validateRowsArity(&quot;insert.values.row.arity&quot;, &quot;INSERT VALUES&quot;, mode.values, diagnostics)
+&nbsp;                }
+&nbsp;                mode.values.flatten().forEach { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlInsertMode.Subquery -&gt; validateQuery(mode.query, diagnostics)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateUpsert(
+&nbsp;        statement: SqlDmlStatement.Upsert,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        validateTable(statement.table, diagnostics)
+&nbsp;        validateDuplicateNames(&quot;upsert.columns.duplicate&quot;, &quot;UPSERT column&quot;, statement.columns.map { it.canonical }, diagnostics)
+&nbsp;        validateDuplicateNames(&quot;upsert.primary.duplicate&quot;, &quot;UPSERT primary key&quot;, statement.primaryKeys.map { it.canonical }, diagnostics)
+&nbsp;        val updateAction = statement.action as? com.kotlinorm.syntax.statement.SqlUpsertAction.Update
+&nbsp;        validateDuplicateNames(&quot;upsert.update.duplicate&quot;, &quot;UPSERT update column&quot;, updateAction?.setPairs?.map { it.target.canonicalName }.orEmpty(), diagnostics)
+&nbsp;        if (statement.values.size != statement.columns.size) {
+&nbsp;            diagnostics.error(&quot;upsert.values.arity&quot;, &quot;UPSERT has ${statement.values.size} values but ${statement.columns.size} columns.&quot;)
+&nbsp;        }
+&nbsp;        if (updateAction?.setPairs?.isEmpty() == true) {
+&nbsp;            diagnostics.error(&quot;upsert.update.empty&quot;, &quot;UPSERT requires at least one update column.&quot;)
+&nbsp;        }
+&nbsp;        val columnSet = statement.columns.map { it.canonical }.toSet()
+&nbsp;        val targetColumns = statement.conflictTarget.columns.ifEmpty { statement.primaryKeys }
+&nbsp;        if (targetColumns.isEmpty() &amp;&amp; statement.conflictTarget.constraintName == null) {
+&nbsp;            diagnostics.error(&quot;upsert.target.empty&quot;, &quot;UPSERT requires conflict target columns or a constraint name.&quot;)
+&nbsp;        }
+&nbsp;        val updateTargets = updateAction?.setPairs?.map { it.target.canonicalName }.orEmpty()
+&nbsp;        (targetColumns.map { it.canonical } + updateTargets).forEach { column -&gt;
+&nbsp;            if (column !in columnSet) {
+&nbsp;                diagnostics.error(&quot;upsert.column.unknown&quot;, &quot;UPSERT references column `$column` that is not present in the insert columns.&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.conflictTarget.where?.let { validateExpr(it, diagnostics) }
+&nbsp;        updateAction?.setPairs?.forEach { validateExpr(it.value, diagnostics) }
+&nbsp;        updateAction?.where?.let { validateExpr(it, diagnostics) }
+&nbsp;        statement.returning?.let { validateReturning(it, diagnostics) }
+&nbsp;        statement.values.forEach { validateExpr(it, diagnostics) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateReturning(
+&nbsp;        returning: com.kotlinorm.syntax.statement.SqlReturning,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        returning.items.forEach {
+&nbsp;            if (it is SqlSelectItem.Expr) validateExpr(it.expr, diagnostics)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateTable(table: SqlTable, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (table) {
+&nbsp;            is SqlTable.Ident -&gt; table.matchRecognize?.let { validateMatchRecognize(it, diagnostics) }
+&nbsp;            is SqlTable.Func -&gt; {
+&nbsp;                table.args.forEach { validateExpr(it, diagnostics) }
+&nbsp;                table.matchRecognize?.let { validateMatchRecognize(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlTable.Subquery -&gt; {
+&nbsp;                validateQuery(table.query, diagnostics)
+&nbsp;                table.matchRecognize?.let { validateMatchRecognize(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlTable.Join -&gt; {
+&nbsp;                validateTable(table.left, diagnostics)
+&nbsp;                validateTable(table.right, diagnostics)
+&nbsp;                if (table.joinType == SqlJoinType.Cross &amp;&amp; table.condition != null) {
+&nbsp;                    diagnostics.error(&quot;join.cross.condition&quot;, &quot;CROSS JOIN must not have ON or USING condition.&quot;)
+&nbsp;                }
+&nbsp;                table.condition?.let {
+&nbsp;                    if (it is SqlJoinCondition.On) validateExpr(it.condition, diagnostics)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlTable.Json -&gt; {
+&nbsp;                validateExpr(table.expr, diagnostics)
+&nbsp;                validateExpr(table.path, diagnostics)
+&nbsp;                table.passingItems.forEach { validateJsonPassing(it, diagnostics) }
+&nbsp;                table.columns.forEach { validateJsonColumn(it, diagnostics) }
+&nbsp;                table.matchRecognize?.let { validateMatchRecognize(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlTable.Graph -&gt; {
+&nbsp;                table.patterns.forEach { validateGraphPatternTerm(it.term, diagnostics) }
+&nbsp;                table.where?.let { validateExpr(it, diagnostics) }
+&nbsp;                table.columns.forEach {
+&nbsp;                    if (it is SqlSelectItem.Expr) validateExpr(it.expr, diagnostics)
+&nbsp;                }
+&nbsp;                table.matchRecognize?.let { validateMatchRecognize(it, diagnostics) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateExpr(expr: SqlExpr, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (expr) {
+&nbsp;            is SqlExpr.Column,
+&nbsp;            SqlExpr.NullLiteral,
+&nbsp;            is SqlExpr.StringLiteral,
+&nbsp;            is SqlExpr.NumberLiteral,
+&nbsp;            is SqlExpr.BooleanLiteral,
+&nbsp;            is SqlExpr.TimeLiteral,
+&nbsp;            is SqlExpr.IntervalLiteral,
+&nbsp;            is SqlExpr.Parameter,
+&nbsp;            is SqlExpr.IdentFunc -&gt; {}
+&nbsp;            is SqlExpr.Tuple -&gt; expr.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlExpr.Array -&gt; expr.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlExpr.Unary -&gt; validateExpr(expr.expr, diagnostics)
+&nbsp;            is SqlExpr.Binary -&gt; {
+&nbsp;                validateExpr(expr.left, diagnostics)
+&nbsp;                validateExpr(expr.right, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonTest -&gt; validateExpr(expr.expr, diagnostics)
+&nbsp;            is SqlExpr.In -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                when (val operand = expr.`in`) {
+&nbsp;                    is SqlInRightOperand.Values -&gt; operand.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;                    is SqlInRightOperand.Subquery -&gt; validateQuery(operand.query, diagnostics)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlExpr.Between -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.start, diagnostics)
+&nbsp;                validateExpr(expr.end, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.Like -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.pattern, diagnostics)
+&nbsp;                expr.escape?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.SimilarTo -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.pattern, diagnostics)
+&nbsp;                expr.escape?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.Case -&gt; {
+&nbsp;                expr.branches.forEach { branch -&gt;
+&nbsp;                    validateExpr(branch.`when`, diagnostics)
+&nbsp;                    validateExpr(branch.then, diagnostics)
+&nbsp;                }
+&nbsp;                expr.default?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.SimpleCase -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                expr.branches.forEach { branch -&gt;
+&nbsp;                    validateExpr(branch.`when`, diagnostics)
+&nbsp;                    validateExpr(branch.then, diagnostics)
+&nbsp;                }
+&nbsp;                expr.default?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.Coalesce -&gt; expr.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlExpr.NullIf -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.test, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.Cast -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateType(expr.type, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.Window -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateWindow(expr.window, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.Subquery -&gt; validateQuery(expr.query, diagnostics)
+&nbsp;            is SqlExpr.ExistsPredicate -&gt; validateQuery(expr.query, diagnostics)
+&nbsp;            is SqlExpr.QuantifiedComparisonPredicate -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateQuery(expr.query, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.Grouping -&gt; expr.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlExpr.SubstringFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.from, diagnostics)
+&nbsp;                expr.`for`?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.Function -&gt; {
+&nbsp;                expr.args.forEach { validateExpr(it, diagnostics) }
+&nbsp;                validateOrdering(expr.orderBy, diagnostics)
+&nbsp;                validateOrdering(expr.withinGroup, diagnostics)
+&nbsp;                expr.filter?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.ExcludedColumn,
+&nbsp;            is SqlExpr.SourceColumn -&gt; {}
+&nbsp;            is SqlExpr.TrimFunc -&gt; {
+&nbsp;                expr.trim?.value?.let { validateExpr(it, diagnostics) }
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.OverlayFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.placing, diagnostics)
+&nbsp;                validateExpr(expr.from, diagnostics)
+&nbsp;                expr.`for`?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.PositionFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.inExpr, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.ExtractFunc -&gt; validateExpr(expr.expr, diagnostics)
+&nbsp;            is SqlExpr.JsonSerializeFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonParseFunc -&gt; validateExpr(expr.expr, diagnostics)
+&nbsp;            is SqlExpr.JsonQueryFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.path, diagnostics)
+&nbsp;                expr.passingItems.forEach { validateJsonPassing(it, diagnostics) }
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;                expr.onEmpty?.let { validateJsonQueryEmptyBehavior(it, diagnostics) }
+&nbsp;                expr.onError?.let { validateJsonQueryErrorBehavior(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonValueFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.path, diagnostics)
+&nbsp;                expr.passingItems.forEach { validateJsonPassing(it, diagnostics) }
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;                expr.onEmpty?.let { validateJsonValueEmptyBehavior(it, diagnostics) }
+&nbsp;                expr.onError?.let { validateJsonValueErrorBehavior(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonObjectFunc -&gt; {
+&nbsp;                expr.items.forEach { validateJsonObjectItem(it, diagnostics) }
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonArrayFunc -&gt; {
+&nbsp;                expr.items.forEach { validateJsonArrayItem(it, diagnostics) }
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonExistsFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.path, diagnostics)
+&nbsp;                expr.passingItems.forEach { validateJsonPassing(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.CountAsteriskFunc -&gt; expr.filter?.let { validateExpr(it, diagnostics) }
+&nbsp;            is SqlExpr.JsonObjectAggFunc -&gt; {
+&nbsp;                validateJsonObjectItem(expr.item, diagnostics)
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;                expr.filter?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonArrayAggFunc -&gt; {
+&nbsp;                validateJsonArrayItem(expr.item, diagnostics)
+&nbsp;                validateOrdering(expr.orderBy, diagnostics)
+&nbsp;                expr.output?.let { validateType(it.type, diagnostics) }
+&nbsp;                expr.filter?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.ListAggFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.separator, diagnostics)
+&nbsp;                expr.onOverflow?.let { validateListAggOverflow(it, diagnostics) }
+&nbsp;                validateOrdering(expr.withinGroup, diagnostics)
+&nbsp;                expr.filter?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlExpr.NullsTreatmentFunc -&gt; expr.args.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlExpr.NthValueFunc -&gt; {
+&nbsp;                validateExpr(expr.expr, diagnostics)
+&nbsp;                validateExpr(expr.row, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlExpr.MatchPhase -&gt; validateExpr(expr.expr, diagnostics)
+&nbsp;            is SqlExpr.UnsafeCustom -&gt; expr.tokens.forEach { validateUnsafeToken(it, diagnostics) }
+&nbsp;            is SqlExpr.UnsafeRaw -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateMatchRecognize(matchRecognize: SqlMatchRecognize, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        matchRecognize.partitionBy.forEach { validateExpr(it, diagnostics) }
+&nbsp;        validateOrdering(matchRecognize.orderBy, diagnostics)
+&nbsp;        matchRecognize.measures.forEach { validateExpr(it.expr, diagnostics) }
+&nbsp;        validateRowPattern(matchRecognize.rowPattern, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateRowPattern(pattern: SqlRowPattern, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        val patternNames = collectPatternNames(pattern.pattern)
+&nbsp;        val defineNames = pattern.define.map { it.name }
+&nbsp;        validateDuplicateNames(&quot;match.define.duplicate&quot;, &quot;MATCH_RECOGNIZE DEFINE item&quot;, defineNames, diagnostics)
+&nbsp;        patternNames.forEach { name -&gt;
+&nbsp;            if (name !in defineNames.toSet()) {
+&nbsp;                diagnostics.error(&quot;match.define.missing&quot;, &quot;MATCH_RECOGNIZE pattern `$name` has no DEFINE item.&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;        pattern.define.forEach { validateExpr(it.expr, diagnostics) }
+&nbsp;        validateRowPatternTerm(pattern.pattern, diagnostics)
+&nbsp;        pattern.subset.forEach { validateSubset(it, patternNames, diagnostics) }
+&nbsp;        val skipName = when (val skip = pattern.afterMatchMode) {
+&nbsp;            is SqlRowPatternSkipMode.To -&gt; skip.name
+&nbsp;            is SqlRowPatternSkipMode.ToFirst -&gt; skip.name
+&nbsp;            is SqlRowPatternSkipMode.ToLast -&gt; skip.name
+&nbsp;            SqlRowPatternSkipMode.PastLastRow,
+&nbsp;            SqlRowPatternSkipMode.ToNextRow,
+&nbsp;            null -&gt; null
+&nbsp;        }
+&nbsp;        if (skipName != null &amp;&amp; skipName !in patternNames) {
+&nbsp;            diagnostics.error(&quot;match.skip.unknown&quot;, &quot;AFTER MATCH SKIP references unknown pattern `$skipName`.&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateSubset(
+&nbsp;        subset: SqlRowPatternSubsetItem,
+&nbsp;        patternNames: Set&lt;String&gt;,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        subset.patternNames.forEach { name -&gt;
+&nbsp;            if (name !in patternNames) {
+&nbsp;                diagnostics.error(&quot;match.subset.unknown&quot;, &quot;SUBSET `${subset.name}` references unknown pattern `$name`.&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateRowPatternTerm(term: SqlRowPatternTerm, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        term.quantifier?.let { validateRowPatternQuantifier(it, diagnostics) }
+&nbsp;        when (term) {
+&nbsp;            is SqlRowPatternTerm.Pattern,
+&nbsp;            is SqlRowPatternTerm.Circumflex,
+&nbsp;            is SqlRowPatternTerm.Dollar -&gt; {}
+&nbsp;            is SqlRowPatternTerm.Exclusion -&gt; validateRowPatternTerm(term.term, diagnostics)
+&nbsp;            is SqlRowPatternTerm.Permute -&gt; term.terms.forEach { validateRowPatternTerm(it, diagnostics) }
+&nbsp;            is SqlRowPatternTerm.Then -&gt; {
+&nbsp;                validateRowPatternTerm(term.left, diagnostics)
+&nbsp;                validateRowPatternTerm(term.right, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlRowPatternTerm.Or -&gt; {
+&nbsp;                validateRowPatternTerm(term.left, diagnostics)
+&nbsp;                validateRowPatternTerm(term.right, diagnostics)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateRowPatternQuantifier(
+&nbsp;        quantifier: SqlRowPatternQuantifier,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        when (quantifier) {
+&nbsp;            is SqlRowPatternQuantifier.Between -&gt; {
+&nbsp;                quantifier.start?.let { validateExpr(it, diagnostics) }
+&nbsp;                quantifier.end?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlRowPatternQuantifier.Quantity -&gt; validateExpr(quantifier.quantity, diagnostics)
+&nbsp;            is SqlRowPatternQuantifier.Asterisk,
+&nbsp;            is SqlRowPatternQuantifier.Plus,
+&nbsp;            is SqlRowPatternQuantifier.Question -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateGraphPatternTerm(term: SqlGraphPatternTerm, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (term) {
+&nbsp;            is SqlGraphPatternTerm.Quantified -&gt; {
+&nbsp;                validateGraphPatternTerm(term.term, diagnostics)
+&nbsp;                validateGraphQuantifier(term.quantifier, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlGraphPatternTerm.Vertex -&gt; term.where?.let { validateExpr(it, diagnostics) }
+&nbsp;            is SqlGraphPatternTerm.Edge -&gt; term.where?.let { validateExpr(it, diagnostics) }
+&nbsp;            is SqlGraphPatternTerm.And -&gt; {
+&nbsp;                validateGraphPatternTerm(term.left, diagnostics)
+&nbsp;                validateGraphPatternTerm(term.right, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlGraphPatternTerm.Or -&gt; {
+&nbsp;                validateGraphPatternTerm(term.left, diagnostics)
+&nbsp;                validateGraphPatternTerm(term.right, diagnostics)
+&nbsp;            }
+&nbsp;            is SqlGraphPatternTerm.Alternation -&gt; {
+&nbsp;                validateGraphPatternTerm(term.left, diagnostics)
+&nbsp;                validateGraphPatternTerm(term.right, diagnostics)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateGraphQuantifier(quantifier: SqlGraphQuantifier, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (quantifier) {
+&nbsp;            is SqlGraphQuantifier.Between -&gt; {
+&nbsp;                quantifier.start?.let { validateExpr(it, diagnostics) }
+&nbsp;                quantifier.end?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlGraphQuantifier.Quantity -&gt; validateExpr(quantifier.quantity, diagnostics)
+&nbsp;            SqlGraphQuantifier.Asterisk,
+&nbsp;            SqlGraphQuantifier.Plus,
+&nbsp;            SqlGraphQuantifier.Question -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonColumn(column: SqlJsonColumn, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (column) {
+&nbsp;            is SqlJsonColumn.Ordinality -&gt; {}
+&nbsp;            is SqlJsonColumn.Column -&gt; {
+&nbsp;                validateType(column.type, diagnostics)
+&nbsp;                column.path?.let { validateExpr(it, diagnostics) }
+&nbsp;                column.onEmpty?.let { validateJsonQueryEmptyBehavior(it, diagnostics) }
+&nbsp;                column.onError?.let { validateJsonQueryErrorBehavior(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlJsonColumn.Exists -&gt; {
+&nbsp;                validateType(column.type, diagnostics)
+&nbsp;                column.path?.let { validateExpr(it, diagnostics) }
+&nbsp;            }
+&nbsp;            is SqlJsonColumn.Nested -&gt; {
+&nbsp;                validateExpr(column.path, diagnostics)
+&nbsp;                column.columns.forEach { validateJsonColumn(it, diagnostics) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateColumnDefinition(column: SqlColumnDefinition, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        validateType(column.type, diagnostics)
+&nbsp;        column.defaultValue?.let { validateExpr(it, diagnostics) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateIndexDefinition(
+&nbsp;        index: SqlIndexDefinition,
+&nbsp;        knownColumns: Set&lt;String&gt;,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        validateDuplicateNames(&quot;ddl.index.column.duplicate&quot;, &quot;index column&quot;, index.columns.map { it.canonical }, diagnostics)
+&nbsp;        index.columns.forEach { column -&gt;
+&nbsp;            if (column.canonical !in knownColumns) {
+&nbsp;                diagnostics.error(&quot;ddl.index.column.unknown&quot;, &quot;Index `${index.name.canonical}` references unknown column `${column.canonical}`.&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateTableConstraint(
+&nbsp;        constraint: com.kotlinorm.syntax.statement.SqlTableConstraint,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        when (constraint) {
+&nbsp;            is com.kotlinorm.syntax.statement.SqlTableConstraint.PrimaryKey -&gt;
+&nbsp;                validateDuplicateNames(&quot;ddl.constraint.column.duplicate&quot;, &quot;PRIMARY KEY column&quot;, constraint.columns.map { it.canonical }, diagnostics)
+&nbsp;            is com.kotlinorm.syntax.statement.SqlTableConstraint.Unique -&gt;
+&nbsp;                validateDuplicateNames(&quot;ddl.constraint.column.duplicate&quot;, &quot;UNIQUE column&quot;, constraint.columns.map { it.canonical }, diagnostics)
+&nbsp;            is com.kotlinorm.syntax.statement.SqlTableConstraint.Check -&gt; validateExpr(constraint.condition, diagnostics)
+&nbsp;            is com.kotlinorm.syntax.statement.SqlTableConstraint.ForeignKey -&gt; {
+&nbsp;                validateDuplicateNames(&quot;ddl.constraint.column.duplicate&quot;, &quot;FOREIGN KEY column&quot;, constraint.columns.map { it.canonical }, diagnostics)
+&nbsp;                validateDuplicateNames(&quot;ddl.constraint.reference.duplicate&quot;, &quot;FOREIGN KEY referenced column&quot;, constraint.referencedColumns.map { it.canonical }, diagnostics)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateGroup(group: SqlGroup, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        group.items.forEach { validateGroupingItem(it, diagnostics) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateGroupingItem(item: SqlGroupingItem, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (item) {
+&nbsp;            SqlGroupingItem.EmptyGroup -&gt; {}
+&nbsp;            is SqlGroupingItem.Expr -&gt; validateExpr(item.item, diagnostics)
+&nbsp;            is SqlGroupingItem.Cube -&gt; item.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlGroupingItem.Rollup -&gt; item.items.forEach { validateExpr(it, diagnostics) }
+&nbsp;            is SqlGroupingItem.GroupingSets -&gt; item.items.forEach { validateGroupingItem(it, diagnostics) }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateOrdering(orderBy: List&lt;SqlOrderingItem&gt;, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        orderBy.forEach { validateExpr(it.expr, diagnostics) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateLimit(limit: SqlLimit, scope: String, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        limit.offset?.let { validateExpr(it, diagnostics) }
+&nbsp;        limit.fetch?.let { validateExpr(it.limit, diagnostics) }
+&nbsp;        if (limit.offset == null &amp;&amp; limit.fetch == null) {
+&nbsp;            diagnostics.warning(&quot;$scope.limit.empty&quot;, &quot;LIMIT/OFFSET clause is empty.&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateWindow(window: SqlWindow, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        window.partitionBy.forEach { validateExpr(it, diagnostics) }
+&nbsp;        validateOrdering(window.orderBy, diagnostics)
+&nbsp;        when (val frame = window.frame) {
+&nbsp;            is SqlWindowFrame.Start -&gt; validateWindowFrameBound(frame.start, diagnostics)
+&nbsp;            is SqlWindowFrame.Between -&gt; {
+&nbsp;                validateWindowFrameBound(frame.start, diagnostics)
+&nbsp;                validateWindowFrameBound(frame.end, diagnostics)
+&nbsp;            }
+&nbsp;            null -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateWindowItem(item: SqlWindowItem, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        validateWindow(item.window, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateWindowFrameBound(bound: SqlWindowFrameBound, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (bound) {
+&nbsp;            is SqlWindowFrameBound.Preceding -&gt; validateExpr(bound.n, diagnostics)
+&nbsp;            is SqlWindowFrameBound.Following -&gt; validateExpr(bound.n, diagnostics)
+&nbsp;            SqlWindowFrameBound.CurrentRow,
+&nbsp;            SqlWindowFrameBound.UnboundedFollowing,
+&nbsp;            SqlWindowFrameBound.UnboundedPreceding -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonPassing(passing: SqlJsonPassing, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        validateExpr(passing.expr, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonObjectItem(item: SqlJsonObjectItem, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        validateExpr(item.key, diagnostics)
+&nbsp;        validateExpr(item.value, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonArrayItem(item: SqlJsonArrayItem, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        validateExpr(item.value, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonQueryEmptyBehavior(
+&nbsp;        behavior: SqlJsonQueryEmptyBehavior,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        if (behavior is SqlJsonQueryEmptyBehavior.Default) validateExpr(behavior.expr, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonQueryErrorBehavior(
+&nbsp;        behavior: SqlJsonQueryErrorBehavior,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        if (behavior is SqlJsonQueryErrorBehavior.Default) validateExpr(behavior.expr, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonValueEmptyBehavior(
+&nbsp;        behavior: SqlJsonValueEmptyBehavior,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        if (behavior is SqlJsonValueEmptyBehavior.Default) validateExpr(behavior.expr, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateJsonValueErrorBehavior(
+&nbsp;        behavior: SqlJsonValueErrorBehavior,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        if (behavior is SqlJsonValueErrorBehavior.Default) validateExpr(behavior.expr, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateListAggOverflow(onOverflow: SqlListAggOnOverflow, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        if (onOverflow is SqlListAggOnOverflow.Truncate) {
+&nbsp;            onOverflow.filler?.let { validateExpr(it, diagnostics) }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateType(type: SqlType, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        when (type) {
+&nbsp;            is SqlType.Array -&gt; validateType(type.type, diagnostics)
+&nbsp;            is SqlType.UnsafeCustom -&gt; type.tokens.forEach { validateUnsafeToken(it, diagnostics) }
+&nbsp;            is SqlType.Varchar,
+&nbsp;            SqlType.Int,
+&nbsp;            SqlType.Long,
+&nbsp;            SqlType.Float,
+&nbsp;            SqlType.Double,
+&nbsp;            is SqlType.Decimal,
+&nbsp;            SqlType.Date,
+&nbsp;            is SqlType.Timestamp,
+&nbsp;            is SqlType.Time,
+&nbsp;            SqlType.Json,
+&nbsp;            SqlType.Boolean,
+&nbsp;            SqlType.Interval,
+&nbsp;            SqlType.Geometry,
+&nbsp;            SqlType.Point,
+&nbsp;            SqlType.LineString,
+&nbsp;            SqlType.Polygon,
+&nbsp;            SqlType.MultiPoint,
+&nbsp;            SqlType.MultiLineString,
+&nbsp;            SqlType.MultiPolygon,
+&nbsp;            SqlType.GeometryCollection,
+&nbsp;            is SqlType.Named -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateUnsafeToken(token: SqlUnsafeToken, diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;) {
+&nbsp;        if (token is SqlUnsafeToken.Expr) validateExpr(token.value, diagnostics)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateRowsArity(
+&nbsp;        code: String,
+&nbsp;        label: String,
+&nbsp;        rows: List&lt;List&lt;SqlExpr&gt;&gt;,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        val expected = rows.firstOrNull()?.size ?: return
+&nbsp;        rows.forEachIndexed { index, row -&gt;
+&nbsp;            if (row.size != expected) {
+&nbsp;                diagnostics.error(code, &quot;$label row $index has ${row.size} values but row 0 has $expected values.&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateDuplicateNames(
+&nbsp;        code: String,
+&nbsp;        label: String,
+&nbsp;        names: List&lt;String&gt;,
+&nbsp;        diagnostics: MutableList&lt;SqlValidationDiagnostic&gt;
+&nbsp;    ) {
+&nbsp;        duplicates(names).forEach { name -&gt;
+&nbsp;            diagnostics.error(code, &quot;Duplicate $label `$name`.&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun duplicates(names: List&lt;String&gt;): Set&lt;String&gt; =
+&nbsp;        names.groupingBy { it }.eachCount().filterValues { it &gt; 1 }.keys
+&nbsp;
+&nbsp;    private val SqlAssignmentTarget.canonicalName: String
+&nbsp;        get() = when (this) {
+&nbsp;            is SqlAssignmentTarget.Column -&gt; (qualifier?.parts.orEmpty() + identifier.parts).joinToString(&quot;.&quot;)
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun collectPatternNames(term: SqlRowPatternTerm): Set&lt;String&gt; = when (term) {
+&nbsp;        is SqlRowPatternTerm.Pattern -&gt; setOf(term.name)
+&nbsp;        is SqlRowPatternTerm.Exclusion -&gt; collectPatternNames(term.term)
+&nbsp;        is SqlRowPatternTerm.Permute -&gt; term.terms.flatMap { collectPatternNames(it) }.toSet()
+&nbsp;        is SqlRowPatternTerm.Then -&gt; collectPatternNames(term.left) + collectPatternNames(term.right)
+&nbsp;        is SqlRowPatternTerm.Or -&gt; collectPatternNames(term.left) + collectPatternNames(term.right)
+&nbsp;        is SqlRowPatternTerm.Circumflex,
+&nbsp;        is SqlRowPatternTerm.Dollar -&gt; emptySet()
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableList&lt;SqlValidationDiagnostic&gt;.error(code: String, message: String) {
+&nbsp;        add(SqlValidationDiagnostic(code, message, SqlValidationSeverity.Error))
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableList&lt;SqlValidationDiagnostic&gt;.warning(code: String, message: String) {
+&nbsp;        add(SqlValidationDiagnostic(code, message, SqlValidationSeverity.Warning))
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;data class SqlValidationDiagnostic(</b>
+<b class="fc">&nbsp;    val code: String,</b>
+<b class="fc">&nbsp;    val message: String,</b>
+<b class="fc">&nbsp;    val severity: SqlValidationSeverity</b>
+&nbsp;)
+&nbsp;
+&nbsp;enum class SqlValidationSeverity {
+&nbsp;    Error,
+&nbsp;    Warning
+&nbsp;}
+&nbsp;
+&nbsp;class SqlValidationException(
+&nbsp;    val diagnostics: List&lt;SqlValidationDiagnostic&gt;
+&nbsp;) : IllegalArgumentException(diagnostics.joinToString(&quot;; &quot;) { &quot;${it.code}: ${it.message}&quot; })
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

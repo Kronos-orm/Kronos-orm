@@ -1,0 +1,870 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > NamedParameterUtils</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: NamedParameterUtils (com.kotlinorm.beans.parser)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">NamedParameterUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    92%
+  </span>
+  <span class="absValue">
+    (23/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.6%
+  </span>
+  <span class="absValue">
+    (114/157)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.8%
+  </span>
+  <span class="absValue">
+    (172/196)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.6%
+  </span>
+  <span class="absValue">
+    (1031/1191)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">NamedParameterUtils$generatePlaceholders$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">NamedParameterUtils$Parameter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">NamedParameterUtils$ParseContext</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (76/76)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    92.9%
+  </span>
+  <span class="absValue">
+    (26/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.6%
+  </span>
+  <span class="absValue">
+    (114/157)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.3%
+  </span>
+  <span class="absValue">
+    (182/206)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.6%
+  </span>
+  <span class="absValue">
+    (1126/1286)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.parser
+&nbsp;
+&nbsp;import com.kotlinorm.cache.namedSqlCache
+&nbsp;import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
+&nbsp;import com.kotlinorm.exceptions.InvalidParameterException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;
+&nbsp;/**
+&nbsp; * SQL 命名参数解析工具
+&nbsp; * 
+&nbsp; * 提供 SQL 语句中命名参数的解析和替换功能，支持复杂的路径表达式。
+&nbsp; * 
+&nbsp; * ## 支持的参数格式
+&nbsp; * - 简单参数：`:name` 或 `&amp;name`
+&nbsp; * - 括号参数：`:{name}`
+&nbsp; * - 路径参数：`:user.name`、`:array[0]`、`:records[0].id`
+&nbsp; * - 复杂路径：`:array[0].list[1].map[key].property`
+&nbsp; * 
+&nbsp; * ## 特殊操作符处理
+&nbsp; * - PostgreSQL 类型转换：`::timestamp` 不会被识别为参数
+&nbsp; * - PostgreSQL JSON 操作符：`??`、`?|`、`?&amp;` 不会被识别为参数
+&nbsp; * - 转义冒号：`\:` 会被转换为 `:`
+&nbsp; * 
+&nbsp; * ## 性能优化
+&nbsp; * - 使用缓存避免重复解析相同的 SQL 语句
+&nbsp; * - 迭代实现避免递归调用栈开销
+&nbsp; * - 简单路径快速查找优化
+&nbsp; * 
+&nbsp; * @author OUSC
+&nbsp; * @since 1.0.0
+&nbsp; */
+&nbsp;object NamedParameterUtils {
+&nbsp;    /** SQL 中的引号和注释配对 */
+<b class="fc">&nbsp;    private val QUOTE_PAIRS = [</b>
+<b class="fc">&nbsp;        &quot;&#39;&quot; to &quot;&#39;&quot;,      // 单引号字符串</b>
+<b class="fc">&nbsp;        &quot;\&quot;&quot; to &quot;\&quot;&quot;,    // 双引号字符串</b>
+<b class="fc">&nbsp;        &quot;--&quot; to &quot;\n&quot;,    // 单行注释</b>
+<b class="fc">&nbsp;        &quot;/*&quot; to &quot;*/&quot;,    // 多行注释</b>
+<b class="fc">&nbsp;        &quot;`&quot; to &quot;`&quot;       // 反引号标识符</b>
+&nbsp;    ]
+&nbsp;
+&nbsp;    /** 参数分隔符字符集 */
+&nbsp;    private const val PARAMETER_SEPARATORS = &quot;\&quot;&#39;:&amp;,;()|=+-*%/\\&lt;&gt;^&quot;
+&nbsp;    
+&nbsp;    /** 分隔符索引数组大小 */
+&nbsp;    private const val SEPARATOR_INDEX_SIZE = 128
+&nbsp;
+&nbsp;    /** 快速查找分隔符的布尔数组索引 */
+<b class="fc">&nbsp;    private val separatorIndex = BooleanArray(SEPARATOR_INDEX_SIZE).apply {</b>
+<b class="fc">&nbsp;        PARAMETER_SEPARATORS.forEach { char -&gt;</b>
+<b class="fc">&nbsp;            this[char.code] = true</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 解析 SQL 语句，定位占位符和命名参数
+&nbsp;     * 
+&nbsp;     * 将 SQL 语句中的命名参数（如 `:name`）解析为 JDBC 占位符（`?`），
+&nbsp;     * 并记录参数的位置和名称信息。支持缓存以提高重复解析的性能。
+&nbsp;     * 
+&nbsp;     * @param sql 原始 SQL 语句
+&nbsp;     * @param paramMap 参数映射表
+&nbsp;     * @param listParameterOccurrences 需要按列表展开的命名参数出现位置
+&nbsp;     * @return 解析后的 SQL 对象，包含 JDBC SQL 和参数信息
+&nbsp;     * 
+&nbsp;     * @throws InvalidParameterException 当参数声明格式错误时
+&nbsp;     * 
+&nbsp;     * Example:
+&nbsp;     * ```kotlin
+&nbsp;     * val sql = &quot;SELECT * FROM users WHERE id = :id AND name = :name&quot;
+&nbsp;     * val parsed = parseSqlStatement(sql, mapOf(&quot;id&quot; to 1, &quot;name&quot; to &quot;John&quot;))
+&nbsp;     * // parsed.jdbcSql = &quot;SELECT * FROM users WHERE id = ? AND name = ?&quot;
+&nbsp;     * // parsed.jdbcParamList = [1, &quot;John&quot;]
+&nbsp;     * ```
+&nbsp;     */
+&nbsp;    fun parseSqlStatement(
+&nbsp;        sql: String,
+<b class="fc">&nbsp;        paramMap: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;        listParameterOccurrences: Set&lt;Int&gt; = emptySet()</b>
+&nbsp;    ): ParsedSql {
+<b class="fc">&nbsp;        namedSqlCache[sql]?.let { cached -&gt;</b>
+<b class="fc">&nbsp;            return ParsedSql(</b>
+<b class="fc">&nbsp;                sql, paramMap,</b>
+<b class="fc">&nbsp;                cached.parameterNames,</b>
+<b class="fc">&nbsp;                cached.parameterIndexes,</b>
+<b class="fc">&nbsp;                cached.namedParameterCount,</b>
+<b class="fc">&nbsp;                cached.unnamedParameterCount,</b>
+<b class="fc">&nbsp;                cached.totalParameterCount,</b>
+<b class="fc">&nbsp;                &quot;&quot;,</b>
+<b class="fc">&nbsp;                listParameterOccurrences</b>
+<b class="fc">&nbsp;            ).apply {</b>
+<b class="fc">&nbsp;                jdbcSql = substituteNamedParameters(this, paramMap)</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val context = ParseContext(sql)</b>
+<b class="fc">&nbsp;        parseStatementIterative(context)</b>
+&nbsp;
+<b class="fc">&nbsp;        return ParsedSql(context.sqlToUse.toString(), paramMap, listParameterOccurrences = listParameterOccurrences).apply {</b>
+<b class="fc">&nbsp;            context.parameterList.forEach { addNamedParameter(it.name, it.startIndex, it.endIndex) }</b>
+<b class="fc">&nbsp;            namedParameterCount = context.namedParameters.size</b>
+<b class="fc">&nbsp;            unnamedParameterCount = context.unnamedParameterCount</b>
+<b class="fc">&nbsp;            totalParameterCount = context.totalParameterCount</b>
+<b class="fc">&nbsp;            jdbcSql = substituteNamedParameters(this, paramMap)</b>
+<b class="fc">&nbsp;            namedSqlCache[sql] = this</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * SQL 解析上下文
+&nbsp;     * 
+&nbsp;     * 保存解析过程中的状态信息
+&nbsp;     * 
+&nbsp;     * @property originalSql 原始 SQL 字符串
+&nbsp;     * @property statement SQL 字符数组，用于快速访问
+&nbsp;     * @property sqlToUse 处理转义后的 SQL
+&nbsp;     * @property namedParameters 已发现的唯一参数名集合
+&nbsp;     * @property parameterList 参数列表，包含位置信息
+&nbsp;     * @property totalParameterCount 总参数数量（包括重复的）
+&nbsp;     * @property unnamedParameterCount 未命名参数（?）数量
+&nbsp;     * @property escapes 转义字符数量
+&nbsp;     */
+&nbsp;    private data class ParseContext(
+<b class="fc">&nbsp;        val originalSql: String,</b>
+<b class="fc">&nbsp;        val statement: CharArray = originalSql.toCharArray(),</b>
+<b class="fc">&nbsp;        val sqlToUse: StringBuilder = StringBuilder(originalSql),</b>
+<b class="fc">&nbsp;        val namedParameters: MutableSet&lt;String&gt; = mutableSetOf(),</b>
+<b class="fc">&nbsp;        val parameterList: MutableList&lt;Parameter&gt; = mutableListOf(),</b>
+<b class="fc">&nbsp;        var totalParameterCount: Int = 0,</b>
+<b class="fc">&nbsp;        var unnamedParameterCount: Int = 0,</b>
+<b class="fc">&nbsp;        var escapes: Int = 0</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 参数信息
+&nbsp;     * 
+&nbsp;     * @property name 参数名称
+&nbsp;     * @property startIndex 在 SQL 中的起始位置
+&nbsp;     * @property endIndex 在 SQL 中的结束位置
+&nbsp;     */
+<b class="fc">&nbsp;    private data class Parameter(val name: String, val startIndex: Int, val endIndex: Int)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 迭代方式解析 SQL 语句
+&nbsp;     * 
+&nbsp;     * 使用迭代而非递归，避免长 SQL 语句导致的栈溢出问题
+&nbsp;     * 
+&nbsp;     * @param context 解析上下文
+&nbsp;     */
+&nbsp;    private fun parseStatementIterative(context: ParseContext) {
+<b class="fc">&nbsp;        var position = 0</b>
+&nbsp;        
+<b class="fc">&nbsp;        while (position &lt; context.statement.size) {</b>
+&nbsp;            // 跳过注释和引号内容
+<b class="fc">&nbsp;            val nextPos = skipCommentsAndQuotes(context.statement, position)</b>
+<b class="fc">&nbsp;            if (nextPos != position) {</b>
+<b class="fc">&nbsp;                position = nextPos</b>
+&nbsp;                continue
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            when (val char = context.statement[position]) {</b>
+&nbsp;                &#39;:&#39;, &#39;&amp;&#39; -&gt; {
+<b class="fc">&nbsp;                    position = parseParameter(context, position, char)</b>
+&nbsp;                }
+&nbsp;                &#39;\\&#39; -&gt; {
+<b class="pc">&nbsp;                    position = if (handleEscapedColon(context, position)) {</b>
+<b class="fc">&nbsp;                        position + 2</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        position + 1</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                &#39;?&#39; -&gt; {
+<b class="fc">&nbsp;                    position = if (handleQuestionMark(context, position)) {</b>
+<b class="fc">&nbsp;                        position + 2</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        context.unnamedParameterCount++</b>
+<b class="fc">&nbsp;                        context.totalParameterCount++</b>
+<b class="fc">&nbsp;                        position + 1</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                else -&gt; position++</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 解析参数
+&nbsp;     * 
+&nbsp;     * 识别并解析命名参数，支持两种格式：
+&nbsp;     * - 括号格式：`:{name}`
+&nbsp;     * - 常规格式：`:name` 或 `:array[0].property`
+&nbsp;     * 
+&nbsp;     * @param context 解析上下文
+&nbsp;     * @param start 参数起始位置
+&nbsp;     * @param prefix 参数前缀字符（`:` 或 `&amp;`）
+&nbsp;     * @return 参数结束位置
+&nbsp;     */
+&nbsp;    private fun parseParameter(context: ParseContext, start: Int, prefix: Char): Int {
+<b class="fc">&nbsp;        val next = start + 1</b>
+&nbsp;        
+&nbsp;        // 跳过 Postgres 的 :: 类型转换操作符
+<b class="pc">&nbsp;        if (prefix == &#39;:&#39; &amp;&amp; next &lt; context.statement.size &amp;&amp; context.statement[next] == &#39;:&#39;) {</b>
+<b class="fc">&nbsp;            return start + 2</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val (paramName, endPos) = when {</b>
+<b class="pc">&nbsp;            prefix == &#39;:&#39; &amp;&amp; next &lt; context.statement.size &amp;&amp; context.statement[next] == &#39;{&#39; -&gt;</b>
+<b class="fc">&nbsp;                parseBracketParameter(context, start, next)</b>
+&nbsp;            else -&gt;
+<b class="fc">&nbsp;                parseRegularParameter(context, start, next)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (paramName.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            context.namedParameters.add(paramName)</b>
+<b class="fc">&nbsp;            context.parameterList.add(</b>
+<b class="fc">&nbsp;                Parameter(paramName, start - context.escapes, endPos - context.escapes)</b>
+&nbsp;            )
+<b class="fc">&nbsp;            context.totalParameterCount++</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return endPos</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 解析括号格式的参数
+&nbsp;     * 
+&nbsp;     * 格式：`:{paramName}`
+&nbsp;     * 
+&nbsp;     * @param context 解析上下文
+&nbsp;     * @param start 参数起始位置
+&nbsp;     * @param bracketStart 左括号位置
+&nbsp;     * @return 参数名和结束位置
+&nbsp;     * @throws InvalidParameterException 当括号未闭合或包含非法字符时
+&nbsp;     */
+&nbsp;    private fun parseBracketParameter(context: ParseContext, start: Int, bracketStart: Int): Pair&lt;String, Int&gt; {
+<b class="fc">&nbsp;        var pos = bracketStart + 1</b>
+&nbsp;        
+<b class="fc">&nbsp;        while (pos &lt; context.statement.size &amp;&amp; context.statement[pos] != &#39;}&#39;) {</b>
+<b class="fc">&nbsp;            val char = context.statement[pos]</b>
+<b class="pc">&nbsp;            if (char == &#39;:&#39; || char == &#39;{&#39;) {</b>
+<b class="nc">&nbsp;                throw InvalidParameterException(</b>
+<b class="nc">&nbsp;                    &quot;Parameter name contains invalid character &#39;$char&#39; at position $start in statement: ${context.originalSql}&quot;</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (pos &gt;= context.statement.size) {</b>
+<b class="fc">&nbsp;            throw InvalidParameterException(</b>
+<b class="fc">&nbsp;                &quot;Non-terminated named parameter declaration at position $start in statement: ${context.originalSql}&quot;</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val paramName = if (pos - bracketStart &gt; 1) {</b>
+<b class="fc">&nbsp;            context.originalSql.substring(bracketStart + 1, pos)</b>
+<b class="fc">&nbsp;        } else &quot;&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;        return paramName to pos + 1</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 解析常规格式的参数
+&nbsp;     * 
+&nbsp;     * 支持简单参数和路径参数：
+&nbsp;     * - 简单：`:name`
+&nbsp;     * - 路径：`:user.name`、`:array[0]`、`:records[0].id`
+&nbsp;     * 
+&nbsp;     * @param context 解析上下文
+&nbsp;     * @param start 参数起始位置
+&nbsp;     * @param paramStart 参数名起始位置
+&nbsp;     * @return 参数名和结束位置
+&nbsp;     */
+&nbsp;    private fun parseRegularParameter(context: ParseContext, start: Int, paramStart: Int): Pair&lt;String, Int&gt; {
+<b class="fc">&nbsp;        var pos = paramStart</b>
+<b class="fc">&nbsp;        var hasSquareBracket = false</b>
+&nbsp;
+<b class="fc">&nbsp;        while (pos &lt; context.statement.size) {</b>
+<b class="fc">&nbsp;            val char = context.statement[pos]</b>
+&nbsp;            
+<b class="pc">&nbsp;            when (char) {</b>
+<b class="fc">&nbsp;                &#39;[&#39; -&gt; hasSquareBracket = true</b>
+&nbsp;                &#39;]&#39; -&gt; {
+<b class="fc">&nbsp;                    if (!hasSquareBracket) break</b>
+<b class="fc">&nbsp;                    hasSquareBracket = false</b>
+&nbsp;                }
+<b class="fc">&nbsp;                else -&gt; if (isParameterSeparator(char)) break</b>
+&nbsp;            }
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val paramName = if (pos - start &gt; 1) {</b>
+<b class="fc">&nbsp;            context.originalSql.substring(start + 1, pos)</b>
+<b class="fc">&nbsp;        } else &quot;&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;        return paramName to pos</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 处理转义的冒号
+&nbsp;     * 
+&nbsp;     * 将 `\:` 转换为 `:`
+&nbsp;     * 
+&nbsp;     * @param context 解析上下文
+&nbsp;     * @param position 当前位置
+&nbsp;     * @return 是否处理了转义
+&nbsp;     */
+&nbsp;    private inline fun handleEscapedColon(context: ParseContext, position: Int): Boolean {
+<b class="fc">&nbsp;        val next = position + 1</b>
+<b class="pc">&nbsp;        return if (next &lt; context.statement.size &amp;&amp; context.statement[next] == &#39;:&#39;) {</b>
+<b class="fc">&nbsp;            context.sqlToUse.deleteCharAt(position - context.escapes)</b>
+<b class="fc">&nbsp;            context.escapes++</b>
+<b class="fc">&nbsp;            true</b>
+<b class="nc">&nbsp;        } else false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 处理问号操作符
+&nbsp;     * 
+&nbsp;     * 识别 PostgreSQL 的特殊操作符：`??`、`?|`、`?&amp;`
+&nbsp;     * 
+&nbsp;     * @param context 解析上下文
+&nbsp;     * @param position 当前位置
+&nbsp;     * @return 是否是特殊操作符
+&nbsp;     */
+&nbsp;    private inline fun handleQuestionMark(context: ParseContext, position: Int): Boolean {
+<b class="fc">&nbsp;        val next = position + 1</b>
+<b class="fc">&nbsp;        if (next &gt;= context.statement.size) return false</b>
+<b class="fc">&nbsp;        val nextChar = context.statement[next]</b>
+<b class="fc">&nbsp;        return nextChar == &#39;?&#39; || nextChar == &#39;|&#39; || nextChar == &#39;&amp;&#39;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 跳过 SQL 中的注释和引号内容
+&nbsp;     * 
+&nbsp;     * @param statement SQL 字符数组
+&nbsp;     * @param position 当前位置
+&nbsp;     * @return 跳过后的位置
+&nbsp;     */
+&nbsp;    private fun skipCommentsAndQuotes(statement: CharArray, position: Int): Int {
+<b class="pc">&nbsp;        if (position &gt;= statement.size) return position</b>
+&nbsp;
+<b class="fc">&nbsp;        for ((start, end) in QUOTE_PAIRS) {</b>
+<b class="fc">&nbsp;            if (matchesPattern(statement, position, start)) {</b>
+<b class="fc">&nbsp;                return findPatternEndIterative(statement, position + start.length, end)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return position</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 匹配字符串模式
+&nbsp;     * 
+&nbsp;     * @param statement SQL 字符数组
+&nbsp;     * @param position 起始位置
+&nbsp;     * @param pattern 要匹配的模式
+&nbsp;     * @return 是否匹配
+&nbsp;     */
+&nbsp;    private inline fun matchesPattern(statement: CharArray, position: Int, pattern: String): Boolean {
+<b class="fc">&nbsp;        if (position + pattern.length &gt; statement.size) return false</b>
+<b class="fc">&nbsp;        return pattern.indices.all { statement[position + it] == pattern[it] }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 查找模式结束位置（迭代实现）
+&nbsp;     * 
+&nbsp;     * @param statement SQL 字符数组
+&nbsp;     * @param startPos 搜索起始位置
+&nbsp;     * @param pattern 结束模式
+&nbsp;     * @return 模式结束位置
+&nbsp;     */
+&nbsp;    private fun findPatternEndIterative(statement: CharArray, startPos: Int, pattern: String): Int {
+<b class="fc">&nbsp;        var position = startPos</b>
+&nbsp;        
+<b class="fc">&nbsp;        while (position &lt; statement.size) {</b>
+<b class="fc">&nbsp;            if (matchesPattern(statement, position, pattern)) {</b>
+<b class="fc">&nbsp;                return position + pattern.length</b>
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+&nbsp;        
+<b class="fc">&nbsp;        return statement.size</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 判断字符是否为参数分隔符
+&nbsp;     * 
+&nbsp;     * @param char 要判断的字符
+&nbsp;     * @return 是否为分隔符
+&nbsp;     */
+&nbsp;    private inline fun isParameterSeparator(char: Char): Boolean =
+<b class="fc">&nbsp;        (char.code &lt; SEPARATOR_INDEX_SIZE &amp;&amp; separatorIndex[char.code]) || char.isWhitespace()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 替换命名参数为 JDBC 占位符
+&nbsp;     * 
+&nbsp;     * 将命名参数（如 `:name`）替换为 JDBC 占位符（`?`）。
+&nbsp;     * 只有被 AST/任务标记为列表展开的参数出现位置会展开为多个占位符。
+&nbsp;     * 
+&nbsp;     * @param parsedSql 已解析的 SQL 对象
+&nbsp;     * @param paramSource 参数值映射表，用于确定集合参数的展开数量
+&nbsp;     * @return 替换后的 JDBC SQL 语句
+&nbsp;     * 
+&nbsp;     * Example:
+&nbsp;     * ```kotlin
+&nbsp;     * val parsed = parseSqlStatement(
+&nbsp;     *     &quot;SELECT * FROM users WHERE id IN (:ids)&quot;,
+&nbsp;     *     mapOf(&quot;ids&quot; to listOf(1, 2, 3)),
+&nbsp;     *     listParameterOccurrences = setOf(0)
+&nbsp;     * )
+&nbsp;     * val sql = parsed.jdbcSql
+&nbsp;     * // sql = &quot;SELECT * FROM users WHERE id IN (?, ?, ?)&quot;
+&nbsp;     * ```
+&nbsp;     */
+<b class="nc">&nbsp;    fun substituteNamedParameters(parsedSql: ParsedSql, paramSource: Map&lt;String, Any?&gt;? = null): String {</b>
+<b class="fc">&nbsp;        val paramNames = parsedSql.parameterNames</b>
+<b class="fc">&nbsp;        if (paramNames.isEmpty()) return parsedSql.originalSql</b>
+&nbsp;
+<b class="fc">&nbsp;        return buildString(parsedSql.originalSql.length) {</b>
+<b class="fc">&nbsp;            var lastIndex = 0</b>
+&nbsp;            
+<b class="fc">&nbsp;            paramNames.forEachIndexed { i, paramName -&gt;</b>
+<b class="fc">&nbsp;                val (startIndex, endIndex) = parsedSql.parameterIndexes[i]</b>
+<b class="fc">&nbsp;                append(parsedSql.originalSql, lastIndex, startIndex)</b>
+&nbsp;                
+<b class="fc">&nbsp;                val placeholders = generatePlaceholders(paramSource, paramName, i in parsedSql.listParameterOccurrences)</b>
+<b class="fc">&nbsp;                append(placeholders)</b>
+&nbsp;                
+<b class="fc">&nbsp;                lastIndex = endIndex</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;            
+<b class="fc">&nbsp;            append(parsedSql.originalSql, lastIndex, parsedSql.originalSql.length)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 生成参数占位符
+&nbsp;     * 
+&nbsp;     * 根据参数值类型生成相应数量的占位符：
+&nbsp;     * - 单值：`?`
+&nbsp;     * - 标记的列表出现位置：`?, ?, ?`
+&nbsp;     * 
+&nbsp;     * @param paramSource 参数值映射表
+&nbsp;     * @param paramName 参数名
+&nbsp;     * @return 占位符字符串
+&nbsp;     */
+&nbsp;    private inline fun generatePlaceholders(
+&nbsp;        paramSource: Map&lt;String, Any?&gt;?,
+&nbsp;        paramName: String,
+&nbsp;        expandAsList: Boolean
+&nbsp;    ): String {
+<b class="pc">&nbsp;        if (!expandAsList || paramSource == null) return &quot;?&quot;</b>
+<b class="fc">&nbsp;        val value = getValueFromMap(paramSource, paramName)</b>
+<b class="fc">&nbsp;        val list = value.asListValue()</b>
+<b class="fc">&nbsp;        validateListParameterNotEmpty(paramName, list)</b>
+&nbsp;
+<b class="fc">&nbsp;        return list.joinToString(&quot;, &quot;) { &quot;?&quot; }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 构建参数值数组
+&nbsp;     * 
+&nbsp;     * 将命名参数映射表转换为 JDBC 参数数组，只展开被 AST/任务标记的参数出现位置。
+&nbsp;     * 
+&nbsp;     * @param parsedSql 已解析的 SQL 对象
+&nbsp;     * @param paramSource 参数值映射表
+&nbsp;     * @return JDBC 参数数组
+&nbsp;     * @throws InvalidDataAccessApiUsageException 当混用命名参数和 `?` 占位符时
+&nbsp;     * 
+&nbsp;     * Example:
+&nbsp;     * ```kotlin
+&nbsp;     * val parsed = parseSqlStatement(&quot;INSERT INTO users VALUES (:id, :name)&quot;)
+&nbsp;     * val params = buildValueArray(parsed, mapOf(&quot;id&quot; to 1, &quot;name&quot; to &quot;John&quot;))
+&nbsp;     * // params = [1, &quot;John&quot;]
+&nbsp;     * ```
+&nbsp;     */
+&nbsp;    fun buildValueArray(parsedSql: ParsedSql, paramSource: Map&lt;String, Any?&gt;): Array&lt;Any?&gt; {
+<b class="fc">&nbsp;        validatePlaceholders(parsedSql)</b>
+&nbsp;
+<b class="fc">&nbsp;        return buildList {</b>
+<b class="fc">&nbsp;            parsedSql.parameterNames.forEachIndexed { index, paramName -&gt;</b>
+<b class="fc">&nbsp;                val value = getValueFromMap(paramSource, paramName)</b>
+<b class="fc">&nbsp;                if (index in parsedSql.listParameterOccurrences) {</b>
+<b class="fc">&nbsp;                    val list = value.asListValue()</b>
+<b class="fc">&nbsp;                    validateListParameterNotEmpty(paramName, list)</b>
+<b class="fc">&nbsp;                    addAll(list)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    add(value)</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }.toTypedArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Builds names aligned with the expanded JDBC value array for typed-null hints. */
+&nbsp;    fun buildParameterNameList(parsedSql: ParsedSql, paramSource: Map&lt;String, Any?&gt;): List&lt;String&gt; {
+<b class="nc">&nbsp;        validatePlaceholders(parsedSql)</b>
+<b class="nc">&nbsp;        return buildList {</b>
+<b class="nc">&nbsp;            parsedSql.parameterNames.forEachIndexed { index, paramName -&gt;</b>
+<b class="nc">&nbsp;                if (index in parsedSql.listParameterOccurrences) {</b>
+<b class="nc">&nbsp;                    val list = getValueFromMap(paramSource, paramName).asListValue()</b>
+<b class="nc">&nbsp;                    validateListParameterNotEmpty(paramName, list)</b>
+<b class="nc">&nbsp;                    repeat(list.size) { add(paramName) }</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    add(paramName)</b>
+&nbsp;                }
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun validateListParameterNotEmpty(paramName: String, values: List&lt;Any?&gt;) {
+<b class="fc">&nbsp;        if (values.isEmpty()) {</b>
+<b class="fc">&nbsp;            throw InvalidDataAccessApiUsageException(</b>
+<b class="fc">&nbsp;                &quot;SQL list parameter occurrence &#39;$paramName&#39; must contain at least one value. &quot; +</b>
+&nbsp;                &quot;Handle empty lists before binding list parameters.&quot;
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 验证占位符使用是否合法
+&nbsp;     * 
+&nbsp;     * 不允许在同一 SQL 中混用命名参数和 `?` 占位符
+&nbsp;     * 
+&nbsp;     * @param parsedSql 已解析的 SQL 对象
+&nbsp;     * @throws InvalidDataAccessApiUsageException 当混用时抛出异常
+&nbsp;     */
+&nbsp;    private inline fun validatePlaceholders(parsedSql: ParsedSql) {
+<b class="pc">&nbsp;        if (parsedSql.namedParameterCount &gt; 0 &amp;&amp; parsedSql.unnamedParameterCount &gt; 0) {</b>
+<b class="fc">&nbsp;            throw InvalidDataAccessApiUsageException(</b>
+<b class="fc">&nbsp;                &quot;Not allowed to mix named and traditional ? placeholders. &quot; +</b>
+<b class="fc">&nbsp;                &quot;You have ${parsedSql.namedParameterCount} named parameter(s) and &quot; +</b>
+<b class="fc">&nbsp;                &quot;${parsedSql.unnamedParameterCount} traditional placeholder(s) in statement: ${parsedSql.originalSql}&quot;</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 从映射表中获取值，支持路径表达式
+&nbsp;     * 
+&nbsp;     * 支持的路径格式：
+&nbsp;     * - 简单：`name`
+&nbsp;     * - 属性：`user.name`
+&nbsp;     * - 索引：`array[0]`
+&nbsp;     * - 复杂：`records[0].user.name`
+&nbsp;     * 
+&nbsp;     * @param map 参数映射表
+&nbsp;     * @param path 参数路径
+&nbsp;     * @return 参数值，如果路径无效则返回 null
+&nbsp;     */
+&nbsp;    private fun getValueFromMap(map: Map&lt;String, Any?&gt;, path: String): Any? {
+&nbsp;        // 简单路径优化：如果没有特殊字符，直接从 map 取值
+<b class="pc">&nbsp;        if (!path.contains(&#39;[&#39;) &amp;&amp; !path.contains(&#39;.&#39;)) {</b>
+<b class="fc">&nbsp;            return map[path]</b>
+&nbsp;        }
+&nbsp;        
+<b class="fc">&nbsp;        val keys = parsePath(path)</b>
+<b class="fc">&nbsp;        return keys.fold(map as Any?) { current, key -&gt; </b>
+<b class="fc">&nbsp;            navigateToValue(current, key)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 导航到指定键的值
+&nbsp;     * 
+&nbsp;     * 根据当前值的类型选择合适的访问方式
+&nbsp;     * 
+&nbsp;     * @param current 当前值
+&nbsp;     * @param key 键或索引
+&nbsp;     * @return 导航后的值
+&nbsp;     */
+<b class="fc">&nbsp;    private inline fun navigateToValue(current: Any?, key: String): Any? = when (current) {</b>
+<b class="pc">&nbsp;        null -&gt; null</b>
+<b class="fc">&nbsp;        is Map&lt;*, *&gt; -&gt; current[key]</b>
+<b class="fc">&nbsp;        is KPojo -&gt; current.toDataMap()[key]</b>
+<b class="fc">&nbsp;        is Iterable&lt;*&gt;, is Array&lt;*&gt;,</b>
+<b class="pc">&nbsp;        is IntArray, is LongArray, is ShortArray, is ByteArray,</b>
+<b class="nc">&nbsp;        is DoubleArray, is FloatArray, is BooleanArray -&gt; </b>
+<b class="pc">&nbsp;            key.toIntOrNull()?.let { current.asListValue().getOrNull(it) }</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** 路径解析正则表达式（延迟初始化） */
+<b class="fc">&nbsp;    private val PATH_REGEX by lazy { &quot;&quot;&quot;\.|(\[([0-9]+)])|(?&lt;key&gt;[^.\[\]]+)&quot;&quot;&quot;.toRegex() }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 解析路径表达式
+&nbsp;     * 
+&nbsp;     * 将路径字符串解析为键列表
+&nbsp;     * 
+&nbsp;     * @param path 路径字符串，如 `array[0].property`
+&nbsp;     * @return 键列表，如 `[&quot;array&quot;, &quot;0&quot;, &quot;property&quot;]`
+&nbsp;     */
+&nbsp;    private fun parsePath(path: String): List&lt;String&gt; =
+<b class="fc">&nbsp;        PATH_REGEX.findAll(path)</b>
+<b class="pc">&nbsp;            .mapNotNull { it.groups[&quot;key&quot;]?.value ?: it.groups[2]?.value }</b>
+<b class="fc">&nbsp;            .toList()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 将任意值转换为列表
+&nbsp;     * 
+&nbsp;     * 支持各种集合和数组类型的统一转换
+&nbsp;     * 
+&nbsp;     * @receiver 要转换的值
+&nbsp;     * @return 转换后的列表
+&nbsp;     */
+<b class="fc">&nbsp;    private fun Any?.asListValue(): List&lt;Any?&gt; = when (this) {</b>
+<b class="fc">&nbsp;        null -&gt; [null]</b>
+<b class="fc">&nbsp;        is Iterable&lt;*&gt; -&gt; this.toList()</b>
+<b class="fc">&nbsp;        is Array&lt;*&gt; -&gt; this.toList()</b>
+<b class="fc">&nbsp;        is IntArray -&gt; this.toList()</b>
+<b class="pc">&nbsp;        is LongArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        is ShortArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        is ByteArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        is CharArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        is DoubleArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        is FloatArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        is BooleanArray -&gt; this.toList()</b>
+<b class="nc">&nbsp;        else -&gt; [this]</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,250 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlRenderContext</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlRenderContext (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlRenderContext</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (83/83)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.validate.SqlDialectValidator
+&nbsp;import com.kotlinorm.syntax.validate.SqlValidationSeverity
+&nbsp;
+&nbsp;data class RenderedSql(
+&nbsp;    val sql: String,
+&nbsp;    val parameters: Map&lt;String, Any?&gt; = emptyMap(),
+&nbsp;    val parameterNames: List&lt;String&gt; = parameters.keys.toList(),
+&nbsp;    val listParameterOccurrences: Set&lt;Int&gt; = emptySet()
+&nbsp;) {
+&nbsp;    val orderedParameters: List&lt;Any?&gt;
+&nbsp;        get() = parameterNames.map { parameters[it] }
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlRenderContext(
+<b class="fc">&nbsp;    val dialect: SqlDialect = SqlDialect.Standard,</b>
+<b class="fc">&nbsp;    val parameterValues: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;    val strictParameterBinding: Boolean = false,</b>
+<b class="fc">&nbsp;    val lowerer: SqlDialectLowerer = SqlDialectLowerer.None,</b>
+<b class="fc">&nbsp;    @ExperimentalKronosSyntaxApi</b>
+<b class="fc">&nbsp;    val planner: SqlDialectPlanner = SqlDialectPlanner.None,</b>
+<b class="fc">&nbsp;    val validator: SqlDialectValidator = SqlDialectValidator.None,</b>
+<b class="fc">&nbsp;    val validateBeforeRender: Boolean = true</b>
+&nbsp;) {
+&nbsp;    fun bind(name: String, value: Any?): SqlRenderContext =
+<b class="fc">&nbsp;        copy(parameterValues = parameterValues + (name to value))</b>
+&nbsp;
+&nbsp;    fun bindAll(values: Map&lt;String, Any?&gt;): SqlRenderContext =
+<b class="fc">&nbsp;        copy(parameterValues = parameterValues + values)</b>
+&nbsp;}
+&nbsp;
+&nbsp;class UnboundSqlParameterException(
+&nbsp;    val parameterNames: List&lt;String&gt;
+&nbsp;) : IllegalArgumentException(&quot;Unbound SQL parameter(s): ${parameterNames.joinToString(&quot;, &quot;)}&quot;)
+&nbsp;
+&nbsp;internal fun renderedSql(
+&nbsp;    sql: String,
+&nbsp;    context: SqlRenderContext,
+&nbsp;    astParameterNames: List&lt;String&gt;? = null,
+&nbsp;    listParameterOccurrences: Set&lt;Int&gt; = emptySet()
+&nbsp;): RenderedSql {
+&nbsp;    val names = mergeParameterNames(
+&nbsp;        astParameterNames = astParameterNames,
+&nbsp;        renderedParameterNames = SqlRenderedParameterScanner.collectNamedParameters(sql)
+&nbsp;    )
+&nbsp;    val missing = names.distinct().filterNot { it in context.parameterValues }
+&nbsp;    if (context.strictParameterBinding &amp;&amp; missing.isNotEmpty()) {
+&nbsp;        throw UnboundSqlParameterException(missing)
+&nbsp;    }
+&nbsp;    val parameters = names.distinct().associateWith { context.parameterValues[it] }
+&nbsp;    return RenderedSql(
+&nbsp;        sql = sql,
+&nbsp;        parameters = parameters,
+&nbsp;        parameterNames = names,
+&nbsp;        listParameterOccurrences = listParameterOccurrences
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;private fun mergeParameterNames(astParameterNames: List&lt;String&gt;?, renderedParameterNames: List&lt;String&gt;): List&lt;String&gt; {
+&nbsp;    if (astParameterNames == null) return renderedParameterNames
+&nbsp;    val names = astParameterNames.toMutableList()
+&nbsp;    val remainingAstCounts = astParameterNames.groupingBy { it }.eachCount().toMutableMap()
+&nbsp;    for (renderedName in renderedParameterNames) {
+&nbsp;        val remaining = remainingAstCounts[renderedName] ?: 0
+&nbsp;        if (remaining &gt; 0) {
+&nbsp;            remainingAstCounts[renderedName] = remaining - 1
+&nbsp;        } else {
+&nbsp;            names += renderedName
+&nbsp;        }
+&nbsp;    }
+&nbsp;    return names
+&nbsp;}
+&nbsp;
+&nbsp;internal fun throwOnDialectErrors(context: SqlRenderContext, diagnostics: List&lt;com.kotlinorm.syntax.validate.SqlValidationDiagnostic&gt;) {
+&nbsp;    if (!context.validateBeforeRender) return
+&nbsp;    val errors = diagnostics.filter { it.severity == SqlValidationSeverity.Error }
+&nbsp;    if (errors.isNotEmpty()) {
+&nbsp;        throw com.kotlinorm.syntax.validate.SqlValidationException(errors)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal object SqlRenderedParameterScanner {
+&nbsp;    fun collectNamedParameters(sql: String): List&lt;String&gt; {
+&nbsp;        val names = mutableListOf&lt;String&gt;()
+&nbsp;        var index = 0
+&nbsp;        var inSingleQuote = false
+&nbsp;        var inDoubleQuote = false
+&nbsp;        while (index &lt; sql.length) {
+&nbsp;            val char = sql[index]
+&nbsp;            when {
+&nbsp;                char == &#39;\&#39;&#39; &amp;&amp; !inDoubleQuote -&gt; {
+&nbsp;                    inSingleQuote = !inSingleQuote
+&nbsp;                    index++
+&nbsp;                }
+&nbsp;                char == &#39;&quot;&#39; &amp;&amp; !inSingleQuote -&gt; {
+&nbsp;                    inDoubleQuote = !inDoubleQuote
+&nbsp;                    index++
+&nbsp;                }
+&nbsp;                char == &#39;:&#39; &amp;&amp; !inSingleQuote &amp;&amp; !inDoubleQuote &amp;&amp; index + 1 &lt; sql.length &amp;&amp; sql[index + 1] != &#39;:&#39; -&gt; {
+&nbsp;                    val start = index + 1
+&nbsp;                    var end = start
+&nbsp;                    while (end &lt; sql.length &amp;&amp; isParameterNameChar(sql[end])) end++
+&nbsp;                    if (end &gt; start &amp;&amp; isParameterNameStart(sql[start])) {
+&nbsp;                        names += sql.substring(start, end)
+&nbsp;                        index = end
+&nbsp;                    } else {
+&nbsp;                        index++
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                else -&gt; index++
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return names
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isParameterNameStart(char: Char): Boolean =
+&nbsp;        char == &#39;_&#39; || char.isLetter()
+&nbsp;
+&nbsp;    private fun isParameterNameChar(char: Char): Boolean =
+&nbsp;        char == &#39;_&#39; || char.isLetterOrDigit()
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

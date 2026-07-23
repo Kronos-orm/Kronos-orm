@@ -1,0 +1,196 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > GeneratedKeyRequestKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: GeneratedKeyRequestKt (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GeneratedKeyRequestKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (98/98)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GeneratedKeyRequestKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (98/98)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;
+&nbsp;data class GeneratedKeyRequest(
+&nbsp;    val tableName: String,
+&nbsp;    val columnName: String
+&nbsp;)
+&nbsp;
+&nbsp;internal fun GeneratedKeyRequest.lastInsertIdFallbackSql(dbType: DBType): String =
+<b class="fc">&nbsp;    when (dbType) {</b>
+<b class="fc">&nbsp;        DBType.Mysql, DBType.H2, DBType.OceanBase -&gt; &quot;SELECT LAST_INSERT_ID()&quot;</b>
+<b class="fc">&nbsp;        DBType.Oracle -&gt; &quot;SELECT MAX(${quoteOracleIdentifier(columnName)}) FROM ${quoteOracleIdentifier(tableName)}&quot;</b>
+<b class="fc">&nbsp;        DBType.Mssql -&gt; &quot;SELECT SCOPE_IDENTITY()&quot;</b>
+<b class="fc">&nbsp;        DBType.Postgres -&gt; &quot;SELECT LASTVAL()&quot;</b>
+<b class="fc">&nbsp;        DBType.DB2 -&gt; &quot;SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1&quot;</b>
+<b class="fc">&nbsp;        DBType.Sybase -&gt; &quot;SELECT @@IDENTITY&quot;</b>
+<b class="fc">&nbsp;        DBType.SQLite -&gt; &quot;SELECT last_insert_rowid()&quot;</b>
+<b class="fc">&nbsp;        else -&gt; throw UnsupportedOperationException(&quot;Unsupported database type: $dbType&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;private fun quoteOracleIdentifier(identifier: String): String =
+<b class="fc">&nbsp;    identifier.split(&#39;.&#39;).joinToString(&quot;.&quot;) { part -&gt;</b>
+<b class="fc">&nbsp;        &quot;\&quot;${part.trim(&#39;&quot;&#39;).uppercase()}\&quot;&quot;</b>
+&nbsp;    }
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

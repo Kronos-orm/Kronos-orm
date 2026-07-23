@@ -1,0 +1,325 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > MissingEnumMetadata</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.exceptions</a>
+</div>
+
+<h1>Coverage Summary for Class: MissingEnumMetadata (com.kotlinorm.exceptions)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">MissingEnumMetadata</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (23/23)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.exceptions
+&nbsp;
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.ValueCodecOrigin
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/**
+&nbsp; * Reports one failed semantic value conversion with both declared and runtime
+&nbsp; * source types kept separately.
+&nbsp; *
+&nbsp; * @property direction conversion direction selected by the caller
+&nbsp; * @property origin mapping boundary that created the request
+&nbsp; * @property declaredSourceType complete source KType supplied by the caller, when known
+&nbsp; * @property runtimeSourceType star-projected KType observed from the non-null runtime value
+&nbsp; * @property targetType complete logical target KType
+&nbsp; * @property fieldName mapped Kotlin field name, when available
+&nbsp; * @property columnName mapped database column name, when available
+&nbsp; * @property valueName parameter or result label, when available
+&nbsp; * @property dialect SQL dialect family, when available
+&nbsp; * @property batchIndex source batch index, when available
+&nbsp; */
+&nbsp;open class ValueMappingException internal constructor(
+&nbsp;    val direction: ValueCodecDirection,
+&nbsp;    val origin: ValueCodecOrigin,
+&nbsp;    val declaredSourceType: KType?,
+&nbsp;    val runtimeSourceType: KType?,
+&nbsp;    val targetType: KType,
+&nbsp;    val fieldName: String?,
+&nbsp;    val columnName: String?,
+&nbsp;    val valueName: String?,
+&nbsp;    val dialect: String?,
+&nbsp;    val batchIndex: Int?,
+&nbsp;    detail: String,
+&nbsp;    cause: Throwable? = null
+&nbsp;) : IllegalArgumentException(
+&nbsp;    buildString {
+&nbsp;        append(&quot;Value mapping failed for &quot;)
+&nbsp;        append(direction)
+&nbsp;        append(&#39;/&#39;)
+&nbsp;        append(origin)
+&nbsp;        fieldName?.let { append(&quot; field &#39;&quot;).append(it).append(&#39;\&#39;&#39;) }
+&nbsp;        columnName?.let { append(&quot; column &#39;&quot;).append(it).append(&#39;\&#39;&#39;) }
+&nbsp;        valueName?.let { append(&quot; parameter/value &#39;&quot;).append(it).append(&#39;\&#39;&#39;) }
+&nbsp;        append(&quot;: declared source &quot;)
+&nbsp;        append(declaredSourceType ?: &quot;unknown&quot;)
+&nbsp;        append(&quot;, runtime source &quot;)
+&nbsp;        append(runtimeSourceType ?: &quot;unknown&quot;)
+&nbsp;        append(&quot; -&gt; &quot;)
+&nbsp;        append(targetType)
+&nbsp;        dialect?.let { append(&quot; (dialect=&quot;).append(it).append(&#39;)&#39;) }
+&nbsp;        batchIndex?.let { append(&quot; (batchIndex=&quot;).append(it).append(&#39;)&#39;) }
+&nbsp;        append(&quot;; &quot;)
+&nbsp;        append(detail)
+&nbsp;    },
+&nbsp;    cause
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Reports a serialized request for which no registered user codec matched.
+&nbsp; */
+&nbsp;class MissingSerializedCodec internal constructor(
+&nbsp;    direction: ValueCodecDirection,
+&nbsp;    origin: ValueCodecOrigin,
+&nbsp;    declaredSourceType: KType?,
+&nbsp;    runtimeSourceType: KType?,
+&nbsp;    targetType: KType,
+&nbsp;    fieldName: String?,
+&nbsp;    columnName: String?,
+&nbsp;    valueName: String?,
+&nbsp;    dialect: String?,
+&nbsp;    batchIndex: Int?
+&nbsp;) : ValueMappingException(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    declaredSourceType,
+&nbsp;    runtimeSourceType,
+&nbsp;    targetType,
+&nbsp;    fieldName,
+&nbsp;    columnName,
+&nbsp;    valueName,
+&nbsp;    dialect,
+&nbsp;    batchIndex,
+&nbsp;    &quot;no registered ValueCodec matched SERIALIZED storage&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Reports enum decoding without compiler-generated metadata for the target KType.
+&nbsp; */
+<b class="fc">&nbsp;class MissingEnumMetadata internal constructor(</b>
+&nbsp;    direction: ValueCodecDirection,
+&nbsp;    origin: ValueCodecOrigin,
+&nbsp;    declaredSourceType: KType?,
+&nbsp;    runtimeSourceType: KType?,
+&nbsp;    targetType: KType,
+&nbsp;    fieldName: String?,
+&nbsp;    columnName: String?,
+&nbsp;    valueName: String?,
+&nbsp;    dialect: String?,
+&nbsp;    batchIndex: Int?
+&nbsp;) : ValueMappingException(
+<b class="fc">&nbsp;    direction,</b>
+<b class="fc">&nbsp;    origin,</b>
+<b class="fc">&nbsp;    declaredSourceType,</b>
+<b class="fc">&nbsp;    runtimeSourceType,</b>
+<b class="fc">&nbsp;    targetType,</b>
+<b class="fc">&nbsp;    fieldName,</b>
+<b class="fc">&nbsp;    columnName,</b>
+<b class="fc">&nbsp;    valueName,</b>
+<b class="fc">&nbsp;    dialect,</b>
+<b class="fc">&nbsp;    batchIndex,</b>
+<b class="fc">&nbsp;    &quot;no compiler-generated enum metadata was loaded for $targetType&quot;</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Reports an enum name that is absent from generated metadata.
+&nbsp; *
+&nbsp; * @property rawValuePreview fixed-length safe preview of the persisted name
+&nbsp; */
+&nbsp;class UnknownEnumValue internal constructor(
+&nbsp;    direction: ValueCodecDirection,
+&nbsp;    origin: ValueCodecOrigin,
+&nbsp;    declaredSourceType: KType?,
+&nbsp;    runtimeSourceType: KType?,
+&nbsp;    targetType: KType,
+&nbsp;    fieldName: String?,
+&nbsp;    columnName: String?,
+&nbsp;    valueName: String?,
+&nbsp;    dialect: String?,
+&nbsp;    batchIndex: Int?,
+&nbsp;    rawValue: String
+&nbsp;) : ValueMappingException(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    declaredSourceType,
+&nbsp;    runtimeSourceType,
+&nbsp;    targetType,
+&nbsp;    fieldName,
+&nbsp;    columnName,
+&nbsp;    valueName,
+&nbsp;    dialect,
+&nbsp;    batchIndex,
+&nbsp;    &quot;unknown enum name &#39;${rawValue.safeValuePreview()}&#39;&quot;
+&nbsp;) {
+&nbsp;    val rawValuePreview: String = rawValue.safeValuePreview()
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Reports a persisted enum ordinal that is not an in-range integer.
+&nbsp; *
+&nbsp; * @property rawValuePreview fixed-length safe preview of the persisted value
+&nbsp; */
+&nbsp;class InvalidEnumOrdinal internal constructor(
+&nbsp;    direction: ValueCodecDirection,
+&nbsp;    origin: ValueCodecOrigin,
+&nbsp;    declaredSourceType: KType?,
+&nbsp;    runtimeSourceType: KType?,
+&nbsp;    targetType: KType,
+&nbsp;    fieldName: String?,
+&nbsp;    columnName: String?,
+&nbsp;    valueName: String?,
+&nbsp;    dialect: String?,
+&nbsp;    batchIndex: Int?,
+&nbsp;    rawValue: String,
+&nbsp;    entryCount: Int
+&nbsp;) : ValueMappingException(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    declaredSourceType,
+&nbsp;    runtimeSourceType,
+&nbsp;    targetType,
+&nbsp;    fieldName,
+&nbsp;    columnName,
+&nbsp;    valueName,
+&nbsp;    dialect,
+&nbsp;    batchIndex,
+&nbsp;    &quot;invalid enum ordinal &#39;${rawValue.safeValuePreview()}&#39;; expected an integer in 0 until $entryCount&quot;
+&nbsp;) {
+&nbsp;    val rawValuePreview: String = rawValue.safeValuePreview()
+&nbsp;}
+&nbsp;
+&nbsp;class ConflictingEnumMetadata(val targetType: KType) : IllegalStateException(
+&nbsp;    &quot;Conflicting generated enum metadata was registered for $targetType&quot;
+&nbsp;)
+&nbsp;
+&nbsp;private const val SAFE_VALUE_PREVIEW_LIMIT = 128
+&nbsp;
+&nbsp;private fun String.safeValuePreview(): String =
+&nbsp;    if (length &lt;= SAFE_VALUE_PREVIEW_LIMIT) this else take(SAFE_VALUE_PREVIEW_LIMIT) + &quot;...&quot;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

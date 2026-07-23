@@ -1,0 +1,203 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosAtomicQueryTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosAtomicQueryTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosAtomicQueryTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (104/104)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.InternalKronosApi
+&nbsp;import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.ConflictingResultColumnLabels
+&nbsp;import com.kotlinorm.interfaces.KAtomicQueryTask
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/**
+&nbsp; * Immutable execution metadata for one query, apart from the mutable SQL text and stash.
+&nbsp; *
+&nbsp; * [targetType] is the logical result type consumed by the data-source wrapper. The
+&nbsp; * [resultColumns] map carries projection metadata to the single decode boundary; its keys
+&nbsp; * are planned result labels and therefore may not differ only by case. [stash] transports
+&nbsp; * operation-local binding metadata and is forwarded unchanged to the JDBC statement context.
+&nbsp; *
+&nbsp; * [listParameterOccurrences] identifies named-parameter occurrences that may expand to
+&nbsp; * multiple JDBC positions. It is interpreted together with [paramMap] by [parsed].
+&nbsp; *
+&nbsp; * @property sql named-parameter SQL to execute
+&nbsp; * @property paramMap values keyed by SQL parameter name
+&nbsp; * @property operationType query operation classification
+&nbsp; * @property statement optional structured query that produced [sql]
+&nbsp; * @property targetType complete logical result type, including generic arguments and nullability
+&nbsp; * @property stash mutable operation-local metadata shared with the data-source wrapper
+&nbsp; * @property resultColumns exact planned result labels and their logical decode metadata
+&nbsp; * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
+&nbsp; * @throws ConflictingResultColumnLabels when distinct metadata keys differ only by case
+&nbsp; */
+&nbsp;data class KronosAtomicQueryTask(
+<b class="fc">&nbsp;    override var sql: String,</b>
+<b class="fc">&nbsp;    override val paramMap: Map&lt;String, Any?&gt; = mapOf(),</b>
+<b class="fc">&nbsp;    override val operationType: KOperationType = KOperationType.SELECT,</b>
+<b class="fc">&nbsp;    override val statement: SqlQuery? = null,</b>
+<b class="fc">&nbsp;    override val targetType: KType,</b>
+<b class="fc">&nbsp;    override val stash: MutableMap&lt;String, Any?&gt; = mutableMapOf(),</b>
+<b class="fc">&nbsp;    @InternalKronosApi</b>
+<b class="fc">&nbsp;    override val resultColumns: Map&lt;String, ResultColumnMetadata&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;    val listParameterOccurrences: Set&lt;Int&gt; = emptySet()</b>
+&nbsp;) : KAtomicQueryTask {
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        val labelsByCase = resultColumns.keys.groupBy(String::lowercase)</b>
+<b class="fc">&nbsp;        val conflict = labelsByCase.values.firstOrNull { it.size &gt; 1 }</b>
+<b class="fc">&nbsp;        if (conflict != null) throw ConflictingResultColumnLabels(conflict)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Materializes named SQL and parameters into the exact JDBC SQL, value order, and
+&nbsp;     * parameter-name order used by binding.
+&nbsp;     *
+&nbsp;     * @return parsed JDBC statement metadata for this query
+&nbsp;     */
+<b class="fc">&nbsp;    override fun parsed() = parseSqlStatement(sql, paramMap, listParameterOccurrences)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

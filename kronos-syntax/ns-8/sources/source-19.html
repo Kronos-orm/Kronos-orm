@@ -1,0 +1,899 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > UnsafeTokenSqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: UnsafeTokenSqlRenderer (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UnsafeTokenSqlRenderer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlTimeType
+&nbsp;import com.kotlinorm.syntax.expr.SqlTimeZoneMode
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;import com.kotlinorm.syntax.inspect.SqlParameterCollector
+&nbsp;import com.kotlinorm.syntax.limit.SqlFetchMode
+&nbsp;import com.kotlinorm.syntax.limit.SqlFetchUnit
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.order.SqlNullsOrdering
+&nbsp;import com.kotlinorm.syntax.order.SqlOrdering
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlInsertMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemAliasMetadata
+&nbsp;import com.kotlinorm.syntax.statement.SqlColumnDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
+&nbsp;import com.kotlinorm.syntax.statement.SqlUpsertAction
+&nbsp;import com.kotlinorm.syntax.table.SqlTableAlias
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;open class MysqlSqlRenderer(
+&nbsp;    standardEscapeStrings: Boolean = false
+&nbsp;) : StandardSqlRenderer(SqlDialect.MySql.copy(standardEscapeStrings = standardEscapeStrings)) {
+&nbsp;    override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+&nbsp;        is SqlDdlStatement.CreateTable -&gt; renderMysqlCreateTable(statement)
+&nbsp;        is SqlDdlStatement.AlterTable.AddColumn -&gt; buildString {
+&nbsp;            append(&quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ADD COLUMN ${renderColumnDefinition(statement.column)}&quot;)
+&nbsp;            statement.position?.let { append(&quot; ${renderColumnPosition(it)}&quot;) }
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.AlterTable.ModifyColumn -&gt; buildString {
+&nbsp;            append(&quot;ALTER TABLE ${renderIdentifier(statement.tableName)} MODIFY COLUMN ${renderColumnDefinition(statement.column)}&quot;)
+&nbsp;            statement.position?.let { append(&quot; ${renderColumnPosition(it)}&quot;) }
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.CreateIndex -&gt; renderMysqlCreateIndex(statement)
+&nbsp;        is SqlDdlStatement.CommentOnTable -&gt; renderMysqlTableComment(statement.tableName, statement.comment)
+&nbsp;        is SqlDdlStatement.AlterTable.SetTableComment -&gt; renderMysqlTableComment(statement.tableName, statement.comment)
+&nbsp;        else -&gt; super.renderDdl(statement)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderMysqlCreateTable(statement: SqlDdlStatement.CreateTable): String = buildString {
+&nbsp;        append(&quot;CREATE TABLE &quot;)
+&nbsp;        if (statement.ifNotExists) append(&quot;IF NOT EXISTS &quot;)
+&nbsp;        append(renderIdentifier(statement.tableName))
+&nbsp;        val definitions = statement.columns.map { renderColumnDefinition(it) } +
+&nbsp;            statement.indexes.map { renderIndexDefinition(it) }
+&nbsp;        append(definitions.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;))
+&nbsp;        statement.comment?.let { append(&quot; COMMENT = ${renderCommentValue(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderMysqlCreateIndex(statement: SqlDdlStatement.CreateIndex): String = buildString {
+&nbsp;        append(&quot;CREATE&quot;)
+&nbsp;        if (statement.unique) append(&quot; UNIQUE&quot;)
+&nbsp;        statement.type?.takeIf { it.isNotBlank() }?.let { append(&quot; $it&quot;) }
+&nbsp;        append(&quot; INDEX&quot;)
+&nbsp;        if (statement.ifNotExists) append(&quot; IF NOT EXISTS&quot;)
+&nbsp;        append(&quot; ${renderIdentifier(statement.indexName)} ON ${renderIdentifier(statement.tableName)}&quot;)
+&nbsp;        append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;        statement.method?.takeIf { it.isNotBlank() }?.let { append(&quot; USING $it&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderMysqlTableComment(tableName: SqlIdentifier, comment: String?): String =
+&nbsp;        &quot;ALTER TABLE ${renderIdentifier(tableName)} COMMENT = ${renderCommentValue(comment ?: &quot;&quot;)}&quot;
+&nbsp;
+&nbsp;    override fun renderColumnDefinition(column: SqlColumnDefinition): String = buildString {
+&nbsp;        append(&quot;${renderIdentifier(column.name)} ${renderType(column.type)}&quot;)
+&nbsp;        if (!column.nullable) append(&quot; NOT NULL&quot;)
+&nbsp;        if (column.primaryKey != SqlPrimaryKeyMode.NotPrimary) append(&quot; PRIMARY KEY&quot;)
+&nbsp;        if (column.primaryKey == SqlPrimaryKeyMode.Identity) append(&quot; AUTO_INCREMENT&quot;)
+&nbsp;        column.defaultValue?.let { append(&quot; DEFAULT ${renderExpr(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(&quot;INSERT INTO &quot;)
+&nbsp;        append(renderTable(statement.table))
+&nbsp;        append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;        append(&quot; VALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExpr(it) })
+&nbsp;        append(&quot;) ON DUPLICATE KEY UPDATE &quot;)
+&nbsp;        when (val action = statement.action) {
+&nbsp;            SqlUpsertAction.DoNothing -&gt; {
+&nbsp;                val column = statement.primaryKeys.firstOrNull() ?: statement.columns.first()
+&nbsp;                append(&quot;${renderIdentifier(column)} = ${renderIdentifier(column)}&quot;)
+&nbsp;            }
+&nbsp;            is SqlUpsertAction.Update -&gt; {
+&nbsp;                append(action.setPairs.joinToString(&quot;, &quot;) {
+&nbsp;                    val value = when (val expr = it.value) {
+&nbsp;                        is SqlExpr.ExcludedColumn -&gt; &quot;VALUES (${renderIdentifier(expr.identifier)})&quot;
+&nbsp;                        else -&gt; renderExpr(expr)
+&nbsp;                    }
+&nbsp;                    &quot;${renderAssignmentTarget(it.target)} = $value&quot;
+&nbsp;                })
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLimit(limit: SqlLimit): String = buildString {
+&nbsp;        limit.fetch?.let { append(&quot;LIMIT ${renderExpr(it.limit)}&quot;) }
+&nbsp;        limit.offset?.let {
+&nbsp;            if (isEmpty()) append(&quot;LIMIT ${Long.MAX_VALUE}&quot;)
+&nbsp;            append(&quot; OFFSET ${renderExpr(it)}&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderExpr(expr: SqlExpr): String = when (expr) {
+&nbsp;        is SqlExpr.BooleanLiteral -&gt; expr.boolean.toString()
+&nbsp;        else -&gt; super.renderExpr(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderValuesQuery(query: com.kotlinorm.syntax.statement.SqlQuery.Values): String =
+&nbsp;        query.values.joinToString(&quot;, &quot;, &quot;VALUES &quot;) { row -&gt;
+&nbsp;            row.joinToString(&quot;, &quot;, &quot;ROW(&quot;, &quot;)&quot;) { renderExpr(it) }
+&nbsp;        }
+&nbsp;
+&nbsp;    override fun renderBinary(expr: SqlExpr.Binary): String = when (val op = expr.operator) {
+&nbsp;        SqlBinaryOperator.Concat -&gt; &quot;CONCAT(${renderExpr(expr.left)}, ${renderExpr(expr.right)})&quot;
+&nbsp;        is SqlBinaryOperator.IsDistinctFrom -&gt; {
+&nbsp;            val comparison = &quot;${renderExpr(expr.left)} &lt;=&gt; ${renderExpr(expr.right)}&quot;
+&nbsp;            if (op.withNot) comparison else &quot;NOT($comparison)&quot;
+&nbsp;        }
+&nbsp;        else -&gt; super.renderBinary(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderListAgg(expr: SqlExpr.ListAggFunc): String = buildString {
+&nbsp;        append(&quot;GROUP_CONCAT(&quot;)
+&nbsp;        expr.quantifier?.let { append(&quot;${renderQuantifier(it)} &quot;) }
+&nbsp;        append(renderExpr(expr.expr))
+&nbsp;        if (expr.withinGroup.isNotEmpty()) {
+&nbsp;            append(expr.withinGroup.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })
+&nbsp;        }
+&nbsp;        append(&quot; SEPARATOR &quot;)
+&nbsp;        append(renderExpr(expr.separator))
+&nbsp;        append(&quot;)&quot;)
+&nbsp;        expr.filter?.let { append(&quot; ${renderFilter(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderOrderingItem(item: SqlOrderingItem): String {
+&nbsp;        val order = item.ordering ?: SqlOrdering.Asc
+&nbsp;        val orderSql = order.name.uppercase()
+&nbsp;        return when (item.nullsOrdering) {
+&nbsp;            null -&gt; &quot;${renderExpr(item.expr)} $orderSql&quot;
+&nbsp;            SqlNullsOrdering.First -&gt; if (order == SqlOrdering.Asc) {
+&nbsp;                &quot;${renderExpr(item.expr)} $orderSql&quot;
+&nbsp;            } else {
+&nbsp;                &quot;CASE WHEN ${renderExpr(item.expr)} IS NULL THEN 1 ELSE 0 END $orderSql, ${renderExpr(item.expr)} $orderSql&quot;
+&nbsp;            }
+&nbsp;            SqlNullsOrdering.Last -&gt; if (order == SqlOrdering.Desc) {
+&nbsp;                &quot;${renderExpr(item.expr)} $orderSql&quot;
+&nbsp;            } else {
+&nbsp;                &quot;CASE WHEN ${renderExpr(item.expr)} IS NULL THEN 1 ELSE 0 END $orderSql, ${renderExpr(item.expr)} $orderSql&quot;
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderFunction(expr: SqlExpr.Function): String {
+&nbsp;        if (expr.name.last.equals(&quot;TRUNC&quot;, ignoreCase = true)) {
+&nbsp;            return renderFunction(expr.copy(name = SqlIdentifier.of(&quot;TRUNCATE&quot;)))
+&nbsp;        }
+&nbsp;        if (expr.name.last.equals(&quot;JOIN&quot;, ignoreCase = true)) {
+&nbsp;            return renderFunction(expr.copy(name = SqlIdentifier.of(&quot;CONCAT_WS&quot;)))
+&nbsp;        }
+&nbsp;        if (expr.name.last.equals(&quot;CONCAT&quot;, ignoreCase = true)) {
+&nbsp;            val args = flattenConcatArgs(expr.args)
+&nbsp;            return super.renderFunction(expr.copy(args = args))
+&nbsp;        }
+&nbsp;        return super.renderFunction(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun flattenConcatArgs(args: List&lt;SqlExpr&gt;): List&lt;SqlExpr&gt; =
+&nbsp;        args.flatMap { arg -&gt;
+&nbsp;            if (arg is SqlExpr.Function &amp;&amp; arg.name.last.equals(&quot;CONCAT&quot;, ignoreCase = true)) {
+&nbsp;                flattenConcatArgs(arg.args)
+&nbsp;            } else {
+&nbsp;                listOf(arg)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;    override fun renderType(type: SqlType): String = when (type) {
+&nbsp;        is SqlType.Varchar -&gt; &quot;CHAR${type.maxLength?.let { &quot;($it)&quot; } ?: &quot;&quot;}&quot;
+&nbsp;        SqlType.Int,
+&nbsp;        SqlType.Long -&gt; &quot;SIGNED&quot;
+&nbsp;        is SqlType.Timestamp -&gt; when (type.mode) {
+&nbsp;            null,
+&nbsp;            SqlTimeZoneMode.WithoutTimeZone -&gt; &quot;DATETIME&quot;
+&nbsp;            SqlTimeZoneMode.WithTimeZone -&gt; super.renderType(type)
+&nbsp;        }
+&nbsp;        else -&gt; super.renderType(type)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;open class PostgresqlSqlRenderer : StandardSqlRenderer(SqlDialect.PostgreSql) {
+&nbsp;    override fun shouldQuoteSelectItemAlias(metadata: SqlSelectItemAliasMetadata?): Boolean =
+&nbsp;        metadata?.userReferenceable == true || super.shouldQuoteSelectItemAlias(metadata)
+&nbsp;
+&nbsp;    override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+&nbsp;        is SqlDdlStatement.AlterTable.ModifyColumn -&gt; {
+&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderIdentifier(statement.column.name)} TYPE ${renderType(statement.column.type)}&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.AlterTable.SetTableComment -&gt; {
+&nbsp;            super.renderDdl(SqlDdlStatement.CommentOnTable(statement.tableName, statement.comment))
+&nbsp;        }
+&nbsp;        else -&gt; super.renderDdl(statement)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(&quot;INSERT INTO &quot;)
+&nbsp;        append(renderTable(statement.table))
+&nbsp;        append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;        append(&quot; VALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExpr(it) })
+&nbsp;        append(&quot;) ON CONFLICT &quot;)
+&nbsp;        val target = statement.conflictTarget
+&nbsp;        if (target.constraintName != null) {
+&nbsp;            append(&quot;ON CONSTRAINT ${renderIdentifier(target.constraintName)}&quot;)
+&nbsp;        } else {
+&nbsp;            val columns = if (target.columns.isNotEmpty()) target.columns else statement.primaryKeys
+&nbsp;            append(columns.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;            target.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }
+&nbsp;        }
+&nbsp;        when (val action = statement.action) {
+&nbsp;            SqlUpsertAction.DoNothing -&gt; append(&quot; DO NOTHING&quot;)
+&nbsp;            is SqlUpsertAction.Update -&gt; {
+&nbsp;                append(&quot; DO UPDATE SET &quot;)
+&nbsp;                append(action.setPairs.joinToString(&quot;, &quot;) { &quot;${renderAssignmentTarget(it.target)} = ${renderExpr(it.value)}&quot; })
+&nbsp;                action.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLimit(limit: SqlLimit): String {
+&nbsp;        val fetch = limit.fetch
+&nbsp;        val standardMode = fetch != null &amp;&amp; (fetch.unit != SqlFetchUnit.RowCount || fetch.mode != SqlFetchMode.Only)
+&nbsp;        return if (standardMode) {
+&nbsp;            buildString {
+&nbsp;                limit.offset?.let { append(&quot;OFFSET ${renderExpr(it)} ROWS&quot;) }
+&nbsp;                fetch.let {
+&nbsp;                    if (isNotEmpty()) append(&quot; &quot;)
+&nbsp;                    append(&quot;FETCH NEXT ${renderExpr(it.limit)} &quot;)
+&nbsp;                    append(
+&nbsp;                        when (it.unit) {
+&nbsp;                            SqlFetchUnit.RowCount -&gt; &quot;ROWS&quot;
+&nbsp;                            SqlFetchUnit.Percentage -&gt; &quot;PERCENT ROWS&quot;
+&nbsp;                        }
+&nbsp;                    )
+&nbsp;                    append(&quot; &quot;)
+&nbsp;                    append(
+&nbsp;                        when (it.mode) {
+&nbsp;                            SqlFetchMode.Only -&gt; &quot;ONLY&quot;
+&nbsp;                            SqlFetchMode.WithTies -&gt; &quot;WITH TIES&quot;
+&nbsp;                        }
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } else {
+&nbsp;            buildString {
+&nbsp;                fetch?.let { append(&quot;LIMIT ${renderExpr(it.limit)}&quot;) }
+&nbsp;                limit.offset?.let {
+&nbsp;                    if (isNotEmpty()) append(&quot; &quot;)
+&nbsp;                    append(&quot;OFFSET ${renderExpr(it)}&quot;)
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderListAgg(expr: SqlExpr.ListAggFunc): String {
+&nbsp;        val function = SqlExpr.Function(
+&nbsp;            quantifier = expr.quantifier,
+&nbsp;            name = SqlIdentifier.of(&quot;STRING_AGG&quot;),
+&nbsp;            args = listOf(expr.expr, expr.separator),
+&nbsp;            orderBy = expr.withinGroup,
+&nbsp;            filter = expr.filter
+&nbsp;        )
+&nbsp;        return renderExpr(function)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
+&nbsp;        &quot;RAND&quot; -&gt; &quot;RANDOM()&quot;
+&nbsp;        &quot;SUBSTR&quot; -&gt; renderPostgresSubstring(expr.args)
+&nbsp;        &quot;LEFT&quot; -&gt; renderPostgresSubstring(listOfNotNull(expr.args.getOrNull(0), SqlExpr.NumberLiteral(&quot;1&quot;), expr.args.getOrNull(1)))
+&nbsp;        &quot;RIGHT&quot; -&gt; {
+&nbsp;            val source = expr.args.getOrNull(0)
+&nbsp;            val length = expr.args.getOrNull(1)
+&nbsp;            if (source != null &amp;&amp; length != null) &quot;SUBSTRING(${renderExpr(source)} FROM -${renderExpr(length)})&quot; else super.renderFunction(expr)
+&nbsp;        }
+&nbsp;        else -&gt; super.renderFunction(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderPostgresSubstring(args: List&lt;SqlExpr&gt;): String {
+&nbsp;        val source = args.getOrNull(0) ?: return &quot;SUBSTRING()&quot;
+&nbsp;        val start = args.getOrNull(1)
+&nbsp;        val length = args.getOrNull(2)
+&nbsp;        return buildString {
+&nbsp;            append(&quot;SUBSTRING(${renderExpr(source)}&quot;)
+&nbsp;            start?.let { append(&quot; FROM ${renderExpr(it)}&quot;) }
+&nbsp;            length?.let { append(&quot; FOR ${renderExpr(it)}&quot;) }
+&nbsp;            append(&quot;)&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;open class SqliteSqlRenderer : StandardSqlRenderer(SqlDialect.SQLite) {
+&nbsp;    override fun renderSetQuery(query: SqlQuery.Set): String = buildString {
+&nbsp;        append(renderSqliteSetOperand(query.left))
+&nbsp;        append(&quot; ${renderSetOperator(query.operator)} &quot;)
+&nbsp;        append(renderSqliteSetOperand(query.right))
+&nbsp;        if (query.orderBy.isNotEmpty()) {
+&nbsp;            append(query.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })
+&nbsp;        }
+&nbsp;        query.limit?.let { append(&quot; ${renderLimit(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderSqliteSetOperand(query: SqlQuery): String =
+&nbsp;        when (query) {
+&nbsp;            is SqlQuery.Set -&gt; &quot;(${renderSetQuery(query)})&quot;
+&nbsp;            else -&gt; renderQuery(query)
+&nbsp;        }
+&nbsp;
+&nbsp;    override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+&nbsp;        is SqlDdlStatement.Vacuum -&gt; buildString {
+&nbsp;            append(&quot;VACUUM&quot;)
+&nbsp;            statement.schemaName?.let { append(&quot; ${renderIdentifier(it)}&quot;) }
+&nbsp;            statement.into?.let { append(&quot; INTO ${renderExpr(it)}&quot;) }
+&nbsp;        }
+&nbsp;        else -&gt; super.renderDdl(statement)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderColumnDefinition(column: SqlColumnDefinition): String = buildString {
+&nbsp;        append(&quot;${renderIdentifier(column.name)} ${renderType(column.type)}&quot;)
+&nbsp;        if (!column.nullable) append(&quot; NOT NULL&quot;)
+&nbsp;        if (column.primaryKey != SqlPrimaryKeyMode.NotPrimary) append(&quot; PRIMARY KEY&quot;)
+&nbsp;        if (column.primaryKey == SqlPrimaryKeyMode.Identity) append(&quot; AUTOINCREMENT&quot;)
+&nbsp;        column.defaultValue?.let { append(&quot; DEFAULT ${renderExpr(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+&nbsp;        append(if (statement.action == SqlUpsertAction.DoNothing) &quot;INSERT OR IGNORE INTO &quot; else &quot;INSERT INTO &quot;)
+&nbsp;        append(renderTable(statement.table))
+&nbsp;        append(statement.columns.joinToString(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;        append(&quot; VALUES (&quot;)
+&nbsp;        append(statement.values.joinToString(&quot;, &quot;) { renderExpr(it) })
+&nbsp;        append(&quot;)&quot;)
+&nbsp;        when (val action = statement.action) {
+&nbsp;            SqlUpsertAction.DoNothing -&gt; {}
+&nbsp;            is SqlUpsertAction.Update -&gt; {
+&nbsp;                val target = statement.conflictTarget
+&nbsp;                val columns = if (target.columns.isNotEmpty()) target.columns else statement.primaryKeys
+&nbsp;                append(columns.joinToString(&quot;, &quot;, &quot; ON CONFLICT (&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;                target.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }
+&nbsp;                append(&quot; DO UPDATE SET &quot;)
+&nbsp;                append(action.setPairs.joinToString(&quot;, &quot;) { &quot;${renderAssignmentTarget(it.target)} = ${renderExpr(it.value)}&quot; })
+&nbsp;                action.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        statement.returning?.let { append(&quot; ${renderReturning(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLimit(limit: SqlLimit): String = buildString {
+&nbsp;        append(&quot;LIMIT &quot;)
+&nbsp;        append(limit.fetch?.let { renderExpr(it.limit) } ?: Long.MAX_VALUE.toString())
+&nbsp;        limit.offset?.let { append(&quot; OFFSET ${renderExpr(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderListAgg(expr: SqlExpr.ListAggFunc): String {
+&nbsp;        val function = SqlExpr.Function(
+&nbsp;            quantifier = expr.quantifier,
+&nbsp;            name = SqlIdentifier.of(&quot;GROUP_CONCAT&quot;),
+&nbsp;            args = listOf(expr.expr, expr.separator),
+&nbsp;            orderBy = expr.withinGroup,
+&nbsp;            filter = expr.filter
+&nbsp;        )
+&nbsp;        return renderExpr(function)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
+&nbsp;        &quot;RAND&quot; -&gt; &quot;RANDOM()&quot;
+&nbsp;        else -&gt; super.renderFunction(expr)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
+&nbsp;    override fun quoteIdent(identifier: String): String =
+&nbsp;        super.quoteIdent(identifier.uppercase())
+&nbsp;
+&nbsp;    override fun renderSelectItemAlias(alias: String, metadata: SqlSelectItemAliasMetadata?): String {
+&nbsp;        val normalized = alias.uppercase()
+&nbsp;        return if (shouldQuoteSelectItemAlias(metadata)) quoteIdent(normalized) else safeUnquotedIdent(normalized)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+&nbsp;        is SqlDdlStatement.CreateTableAsSelect -&gt; renderOracleCreateTableAsSelect(statement)
+&nbsp;        is SqlDdlStatement.AlterTable.AddColumn -&gt; {
+&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ADD ${renderColumnDefinition(statement.column)}&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.AlterTable.ModifyColumn -&gt; {
+&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} MODIFY(${renderColumnDefinition(statement.column)})&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.AlterTable.SetTableComment -&gt; {
+&nbsp;            super.renderDdl(SqlDdlStatement.CommentOnTable(statement.tableName, statement.comment))
+&nbsp;        }
+&nbsp;        else -&gt; super.renderDdl(statement)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderOracleCreateTableAsSelect(statement: SqlDdlStatement.CreateTableAsSelect): String {
+&nbsp;        val createSql = &quot;CREATE TABLE ${renderIdentifier(statement.tableName)} AS ${renderQuery(statement.query)}&quot;
+&nbsp;        val parameterNames = SqlParameterCollector.collectNamedParameters(statement.query)
+&nbsp;        if (!statement.ifNotExists &amp;&amp; parameterNames.isEmpty()) return createSql
+&nbsp;
+&nbsp;        val executeImmediate = buildString {
+&nbsp;            append(&quot;EXECUTE IMMEDIATE &#39;&quot;)
+&nbsp;            append(createSql.replace(&quot;&#39;&quot;, &quot;&#39;&#39;&quot;))
+&nbsp;            append(&quot;&#39;&quot;)
+&nbsp;            if (parameterNames.isNotEmpty()) {
+&nbsp;                append(parameterNames.joinToString(&quot;, &quot;, &quot; USING &quot;) { name -&gt; &quot;:$name&quot; })
+&nbsp;            }
+&nbsp;            append(&quot;;&quot;)
+&nbsp;        }
+&nbsp;        return if (statement.ifNotExists) {
+&nbsp;            &quot;BEGIN $executeImmediate EXCEPTION WHEN OTHERS THEN IF SQLCODE != -955 THEN RAISE; END IF; END;&quot;
+&nbsp;        } else {
+&nbsp;            &quot;BEGIN $executeImmediate END;&quot;
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderExpr(expr: SqlExpr): String = when (expr) {
+&nbsp;        is SqlExpr.TimeLiteral -&gt; when (expr.type) {
+&nbsp;            is SqlTimeType.Timestamp -&gt; when (expr.type.mode) {
+&nbsp;                SqlTimeZoneMode.WithTimeZone -&gt; renderExpr(
+&nbsp;                    SqlExpr.Function(
+&nbsp;                        name = SqlIdentifier.of(&quot;TO_TIMESTAMP_TZ&quot;),
+&nbsp;                        args = listOf(
+&nbsp;                            SqlExpr.StringLiteral(expr.time),
+&nbsp;                            SqlExpr.StringLiteral(&quot;YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM&quot;)
+&nbsp;                        )
+&nbsp;                    )
+&nbsp;                )
+&nbsp;                null,
+&nbsp;                SqlTimeZoneMode.WithoutTimeZone -&gt; renderExpr(
+&nbsp;                    SqlExpr.Function(
+&nbsp;                        name = SqlIdentifier.of(&quot;TO_TIMESTAMP&quot;),
+&nbsp;                        args = listOf(
+&nbsp;                            SqlExpr.StringLiteral(expr.time),
+&nbsp;                            SqlExpr.StringLiteral(&quot;YYYY-MM-DD HH24:MI:SS.FF9&quot;)
+&nbsp;                        )
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            }
+&nbsp;            SqlTimeType.Date -&gt; renderExpr(
+&nbsp;                SqlExpr.Function(
+&nbsp;                    name = SqlIdentifier.of(&quot;TO_DATE&quot;),
+&nbsp;                    args = listOf(
+&nbsp;                        SqlExpr.StringLiteral(expr.time),
+&nbsp;                        SqlExpr.StringLiteral(&quot;YYYY-MM-DD&quot;)
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            )
+&nbsp;            is SqlTimeType.Time -&gt; super.renderExpr(expr)
+&nbsp;        }
+&nbsp;        else -&gt; super.renderExpr(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderPredicateBooleanLiteral(value: Boolean): String =
+&nbsp;        if (value) &quot;1 = 1&quot; else &quot;1 = 0&quot;
+&nbsp;
+&nbsp;    override fun renderBinary(expr: SqlExpr.Binary): String = when (expr.operator) {
+&nbsp;        SqlBinaryOperator.Mod -&gt; &quot;MOD(${renderExpr(expr.left)}, ${renderExpr(expr.right)})&quot;
+&nbsp;        else -&gt; super.renderBinary(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun requiresComparisonOperandParens(expr: SqlExpr): Boolean =
+&nbsp;        !(expr is SqlExpr.Binary &amp;&amp; expr.operator === SqlBinaryOperator.Mod) &amp;&amp; super.requiresComparisonOperandParens(expr)
+&nbsp;
+&nbsp;    override fun renderSelectItemExpr(expr: SqlExpr): String =
+&nbsp;        if (expr is SqlExpr.Binary &amp;&amp; expr.operator === SqlBinaryOperator.Mod) renderExpr(expr) else super.renderSelectItemExpr(expr)
+&nbsp;
+&nbsp;    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
+&nbsp;        &quot;RAND&quot; -&gt; &quot;DBMS_RANDOM.VALUE&quot;
+&nbsp;        &quot;CONCAT_WS&quot;,
+&nbsp;        &quot;JOIN&quot; -&gt; renderOracleConcatWs(expr.args)
+&nbsp;        &quot;LEFT&quot; -&gt; {
+&nbsp;            val source = expr.args.getOrNull(0)
+&nbsp;            val length = expr.args.getOrNull(1)
+&nbsp;            if (source != null &amp;&amp; length != null) &quot;SUBSTR(${renderExpr(source)}, 1, ${renderExpr(length)})&quot; else super.renderFunction(expr)
+&nbsp;        }
+&nbsp;        &quot;RIGHT&quot; -&gt; {
+&nbsp;            val source = expr.args.getOrNull(0)
+&nbsp;            val length = expr.args.getOrNull(1)
+&nbsp;            if (source != null &amp;&amp; length != null) &quot;SUBSTR(${renderExpr(source)}, -${renderExpr(length)})&quot; else super.renderFunction(expr)
+&nbsp;        }
+&nbsp;        &quot;REPEAT&quot; -&gt; {
+&nbsp;            val source = expr.args.getOrNull(0)
+&nbsp;            val times = expr.args.getOrNull(1)
+&nbsp;            if (source != null &amp;&amp; times != null) {
+&nbsp;                val sourceSql = renderExpr(source)
+&nbsp;                &quot;RPAD($sourceSql, ${renderExpr(times)} * LENGTH($sourceSql), $sourceSql)&quot;
+&nbsp;            } else {
+&nbsp;                super.renderFunction(expr)
+&nbsp;            }
+&nbsp;        }
+&nbsp;        else -&gt; super.renderFunction(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderOracleConcatWs(args: List&lt;SqlExpr&gt;): String {
+&nbsp;        if (args.size &lt; 2) return &quot;&#39;&#39;&quot;
+&nbsp;        val separator = renderExpr(args.first())
+&nbsp;        return args.drop(1).joinToString(&quot; || $separator || &quot;) { renderExpr(it) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderType(type: SqlType): String = when (type) {
+&nbsp;        is SqlType.Varchar -&gt; if (type.maxLength == null) &quot;VARCHAR(4000)&quot; else super.renderType(type)
+&nbsp;        SqlType.Long -&gt; &quot;INT&quot;
+&nbsp;        else -&gt; super.renderType(type)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderColumnDefinition(column: SqlColumnDefinition): String = buildString {
+&nbsp;        append(&quot;${renderIdentifier(column.name)} ${renderType(column.type)}&quot;)
+&nbsp;        if (column.primaryKey == SqlPrimaryKeyMode.Identity) append(&quot; GENERATED ALWAYS AS IDENTITY&quot;)
+&nbsp;        if (!column.nullable) append(&quot; NOT NULL&quot;)
+&nbsp;        if (column.primaryKey != SqlPrimaryKeyMode.NotPrimary) append(&quot; PRIMARY KEY&quot;)
+&nbsp;        column.defaultValue?.let { append(&quot; DEFAULT ${renderExpr(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTableAlias(alias: SqlTableAlias): String = buildString {
+&nbsp;        append(renderIdentifier(alias.identifier))
+&nbsp;        if (alias.columnIdentifiers.isNotEmpty()) {
+&nbsp;            append(alias.columnIdentifiers.joinToString(&quot;, &quot;, &quot;(&quot;, &quot;)&quot;) { renderIdentifier(it) })
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
+&nbsp;    override fun renderSelect(query: SqlQuery.Select): String {
+&nbsp;        val limit = query.limit
+&nbsp;        val fetch = limit?.fetch
+&nbsp;        if (limit?.offset == null &amp;&amp; fetch != null) {
+&nbsp;            return renderSelectWithTop(query, fetch.limit)
+&nbsp;        }
+&nbsp;        return super.renderSelect(query)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderSelectWithTop(query: SqlQuery.Select, limit: SqlExpr): String = buildString {
+&nbsp;        append(&quot;SELECT&quot;)
+&nbsp;        query.quantifier?.let { append(&quot; ${renderQuantifier(it)}&quot;) }
+&nbsp;        append(&quot; TOP (${renderExpr(limit)}) &quot;)
+&nbsp;        append(if (query.select.isEmpty()) &quot;*&quot; else query.select.joinToString(&quot;, &quot;) { renderSelectItem(it) })
+&nbsp;        if (query.from.isNotEmpty()) append(query.from.joinToString(&quot;, &quot;, &quot; FROM &quot;) { renderTable(it) })
+&nbsp;        query.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }
+&nbsp;        query.groupBy?.let { append(&quot; ${renderGroup(it)}&quot;) }
+&nbsp;        query.having?.let { append(&quot; HAVING ${renderPredicate(it)}&quot;) }
+&nbsp;        if (query.window.isNotEmpty()) {
+&nbsp;            append(query.window.joinToString(&quot;, &quot;, &quot; WINDOW &quot;) { renderWindowItem(it) })
+&nbsp;        }
+&nbsp;        query.qualify?.let { append(&quot; QUALIFY ${renderPredicate(it)}&quot;) }
+&nbsp;        if (query.orderBy.isNotEmpty()) {
+&nbsp;            append(query.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+&nbsp;        is SqlDdlStatement.CreateTable -&gt; renderSqlServerCreateTable(statement)
+&nbsp;        is SqlDdlStatement.CreateTableAsSelect -&gt; renderSqlServerCreateTableAsSelect(statement)
+&nbsp;        is SqlDdlStatement.AlterTable.AddColumn -&gt; {
+&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ADD ${renderColumnDefinition(statement.column)}&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.AlterTable.ModifyColumn -&gt; {
+&nbsp;            &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderColumnDefinition(statement.column)}&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.AlterTable.AlterColumnDefault -&gt; {
+&nbsp;            statement.defaultValue?.let {
+&nbsp;                &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} ADD DEFAULT ${renderExpr(it)} FOR ${renderIdentifier(statement.columnName)}&quot;
+&nbsp;            } ?: &quot;ALTER TABLE ${renderIdentifier(statement.tableName)} DROP DEFAULT FOR ${renderIdentifier(statement.columnName)}&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.CommentOnTable -&gt; renderSqlServerExtendedPropertyComment(
+&nbsp;            SqlDdlStatement.SqlServerExtendedPropertyComment(
+&nbsp;                tableName = statement.tableName,
+&nbsp;                comment = statement.comment,
+&nbsp;                operation = commentOperation(statement.comment)
+&nbsp;            )
+&nbsp;        )
+&nbsp;        is SqlDdlStatement.CommentOnColumn -&gt; renderSqlServerExtendedPropertyComment(
+&nbsp;            SqlDdlStatement.SqlServerExtendedPropertyComment(
+&nbsp;                tableName = statement.tableName,
+&nbsp;                columnName = statement.columnName,
+&nbsp;                comment = statement.comment,
+&nbsp;                operation = commentOperation(statement.comment)
+&nbsp;            )
+&nbsp;        )
+&nbsp;        is SqlDdlStatement.AlterTable.SetTableComment -&gt; renderSqlServerExtendedPropertyComment(
+&nbsp;            SqlDdlStatement.SqlServerExtendedPropertyComment(
+&nbsp;                tableName = statement.tableName,
+&nbsp;                comment = statement.comment,
+&nbsp;                operation = commentOperation(statement.comment)
+&nbsp;            )
+&nbsp;        )
+&nbsp;        is SqlDdlStatement.SqlServerExtendedPropertyComment -&gt; renderSqlServerExtendedPropertyComment(statement)
+&nbsp;        is SqlDdlStatement.DropIndex -&gt; {
+&nbsp;            &quot;DROP INDEX ${renderIdentifier(statement.indexName)} ON ${renderIdentifier(statement.tableName ?: statement.indexName)}&quot;
+&nbsp;        }
+&nbsp;        is SqlDdlStatement.SqlServerDropDefaultConstraint -&gt; renderSqlServerDropDefaultConstraint(statement)
+&nbsp;        else -&gt; super.renderDdl(statement)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderUpsert(statement: SqlDmlStatement.Upsert): String =
+&nbsp;        &quot;${super.renderUpsert(statement)};&quot;
+&nbsp;
+&nbsp;    private fun renderSqlServerCreateTable(statement: SqlDdlStatement.CreateTable): String {
+&nbsp;        val createSql = super.renderDdl(statement.copy(ifNotExists = false))
+&nbsp;        if (!statement.ifNotExists) return createSql
+&nbsp;        val schemaName = statement.tableName.parts.dropLast(1).lastOrNull() ?: &quot;dbo&quot;
+&nbsp;        val tableName = statement.tableName.last
+&nbsp;        return &quot;IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N&#39;${quoteIdent(schemaName)}.${quoteIdent(tableName)}&#39;) AND type in (N&#39;U&#39;)) BEGIN $createSql; END&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderSqlServerCreateTableAsSelect(statement: SqlDdlStatement.CreateTableAsSelect): String {
+&nbsp;        val selectInto = when (val query = statement.query) {
+&nbsp;            is SqlQuery.Select -&gt; renderSqlServerSelectInto(query, statement.tableName)
+&nbsp;            else -&gt; &quot;SELECT * INTO ${renderIdentifier(statement.tableName)} FROM (${renderQuery(query)}) AS ${quoteIdent(&quot;__kronos_ctas_source&quot;)}&quot;
+&nbsp;        }
+&nbsp;        if (!statement.ifNotExists) return selectInto
+&nbsp;        val schemaName = statement.tableName.parts.dropLast(1).lastOrNull() ?: &quot;dbo&quot;
+&nbsp;        val tableName = statement.tableName.last
+&nbsp;        return &quot;IF OBJECT_ID(N&#39;${quoteIdent(schemaName)}.${quoteIdent(tableName)}&#39;, N&#39;U&#39;) IS NULL BEGIN $selectInto; END&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderSqlServerSelectInto(query: SqlQuery.Select, tableName: SqlIdentifier): String = buildString {
+&nbsp;        val limit = query.limit
+&nbsp;        val fetch = limit?.fetch
+&nbsp;        append(&quot;SELECT&quot;)
+&nbsp;        query.quantifier?.let { append(&quot; ${renderQuantifier(it)}&quot;) }
+&nbsp;        if (limit?.offset == null &amp;&amp; fetch != null) append(&quot; TOP (${renderExpr(fetch.limit)})&quot;)
+&nbsp;        append(&quot; &quot;)
+&nbsp;        append(if (query.select.isEmpty()) &quot;*&quot; else query.select.joinToString(&quot;, &quot;) { renderSelectItem(it) })
+&nbsp;        append(&quot; INTO ${renderIdentifier(tableName)}&quot;)
+&nbsp;        if (query.from.isNotEmpty()) append(query.from.joinToString(&quot;, &quot;, &quot; FROM &quot;) { renderTable(it) })
+&nbsp;        query.where?.let { append(&quot; WHERE ${renderPredicate(it)}&quot;) }
+&nbsp;        query.groupBy?.let { append(&quot; ${renderGroup(it)}&quot;) }
+&nbsp;        query.having?.let { append(&quot; HAVING ${renderPredicate(it)}&quot;) }
+&nbsp;        if (query.window.isNotEmpty()) {
+&nbsp;            append(query.window.joinToString(&quot;, &quot;, &quot; WINDOW &quot;) { renderWindowItem(it) })
+&nbsp;        }
+&nbsp;        query.qualify?.let { append(&quot; QUALIFY ${renderPredicate(it)}&quot;) }
+&nbsp;        if (query.orderBy.isNotEmpty()) {
+&nbsp;            append(query.orderBy.joinToString(&quot;, &quot;, &quot; ORDER BY &quot;) { renderOrderingItem(it) })
+&nbsp;        }
+&nbsp;        if (limit?.offset != null) append(&quot; ${renderLimit(limit)}&quot;)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun commentOperation(comment: String?): SqlServerExtendedPropertyOperation =
+&nbsp;        if (comment == null) SqlServerExtendedPropertyOperation.Drop else SqlServerExtendedPropertyOperation.Add
+&nbsp;
+&nbsp;    override fun renderColumnDefinition(column: SqlColumnDefinition): String = buildString {
+&nbsp;        append(&quot;${renderIdentifier(column.name)} ${renderType(column.type)}&quot;)
+&nbsp;        if (column.primaryKey == SqlPrimaryKeyMode.Identity) append(&quot; IDENTITY&quot;)
+&nbsp;        if (!column.nullable) append(&quot; NOT NULL&quot;)
+&nbsp;        if (column.primaryKey != SqlPrimaryKeyMode.NotPrimary) append(&quot; PRIMARY KEY&quot;)
+&nbsp;        column.defaultValue?.let { append(&quot; DEFAULT ${renderExpr(it)}&quot;) }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLimit(limit: SqlLimit): String = buildString {
+&nbsp;        append(&quot;OFFSET ${limit.offset?.let { renderExpr(it) } ?: &quot;0&quot;} ROWS&quot;)
+&nbsp;        limit.fetch?.let {
+&nbsp;            append(&quot; FETCH NEXT ${renderExpr(it.limit)} &quot;)
+&nbsp;            append(
+&nbsp;                when (it.unit) {
+&nbsp;                    SqlFetchUnit.RowCount -&gt; &quot;ROWS&quot;
+&nbsp;                    SqlFetchUnit.Percentage -&gt; &quot;PERCENT ROWS&quot;
+&nbsp;                }
+&nbsp;            )
+&nbsp;            append(&quot; &quot;)
+&nbsp;            append(
+&nbsp;                when (it.mode) {
+&nbsp;                    SqlFetchMode.Only -&gt; &quot;ONLY&quot;
+&nbsp;                    SqlFetchMode.WithTies -&gt; &quot;WITH TIES&quot;
+&nbsp;                }
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderExpr(expr: SqlExpr): String = when (expr) {
+&nbsp;        is SqlExpr.StringLiteral -&gt; &quot;N${super.renderExpr(expr)}&quot;
+&nbsp;        is SqlExpr.TimeLiteral -&gt; when (expr.type) {
+&nbsp;            is SqlTimeType.Timestamp -&gt; renderExpr(
+&nbsp;                SqlExpr.Cast(
+&nbsp;                    SqlExpr.StringLiteral(expr.time),
+&nbsp;                    SqlType.Timestamp(expr.type.mode)
+&nbsp;                )
+&nbsp;            )
+&nbsp;            SqlTimeType.Date -&gt; renderExpr(SqlExpr.Cast(SqlExpr.StringLiteral(expr.time), SqlType.Date))
+&nbsp;            is SqlTimeType.Time -&gt; super.renderExpr(expr)
+&nbsp;        }
+&nbsp;        else -&gt; super.renderExpr(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderPredicateBooleanLiteral(value: Boolean): String =
+&nbsp;        if (value) &quot;1 = 1&quot; else &quot;1 = 0&quot;
+&nbsp;
+&nbsp;    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
+&nbsp;        &quot;CEIL&quot; -&gt; renderRenamedFunction(&quot;CEILING&quot;, expr.args)
+&nbsp;        &quot;LN&quot; -&gt; {
+&nbsp;            val arg = expr.args.getOrNull(0)
+&nbsp;            if (arg != null) &quot;LOG(${renderExpr(arg)}, EXP(1))&quot; else super.renderFunction(expr)
+&nbsp;        }
+&nbsp;        &quot;LENGTH&quot; -&gt; renderRenamedFunction(&quot;LEN&quot;, expr.args)
+&nbsp;        &quot;REPEAT&quot; -&gt; &quot;REPLICATE(${expr.args.joinToString(&quot;, &quot;) { renderSqlServerFunctionArg(it) }})&quot;
+&nbsp;        &quot;TRUNC&quot; -&gt; renderRenamedFunction(&quot;ROUND&quot;, expr.args)
+&nbsp;        else -&gt; super.renderFunction(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderRenamedFunction(name: String, args: List&lt;SqlExpr&gt;): String =
+&nbsp;        args.joinToString(&quot;, &quot;, &quot;$name(&quot;, &quot;)&quot;) { renderExpr(it) }
+&nbsp;
+&nbsp;    private fun renderSqlServerFunctionArg(expr: SqlExpr): String = when (expr) {
+&nbsp;        is SqlExpr.StringLiteral -&gt; plainString(expr.string)
+&nbsp;        else -&gt; renderExpr(expr)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun plainString(value: String): String =
+&nbsp;        &quot;&#39;&quot; + value.replace(&quot;&#39;&quot;, &quot;&#39;&#39;&quot;) + &quot;&#39;&quot;
+&nbsp;
+&nbsp;    override fun renderType(type: SqlType): String = when (type) {
+&nbsp;        is SqlType.Varchar -&gt; &quot;NVARCHAR(${type.maxLength?.toString() ?: &quot;MAX&quot;})&quot;
+&nbsp;        is SqlType.Timestamp -&gt; when (type.mode) {
+&nbsp;            SqlTimeZoneMode.WithTimeZone -&gt; &quot;DATETIMEOFFSET&quot;
+&nbsp;            null,
+&nbsp;            SqlTimeZoneMode.WithoutTimeZone -&gt; &quot;DATETIME2&quot;
+&nbsp;        }
+&nbsp;        else -&gt; super.renderType(type)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderListAgg(expr: SqlExpr.ListAggFunc): String {
+&nbsp;        val function = SqlExpr.Function(
+&nbsp;            quantifier = expr.quantifier,
+&nbsp;            name = SqlIdentifier.of(&quot;STRING_AGG&quot;),
+&nbsp;            args = listOf(expr.expr, expr.separator),
+&nbsp;            withinGroup = expr.withinGroup,
+&nbsp;            filter = expr.filter
+&nbsp;        )
+&nbsp;        return renderExpr(function)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderOrderingItem(item: SqlOrderingItem): String {
+&nbsp;        val order = item.ordering ?: SqlOrdering.Asc
+&nbsp;        val orderSql = order.name.uppercase()
+&nbsp;        val exprSql = renderExpr(item.expr)
+&nbsp;        val nullRank = &quot;CASE WHEN $exprSql IS NULL THEN 1 ELSE 0 END&quot;
+&nbsp;        return when (item.nullsOrdering) {
+&nbsp;            null -&gt; &quot;$exprSql $orderSql&quot;
+&nbsp;            SqlNullsOrdering.First -&gt; if (order == SqlOrdering.Asc) {
+&nbsp;                &quot;$exprSql $orderSql&quot;
+&nbsp;            } else {
+&nbsp;                &quot;$nullRank $orderSql, $exprSql $orderSql&quot;
+&nbsp;            }
+&nbsp;            SqlNullsOrdering.Last -&gt; if (order == SqlOrdering.Desc) {
+&nbsp;                &quot;$exprSql $orderSql&quot;
+&nbsp;            } else {
+&nbsp;                &quot;$nullRank $orderSql, $exprSql $orderSql&quot;
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;class UnsafeTokenSqlRenderer(dialect: SqlDialect = SqlDialect.Standard) : StandardSqlRenderer(dialect) {</b>
+<b class="fc">&nbsp;    fun renderToken(token: SqlUnsafeToken): String = renderUnsafeToken(token)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,270 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > JoinSource</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.join</a>
+</div>
+
+<h1>Coverage Summary for Class: JoinSource (com.kotlinorm.orm.join)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">JoinSource</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (19/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (85/85)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.join
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.SourceIdentityScope
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.functions.KronosFunctionExpressions.withQualifiedFieldArgs
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinType
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;sealed interface JoinResult
+&nbsp;
+<b class="fc">&nbsp;abstract class JoinSource&lt;T1 : KPojo, Self : JoinSource&lt;T1, Self&gt;&gt; @PublishedApi internal constructor(</b>
+<b class="fc">&nbsp;    @PublishedApi internal val joinState: JoinSourceState&lt;T1&gt;</b>
+&nbsp;) : JoinResult {
+&nbsp;    @PublishedApi
+&nbsp;    internal abstract fun recreate(state: JoinSourceState&lt;T1&gt;): Self
+&nbsp;
+&nbsp;    fun leftJoin(on: ToFilter&lt;T1, Boolean?&gt;): Self =
+<b class="fc">&nbsp;        recreate(joinState.append(SqlJoinType.Left, on))</b>
+&nbsp;
+&nbsp;    fun rightJoin(on: ToFilter&lt;T1, Boolean?&gt;): Self =
+<b class="fc">&nbsp;        recreate(joinState.append(SqlJoinType.Right, on))</b>
+&nbsp;
+&nbsp;    fun innerJoin(on: ToFilter&lt;T1, Boolean?&gt;): Self =
+<b class="fc">&nbsp;        recreate(joinState.append(SqlJoinType.Inner, on))</b>
+&nbsp;
+&nbsp;    fun fullJoin(on: ToFilter&lt;T1, Boolean?&gt;): Self =
+<b class="fc">&nbsp;        recreate(joinState.append(SqlJoinType.Full, on))</b>
+&nbsp;
+&nbsp;    fun crossJoin(): Self =
+<b class="fc">&nbsp;        recreate(joinState.append(SqlJoinType.Cross, null))</b>
+&nbsp;
+<b class="fc">&nbsp;    fun select(fields: ToSelect&lt;T1, Any?&gt; = null): JoinedSelectQuery&lt;T1, T1, T1&gt; =</b>
+<b class="fc">&nbsp;        createJoinedSelectQuery(</b>
+<b class="fc">&nbsp;            projectionType = joinState.sourceType,</b>
+<b class="fc">&nbsp;            nullableProjectionType = joinState.nullableSourceType,</b>
+<b class="fc">&nbsp;            contextPojo = joinState.root,</b>
+<b class="fc">&nbsp;            fields = fields</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun &lt;Selected : KPojo, Context : KPojo&gt; createJoinedSelectQuery(
+&nbsp;        projectionType: KType,
+&nbsp;        nullableProjectionType: KType,
+&nbsp;        contextPojo: Context,
+&nbsp;        fields: ToSelect&lt;T1, Any?&gt;
+&nbsp;    ): JoinedSelectQuery&lt;T1, Selected, Context&gt; =
+<b class="fc">&nbsp;        JoinedSelectQuery(</b>
+<b class="fc">&nbsp;            state = joinState.requireComplete(),</b>
+<b class="fc">&nbsp;            projectionType = projectionType,</b>
+<b class="fc">&nbsp;            nullableProjectionType = nullableProjectionType,</b>
+<b class="fc">&nbsp;            contextPojo = contextPojo,</b>
+<b class="fc">&nbsp;            fields = fields</b>
+&nbsp;        )
+&nbsp;}
+&nbsp;
+&nbsp;@PublishedApi
+&nbsp;internal class JoinSourceState&lt;T1 : KPojo&gt;(
+&nbsp;    val root: T1,
+&nbsp;    val sourceType: KType,
+&nbsp;    val nullableSourceType: KType,
+&nbsp;    val operands: List&lt;FromSourceNode&gt;,
+&nbsp;    val current: FromSourceNode,
+&nbsp;    val nextOperandIndex: Int
+&nbsp;) {
+&nbsp;    val leaves: List&lt;FromSourceLeaf&gt; = operands.flatMap(FromSourceNode::leaves)
+&nbsp;    val sources: List&lt;KPojo&gt; = leaves.map(FromSourceLeaf::pojo)
+&nbsp;    private val sourceIdentityFrame = SourceIdentityScope.frame(sources)
+&nbsp;
+&nbsp;    fun append(joinType: SqlJoinType, on: ToFilter&lt;T1, Boolean?&gt;?): JoinSourceState&lt;T1&gt; {
+&nbsp;        check(nextOperandIndex &lt; operands.size) {
+&nbsp;            &quot;JOIN has no remaining source for ${joinType.displayName()}Join().&quot;
+&nbsp;        }
+&nbsp;        val condition = if (joinType == SqlJoinType.Cross) {
+&nbsp;            null
+&nbsp;        } else {
+&nbsp;            captureCondition(on ?: throw EmptyFieldsException())
+&nbsp;        }
+&nbsp;        return JoinSourceState(
+&nbsp;            root = root,
+&nbsp;            sourceType = sourceType,
+&nbsp;            nullableSourceType = nullableSourceType,
+&nbsp;            operands = operands,
+&nbsp;            current = FromSourceNode.Join(
+&nbsp;                left = current,
+&nbsp;                joinType = joinType,
+&nbsp;                right = operands[nextOperandIndex],
+&nbsp;                condition = condition
+&nbsp;            ),
+&nbsp;            nextOperandIndex = nextOperandIndex + 1
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun requireComplete(): JoinSourceState&lt;T1&gt; {
+&nbsp;        check(nextOperandIndex == operands.size) {
+&nbsp;            &quot;JOIN requires ${operands.size - 1} relation calls before select; &quot; +
+&nbsp;                &quot;${operands.size - nextOperandIndex} source(s) remain.&quot;
+&nbsp;        }
+&nbsp;        return this
+&nbsp;    }
+&nbsp;
+&nbsp;    fun &lt;T&gt; withSourceScope(block: () -&gt; T): T =
+&nbsp;        SourceIdentityScope.withFrame(sourceIdentityFrame, block)
+&nbsp;
+&nbsp;    fun qualifierFor(source: KPojo): String =
+&nbsp;        sourceIdentityFrame.aliasForSource(source) ?: source.__tableName
+&nbsp;
+&nbsp;    private fun captureCondition(
+&nbsp;        on: ToFilter&lt;T1, Boolean?&gt;
+&nbsp;    ): JoinConditionSnapshot = withSourceScope {
+&nbsp;        lateinit var snapshot: JoinConditionSnapshot
+&nbsp;        root.afterFilter {
+&nbsp;            sourceValues = linkedMapOf&lt;String, Any?&gt;().also { values -&gt;
+&nbsp;                sources.forEach { values.putAll(it.toDataMap()) }
+&nbsp;            }
+&nbsp;            operationType = KOperationType.SELECT
+&nbsp;            withQualifiedFieldArgs { on.invoke(this@afterFilter, root) }
+&nbsp;            snapshot = JoinConditionSnapshot(
+&nbsp;                expression = sqlExpr ?: throw EmptyFieldsException(),
+&nbsp;                parameters = parameterValues.toMap(),
+&nbsp;                parameterFields = parameterFields.toMap(),
+&nbsp;                qualifiers = sources.map { source -&gt;
+&nbsp;                    SourceQualifierSnapshot(source, qualifierFor(source))
+&nbsp;                }
+&nbsp;            )
+&nbsp;        }
+&nbsp;        snapshot
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun SqlJoinType.displayName(): String = when (this) {
+&nbsp;        SqlJoinType.Inner -&gt; &quot;inner&quot;
+&nbsp;        SqlJoinType.Left -&gt; &quot;left&quot;
+&nbsp;        SqlJoinType.Right -&gt; &quot;right&quot;
+&nbsp;        SqlJoinType.Full -&gt; &quot;full&quot;
+&nbsp;        SqlJoinType.Cross -&gt; &quot;cross&quot;
+&nbsp;        is SqlJoinType.UnsafeCustom -&gt; &quot;custom&quot;
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

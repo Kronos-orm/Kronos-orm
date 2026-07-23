@@ -1,0 +1,725 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlParameterCollector</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.inspect</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlParameterCollector (com.kotlinorm.syntax.inspect)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlParameterCollector</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (94/94)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.inspect
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlInRightOperand
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindow
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowFrame
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowFrameBound
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowItem
+&nbsp;import com.kotlinorm.syntax.group.SqlGroup
+&nbsp;import com.kotlinorm.syntax.group.SqlGroupingItem
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlColumnDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlInsertMode
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlReturning
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlTableConstraint
+&nbsp;import com.kotlinorm.syntax.statement.SqlUpsertAction
+&nbsp;import com.kotlinorm.syntax.table.SqlGraphPatternTerm
+&nbsp;import com.kotlinorm.syntax.table.SqlGraphQuantifier
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinCondition
+&nbsp;import com.kotlinorm.syntax.table.SqlJsonColumn
+&nbsp;import com.kotlinorm.syntax.table.SqlMatchRecognize
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPattern
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPatternQuantifier
+&nbsp;import com.kotlinorm.syntax.table.SqlRowPatternTerm
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;fun interface SqlNodeVisitor {
+&nbsp;    fun visit(node: SqlNode)
+&nbsp;}
+&nbsp;
+&nbsp;object SqlNodeWalker {
+&nbsp;    fun walk(node: SqlNode, visitor: SqlNodeVisitor) {
+&nbsp;        visitor.visit(node)
+&nbsp;        when (node) {
+&nbsp;            is SqlStatement -&gt; walkStatement(node, visitor)
+&nbsp;            is SqlTable -&gt; walkTable(node, visitor)
+&nbsp;            is SqlExpr -&gt; walkExpr(node, visitor)
+&nbsp;            is SqlGroup -&gt; node.items.forEach { walkGroupingItem(it, visitor) }
+&nbsp;            is SqlLimit -&gt; {
+&nbsp;                node.offset?.let { walk(it, visitor) }
+&nbsp;                node.fetch?.let { walk(it.limit, visitor) }
+&nbsp;            }
+&nbsp;            is SqlOrderingItem -&gt; walk(node.expr, visitor)
+&nbsp;            is SqlSelectItem -&gt; walkSelectItem(node, visitor)
+&nbsp;            is SqlColumnDefinition -&gt; node.defaultValue?.let { walk(it, visitor) }
+&nbsp;            is SqlTableConstraint -&gt; walkConstraint(node, visitor)
+&nbsp;            is SqlWindow -&gt; walkWindow(node, visitor)
+&nbsp;            is SqlWindowItem -&gt; walkWindow(node.window, visitor)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkStatement(statement: SqlStatement, visitor: SqlNodeVisitor) {
+&nbsp;        when (statement) {
+&nbsp;            is SqlQuery -&gt; walkQuery(statement, visitor)
+&nbsp;            is SqlDmlStatement -&gt; walkDml(statement, visitor)
+&nbsp;            is SqlDdlStatement -&gt; walkDdl(statement, visitor)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkQuery(query: SqlQuery, visitor: SqlNodeVisitor) {
+&nbsp;        when (query) {
+&nbsp;            is SqlQuery.Select -&gt; {
+&nbsp;                query.select.forEach { walkSelectItem(it, visitor) }
+&nbsp;                query.from.forEach { walk(it, visitor) }
+&nbsp;                query.where?.let { walk(it, visitor) }
+&nbsp;                query.groupBy?.let { walk(it, visitor) }
+&nbsp;                query.having?.let { walk(it, visitor) }
+&nbsp;                query.window.forEach { walkWindowItem(it, visitor) }
+&nbsp;                query.qualify?.let { walk(it, visitor) }
+&nbsp;                query.orderBy.forEach { walk(it, visitor) }
+&nbsp;                query.limit?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlQuery.Set -&gt; {
+&nbsp;                walk(query.left, visitor)
+&nbsp;                walk(query.right, visitor)
+&nbsp;                query.orderBy.forEach { walk(it, visitor) }
+&nbsp;                query.limit?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlQuery.Values -&gt; query.values.flatten().forEach { walk(it, visitor) }
+&nbsp;            is SqlQuery.With -&gt; {
+&nbsp;                query.withItems.forEach { walk(it.query, visitor) }
+&nbsp;                walk(query.query, visitor)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkDml(statement: SqlDmlStatement, visitor: SqlNodeVisitor) {
+&nbsp;        when (statement) {
+&nbsp;            is SqlDmlStatement.Delete -&gt; {
+&nbsp;                walk(statement.table, visitor)
+&nbsp;                statement.where?.let { walk(it, visitor) }
+&nbsp;                statement.returning?.let { walkReturning(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlDmlStatement.Insert -&gt; {
+&nbsp;                walk(statement.table, visitor)
+&nbsp;                when (val mode = statement.mode) {
+&nbsp;                    is SqlInsertMode.Values -&gt; mode.values.flatten().forEach { walk(it, visitor) }
+&nbsp;                    is SqlInsertMode.Subquery -&gt; walk(mode.query, visitor)
+&nbsp;                }
+&nbsp;                statement.returning?.let { walkReturning(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlDmlStatement.Update -&gt; {
+&nbsp;                walk(statement.table, visitor)
+&nbsp;                statement.setPairs.forEach { walk(it.value, visitor) }
+&nbsp;                statement.where?.let { walk(it, visitor) }
+&nbsp;                statement.returning?.let { walkReturning(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlDmlStatement.Truncate -&gt; walk(statement.table, visitor)
+&nbsp;            is SqlDmlStatement.Upsert -&gt; {
+&nbsp;                walk(statement.table, visitor)
+&nbsp;                statement.values.forEach { walk(it, visitor) }
+&nbsp;                statement.conflictTarget.where?.let { walk(it, visitor) }
+&nbsp;                val update = statement.action as? com.kotlinorm.syntax.statement.SqlUpsertAction.Update
+&nbsp;                update?.setPairs?.forEach { walk(it.value, visitor) }
+&nbsp;                update?.where?.let { walk(it, visitor) }
+&nbsp;                statement.returning?.let { walkReturning(it, visitor) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkDdl(statement: SqlDdlStatement, visitor: SqlNodeVisitor) {
+&nbsp;        when (statement) {
+&nbsp;            is SqlDdlStatement.CreateTable -&gt; {
+&nbsp;                statement.columns.forEach { walk(it, visitor) }
+&nbsp;                statement.indexes.forEach { index -&gt; index.columns.forEach { visitor.visit(it) } }
+&nbsp;            }
+&nbsp;            is SqlDdlStatement.CreateTableAsSelect -&gt; walk(statement.query, visitor)
+&nbsp;            is SqlDdlStatement.AlterTable.AddColumn -&gt; walk(statement.column, visitor)
+&nbsp;            is SqlDdlStatement.AlterTable.ModifyColumn -&gt; walk(statement.column, visitor)
+&nbsp;            is SqlDdlStatement.AlterTable.AlterColumnDefault -&gt; statement.defaultValue?.let { walk(it, visitor) }
+&nbsp;            is SqlDdlStatement.AddConstraint -&gt; walk(statement.constraint, visitor)
+&nbsp;            is SqlDdlStatement.Vacuum -&gt; statement.into?.let { walk(it, visitor) }
+&nbsp;            is SqlDdlStatement.AlterTable.DropColumn,
+&nbsp;            is SqlDdlStatement.AlterTable.RenameColumn,
+&nbsp;            is SqlDdlStatement.AlterTable.RenameTable,
+&nbsp;            is SqlDdlStatement.AlterTable.AlterColumnNullable,
+&nbsp;            is SqlDdlStatement.AlterTable.SetTableComment,
+&nbsp;            is SqlDdlStatement.DropTable,
+&nbsp;            is SqlDdlStatement.CreateIndex,
+&nbsp;            is SqlDdlStatement.DropIndex,
+&nbsp;            is SqlDdlStatement.DropConstraint,
+&nbsp;            is SqlDdlStatement.CommentOnTable,
+&nbsp;            is SqlDdlStatement.CommentOnColumn,
+&nbsp;            is SqlDdlStatement.SqlServerExtendedPropertyComment,
+&nbsp;            is SqlDdlStatement.SqlServerDropDefaultConstraint -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkTable(table: SqlTable, visitor: SqlNodeVisitor) {
+&nbsp;        when (table) {
+&nbsp;            is SqlTable.Ident -&gt; table.matchRecognize?.let { walkMatchRecognize(it, visitor) }
+&nbsp;            is SqlTable.Func -&gt; {
+&nbsp;                table.args.forEach { walk(it, visitor) }
+&nbsp;                table.matchRecognize?.let { walkMatchRecognize(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlTable.Subquery -&gt; {
+&nbsp;                walk(table.query, visitor)
+&nbsp;                table.matchRecognize?.let { walkMatchRecognize(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlTable.Join -&gt; {
+&nbsp;                walk(table.left, visitor)
+&nbsp;                walk(table.right, visitor)
+&nbsp;                when (val condition = table.condition) {
+&nbsp;                    is SqlJoinCondition.On -&gt; walk(condition.condition, visitor)
+&nbsp;                    is SqlJoinCondition.Using,
+&nbsp;                    null -&gt; {}
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlTable.Json -&gt; {
+&nbsp;                walk(table.expr, visitor)
+&nbsp;                walk(table.path, visitor)
+&nbsp;                table.passingItems.forEach { walk(it.expr, visitor) }
+&nbsp;                table.columns.forEach { walkJsonColumn(it, visitor) }
+&nbsp;                table.matchRecognize?.let { walkMatchRecognize(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlTable.Graph -&gt; {
+&nbsp;                table.patterns.forEach { walkGraphPatternTerm(it.term, visitor) }
+&nbsp;                table.where?.let { walk(it, visitor) }
+&nbsp;                table.columns.forEach { walkSelectItem(it, visitor) }
+&nbsp;                table.matchRecognize?.let { walkMatchRecognize(it, visitor) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkExpr(expr: SqlExpr, visitor: SqlNodeVisitor) {
+&nbsp;        when (expr) {
+&nbsp;            is SqlExpr.Tuple -&gt; expr.items.forEach { walk(it, visitor) }
+&nbsp;            is SqlExpr.Array -&gt; expr.items.forEach { walk(it, visitor) }
+&nbsp;            is SqlExpr.Unary -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.Binary -&gt; {
+&nbsp;                walk(expr.left, visitor)
+&nbsp;                walk(expr.right, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonTest -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.In -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                when (val operand = expr.`in`) {
+&nbsp;                    is SqlInRightOperand.Values -&gt; operand.items.forEach { walk(it, visitor) }
+&nbsp;                    is SqlInRightOperand.Subquery -&gt; walk(operand.query, visitor)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            is SqlExpr.Between -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.start, visitor)
+&nbsp;                walk(expr.end, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.Like -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.pattern, visitor)
+&nbsp;                expr.escape?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.SimilarTo -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.pattern, visitor)
+&nbsp;                expr.escape?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.Case -&gt; {
+&nbsp;                expr.branches.forEach {
+&nbsp;                    walk(it.`when`, visitor)
+&nbsp;                    walk(it.then, visitor)
+&nbsp;                }
+&nbsp;                expr.default?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.SimpleCase -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                expr.branches.forEach {
+&nbsp;                    walk(it.`when`, visitor)
+&nbsp;                    walk(it.then, visitor)
+&nbsp;                }
+&nbsp;                expr.default?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.Coalesce -&gt; expr.items.forEach { walk(it, visitor) }
+&nbsp;            is SqlExpr.NullIf -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.test, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.Cast -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.Window -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walkWindow(expr.window, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.Subquery -&gt; walk(expr.query, visitor)
+&nbsp;            is SqlExpr.ExistsPredicate -&gt; walk(expr.query, visitor)
+&nbsp;            is SqlExpr.QuantifiedComparisonPredicate -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.query, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.Grouping -&gt; expr.items.forEach { walk(it, visitor) }
+&nbsp;            is SqlExpr.Function -&gt; {
+&nbsp;                expr.args.forEach { walk(it, visitor) }
+&nbsp;                expr.orderBy.forEach { walk(it, visitor) }
+&nbsp;                expr.withinGroup.forEach { walk(it, visitor) }
+&nbsp;                expr.filter?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.SubstringFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.from, visitor)
+&nbsp;                expr.`for`?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.TrimFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                expr.trim?.value?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.OverlayFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.placing, visitor)
+&nbsp;                walk(expr.from, visitor)
+&nbsp;                expr.`for`?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.PositionFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.inExpr, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.ExtractFunc -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.JsonSerializeFunc -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.JsonParseFunc -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.JsonQueryFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.path, visitor)
+&nbsp;                expr.passingItems.forEach { walk(it.expr, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonValueFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.path, visitor)
+&nbsp;                expr.passingItems.forEach { walk(it.expr, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonObjectFunc -&gt; expr.items.forEach {
+&nbsp;                walk(it.key, visitor)
+&nbsp;                walk(it.value, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonArrayFunc -&gt; expr.items.forEach { walk(it.value, visitor) }
+&nbsp;            is SqlExpr.JsonExistsFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.path, visitor)
+&nbsp;                expr.passingItems.forEach { walk(it.expr, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.CountAsteriskFunc -&gt; expr.filter?.let { walk(it, visitor) }
+&nbsp;            is SqlExpr.JsonObjectAggFunc -&gt; {
+&nbsp;                walk(expr.item.key, visitor)
+&nbsp;                walk(expr.item.value, visitor)
+&nbsp;                expr.filter?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.JsonArrayAggFunc -&gt; {
+&nbsp;                walk(expr.item.value, visitor)
+&nbsp;                expr.orderBy.forEach { walk(it, visitor) }
+&nbsp;                expr.filter?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.ListAggFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.separator, visitor)
+&nbsp;                expr.withinGroup.forEach { walk(it, visitor) }
+&nbsp;                expr.filter?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlExpr.NullsTreatmentFunc -&gt; expr.args.forEach { walk(it, visitor) }
+&nbsp;            is SqlExpr.NthValueFunc -&gt; {
+&nbsp;                walk(expr.expr, visitor)
+&nbsp;                walk(expr.row, visitor)
+&nbsp;            }
+&nbsp;            is SqlExpr.MatchPhase -&gt; walk(expr.expr, visitor)
+&nbsp;            is SqlExpr.UnsafeCustom -&gt; expr.tokens.forEach {
+&nbsp;                if (it is SqlUnsafeToken.Expr) walk(it.value, visitor)
+&nbsp;            }
+&nbsp;            SqlExpr.NullLiteral,
+&nbsp;            is SqlExpr.Column,
+&nbsp;            is SqlExpr.StringLiteral,
+&nbsp;            is SqlExpr.NumberLiteral,
+&nbsp;            is SqlExpr.BooleanLiteral,
+&nbsp;            is SqlExpr.TimeLiteral,
+&nbsp;            is SqlExpr.IntervalLiteral,
+&nbsp;            is SqlExpr.Parameter,
+&nbsp;            is SqlExpr.IdentFunc,
+&nbsp;            is SqlExpr.ExcludedColumn,
+&nbsp;            is SqlExpr.SourceColumn,
+&nbsp;            is SqlExpr.UnsafeRaw -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkReturning(returning: SqlReturning, visitor: SqlNodeVisitor) {
+&nbsp;        returning.items.forEach { walkSelectItem(it, visitor) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkSelectItem(item: SqlSelectItem, visitor: SqlNodeVisitor) {
+&nbsp;        if (item is SqlSelectItem.Expr) walk(item.expr, visitor)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkGroupingItem(item: SqlGroupingItem, visitor: SqlNodeVisitor) {
+&nbsp;        when (item) {
+&nbsp;            SqlGroupingItem.EmptyGroup -&gt; {}
+&nbsp;            is SqlGroupingItem.Expr -&gt; walk(item.item, visitor)
+&nbsp;            is SqlGroupingItem.Cube -&gt; item.items.forEach { walk(it, visitor) }
+&nbsp;            is SqlGroupingItem.Rollup -&gt; item.items.forEach { walk(it, visitor) }
+&nbsp;            is SqlGroupingItem.GroupingSets -&gt; item.items.forEach { walkGroupingItem(it, visitor) }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkWindow(window: SqlWindow, visitor: SqlNodeVisitor) {
+&nbsp;        window.partitionBy.forEach { walk(it, visitor) }
+&nbsp;        window.orderBy.forEach { walk(it, visitor) }
+&nbsp;        when (val frame = window.frame) {
+&nbsp;            is SqlWindowFrame.Start -&gt; walkWindowFrameBound(frame.start, visitor)
+&nbsp;            is SqlWindowFrame.Between -&gt; {
+&nbsp;                walkWindowFrameBound(frame.start, visitor)
+&nbsp;                walkWindowFrameBound(frame.end, visitor)
+&nbsp;            }
+&nbsp;            null -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkWindowItem(item: SqlWindowItem, visitor: SqlNodeVisitor) {
+&nbsp;        visitor.visit(item)
+&nbsp;        walkWindow(item.window, visitor)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkWindowFrameBound(bound: SqlWindowFrameBound, visitor: SqlNodeVisitor) {
+&nbsp;        when (bound) {
+&nbsp;            is SqlWindowFrameBound.Preceding -&gt; walk(bound.n, visitor)
+&nbsp;            is SqlWindowFrameBound.Following -&gt; walk(bound.n, visitor)
+&nbsp;            SqlWindowFrameBound.CurrentRow,
+&nbsp;            SqlWindowFrameBound.UnboundedFollowing,
+&nbsp;            SqlWindowFrameBound.UnboundedPreceding -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkJsonColumn(column: SqlJsonColumn, visitor: SqlNodeVisitor) {
+&nbsp;        when (column) {
+&nbsp;            is SqlJsonColumn.Column -&gt; column.path?.let { walk(it, visitor) }
+&nbsp;            is SqlJsonColumn.Exists -&gt; column.path?.let { walk(it, visitor) }
+&nbsp;            is SqlJsonColumn.Nested -&gt; {
+&nbsp;                walk(column.path, visitor)
+&nbsp;                column.columns.forEach { walkJsonColumn(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlJsonColumn.Ordinality -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkMatchRecognize(matchRecognize: SqlMatchRecognize, visitor: SqlNodeVisitor) {
+&nbsp;        matchRecognize.partitionBy.forEach { walk(it, visitor) }
+&nbsp;        matchRecognize.orderBy.forEach { walk(it, visitor) }
+&nbsp;        matchRecognize.measures.forEach { walk(it.expr, visitor) }
+&nbsp;        walkRowPattern(matchRecognize.rowPattern, visitor)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkRowPattern(pattern: SqlRowPattern, visitor: SqlNodeVisitor) {
+&nbsp;        walkRowPatternTerm(pattern.pattern, visitor)
+&nbsp;        pattern.define.forEach { walk(it.expr, visitor) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkRowPatternTerm(term: SqlRowPatternTerm, visitor: SqlNodeVisitor) {
+&nbsp;        term.quantifier?.let { walkRowPatternQuantifier(it, visitor) }
+&nbsp;        when (term) {
+&nbsp;            is SqlRowPatternTerm.Exclusion -&gt; walkRowPatternTerm(term.term, visitor)
+&nbsp;            is SqlRowPatternTerm.Permute -&gt; term.terms.forEach { walkRowPatternTerm(it, visitor) }
+&nbsp;            is SqlRowPatternTerm.Then -&gt; {
+&nbsp;                walkRowPatternTerm(term.left, visitor)
+&nbsp;                walkRowPatternTerm(term.right, visitor)
+&nbsp;            }
+&nbsp;            is SqlRowPatternTerm.Or -&gt; {
+&nbsp;                walkRowPatternTerm(term.left, visitor)
+&nbsp;                walkRowPatternTerm(term.right, visitor)
+&nbsp;            }
+&nbsp;            is SqlRowPatternTerm.Pattern,
+&nbsp;            is SqlRowPatternTerm.Circumflex,
+&nbsp;            is SqlRowPatternTerm.Dollar -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkRowPatternQuantifier(quantifier: SqlRowPatternQuantifier, visitor: SqlNodeVisitor) {
+&nbsp;        when (quantifier) {
+&nbsp;            is SqlRowPatternQuantifier.Between -&gt; {
+&nbsp;                quantifier.start?.let { walk(it, visitor) }
+&nbsp;                quantifier.end?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlRowPatternQuantifier.Quantity -&gt; walk(quantifier.quantity, visitor)
+&nbsp;            is SqlRowPatternQuantifier.Asterisk,
+&nbsp;            is SqlRowPatternQuantifier.Plus,
+&nbsp;            is SqlRowPatternQuantifier.Question -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkGraphPatternTerm(term: SqlGraphPatternTerm, visitor: SqlNodeVisitor) {
+&nbsp;        when (term) {
+&nbsp;            is SqlGraphPatternTerm.Quantified -&gt; {
+&nbsp;                walkGraphPatternTerm(term.term, visitor)
+&nbsp;                walkGraphQuantifier(term.quantifier, visitor)
+&nbsp;            }
+&nbsp;            is SqlGraphPatternTerm.Vertex -&gt; term.where?.let { walk(it, visitor) }
+&nbsp;            is SqlGraphPatternTerm.Edge -&gt; term.where?.let { walk(it, visitor) }
+&nbsp;            is SqlGraphPatternTerm.And -&gt; {
+&nbsp;                walkGraphPatternTerm(term.left, visitor)
+&nbsp;                walkGraphPatternTerm(term.right, visitor)
+&nbsp;            }
+&nbsp;            is SqlGraphPatternTerm.Or -&gt; {
+&nbsp;                walkGraphPatternTerm(term.left, visitor)
+&nbsp;                walkGraphPatternTerm(term.right, visitor)
+&nbsp;            }
+&nbsp;            is SqlGraphPatternTerm.Alternation -&gt; {
+&nbsp;                walkGraphPatternTerm(term.left, visitor)
+&nbsp;                walkGraphPatternTerm(term.right, visitor)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkGraphQuantifier(quantifier: SqlGraphQuantifier, visitor: SqlNodeVisitor) {
+&nbsp;        when (quantifier) {
+&nbsp;            is SqlGraphQuantifier.Between -&gt; {
+&nbsp;                quantifier.start?.let { walk(it, visitor) }
+&nbsp;                quantifier.end?.let { walk(it, visitor) }
+&nbsp;            }
+&nbsp;            is SqlGraphQuantifier.Quantity -&gt; walk(quantifier.quantity, visitor)
+&nbsp;            SqlGraphQuantifier.Asterisk,
+&nbsp;            SqlGraphQuantifier.Plus,
+&nbsp;            SqlGraphQuantifier.Question -&gt; {}
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun walkConstraint(constraint: SqlTableConstraint, visitor: SqlNodeVisitor) {
+&nbsp;        if (constraint is SqlTableConstraint.Check) walk(constraint.condition, visitor)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;object SqlParameterCollector {
+<b class="fc">&nbsp;    fun collectParameters(node: SqlNode): List&lt;SqlParameter&gt; = buildList {</b>
+<b class="fc">&nbsp;        SqlNodeWalker.walk(node) { visited -&gt;</b>
+<b class="fc">&nbsp;            if (visited is SqlExpr.Parameter) add(visited.parameter)</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    fun collectNamedParameters(node: SqlNode): List&lt;String&gt; =
+<b class="fc">&nbsp;        collectParameters(node).mapNotNull { (it as? SqlParameter.Named)?.name }</b>
+&nbsp;
+<b class="fc">&nbsp;    fun collectListExpansionOccurrences(node: SqlNode): Set&lt;Int&gt; = buildSet {</b>
+<b class="fc">&nbsp;        var occurrence = 0</b>
+<b class="fc">&nbsp;        SqlNodeWalker.walk(node) { visited -&gt;</b>
+<b class="fc">&nbsp;            val parameter = visited as? SqlExpr.Parameter ?: return@walk</b>
+<b class="fc">&nbsp;            if (parameter.parameter is SqlParameter.Named) {</b>
+<b class="fc">&nbsp;                if (parameter.expandAsList) add(occurrence)</b>
+<b class="fc">&nbsp;                occurrence++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;data class SqlQueryOutput(
+&nbsp;    val outputName: String?,
+&nbsp;    val alias: String?,
+&nbsp;    val sourceColumn: SqlIdentifier?,
+&nbsp;    val expression: SqlExpr?
+&nbsp;)
+&nbsp;
+&nbsp;object SqlStatementInspector {
+&nbsp;    fun tableNameOrNull(statement: SqlStatement): SqlIdentifier? = when (statement) {
+&nbsp;        is SqlDmlStatement.Delete -&gt; statement.table.identifier
+&nbsp;        is SqlDmlStatement.Insert -&gt; statement.table.identifier
+&nbsp;        is SqlDmlStatement.Update -&gt; statement.table.identifier
+&nbsp;        is SqlDmlStatement.Truncate -&gt; statement.table.identifier
+&nbsp;        is SqlDmlStatement.Upsert -&gt; statement.table.identifier
+&nbsp;        is SqlDdlStatement.CreateTable -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.CreateTableAsSelect -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.AlterTable -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.DropTable -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.CreateIndex -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.DropIndex -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.AddConstraint -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.DropConstraint -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.CommentOnTable -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.CommentOnColumn -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.SqlServerExtendedPropertyComment -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.SqlServerDropDefaultConstraint -&gt; statement.tableName
+&nbsp;        is SqlDdlStatement.Vacuum -&gt; null
+&nbsp;        is SqlQuery -&gt; null
+&nbsp;    }
+&nbsp;
+&nbsp;    fun whereOrNull(statement: SqlStatement): SqlExpr? = when (statement) {
+&nbsp;        is SqlQuery.Select -&gt; statement.where
+&nbsp;        is SqlDmlStatement.Delete -&gt; statement.where
+&nbsp;        is SqlDmlStatement.Update -&gt; statement.where
+&nbsp;        is SqlDmlStatement.Upsert -&gt; {
+&nbsp;            val updateWhere = (statement.action as? SqlUpsertAction.Update)?.where
+&nbsp;            when {
+&nbsp;                statement.conflictTarget.where == null -&gt; updateWhere
+&nbsp;                updateWhere == null -&gt; statement.conflictTarget.where
+&nbsp;                else -&gt; SqlExpr.Binary(
+&nbsp;                    statement.conflictTarget.where,
+&nbsp;                    SqlBinaryOperator.And,
+&nbsp;                    updateWhere
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;        else -&gt; null
+&nbsp;    }
+&nbsp;
+&nbsp;    fun queryOutputs(query: SqlQuery): List&lt;SqlQueryOutput&gt; = when (query) {
+&nbsp;        is SqlQuery.Select -&gt; query.select.mapIndexed { index, item -&gt;
+&nbsp;            when (item) {
+&nbsp;                is SqlSelectItem.Asterisk -&gt; SqlQueryOutput(item.qualifier?.canonical, item.qualifier?.canonical, null, null)
+&nbsp;                is SqlSelectItem.Expr -&gt; {
+&nbsp;                    val source = item.expr as? SqlExpr.Column
+&nbsp;                    val alias = item.alias
+&nbsp;                    SqlQueryOutput(
+&nbsp;                        outputName = alias ?: source?.identifier?.last ?: &quot;expr$index&quot;,
+&nbsp;                        alias = alias,
+&nbsp;                        sourceColumn = source?.identifier,
+&nbsp;                        expression = item.expr
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        is SqlQuery.With -&gt; queryOutputs(query.query)
+&nbsp;        is SqlQuery.Set -&gt; queryOutputs(query.left)
+&nbsp;        is SqlQuery.Values -&gt; emptyList()
+&nbsp;    }
+&nbsp;
+&nbsp;    fun selectAliasRegistry(query: SqlQuery): Map&lt;String, SqlSelectItem.Expr&gt; =
+&nbsp;        (query as? SqlQuery.Select)?.select.orEmpty()
+&nbsp;            .filterIsInstance&lt;SqlSelectItem.Expr&gt;()
+&nbsp;            .mapNotNull { item -&gt; item.alias?.let { it to item } }
+&nbsp;            .toMap()
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

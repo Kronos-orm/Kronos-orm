@@ -1,0 +1,197 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > CompositeSqlDialectValidator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.validate</a>
+</div>
+
+<h1>Coverage Summary for Class: CompositeSqlDialectValidator (com.kotlinorm.syntax.validate)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CompositeSqlDialectValidator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.validate
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.render.SqlDialect
+&nbsp;import com.kotlinorm.syntax.render.SqlDialectFamily
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;
+&nbsp;interface SqlDialectValidator {
+&nbsp;    fun validate(node: SqlNode, dialect: SqlDialect): List&lt;SqlValidationDiagnostic&gt;
+&nbsp;
+&nbsp;    fun validateOrThrow(node: SqlNode, dialect: SqlDialect) {
+&nbsp;        val errors = validate(node, dialect).filter { it.severity == SqlValidationSeverity.Error }
+&nbsp;        if (errors.isNotEmpty()) throw SqlValidationException(errors)
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        val None: SqlDialectValidator = object : SqlDialectValidator {
+&nbsp;            override fun validate(node: SqlNode, dialect: SqlDialect): List&lt;SqlValidationDiagnostic&gt; = emptyList()
+&nbsp;        }
+&nbsp;
+&nbsp;        val Default: SqlDialectValidator = DefaultSqlDialectValidator
+&nbsp;
+&nbsp;        fun composite(vararg validators: SqlDialectValidator): SqlDialectValidator =
+&nbsp;            CompositeSqlDialectValidator(validators.toList())
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;class CompositeSqlDialectValidator(</b>
+<b class="fc">&nbsp;    private val validators: List&lt;SqlDialectValidator&gt;</b>
+&nbsp;) : SqlDialectValidator {
+&nbsp;    override fun validate(node: SqlNode, dialect: SqlDialect): List&lt;SqlValidationDiagnostic&gt; =
+<b class="fc">&nbsp;        validators.flatMap { it.validate(node, dialect) }</b>
+&nbsp;}
+&nbsp;
+&nbsp;object DefaultSqlDialectValidator : SqlDialectValidator {
+&nbsp;    override fun validate(node: SqlNode, dialect: SqlDialect): List&lt;SqlValidationDiagnostic&gt; = buildList {
+&nbsp;        when (node) {
+&nbsp;            is SqlQuery -&gt; validateQuery(node, dialect)
+&nbsp;            is SqlDmlStatement -&gt; validateDml(node, dialect)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableList&lt;SqlValidationDiagnostic&gt;.validateQuery(query: SqlQuery, dialect: SqlDialect) {
+&nbsp;        if (dialect.family == SqlDialectFamily.SQLite &amp;&amp; query.lock != null) {
+&nbsp;            error(&quot;dialect.lock.unsupported&quot;, &quot;SQLite does not support row-level SELECT locks.&quot;)
+&nbsp;        }
+&nbsp;        if (query is SqlQuery.Select &amp;&amp; dialect.family == SqlDialectFamily.SqlServer &amp;&amp; query.limit != null &amp;&amp; query.orderBy.isEmpty()) {
+&nbsp;            error(&quot;dialect.sqlserver.limit.requires.order&quot;, &quot;SQL Server OFFSET/FETCH pagination requires ORDER BY.&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableList&lt;SqlValidationDiagnostic&gt;.validateDml(statement: SqlDmlStatement, dialect: SqlDialect) {
+&nbsp;        val hasReturning = when (statement) {
+&nbsp;            is SqlDmlStatement.Delete -&gt; statement.returning != null
+&nbsp;            is SqlDmlStatement.Insert -&gt; statement.returning != null
+&nbsp;            is SqlDmlStatement.Update -&gt; statement.returning != null
+&nbsp;            is SqlDmlStatement.Upsert -&gt; statement.returning != null
+&nbsp;            is SqlDmlStatement.Truncate -&gt; false
+&nbsp;        }
+&nbsp;        if (hasReturning &amp;&amp; dialect.family in setOf(SqlDialectFamily.MySql, SqlDialectFamily.SqlServer)) {
+&nbsp;            error(&quot;dialect.returning.unsupported&quot;, &quot;${dialect.family} does not support RETURNING in this syntax layer.&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableList&lt;SqlValidationDiagnostic&gt;.error(code: String, message: String) {
+&nbsp;        add(SqlValidationDiagnostic(code, message, SqlValidationSeverity.Error))
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

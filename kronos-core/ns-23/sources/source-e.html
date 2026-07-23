@@ -1,0 +1,365 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KPojoRuntimeMetadataKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: KPojoRuntimeMetadataKt (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KPojoRuntimeMetadataKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.3%
+  </span>
+  <span class="absValue">
+    (12/13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.1%
+  </span>
+  <span class="absValue">
+    (25/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.1%
+  </span>
+  <span class="absValue">
+    (66/68)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.3%
+  </span>
+  <span class="absValue">
+    (399/437)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos.primaryKeyStrategy
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.cache.fieldsMapCache
+&nbsp;import com.kotlinorm.cache.kPojoAllColumnsCache
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.cache.kPojoCreateTimeCache
+&nbsp;import com.kotlinorm.cache.kPojoInstanceCache
+&nbsp;import com.kotlinorm.cache.kPojoLogicDeleteCache
+&nbsp;import com.kotlinorm.cache.kPojoOptimisticLockCache
+&nbsp;import com.kotlinorm.cache.kPojoUpdateTimeCache
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Fully resolved runtime view consumed by ORM planners for one KPojo type.
+&nbsp; *
+&nbsp; * Static models reuse KType-keyed caches populated from generated metadata.
+&nbsp; * Dynamic models are bound to the instance table name and are never inserted
+&nbsp; * into those static caches.
+&nbsp; *
+&nbsp; * @property kType complete runtime type used as the cache/factory identity
+&nbsp; * @property tableName physical table name after dynamic binding
+&nbsp; * @property allFields ordered mapped fields, including non-column DSL fields
+&nbsp; * @property allColumns database-backed subset of [allFields]
+&nbsp; * @property fieldMap case-tolerant lookup by property and column name
+&nbsp; * @property primaryKey resolved explicit or global-strategy primary key
+&nbsp; * @property tableIndexes table indexes visible to DDL operations
+&nbsp; * @property createTimeStrategy enabled creation-time strategy bound to a real column
+&nbsp; * @property updateTimeStrategy enabled update-time strategy bound to a real column
+&nbsp; * @property logicDeleteStrategy enabled logical-delete strategy bound to a real column
+&nbsp; * @property optimisticLockStrategy enabled optimistic-lock strategy bound to a real column
+&nbsp; * @property dynamic whether metadata came from the current object rather than static caches
+&nbsp; */
+&nbsp;@PublishedApi
+&nbsp;internal data class KPojoRuntimeMetadata(
+&nbsp;    val kType: KType,
+&nbsp;    val tableName: String,
+&nbsp;    val allFields: LinkedHashSet&lt;Field&gt;,
+&nbsp;    val allColumns: List&lt;Field&gt;,
+&nbsp;    val fieldMap: Map&lt;String, Field&gt;,
+&nbsp;    val primaryKey: Field?,
+&nbsp;    val tableIndexes: List&lt;KTableIndex&gt;,
+&nbsp;    val createTimeStrategy: KronosCommonStrategy?,
+&nbsp;    val updateTimeStrategy: KronosCommonStrategy?,
+&nbsp;    val logicDeleteStrategy: KronosCommonStrategy?,
+&nbsp;    val optimisticLockStrategy: KronosCommonStrategy?,
+&nbsp;    val dynamic: Boolean
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves generated or dynamic metadata for this KPojo exactly once per call.
+&nbsp; *
+&nbsp; * Static metadata reads the KType-keyed caches and therefore requires compiler-
+&nbsp; * generated factory/column metadata to be available. A `typeOf&lt;KPojo&gt;()` marker
+&nbsp; * selects instance-owned dynamic metadata instead.
+&nbsp; *
+&nbsp; * @receiver KPojo whose runtime table metadata is required
+&nbsp; * @return a coherent metadata snapshot with strategies bound to actual columns
+&nbsp; * @throws IllegalStateException when generated static metadata is unavailable
+&nbsp; */
+&nbsp;@PublishedApi
+&nbsp;internal fun KPojo.resolveRuntimeMetadata(): KPojoRuntimeMetadata {
+<b class="fc">&nbsp;    val resolvedType = __kType</b>
+<b class="fc">&nbsp;    val tableName = __tableName</b>
+<b class="fc">&nbsp;    if (KTypeKey.from(resolvedType, ignoreTopLevelNullability = true) == KTypeKey.from(typeOf&lt;KPojo&gt;())) {</b>
+<b class="fc">&nbsp;        return dynamicRuntimeMetadata(resolvedType, tableName)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return KPojoRuntimeMetadata(</b>
+<b class="fc">&nbsp;        kType = resolvedType,</b>
+<b class="fc">&nbsp;        tableName = tableName,</b>
+<b class="fc">&nbsp;        allFields = kPojoAllFieldsCache[resolvedType]!!,</b>
+<b class="fc">&nbsp;        allColumns = kPojoAllColumnsCache[resolvedType]!!,</b>
+<b class="fc">&nbsp;        fieldMap = fieldsMapCache[resolvedType]!!,</b>
+<b class="fc">&nbsp;        primaryKey = resolvePrimaryKeyOrNull(kPojoAllColumnsCache[resolvedType]!!),</b>
+<b class="fc">&nbsp;        tableIndexes = kPojoInstanceCache[resolvedType]!!.runtimeTableIndexes(),</b>
+<b class="fc">&nbsp;        createTimeStrategy = kPojoCreateTimeCache[resolvedType],</b>
+<b class="fc">&nbsp;        updateTimeStrategy = kPojoUpdateTimeCache[resolvedType],</b>
+<b class="fc">&nbsp;        logicDeleteStrategy = kPojoLogicDeleteCache[resolvedType],</b>
+<b class="fc">&nbsp;        optimisticLockStrategy = kPojoOptimisticLockCache[resolvedType],</b>
+<b class="fc">&nbsp;        dynamic = false</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the generated or explicitly supplied mutable field metadata list.
+&nbsp; * Dynamic metadata binds copies later and does not mutate this source list.
+&nbsp; */
+&nbsp;internal fun KPojo.runtimeColumns(): MutableList&lt;Field&gt; =
+<b class="fc">&nbsp;    __columns</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns table indexes from generated or explicitly supplied runtime metadata.
+&nbsp; * Callers snapshot the list before exposing it through resolved metadata.
+&nbsp; */
+&nbsp;internal fun KPojo.runtimeTableIndexes(): MutableList&lt;KTableIndex&gt; =
+<b class="fc">&nbsp;    __tableIndexes</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the raw creation-time strategy before its field is bound to the
+&nbsp; * runtime table and actual column metadata.
+&nbsp; */
+&nbsp;internal fun KPojo.runtimeCreateTimeStrategy(): KronosCommonStrategy =
+<b class="fc">&nbsp;    __createTime</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the raw update-time strategy before its field is bound to the
+&nbsp; * runtime table and actual column metadata.
+&nbsp; */
+&nbsp;internal fun KPojo.runtimeUpdateTimeStrategy(): KronosCommonStrategy =
+<b class="fc">&nbsp;    __updateTime</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the raw logical-delete strategy before its field is bound to the
+&nbsp; * runtime table and actual column metadata.
+&nbsp; */
+&nbsp;internal fun KPojo.runtimeLogicDeleteStrategy(): KronosCommonStrategy =
+<b class="fc">&nbsp;    __logicDelete</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the raw optimistic-lock strategy before its field is bound to the
+&nbsp; * runtime table and actual column metadata.
+&nbsp; */
+&nbsp;internal fun KPojo.runtimeOptimisticLockStrategy(): KronosCommonStrategy =
+<b class="fc">&nbsp;    __optimisticLock</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Builds a case-tolerant property/column lookup without mutating field metadata.
+&nbsp; * Exact, upper-case and lower-case aliases map to the same [Field].
+&nbsp; *
+&nbsp; * @param fields mapped fields to index
+&nbsp; * @return lookup map keyed by property and column aliases
+&nbsp; */
+&nbsp;internal fun buildRuntimeFieldMap(fields: Iterable&lt;Field&gt;): Map&lt;String, Field&gt; =
+<b class="fc">&nbsp;    fields.flatMap { field -&gt;</b>
+<b class="fc">&nbsp;        listOf(</b>
+<b class="fc">&nbsp;            field.name,</b>
+<b class="fc">&nbsp;            field.columnName,</b>
+<b class="fc">&nbsp;            field.name.uppercase(),</b>
+<b class="fc">&nbsp;            field.columnName.uppercase(),</b>
+<b class="fc">&nbsp;            field.name.lowercase(),</b>
+<b class="fc">&nbsp;            field.columnName.lowercase()</b>
+&nbsp;        )
+<b class="fc">&nbsp;            .distinct()</b>
+<b class="fc">&nbsp;            .map { it to field }</b>
+<b class="fc">&nbsp;    }.toMap()</b>
+&nbsp;
+&nbsp;private fun KPojo.dynamicRuntimeMetadata(type: KType, tableName: String): KPojoRuntimeMetadata {
+<b class="fc">&nbsp;    val allFields = runtimeColumns()</b>
+<b class="fc">&nbsp;        .map { it.bindDynamicTableName(tableName) }</b>
+<b class="fc">&nbsp;        .toLinkedSet()</b>
+<b class="fc">&nbsp;    val allColumns = allFields.filter { it.isColumn }</b>
+<b class="fc">&nbsp;    val fieldMap = buildRuntimeFieldMap(allFields)</b>
+<b class="fc">&nbsp;    return KPojoRuntimeMetadata(</b>
+<b class="fc">&nbsp;        kType = type,</b>
+<b class="fc">&nbsp;        tableName = tableName,</b>
+<b class="fc">&nbsp;        allFields = allFields,</b>
+<b class="fc">&nbsp;        allColumns = allColumns,</b>
+<b class="fc">&nbsp;        fieldMap = fieldMap,</b>
+<b class="fc">&nbsp;        primaryKey = resolvePrimaryKeyOrNull(allColumns),</b>
+<b class="fc">&nbsp;        tableIndexes = runtimeTableIndexes().toList(),</b>
+<b class="fc">&nbsp;        createTimeStrategy = runtimeCreateTimeStrategy().runtimeBind(tableName, allColumns),</b>
+<b class="fc">&nbsp;        updateTimeStrategy = runtimeUpdateTimeStrategy().runtimeBind(tableName, allColumns),</b>
+<b class="fc">&nbsp;        logicDeleteStrategy = runtimeLogicDeleteStrategy().runtimeBind(tableName, allColumns),</b>
+<b class="fc">&nbsp;        optimisticLockStrategy = runtimeOptimisticLockStrategy().runtimeBind(tableName, allColumns),</b>
+<b class="fc">&nbsp;        dynamic = true</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;private fun Field.bindDynamicTableName(tableName: String): Field =
+<b class="fc">&nbsp;    if (this.tableName.isBlank()) copy(tableName = tableName) else copy()</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves a required primary key from explicit column metadata first and the
+&nbsp; * enabled global primary-key strategy second.
+&nbsp; *
+&nbsp; * @param type complete KPojo type included in a missing-key failure
+&nbsp; * @param columns database-backed columns eligible for key selection
+&nbsp; * @return the resolved primary-key field
+&nbsp; * @throws IllegalStateException when neither explicit nor strategy metadata matches
+&nbsp; */
+&nbsp;internal fun resolvePrimaryKey(type: KType, columns: List&lt;Field&gt;): Field =
+<b class="nc">&nbsp;    resolvePrimaryKeyOrNull(columns) ?: error(&quot;No primary key found for $type!&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the first explicit primary key, otherwise a matching enabled global
+&nbsp; * strategy field. A global strategy that does not correspond to a real column
+&nbsp; * is ignored.
+&nbsp; */
+&nbsp;internal fun resolvePrimaryKeyOrNull(columns: List&lt;Field&gt;): Field? =
+<b class="fc">&nbsp;    columns.firstOrNull { it.primaryKey != PrimaryKeyType.NOT } ?: primaryKeyStrategy</b>
+<b class="fc">&nbsp;        .takeIf { it.enabled }</b>
+<b class="fc">&nbsp;        ?.field</b>
+<b class="pc">&nbsp;        ?.takeIf { strategyField -&gt;</b>
+<b class="pc">&nbsp;            columns.any { it.name == strategyField.name || it.columnName == strategyField.columnName }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;/**
+&nbsp; * Binds an enabled strategy to the actual runtime column and table name.
+&nbsp; *
+&nbsp; * The strategy-specific date format overrides the column format; an absent
+&nbsp; * format inherits the column metadata. Disabled or unmatched strategies return
+&nbsp; * `null` so planners cannot emit writes for a nonexistent column.
+&nbsp; *
+&nbsp; * @receiver optional generated/global strategy
+&nbsp; * @param tableName runtime physical table name
+&nbsp; * @param columns database-backed fields eligible for binding
+&nbsp; * @return a bound enabled strategy, or `null` when disabled/unmatched
+&nbsp; */
+&nbsp;internal fun KronosCommonStrategy?.runtimeBind(
+&nbsp;    tableName: String,
+&nbsp;    columns: List&lt;Field&gt;
+&nbsp;): KronosCommonStrategy? {
+<b class="pc">&nbsp;    val strategy = this?.takeIf { it.enabled } ?: return null</b>
+<b class="pc">&nbsp;    val column = columns.firstOrNull {</b>
+<b class="fc">&nbsp;        it.name == strategy.field.name || it.columnName == strategy.field.columnName</b>
+<b class="nc">&nbsp;    } ?: return null</b>
+<b class="fc">&nbsp;    return KronosCommonStrategy(</b>
+<b class="fc">&nbsp;        enabled = true,</b>
+<b class="fc">&nbsp;        field = column.copy(</b>
+<b class="fc">&nbsp;            dateFormat = strategy.field.dateFormat ?: column.dateFormat,</b>
+<b class="fc">&nbsp;            tableName = tableName</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

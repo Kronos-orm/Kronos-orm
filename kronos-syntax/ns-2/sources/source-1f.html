@@ -1,0 +1,419 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlSubqueryQuantifier</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.expr</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlSubqueryQuantifier (com.kotlinorm.syntax.expr)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlSubqueryQuantifier</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.expr
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.SqlNode
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.quantifier.SqlQuantifier
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;/**
+&nbsp; * sqala-style expression tree with Kronos compatibility extensions.
+&nbsp; */
+&nbsp;sealed interface SqlExpr : SqlNode {
+&nbsp;    data class Column(
+&nbsp;        val tableName: String? = null,
+&nbsp;        val columnName: String,
+&nbsp;        val qualifier: SqlIdentifier? = tableName?.let { SqlIdentifier.of(it) },
+&nbsp;        val identifier: SqlIdentifier = SqlIdentifier.of(columnName)
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    object NullLiteral : SqlExpr
+&nbsp;
+&nbsp;    data class StringLiteral(val string: String) : SqlExpr
+&nbsp;
+&nbsp;    data class NumberLiteral(val number: String) : SqlExpr
+&nbsp;
+&nbsp;    data class BooleanLiteral(val boolean: Boolean) : SqlExpr
+&nbsp;
+&nbsp;    data class TimeLiteral(val type: SqlTimeType, val time: String) : SqlExpr
+&nbsp;
+&nbsp;    data class IntervalLiteral(val value: String, val field: SqlIntervalField) : SqlExpr
+&nbsp;
+&nbsp;    data class Tuple(val items: List&lt;SqlExpr&gt;) : SqlExpr {
+&nbsp;        init {
+&nbsp;            require(items.isNotEmpty()) { &quot;Tuple expression requires at least one item.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Array(val items: List&lt;SqlExpr&gt;) : SqlExpr
+&nbsp;
+&nbsp;    data class Parameter(
+&nbsp;        val parameter: SqlParameter,
+&nbsp;        val expandAsList: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class Unary(val operator: SqlUnaryOperator, val expr: SqlExpr) : SqlExpr
+&nbsp;
+&nbsp;    data class Binary(
+&nbsp;        val left: SqlExpr,
+&nbsp;        val operator: SqlBinaryOperator,
+&nbsp;        val right: SqlExpr
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonTest(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val nodeType: SqlJsonNodeType? = null,
+&nbsp;        val uniquenessMode: SqlJsonUniquenessMode? = null,
+&nbsp;        val withNot: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class In(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val `in`: SqlInRightOperand,
+&nbsp;        val withNot: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class Between(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val start: SqlExpr,
+&nbsp;        val end: SqlExpr,
+&nbsp;        val withNot: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class Like(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val pattern: SqlExpr,
+&nbsp;        val escape: SqlExpr? = null,
+&nbsp;        val withNot: Boolean = false,
+&nbsp;        val caseInsensitive: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class SimilarTo(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val pattern: SqlExpr,
+&nbsp;        val escape: SqlExpr? = null,
+&nbsp;        val withNot: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class Case(
+&nbsp;        val branches: List&lt;SqlCaseBranch&gt;,
+&nbsp;        val default: SqlExpr? = null
+&nbsp;    ) : SqlExpr {
+&nbsp;        init {
+&nbsp;            require(branches.isNotEmpty()) { &quot;CASE expression requires at least one WHEN branch.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class SimpleCase(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val branches: List&lt;SqlCaseBranch&gt;,
+&nbsp;        val default: SqlExpr? = null
+&nbsp;    ) : SqlExpr {
+&nbsp;        init {
+&nbsp;            require(branches.isNotEmpty()) { &quot;Simple CASE expression requires at least one WHEN branch.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Coalesce(val items: List&lt;SqlExpr&gt;) : SqlExpr {
+&nbsp;        init {
+&nbsp;            require(items.isNotEmpty()) { &quot;COALESCE requires at least one expression.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class NullIf(val expr: SqlExpr, val test: SqlExpr) : SqlExpr
+&nbsp;
+&nbsp;    data class Cast(val expr: SqlExpr, val type: SqlType) : SqlExpr
+&nbsp;
+&nbsp;    data class Window(val expr: SqlExpr, val window: SqlWindow) : SqlExpr
+&nbsp;
+&nbsp;    data class Subquery(val query: SqlQuery) : SqlExpr
+&nbsp;
+&nbsp;    data class ExistsPredicate(
+&nbsp;        val query: SqlQuery,
+&nbsp;        val withNot: Boolean = false
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class QuantifiedComparisonPredicate(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val operator: SqlQuantifiedComparisonOperator,
+&nbsp;        val quantifier: SqlSubqueryQuantifier,
+&nbsp;        val query: SqlQuery
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class Grouping(val items: List&lt;SqlExpr&gt;) : SqlExpr {
+&nbsp;        init {
+&nbsp;            require(items.isNotEmpty()) { &quot;GROUPING requires at least one expression.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class IdentFunc(val name: String) : SqlExpr
+&nbsp;
+&nbsp;    data class Function(
+&nbsp;        val name: SqlIdentifier,
+&nbsp;        val quantifier: SqlQuantifier? = null,
+&nbsp;        val args: List&lt;SqlExpr&gt; = emptyList(),
+&nbsp;        val orderBy: List&lt;SqlOrderingItem&gt; = emptyList(),
+&nbsp;        val withinGroup: List&lt;SqlOrderingItem&gt; = emptyList(),
+&nbsp;        val filter: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class ExcludedColumn(
+&nbsp;        val identifier: SqlIdentifier
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class SourceColumn(
+&nbsp;        val identifier: SqlIdentifier,
+&nbsp;        val qualifier: SqlIdentifier? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class SubstringFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val from: SqlExpr,
+&nbsp;        val `for`: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class TrimFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val trim: SqlTrim? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class OverlayFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val placing: SqlExpr,
+&nbsp;        val from: SqlExpr,
+&nbsp;        val `for`: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class PositionFunc(val expr: SqlExpr, val inExpr: SqlExpr) : SqlExpr
+&nbsp;
+&nbsp;    data class ExtractFunc(val unit: SqlTimeUnit, val expr: SqlExpr) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonSerializeFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val output: SqlJsonOutput? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonParseFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val input: SqlJsonInput? = null,
+&nbsp;        val uniquenessMode: SqlJsonUniquenessMode? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonQueryFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val path: SqlExpr,
+&nbsp;        val passingItems: List&lt;SqlJsonPassing&gt; = emptyList(),
+&nbsp;        val output: SqlJsonOutput? = null,
+&nbsp;        val wrapper: SqlJsonQueryWrapperBehavior? = null,
+&nbsp;        val quotes: SqlJsonQueryQuotesBehavior? = null,
+&nbsp;        val onEmpty: SqlJsonQueryEmptyBehavior? = null,
+&nbsp;        val onError: SqlJsonQueryErrorBehavior? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonValueFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val path: SqlExpr,
+&nbsp;        val passingItems: List&lt;SqlJsonPassing&gt; = emptyList(),
+&nbsp;        val output: SqlJsonOutput? = null,
+&nbsp;        val onEmpty: SqlJsonValueEmptyBehavior? = null,
+&nbsp;        val onError: SqlJsonValueErrorBehavior? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonObjectFunc(
+&nbsp;        val items: List&lt;SqlJsonObjectItem&gt; = emptyList(),
+&nbsp;        val nullConstructor: SqlJsonNullConstructor? = null,
+&nbsp;        val uniquenessMode: SqlJsonUniquenessMode? = null,
+&nbsp;        val output: SqlJsonOutput? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonArrayFunc(
+&nbsp;        val items: List&lt;SqlJsonArrayItem&gt; = emptyList(),
+&nbsp;        val nullConstructor: SqlJsonNullConstructor? = null,
+&nbsp;        val output: SqlJsonOutput? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonExistsFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val path: SqlExpr,
+&nbsp;        val passingItems: List&lt;SqlJsonPassing&gt; = emptyList(),
+&nbsp;        val onError: SqlJsonExistsErrorBehavior? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class CountAsteriskFunc(
+&nbsp;        val tableName: String? = null,
+&nbsp;        val filter: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonObjectAggFunc(
+&nbsp;        val item: SqlJsonObjectItem,
+&nbsp;        val nullConstructor: SqlJsonNullConstructor? = null,
+&nbsp;        val uniquenessMode: SqlJsonUniquenessMode? = null,
+&nbsp;        val output: SqlJsonOutput? = null,
+&nbsp;        val filter: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class JsonArrayAggFunc(
+&nbsp;        val item: SqlJsonArrayItem,
+&nbsp;        val orderBy: List&lt;SqlOrderingItem&gt; = emptyList(),
+&nbsp;        val nullConstructor: SqlJsonNullConstructor? = null,
+&nbsp;        val output: SqlJsonOutput? = null,
+&nbsp;        val filter: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class ListAggFunc(
+&nbsp;        val quantifier: SqlQuantifier? = null,
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val separator: SqlExpr,
+&nbsp;        val onOverflow: SqlListAggOnOverflow? = null,
+&nbsp;        val withinGroup: List&lt;SqlOrderingItem&gt; = emptyList(),
+&nbsp;        val filter: SqlExpr? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class NullsTreatmentFunc(
+&nbsp;        val name: String,
+&nbsp;        val args: List&lt;SqlExpr&gt; = emptyList(),
+&nbsp;        val nullsMode: SqlWindowNullsMode? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class NthValueFunc(
+&nbsp;        val expr: SqlExpr,
+&nbsp;        val row: SqlExpr,
+&nbsp;        val fromMode: SqlNthValueFromMode? = null,
+&nbsp;        val nullsMode: SqlWindowNullsMode? = null
+&nbsp;    ) : SqlExpr
+&nbsp;
+&nbsp;    data class MatchPhase(val phase: SqlMatchPhase, val expr: SqlExpr) : SqlExpr
+&nbsp;
+&nbsp;    data class UnsafeCustom(val tokens: List&lt;SqlUnsafeToken&gt;) : SqlExpr
+&nbsp;
+&nbsp;    data class UnsafeRaw(val sql: String) : SqlExpr {
+&nbsp;        init {
+&nbsp;            require(sql.isNotBlank()) { &quot;Unsafe raw SQL must not be blank.&quot; }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlSubqueryQuantifier {
+<b class="fc">&nbsp;    Any,</b>
+<b class="fc">&nbsp;    All,</b>
+<b class="fc">&nbsp;    Some</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,296 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > LRUCache</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: LRUCache (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">LRUCache</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (50/50)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (298/298)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">LRUCache$Companion</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">LRUCache$Node</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (31/31)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (55/55)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (329/329)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;class LRUCache&lt;T, R&gt;(
+<b class="fc">&nbsp;    private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY,</b>
+<b class="fc">&nbsp;    private val keySelector: (T) -&gt; Any? = { it },</b>
+<b class="fc">&nbsp;    val defaultValue: ((T) -&gt; R?)? = null</b>
+&nbsp;) {
+&nbsp;
+<b class="fc">&nbsp;    private val lock = Any()</b>
+<b class="fc">&nbsp;    private val map = hashMapOf&lt;Any?, Node&lt;T, R&gt;&gt;()</b>
+<b class="fc">&nbsp;    private val head: Node&lt;T, R&gt; = Node()</b>
+<b class="fc">&nbsp;    private val tail: Node&lt;T, R&gt; = Node()</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        head.next = tail</b>
+<b class="fc">&nbsp;        tail.prev = head</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    operator fun get(key: T): R? = synchronized(lock) {</b>
+<b class="fc">&nbsp;        val cacheKey = keySelector(key)</b>
+<b class="fc">&nbsp;        map[cacheKey]?.let { node -&gt;</b>
+<b class="fc">&nbsp;            promote(node)</b>
+<b class="fc">&nbsp;            return@synchronized node.value</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val loader = defaultValue ?: return@synchronized null</b>
+<b class="fc">&nbsp;        val value = loader(key)</b>
+<b class="fc">&nbsp;        put(cacheKey, key, value)</b>
+<b class="fc">&nbsp;        value</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    operator fun get(key: T, defaultValue: ((T) -&gt; R?)): R {
+<b class="fc">&nbsp;        return synchronized(lock) {</b>
+<b class="fc">&nbsp;            val cacheKey = keySelector(key)</b>
+<b class="fc">&nbsp;            map[cacheKey]?.let { node -&gt;</b>
+<b class="fc">&nbsp;                promote(node)</b>
+<b class="fc">&nbsp;                return@synchronized node.value as R</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val value = defaultValue(key) ?: error(&quot;default value not found&quot;)</b>
+<b class="fc">&nbsp;            put(cacheKey, key, value)</b>
+<b class="fc">&nbsp;            value</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun set(key: T, value: R) {
+<b class="fc">&nbsp;        synchronized(lock) {</b>
+<b class="fc">&nbsp;            put(keySelector(key), key, value)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun put(cacheKey: Any?, key: T, value: R?) {
+<b class="fc">&nbsp;        map.remove(cacheKey)?.let(::remove)</b>
+<b class="fc">&nbsp;        val node = Node(key, cacheKey, value)</b>
+<b class="fc">&nbsp;        addAtEnd(node)</b>
+<b class="fc">&nbsp;        map[cacheKey] = node</b>
+<b class="fc">&nbsp;        if (map.size &gt; capacity) {</b>
+<b class="fc">&nbsp;            val first = head.next!!</b>
+<b class="fc">&nbsp;            remove(first)</b>
+<b class="fc">&nbsp;            map.remove(first.cacheKey)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun promote(node: Node&lt;T, R&gt;) {
+<b class="fc">&nbsp;        remove(node)</b>
+<b class="fc">&nbsp;        addAtEnd(node)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun remove(node: Node&lt;T, R&gt;) {
+<b class="fc">&nbsp;        val next = node.next!!</b>
+<b class="fc">&nbsp;        val prev = node.prev!!</b>
+<b class="fc">&nbsp;        prev.next = next</b>
+<b class="fc">&nbsp;        next.prev = prev</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun addAtEnd(node: Node&lt;T, R&gt;) {
+<b class="fc">&nbsp;        val prev = tail.prev!!</b>
+<b class="fc">&nbsp;        prev.next = node</b>
+<b class="fc">&nbsp;        node.prev = prev</b>
+<b class="fc">&nbsp;        node.next = tail</b>
+<b class="fc">&nbsp;        tail.prev = node</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private class Node&lt;T, R&gt;(
+<b class="fc">&nbsp;        val key: T? = null,</b>
+<b class="fc">&nbsp;        val cacheKey: Any? = null,</b>
+<b class="fc">&nbsp;        val value: R? = null</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        var next: Node&lt;T, R&gt;? = null</b>
+<b class="fc">&nbsp;        var prev: Node&lt;T, R&gt;? = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        const val DEFAULT_LRU_CACHE_CAPACITY = 128
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

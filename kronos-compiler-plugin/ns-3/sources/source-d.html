@@ -1,0 +1,893 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > SymbolsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.core</a>
+</div>
+
+<h1>Coverage Summary for Class: SymbolsKt (com.kotlinorm.compiler.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SymbolsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.9%
+  </span>
+  <span class="absValue">
+    (91/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.6%
+  </span>
+  <span class="absValue">
+    (45/62)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.1%
+  </span>
+  <span class="absValue">
+    (226/228)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.7%
+  </span>
+  <span class="absValue">
+    (846/913)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:Suppress(&quot;DEPRECATION&quot;)
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.core
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.FieldClassId
+&nbsp;import com.kotlinorm.compiler.utils.FieldFqName
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.EnumFactoryFqName
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedTypeProviderFqName
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedTypeRegistrarFqName
+&nbsp;import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.JoinSourceClassId
+&nbsp;import com.kotlinorm.compiler.utils.JoinSourceFqName
+&nbsp;import com.kotlinorm.compiler.utils.KCascadeClassId
+&nbsp;import com.kotlinorm.compiler.utils.KCascadeFqName
+&nbsp;import com.kotlinorm.compiler.utils.KColumnTypeClassId
+&nbsp;import com.kotlinorm.compiler.utils.KColumnTypeFqName
+&nbsp;import com.kotlinorm.compiler.utils.KPojoClassId
+&nbsp;import com.kotlinorm.compiler.utils.KPojoFactoryFqName
+&nbsp;import com.kotlinorm.compiler.utils.KPojoFqName
+&nbsp;import com.kotlinorm.compiler.utils.KSelectableClassId
+&nbsp;import com.kotlinorm.compiler.utils.KSelectableFqName
+&nbsp;import com.kotlinorm.compiler.utils.KronosCommonStrategyClassId
+&nbsp;import com.kotlinorm.compiler.utils.KronosFunctionExprClassId
+&nbsp;import com.kotlinorm.compiler.utils.KronosFunctionExprFqName
+&nbsp;import com.kotlinorm.compiler.utils.KronosFunctionExpressionsClassId
+&nbsp;import com.kotlinorm.compiler.utils.KronosObjectClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForConditionClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForConditionFqName
+&nbsp;import com.kotlinorm.compiler.utils.KTableForInsertSelectClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForInsertSelectFqName
+&nbsp;import com.kotlinorm.compiler.utils.KTableForReferenceClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForReferenceFqName
+&nbsp;import com.kotlinorm.compiler.utils.KTableForSelectClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForSelectFqName
+&nbsp;import com.kotlinorm.compiler.utils.KTableForSetClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForSetFqName
+&nbsp;import com.kotlinorm.compiler.utils.KTableForSortClassId
+&nbsp;import com.kotlinorm.compiler.utils.KTableForSortFqName
+&nbsp;import com.kotlinorm.compiler.utils.PairClassId
+&nbsp;import com.kotlinorm.compiler.utils.PairFqName
+&nbsp;import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.SqlOrderingClassId
+&nbsp;import com.kotlinorm.compiler.utils.SqlOrderingItemClassId
+&nbsp;import com.kotlinorm.compiler.utils.SourceIdentityScopeClassId
+&nbsp;import com.kotlinorm.compiler.utils.SourceIdentityScopeFqName
+&nbsp;import com.kotlinorm.compiler.utils.SqlWindowClassId
+&nbsp;import com.kotlinorm.compiler.utils.SyntaxSqlExprColumnClassId
+&nbsp;import com.kotlinorm.compiler.utils.SyntaxSqlExprColumnFqName
+&nbsp;import com.kotlinorm.compiler.utils.StringClassId
+&nbsp;import com.kotlinorm.compiler.utils.SyntaxSqlExprFqName
+&nbsp;import com.kotlinorm.compiler.utils.SyntaxSqlExprClassId
+&nbsp;import com.kotlinorm.compiler.utils.valueParameters
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrSimpleType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeProjection
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.getPropertySetter
+&nbsp;import org.jetbrains.kotlin.ir.util.getPropertyGetter
+&nbsp;import org.jetbrains.kotlin.ir.util.getSimpleFunction
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.ir.util.isVararg
+&nbsp;import org.jetbrains.kotlin.ir.util.superTypes
+&nbsp;import org.jetbrains.kotlin.name.CallableId
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;
+&nbsp;private const val GET_SAFE_VALUE_PARAMETER_COUNT = 5
+&nbsp;
+&nbsp;/**
+&nbsp; * Symbol references for Kronos compiler plugin
+&nbsp; *
+&nbsp; * Uses context receivers and top-level properties to provide access to commonly used symbols
+&nbsp; */
+&nbsp;
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun requiredClass(classId: ClassId, message: String): IrClassSymbol =
+<b class="pc">&nbsp;    context.referenceClass(classId) ?: error(message)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrClassSymbol.requiredConstructor(message: String): IrConstructorSymbol =
+<b class="pc">&nbsp;    constructors.firstOrNull() ?: error(message)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrClassSymbol.requiredFunction(name: String, message: String): IrSimpleFunctionSymbol =
+<b class="pc">&nbsp;    getSimpleFunction(name) ?: error(message)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrClassSymbol.requiredGetter(name: String, message: String): IrSimpleFunctionSymbol =
+<b class="pc">&nbsp;    getPropertyGetter(name) ?: error(message)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrClassSymbol.requiredSetter(name: String, message: String): IrSimpleFunctionSymbol =
+<b class="pc">&nbsp;    getPropertySetter(name) ?: error(message)</b>
+&nbsp;
+&nbsp;private fun Collection&lt;IrSimpleFunctionSymbol&gt;.firstRequired(message: String): IrSimpleFunctionSymbol =
+<b class="pc">&nbsp;    firstOrNull() ?: error(message)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KPojo interface symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kPojoClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KPojoClassId, &quot;KPojo interface not found: ${KPojoFqName.asString()}&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kSelectableClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KSelectableClassId, &quot;KSelectable class not found: ${KSelectableFqName.asString()}&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val joinSourceClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(JoinSourceClassId, &quot;JoinSource class not found: ${JoinSourceFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generated type provider and registrar symbols.
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val generatedTypeProviderSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(</b>
+<b class="fc">&nbsp;        ClassId.topLevel(GeneratedTypeProviderFqName),</b>
+<b class="fc">&nbsp;        &quot;GeneratedTypeProvider interface not found: ${GeneratedTypeProviderFqName.asString()}&quot;</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val generatedTypeRegistrarSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(</b>
+<b class="fc">&nbsp;        ClassId.topLevel(GeneratedTypeRegistrarFqName),</b>
+<b class="fc">&nbsp;        &quot;GeneratedTypeRegistrar interface not found: ${GeneratedTypeRegistrarFqName.asString()}&quot;</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kPojoFactorySymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(</b>
+<b class="fc">&nbsp;        ClassId.topLevel(KPojoFactoryFqName),</b>
+<b class="fc">&nbsp;        &quot;KPojoFactory interface not found: ${KPojoFactoryFqName.asString()}&quot;</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val enumFactorySymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(</b>
+<b class="fc">&nbsp;        ClassId.topLevel(EnumFactoryFqName),</b>
+<b class="fc">&nbsp;        &quot;EnumFactory interface not found: ${EnumFactoryFqName.asString()}&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;/**
+&nbsp; * Field class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val fieldClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(FieldClassId, &quot;Field class not found: ${FieldFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Field constructor symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val fieldConstructorSymbol: IrConstructorSymbol
+<b class="fc">&nbsp;    get() = fieldClassSymbol.requiredConstructor(&quot;Field constructor not found&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sourceIdentityScopeSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(</b>
+<b class="fc">&nbsp;        SourceIdentityScopeClassId,</b>
+<b class="fc">&nbsp;        &quot;SourceIdentityScope object not found: ${SourceIdentityScopeFqName.asString()}&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sourceIdentityResolveTableNameSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = sourceIdentityScopeSymbol.requiredFunction(</b>
+<b class="fc">&nbsp;        &quot;resolveTableName&quot;,</b>
+<b class="fc">&nbsp;        &quot;SourceIdentityScope.resolveTableName method not found&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;/**
+&nbsp; * KCascade class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kCascadeClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KCascadeClassId, &quot;KCascade class not found: ${KCascadeFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KCascade constructor symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kCascadeConstructorSymbol: IrConstructorSymbol
+<b class="fc">&nbsp;    get() = kCascadeClassSymbol.requiredConstructor(&quot;KCascade constructor not found&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosFunctionExprClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KronosFunctionExprClassId, &quot;KronosFunctionExpr class not found: ${KronosFunctionExprFqName.asString()}&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosFunctionExpressionsSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KronosFunctionExpressionsClassId, &quot;KronosFunctionExpressions object not found&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosFunctionCallWindowArgsSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kronosFunctionExpressionsSymbol.requiredFunction(&quot;callWindowArgs&quot;, &quot;KronosFunctionExpressions.callWindowArgs method not found&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosFunctionAliasSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kronosFunctionExprClassSymbol.requiredFunction(&quot;alias&quot;, &quot;KronosFunctionExpr.alias method not found&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosFunctionExprGetterSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kronosFunctionExprClassSymbol.requiredGetter(&quot;expr&quot;, &quot;KronosFunctionExpr.expr getter not found&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Expression sealed interface symbol.
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val expressionClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(SyntaxSqlExprClassId, &quot;SqlExpr interface not found: ${SyntaxSqlExprFqName.asString()}&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlExprColumnClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(SyntaxSqlExprColumnClassId, &quot;SqlExpr.Column class not found: ${SyntaxSqlExprColumnFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlExprColumnConstructorSymbol: IrConstructorSymbol
+<b class="fc">&nbsp;    get() = sqlExprColumnClassSymbol.requiredConstructor(&quot;SqlExpr.Column constructor not found&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlWindowClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(SqlWindowClassId, &quot;SqlWindow class not found&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlWindowConstructorSymbol: IrConstructorSymbol
+<b class="fc">&nbsp;    get() = sqlWindowClassSymbol.requiredConstructor(&quot;SqlWindow constructor not found&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlOrderingItemClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(SqlOrderingItemClassId, &quot;SqlOrderingItem class not found&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlOrderingItemConstructorSymbol: IrConstructorSymbol
+<b class="fc">&nbsp;    get() = sqlOrderingItemClassSymbol.requiredConstructor(&quot;SqlOrderingItem constructor not found&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sqlOrderingClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(SqlOrderingClassId, &quot;SqlOrdering enum not found&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Pair class symbol (kotlin.Pair)
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val pairClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(PairClassId, &quot;Pair class not found: ${PairFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Pair constructor symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val pairConstructorSymbol: IrConstructorSymbol
+<b class="nc">&nbsp;    get() = pairClassSymbol.requiredConstructor(&quot;Pair constructor not found&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KronosCommonStrategy class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosCommonStrategyClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KronosCommonStrategyClassId, &quot;KronosCommonStrategy class not found&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KronosCommonStrategy constructor symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosCommonStrategyConstructorSymbol: IrConstructorSymbol
+<b class="fc">&nbsp;    get() = kronosCommonStrategyClassSymbol.requiredConstructor(&quot;KronosCommonStrategy constructor not found&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos object symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kronosObjectSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KronosObjectClassId, &quot;Kronos object not found&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos.fieldNamingStrategy property getter symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val fieldNamingStrategyGetterSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kronosObjectSymbol.owner.declarations</b>
+<b class="fc">&nbsp;        .filterIsInstance&lt;IrProperty&gt;()</b>
+<b class="fc">&nbsp;        .first { it.name.asString() == &quot;fieldNamingStrategy&quot; }</b>
+<b class="fc">&nbsp;        .getter!!.symbol</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos.tableNamingStrategy property getter symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val tableNamingStrategyGetterSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kronosObjectSymbol.owner.declarations</b>
+<b class="fc">&nbsp;        .filterIsInstance&lt;IrProperty&gt;()</b>
+<b class="fc">&nbsp;        .first { it.name.asString() == &quot;tableNamingStrategy&quot; }</b>
+<b class="fc">&nbsp;        .getter!!.symbol</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KronosNamingStrategy.k2db function symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;val k2dbFunctionSymbol: IrSimpleFunctionSymbol
+&nbsp;    get() {
+<b class="fc">&nbsp;        val namingStrategyClassId = ClassId.topLevel(FqName(&quot;com.kotlinorm.interfaces.KronosNamingStrategy&quot;))</b>
+<b class="pc">&nbsp;        val cls = context.referenceClass(namingStrategyClassId) ?: error(&quot;KronosNamingStrategy not found&quot;)</b>
+<b class="fc">&nbsp;        return cls.owner.declarations</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;org.jetbrains.kotlin.ir.declarations.IrSimpleFunction&gt;()</b>
+<b class="fc">&nbsp;            .first { it.name.asString() == &quot;k2db&quot; }</b>
+<b class="fc">&nbsp;            .symbol</b>
+&nbsp;    }
+&nbsp;
+&nbsp;/**
+&nbsp; * listOf function symbol (kotlin.collections.listOf with vararg)
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;val listOfFunctionSymbol: IrSimpleFunctionSymbol
+&nbsp;    get() {
+<b class="fc">&nbsp;        val functions = context.referenceFunctions(</b>
+<b class="fc">&nbsp;            CallableId(</b>
+<b class="fc">&nbsp;                FqName(&quot;kotlin.collections&quot;),</b>
+<b class="fc">&nbsp;                null,</b>
+<b class="fc">&nbsp;                Name.identifier(&quot;listOf&quot;)</b>
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        return functions.first { </b>
+<b class="pc">&nbsp;            it.owner.parameters.valueParameters.singleOrNull()?.isVararg == true </b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;/**
+&nbsp; * KColumnType enum symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kColumnTypeSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KColumnTypeClassId, &quot;KColumnType enum not found: ${KColumnTypeFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KTableForSelect class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kTableForSelectSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KTableForSelectClassId, &quot;KTableForSelect class not found: ${KTableForSelectFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KTableForInsertSelect class symbol.
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kTableForInsertSelectSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KTableForInsertSelectClassId, &quot;KTableForInsertSelect class not found: ${KTableForInsertSelectFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KTableForSet class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kTableForSetSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KTableForSetClassId, &quot;KTableForSet class not found: ${KTableForSetFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KTableForCondition class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kTableForConditionSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KTableForConditionClassId, &quot;KTableForCondition class not found: ${KTableForConditionFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KTableForSort class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kTableForSortSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KTableForSortClassId, &quot;KTableForSort class not found: ${KTableForSortFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * KTableForReference class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val kTableForReferenceSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(KTableForReferenceClassId, &quot;KTableForReference class not found: ${KTableForReferenceFqName.asString()}&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * addField method symbol from KTableForReference
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addRefFieldSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForReferenceSymbol.requiredFunction(&quot;addField&quot;, &quot;addField method not found in KTableForReference&quot;)</b>
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Method Symbols
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;/**
+&nbsp; * addField method symbol from KTableForSelect
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addFieldMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSelectSymbol.requiredFunction(&quot;addField&quot;, &quot;addField method not found in KTableForSelect&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * addValue method symbol from KTableForInsertSelect.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addInsertSelectValueMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForInsertSelectSymbol.requiredFunction(&quot;addValue&quot;, &quot;addValue method not found in KTableForInsertSelect&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * addScalarSubquery method symbol from KTableForSelect.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addScalarSubqueryMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSelectSymbol.requiredFunction(&quot;addScalarSubquery&quot;, &quot;addScalarSubquery method not found in KTableForSelect&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addFunctionMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSelectSymbol.requiredFunction(&quot;addFunction&quot;, &quot;addFunction method not found in KTableForSelect&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addRawSqlMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSelectSymbol.requiredFunction(&quot;addRawSql&quot;, &quot;addRawSql method not found in KTableForSelect&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * setValue method symbol from KTableForSet
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val setValueMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSetSymbol.requiredFunction(&quot;setValue&quot;, &quot;setValue method not found in KTableForSet&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * setAssign method symbol from KTableForSet
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val setAssignMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSetSymbol.requiredFunction(&quot;setAssign&quot;, &quot;setAssign method not found in KTableForSet&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val setConditionSqlExprSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredSetter(&quot;sqlExpr&quot;, &quot;sqlExpr property setter not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val rawConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;rawConditionExpr&quot;, &quot;rawConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val isNullConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;isNullConditionExpr&quot;, &quot;isNullConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val equalConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;equalConditionExpr&quot;, &quot;equalConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val greaterThanConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;greaterThanConditionExpr&quot;, &quot;greaterThanConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val greaterThanOrEqualConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;greaterThanOrEqualConditionExpr&quot;, &quot;greaterThanOrEqualConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val lessThanConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;lessThanConditionExpr&quot;, &quot;lessThanConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val lessThanOrEqualConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;lessThanOrEqualConditionExpr&quot;, &quot;lessThanOrEqualConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val likeConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;likeConditionExpr&quot;, &quot;likeConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val startsWithConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;startsWithConditionExpr&quot;, &quot;startsWithConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val endsWithConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;endsWithConditionExpr&quot;, &quot;endsWithConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val containsConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;containsConditionExpr&quot;, &quot;containsConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val regexpConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;regexpConditionExpr&quot;, &quot;regexpConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val inConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;inConditionExpr&quot;, &quot;inConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val betweenConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;betweenConditionExpr&quot;, &quot;betweenConditionExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val andExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;andExpr&quot;, &quot;andExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val orExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;orExpr&quot;, &quot;orExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val iterableAnyConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(</b>
+<b class="fc">&nbsp;        &quot;iterableAnyConditionExpr&quot;,</b>
+<b class="fc">&nbsp;        &quot;iterableAnyConditionExpr method not found in KTableForCondition&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val iterableAllConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(</b>
+<b class="fc">&nbsp;        &quot;iterableAllConditionExpr&quot;,</b>
+<b class="fc">&nbsp;        &quot;iterableAllConditionExpr method not found in KTableForCondition&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val iterableNoneConditionExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(</b>
+<b class="fc">&nbsp;        &quot;iterableNoneConditionExpr&quot;,</b>
+<b class="fc">&nbsp;        &quot;iterableNoneConditionExpr method not found in KTableForCondition&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val existsExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;existsExpr&quot;, &quot;existsExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val tupleExprMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;tupleExpr&quot;, &quot;tupleExpr method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * sourceValueByFieldName method symbol from KTableForCondition
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val sourceValueByFieldNameMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForConditionSymbol.requiredFunction(&quot;sourceValueByFieldName&quot;, &quot;sourceValueByFieldName method not found in KTableForCondition&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * addSortField method symbol from KTableForSort
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val addSortFieldMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSortSymbol.requiredFunction(&quot;addSortField&quot;, &quot;addSortField method not found in KTableForSort&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * asc method symbol from KTableForSort
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val ascMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSortSymbol.requiredFunction(&quot;asc&quot;, &quot;asc method not found in KTableForSort&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * desc method symbol from KTableForSort
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val descMethodSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = kTableForSortSymbol.requiredFunction(&quot;desc&quot;, &quot;desc method not found in KTableForSort&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * String class symbol
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val stringClassSymbol: IrClassSymbol
+<b class="fc">&nbsp;    get() = requiredClass(StringClassId, &quot;kotlin.String not found in classpath&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * kotlin.reflect.typeOf function symbol.
+&nbsp; */
+&nbsp;context(context: IrPluginContext)
+&nbsp;val typeOfFunctionSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = context.referenceFunctions(</b>
+<b class="fc">&nbsp;        CallableId(FqName(&quot;kotlin.reflect&quot;), null, Name.identifier(&quot;typeOf&quot;))</b>
+<b class="fc">&nbsp;    ).firstRequired(&quot;kotlin.reflect.typeOf function not found in classpath&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * String.plus function symbol
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;val stringPlusSymbol: IrSimpleFunctionSymbol
+<b class="fc">&nbsp;    get() = stringClassSymbol.requiredFunction(&quot;plus&quot;, &quot;String.plus not found in classpath&quot;)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * getSafeValue function symbol from com.kotlinorm.utils.CommonUtil
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;val getSafeValueSymbol: IrSimpleFunctionSymbol
+<b class="pc">&nbsp;    get() = context.referenceFunctions(</b>
+<b class="fc">&nbsp;        CallableId(FqName(&quot;com.kotlinorm.utils&quot;), null, Name.identifier(&quot;getSafeValue&quot;))</b>
+<b class="pc">&nbsp;    ).firstOrNull { it.owner.parameters.valueParameters.size == GET_SAFE_VALUE_PARAMETER_COUNT }</b>
+<b class="fc">&nbsp;        ?: error(&quot;KType getSafeValue overload not found in com.kotlinorm.utils&quot;)</b>
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Type Judgment Extension Functions
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks whether this type&#39;s classifier graph contains [target].
+&nbsp; *
+&nbsp; * The traversal records visited classifier symbols so recursive bounds cannot create a cycle.
+&nbsp; *
+&nbsp; * @receiver the IR type whose classifier and supertypes are inspected
+&nbsp; * @param target the class symbol to find in the type graph
+&nbsp; * @return true when this type is [target] or reaches it through its supertypes
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun IrType.isTypeOrSubtypeOf(target: IrClassSymbol): Boolean {
+<b class="fc">&nbsp;    val visited = mutableSetOf&lt;IrClassifierSymbol&gt;()</b>
+&nbsp;
+&nbsp;    fun IrType.matchesInTypeGraph(): Boolean {
+<b class="pc">&nbsp;        val classifier = (this as? IrSimpleType)?.classifier ?: return false</b>
+<b class="fc">&nbsp;        if (classifier == target) return true</b>
+<b class="fc">&nbsp;        if (!visited.add(classifier)) return false</b>
+<b class="fc">&nbsp;        return superTypes().any { it.matchesInTypeGraph() }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return matchesInTypeGraph()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if this type is a KPojo type
+&nbsp; *
+&nbsp; * @return true if this type is or implements KPojo interface
+&nbsp; */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;fun IrType.isKPojoType(): Boolean {
+<b class="fc">&nbsp;    return isTypeOrSubtypeOf(kPojoClassSymbol)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Returns whether properties of this type represent SQL source fields in a DSL lambda. */
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;fun IrType.isKronosSqlSourceType(): Boolean {
+<b class="pc">&nbsp;    return isKPojoType() || classFqName?.parent() == GeneratedProjectionPackageFqName</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the first type argument of this type (for generic types like List&lt;T&gt;)
+&nbsp; *
+&nbsp; * @return the first type argument, or null if not available
+&nbsp; */
+&nbsp;fun IrType.firstTypeArgument(): IrType? {
+<b class="pc">&nbsp;    val simpleType = this as? IrSimpleType ?: return null</b>
+<b class="fc">&nbsp;    val projection = simpleType.arguments.firstOrNull() as? IrTypeProjection ?: return null</b>
+<b class="fc">&nbsp;    return projection.type</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if this property represents a database column
+&nbsp; *
+&nbsp; * A property is considered a column if:
+&nbsp; * - It doesn&#39;t have @Ignore annotation
+&nbsp; * - It doesn&#39;t have @Cascade annotation (relationships are not columns)
+&nbsp; * - Its type is not a KPojo or collection of KPojo (relationships are not columns)
+&nbsp; * - Exception: @Serialize annotation forces it to be a column (serialized as JSON/text)
+&nbsp; *
+&nbsp; * @return true if this property represents a column field
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="fc">&nbsp;context(context: IrPluginContext)</b>
+&nbsp;fun IrProperty.isColumnType(): Boolean {
+&nbsp;    // @Ignore means not a column
+<b class="fc">&nbsp;    if (hasAnnotation(IgnoreAnnotationFqName)) return false</b>
+&nbsp;
+&nbsp;    // @Cascade means it&#39;s a relationship, not a column
+<b class="fc">&nbsp;    if (hasAnnotation(CascadeAnnotationFqName)) {</b>
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    // @Serialize forces it to be a column (will be serialized to JSON/text)
+<b class="fc">&nbsp;    if (hasAnnotation(SerializeAnnotationFqName)) {</b>
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    // Get the property type
+<b class="pc">&nbsp;    val propertyType = backingField?.type ?: context.irBuiltIns.anyNType</b>
+&nbsp;    
+&nbsp;    // If the type is KPojo, it&#39;s a relationship, not a column
+<b class="fc">&nbsp;    if (propertyType.isKPojoType()) {</b>
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    // If it&#39;s a collection/array of KPojo, it&#39;s also a relationship
+<b class="fc">&nbsp;    val elementType = propertyType.firstTypeArgument()</b>
+<b class="fc">&nbsp;    if (elementType?.isKPojoType() == true) {</b>
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    // Otherwise, it&#39;s a regular column
+<b class="fc">&nbsp;    return true</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,224 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > Cursor</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.pagination</a>
+</div>
+
+<h1>Coverage Summary for Class: Cursor (com.kotlinorm.orm.pagination)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">Cursor</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.orm.pagination
+&nbsp;
+&nbsp;import java.math.BigDecimal
+&nbsp;import java.math.BigInteger
+&nbsp;import java.sql.Time
+&nbsp;import java.sql.Timestamp
+&nbsp;import java.time.Instant
+&nbsp;import java.time.LocalDate
+&nbsp;import java.time.LocalDateTime
+&nbsp;import java.time.LocalTime
+&nbsp;import java.time.OffsetDateTime
+&nbsp;import java.time.ZonedDateTime
+&nbsp;import java.util.UUID
+&nbsp;import kotlin.time.ExperimentalTime
+&nbsp;
+&nbsp;@JvmInline
+<b class="fc">&nbsp;value class Cursor(val value: String)</b>
+&nbsp;
+&nbsp;internal data class CursorSpec(
+&nbsp;    val cursor: Cursor?,
+&nbsp;    val pageSize: Int,
+&nbsp;    val values: Map&lt;String, Any?&gt; = cursor?.decodeCursorValues().orEmpty()
+&nbsp;)
+&nbsp;
+&nbsp;internal fun Map&lt;String, Any?&gt;.toCursor(): Cursor {
+&nbsp;    val body = entries.joinToString(&quot;\n&quot;) { (name, value) -&gt;
+&nbsp;        &quot;${escape(name)}=${encodeValue(value)}&quot;
+&nbsp;    }
+&nbsp;    return Cursor(java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(body.toByteArray(Charsets.UTF_8)))
+&nbsp;}
+&nbsp;
+&nbsp;private fun Cursor.decodeCursorValues(): Map&lt;String, Any?&gt; {
+&nbsp;    val body = String(java.util.Base64.getUrlDecoder().decode(value), Charsets.UTF_8)
+&nbsp;    if (body.isBlank()) return emptyMap()
+&nbsp;    return body.lineSequence().associate { line -&gt;
+&nbsp;        val index = line.indexOf(&#39;=&#39;)
+&nbsp;        require(index &gt; 0) { &quot;Invalid cursor token.&quot; }
+&nbsp;        unescape(line.substring(0, index)) to decodeValue(line.substring(index + 1))
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(ExperimentalTime::class)
+&nbsp;private fun encodeValue(value: Any?): String = when (value) {
+&nbsp;    null -&gt; &quot;n:&quot;
+&nbsp;    is Int -&gt; &quot;i:$value&quot;
+&nbsp;    is Long -&gt; &quot;l:$value&quot;
+&nbsp;    is Short -&gt; &quot;h:$value&quot;
+&nbsp;    is Byte -&gt; &quot;y:$value&quot;
+&nbsp;    is Float -&gt; &quot;f:$value&quot;
+&nbsp;    is Double -&gt; &quot;d:$value&quot;
+&nbsp;    is Boolean -&gt; &quot;b:$value&quot;
+&nbsp;    is BigDecimal -&gt; &quot;bd:$value&quot;
+&nbsp;    is BigInteger -&gt; &quot;bi:$value&quot;
+&nbsp;    is UUID -&gt; &quot;uuid:$value&quot;
+&nbsp;    is java.sql.Date -&gt; &quot;sqlDate:${value.toLocalDate()}&quot;
+&nbsp;    is Time -&gt; &quot;sqlTime:${value.toLocalTime()}&quot;
+&nbsp;    is Timestamp -&gt; &quot;sqlTimestamp:${value.toLocalDateTime()}&quot;
+&nbsp;    is java.util.Date -&gt; &quot;utilDate:${value.toInstant()}&quot;
+&nbsp;    is LocalDate -&gt; &quot;localDate:$value&quot;
+&nbsp;    is LocalTime -&gt; &quot;localTime:$value&quot;
+&nbsp;    is LocalDateTime -&gt; &quot;localDateTime:$value&quot;
+&nbsp;    is Instant -&gt; &quot;instant:$value&quot;
+&nbsp;    is ZonedDateTime -&gt; &quot;zonedDateTime:$value&quot;
+&nbsp;    is OffsetDateTime -&gt; &quot;offsetDateTime:$value&quot;
+&nbsp;    is kotlin.time.Instant -&gt; &quot;kotlinInstant:$value&quot;
+&nbsp;    else -&gt; &quot;s:${escape(value.toString())}&quot;
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(ExperimentalTime::class)
+&nbsp;private fun decodeValue(encoded: String): Any? {
+&nbsp;    val type = encoded.substringBefore(&#39;:&#39;)
+&nbsp;    val raw = encoded.substringAfter(&#39;:&#39;, &quot;&quot;)
+&nbsp;    return when (type) {
+&nbsp;        &quot;n&quot; -&gt; null
+&nbsp;        &quot;i&quot; -&gt; raw.toInt()
+&nbsp;        &quot;l&quot; -&gt; raw.toLong()
+&nbsp;        &quot;h&quot; -&gt; raw.toShort()
+&nbsp;        &quot;y&quot; -&gt; raw.toByte()
+&nbsp;        &quot;f&quot; -&gt; raw.toFloat()
+&nbsp;        &quot;d&quot; -&gt; raw.toDouble()
+&nbsp;        &quot;b&quot; -&gt; raw.toBooleanStrict()
+&nbsp;        &quot;bd&quot; -&gt; raw.toBigDecimal()
+&nbsp;        &quot;bi&quot; -&gt; raw.toBigInteger()
+&nbsp;        &quot;uuid&quot; -&gt; UUID.fromString(raw)
+&nbsp;        &quot;sqlDate&quot; -&gt; java.sql.Date.valueOf(LocalDate.parse(raw))
+&nbsp;        &quot;sqlTime&quot; -&gt; Time.valueOf(LocalTime.parse(raw))
+&nbsp;        &quot;sqlTimestamp&quot; -&gt; Timestamp.valueOf(LocalDateTime.parse(raw))
+&nbsp;        &quot;utilDate&quot; -&gt; java.util.Date.from(Instant.parse(raw))
+&nbsp;        &quot;localDate&quot; -&gt; LocalDate.parse(raw)
+&nbsp;        &quot;localTime&quot; -&gt; LocalTime.parse(raw)
+&nbsp;        &quot;localDateTime&quot; -&gt; LocalDateTime.parse(raw)
+&nbsp;        &quot;instant&quot; -&gt; Instant.parse(raw)
+&nbsp;        &quot;zonedDateTime&quot; -&gt; ZonedDateTime.parse(raw)
+&nbsp;        &quot;offsetDateTime&quot; -&gt; OffsetDateTime.parse(raw)
+&nbsp;        &quot;kotlinInstant&quot; -&gt; kotlin.time.Instant.parse(raw)
+&nbsp;        &quot;s&quot; -&gt; unescape(raw)
+&nbsp;        else -&gt; error(&quot;Invalid cursor token.&quot;)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun escape(value: String): String = java.net.URLEncoder.encode(value, Charsets.UTF_8.name())
+&nbsp;
+&nbsp;private fun unescape(value: String): String = java.net.URLDecoder.decode(value, Charsets.UTF_8.name())
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

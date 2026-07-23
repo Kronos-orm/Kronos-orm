@@ -1,0 +1,241 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > DatabaseStatementBuildersKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database</a>
+</div>
+
+<h1>Coverage Summary for Class: DatabaseStatementBuildersKt (com.kotlinorm.database)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">DatabaseStatementBuildersKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    56.5%
+  </span>
+  <span class="absValue">
+    (35/62)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.6%
+  </span>
+  <span class="absValue">
+    (41/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.1%
+  </span>
+  <span class="absValue">
+    (327/371)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DatabaseStatementBuildersKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    56.5%
+  </span>
+  <span class="absValue">
+    (35/62)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.6%
+  </span>
+  <span class="absValue">
+    (41/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.1%
+  </span>
+  <span class="absValue">
+    (327/371)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;import com.kotlinorm.syntax.statement.SqlColumnDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
+&nbsp;import com.kotlinorm.syntax.token.SqlUnsafeToken
+&nbsp;
+&nbsp;internal fun Field.toColumnDefinition(columnType: (KColumnType, Int, Int) -&gt; String): SqlColumnDefinition =
+<b class="fc">&nbsp;    SqlColumnDefinition(</b>
+<b class="fc">&nbsp;        name = SqlIdentifier.of(columnName),</b>
+<b class="fc">&nbsp;        type = SqlType.UnsafeCustom(listOf(SqlUnsafeToken.Text(columnType(type, length, scale)))),</b>
+<b class="fc">&nbsp;        nullable = nullable,</b>
+<b class="pc">&nbsp;        primaryKey = when (primaryKey) {</b>
+<b class="fc">&nbsp;            PrimaryKeyType.NOT -&gt; SqlPrimaryKeyMode.NotPrimary</b>
+<b class="fc">&nbsp;            PrimaryKeyType.IDENTITY -&gt; SqlPrimaryKeyMode.Identity</b>
+&nbsp;            PrimaryKeyType.DEFAULT,
+&nbsp;            PrimaryKeyType.UUID,
+&nbsp;            PrimaryKeyType.SNOWFLAKE,
+<b class="nc">&nbsp;            PrimaryKeyType.CUSTOM -&gt; SqlPrimaryKeyMode.Primary</b>
+&nbsp;        },
+<b class="pc">&nbsp;        defaultValue = defaultValue?.let { SqlExpr.UnsafeRaw(it.ifEmpty { &quot;\&quot;\&quot;&quot; }) }</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;internal fun KTableIndex.toCreateIndexStatement(tableName: SqlIdentifier, ifNotExists: Boolean = false): SqlDdlStatement.CreateIndex {</b>
+<b class="fc">&nbsp;    val normalizedType = type.uppercase()</b>
+<b class="fc">&nbsp;    val normalizedMethod = method.uppercase()</b>
+<b class="fc">&nbsp;    return SqlDdlStatement.CreateIndex(</b>
+<b class="fc">&nbsp;        indexName = SqlIdentifier.of(name),</b>
+<b class="fc">&nbsp;        tableName = tableName,</b>
+<b class="fc">&nbsp;        columns = columns.map { SqlIdentifier.of(it) },</b>
+<b class="fc">&nbsp;        unique = normalizedType == &quot;UNIQUE&quot; || normalizedMethod == &quot;UNIQUE&quot;,</b>
+<b class="pc">&nbsp;        type = type.takeUnless { it.isBlank() || it.equals(&quot;NORMAL&quot;, ignoreCase = true) || it.equals(&quot;UNIQUE&quot;, ignoreCase = true) },</b>
+<b class="pc">&nbsp;        method = method.takeUnless {</b>
+<b class="pc">&nbsp;            it.isBlank() ||</b>
+<b class="pc">&nbsp;                it.equals(&quot;UNIQUE&quot;, ignoreCase = true) ||</b>
+<b class="fc">&nbsp;                it.equals(type, ignoreCase = true)</b>
+&nbsp;        },
+<b class="fc">&nbsp;        concurrently = concurrently,</b>
+<b class="fc">&nbsp;        ifNotExists = ifNotExists</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;internal fun Field.sameColumnAttributesAs(other: Field, compareComment: Boolean = true): Boolean =</b>
+<b class="pc">&nbsp;    nullable == other.nullable &amp;&amp;</b>
+<b class="pc">&nbsp;        primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &amp;&amp;</b>
+<b class="pc">&nbsp;        defaultValue.orEmpty() == other.defaultValue.orEmpty() &amp;&amp;</b>
+<b class="pc">&nbsp;        (!compareComment || kDoc.orEmpty() == other.kDoc.orEmpty())</b>
+&nbsp;
+&nbsp;private fun PrimaryKeyType.sameDatabasePrimaryKeyModeAs(other: PrimaryKeyType): Boolean =
+<b class="fc">&nbsp;    databasePrimaryKeyMode() == other.databasePrimaryKeyMode()</b>
+&nbsp;
+&nbsp;private fun PrimaryKeyType.databasePrimaryKeyMode(): String =
+<b class="pc">&nbsp;    when (this) {</b>
+<b class="fc">&nbsp;        PrimaryKeyType.NOT -&gt; &quot;none&quot;</b>
+<b class="fc">&nbsp;        PrimaryKeyType.IDENTITY -&gt; &quot;identity&quot;</b>
+&nbsp;        PrimaryKeyType.DEFAULT,
+&nbsp;        PrimaryKeyType.UUID,
+&nbsp;        PrimaryKeyType.SNOWFLAKE,
+<b class="fc">&nbsp;        PrimaryKeyType.CUSTOM -&gt; &quot;primary&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;internal fun Map&lt;String, Any&gt;.cell(name: String): Any? =
+<b class="fc">&nbsp;    entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value</b>
+&nbsp;
+<b class="fc">&nbsp;internal fun Any?.asInt(): Int = when (this) {</b>
+<b class="fc">&nbsp;    is Int -&gt; this</b>
+<b class="pc">&nbsp;    is Long -&gt; toInt()</b>
+<b class="pc">&nbsp;    is Number -&gt; toInt()</b>
+<b class="pc">&nbsp;    is Boolean -&gt; if (this) 1 else 0</b>
+<b class="pc">&nbsp;    is String -&gt; toIntOrNull() ?: 0</b>
+<b class="fc">&nbsp;    else -&gt; 0</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

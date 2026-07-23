@@ -1,0 +1,334 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KTableForSelectKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: KTableForSelectKt (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KTableForSelectKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (98/98)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.functions.FunctionHandler
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemAliasMetadata
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
+&nbsp;
+&nbsp;/**
+&nbsp; * KTable
+&nbsp; *
+&nbsp; * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
+&nbsp; * to add Fields, you can use following:
+&nbsp; * 1. `[it.&lt;field1&gt;, it.&lt;field2&gt;]`
+&nbsp; * 2. `[it.&lt;field1&gt;, it.&lt;field2&gt;.alias(&quot;&lt;alias&gt;&quot;)]`
+&nbsp; * 3. `addField(Field(columnName, optionalName))`
+&nbsp; * 4. `Field(columnName, optionalName).setAlias(&quot;&lt;alias&gt;&quot;)`
+&nbsp; * 5. `count(it.&lt;field&gt;)` or `count(1)` or `count(it.&lt;field&gt;).alias(&quot;&lt;alias&gt;&quot;)`
+&nbsp; *
+&nbsp; * @param T the type of the table
+&nbsp; */
+&nbsp;open class KTableForSelect&lt;T : KPojo&gt;(
+&nbsp;    val sourceBinding: SourceBinding? = null
+&nbsp;) {
+&nbsp;    val fields: MutableList&lt;Field&gt; = mutableListOf()
+&nbsp;    val selectItems: MutableList&lt;SqlSelectItem&gt; = mutableListOf()
+&nbsp;    internal val projectionItems: MutableList&lt;ProjectionItem&gt; = mutableListOf()
+&nbsp;    val f: FunctionHandler = FunctionHandler
+&nbsp;
+&nbsp;    @Suppress(&quot;UNUSED_PARAMETER&quot;)
+&nbsp;    operator fun get(vararg fields: Any?): Unit = Unit
+&nbsp;
+&nbsp;    operator fun Any?.plus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Any? = null
+&nbsp;
+&nbsp;    operator fun Any?.minus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    operator fun Any?.times(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    operator fun Any?.div(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    operator fun Any?.rem(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Number? = null
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Overloaded operator function that minus two objects of type Any?.
+&nbsp;     *
+&nbsp;     * @param other the object to be added to this object.
+&nbsp;     * @return an integer value of 1.
+&nbsp;     */
+&nbsp;    operator fun KPojo?.minus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?) = this
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets an alias for the given object.
+&nbsp;     *
+&nbsp;     * @param alias the alias to set for the object
+&nbsp;     * @return the provided alias
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+&nbsp;    fun Field.alias(@Suppress(&quot;UNUSED_PARAMETER&quot;) alias: String): Field = this
+&nbsp;
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+&nbsp;    fun KronosFunctionExpr.alias(alias: String): KronosFunctionExpr = copy(alias = alias)
+&nbsp;
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+&nbsp;    fun SqlExpr.alias(alias: String): KronosFunctionExpr = KronosFunctionExpr(this, &quot;expr&quot;, alias)
+&nbsp;
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+&nbsp;    fun &lt;R&gt; R.alias(@Suppress(&quot;UNUSED_PARAMETER&quot;) alias: String): R = this
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a SQL window `OVER (...)` clause to a function expression.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+&nbsp;    fun &lt;R&gt; R.over(block: KTableForWindow&lt;T&gt;.() -&gt; Unit): R {
+&nbsp;        KTableForWindow&lt;T&gt;(sourceBinding).block()
+&nbsp;        return this
+&nbsp;    }
+&nbsp;
+&nbsp;    fun column(field: Field, tableName: String? = field.tableName): SqlExpr.Column =
+&nbsp;        sourceBinding?.projectionColumn(field)
+&nbsp;            ?: SqlExpr.Column(tableName = tableName?.takeIf { it.isNotBlank() }, columnName = field.columnName)
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a field to the collection of fields.
+&nbsp;     *
+&nbsp;     * @param property the field to be added
+&nbsp;     */
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+&nbsp;    fun addField(property: Field) {
+&nbsp;        fields += property
+&nbsp;        projectionItems += ProjectionItem.FieldItem(property, column(property))
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addFunction(function: KronosFunctionExpr) {
+&nbsp;        val alias = function.alias ?: function.functionName.lowercase()
+&nbsp;        val expr = sourceBinding?.bindExpr(function.expr) ?: function.expr
+&nbsp;        val item = SqlSelectItem.Expr(
+&nbsp;            expr = expr,
+&nbsp;            alias = alias,
+&nbsp;            metadata = SqlSelectItemAliasMetadata(
+&nbsp;                outputName = alias,
+&nbsp;                expression = expr,
+&nbsp;                scope = SqlSelectItemSourceScope.Aggregate
+&nbsp;            )
+&nbsp;        )
+&nbsp;        selectItems += item
+&nbsp;        projectionItems += ProjectionItem.SelectItemValue(item)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addRawSql(sql: String, alias: String? = null) {
+&nbsp;        val item = rawSqlSelectItem(sql, alias)
+&nbsp;        selectItems += item
+&nbsp;        projectionItems += ProjectionItem.SelectItemValue(item)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addScalarSubquery(query: KSelectable&lt;*&gt;, alias: String) {
+&nbsp;        val expr = SqlExpr.Subquery(query.toSqlQuery())
+&nbsp;        val item = SqlSelectItem.Expr(
+&nbsp;            expr = expr,
+&nbsp;            alias = alias,
+&nbsp;            metadata = SqlSelectItemAliasMetadata(
+&nbsp;                outputName = alias,
+&nbsp;                expression = expr,
+&nbsp;                scope = SqlSelectItemSourceScope.Selected
+&nbsp;            )
+&nbsp;        )
+&nbsp;        selectItems += item
+&nbsp;        projectionItems += ProjectionItem.ScalarSubqueryValue(query, alias, item)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun Field.setAlias(alias: String): Field {
+&nbsp;        this.name = alias
+&nbsp;        return this
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.
+&nbsp;         *
+&nbsp;         * @param T The type of the KPojo object.
+&nbsp;         * @param block The block of code to be applied to the KTable instance.
+&nbsp;         * @return The resulting KTable instance after applying the block.
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; T.afterSelect(block: KTableForSelect&lt;T&gt;.(T) -&gt; Unit) = KTableForSelect&lt;T&gt;().block(this)
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; T.afterSelect(
+&nbsp;            sourceBinding: SourceBinding?,
+&nbsp;            block: KTableForSelect&lt;T&gt;.(T) -&gt; Unit
+&nbsp;        ) = KTableForSelect&lt;T&gt;(sourceBinding).block(this)
+&nbsp;    }
+&nbsp;
+&nbsp;    internal sealed class ProjectionItem {
+&nbsp;        data class FieldItem(
+&nbsp;            val field: Field,
+&nbsp;            val expr: SqlExpr.Column? = null,
+&nbsp;            val outputName: String? = null
+&nbsp;        ) : ProjectionItem()
+&nbsp;        data class SelectItemValue(val item: SqlSelectItem) : ProjectionItem()
+&nbsp;        data class ScalarSubqueryValue(
+&nbsp;            val query: KSelectable&lt;*&gt;,
+&nbsp;            val alias: String,
+&nbsp;            val item: SqlSelectItem
+&nbsp;        ) : ProjectionItem()
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;internal fun rawSqlSelectItem(sql: String, alias: String? = null): SqlSelectItem.Expr {</b>
+<b class="fc">&nbsp;    val expr = sql.toRawSqlExpr()</b>
+<b class="fc">&nbsp;    return SqlSelectItem.Expr(</b>
+<b class="fc">&nbsp;        expr = expr,</b>
+<b class="fc">&nbsp;        alias = alias,</b>
+<b class="fc">&nbsp;        metadata = alias?.let {</b>
+<b class="fc">&nbsp;            SqlSelectItemAliasMetadata(</b>
+<b class="fc">&nbsp;                outputName = it,</b>
+<b class="fc">&nbsp;                expression = expr,</b>
+<b class="fc">&nbsp;                scope = SqlSelectItemSourceScope.Selected,</b>
+<b class="fc">&nbsp;                userReferenceable = true</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;internal fun String.toRawSqlExpr(): SqlExpr =
+<b class="fc">&nbsp;    when {</b>
+<b class="fc">&nbsp;        toIntOrNull() != null -&gt; SqlExpr.NumberLiteral(this)</b>
+<b class="fc">&nbsp;        toDoubleOrNull() != null -&gt; SqlExpr.NumberLiteral(this)</b>
+<b class="fc">&nbsp;        equals(&quot;true&quot;, ignoreCase = true) || equals(&quot;false&quot;, ignoreCase = true) -&gt; SqlExpr.BooleanLiteral(toBoolean())</b>
+<b class="fc">&nbsp;        equals(&quot;null&quot;, ignoreCase = true) -&gt; SqlExpr.NullLiteral</b>
+<b class="fc">&nbsp;        else -&gt; SqlExpr.UnsafeRaw(this)</b>
+&nbsp;    }
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

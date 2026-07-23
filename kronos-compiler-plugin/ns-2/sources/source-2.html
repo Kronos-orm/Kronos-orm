@@ -1,0 +1,784 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > GeneratedTypeProviderGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: GeneratedTypeProviderGenerator (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GeneratedTypeProviderGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.9%
+  </span>
+  <span class="absValue">
+    (95/140)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.5%
+  </span>
+  <span class="absValue">
+    (271/278)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.9%
+  </span>
+  <span class="absValue">
+    (1880/1961)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderGenerator$capturesExternalValues$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderGenerator$capturesExternalValues$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (20/20)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderGenerator$generate$$inlined$sortedBy$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderGenerator$generate$$inlined$sortedBy$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    86.7%
+  </span>
+  <span class="absValue">
+    (26/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.2%
+  </span>
+  <span class="absValue">
+    (101/146)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.9%
+  </span>
+  <span class="absValue">
+    (277/286)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.9%
+  </span>
+  <span class="absValue">
+    (1917/1998)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.enumFactorySymbol
+&nbsp;import com.kotlinorm.compiler.core.generatedTypeProviderSymbol
+&nbsp;import com.kotlinorm.compiler.core.generatedTypeRegistrarSymbol
+&nbsp;import com.kotlinorm.compiler.core.kPojoClassSymbol
+&nbsp;import com.kotlinorm.compiler.core.kPojoFactorySymbol
+&nbsp;import com.kotlinorm.compiler.core.listOfFunctionSymbol
+&nbsp;import com.kotlinorm.compiler.core.typeOfFunctionSymbol
+&nbsp;import com.kotlinorm.compiler.plugin.GeneratedTypeProviderConfiguration
+&nbsp;import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.ErrorMessages
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedFactoryPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
+&nbsp;import org.jetbrains.kotlin.descriptors.ClassKind
+&nbsp;import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+&nbsp;import org.jetbrains.kotlin.descriptors.Modality
+&nbsp;import org.jetbrains.kotlin.descriptors.impl.MutablePackageFragmentDescriptor
+&nbsp;import org.jetbrains.kotlin.ir.IrElement
+&nbsp;import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.IrValueParameterBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addConstructor
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addFunction
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addGetter
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addProperty
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildClass
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildFun
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildValueParameter
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irDelegatingConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irElseBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irEquals
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irReturn
+&nbsp;import org.jetbrains.kotlin.ir.builders.irSamConversion
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.builders.irVararg
+&nbsp;import org.jetbrains.kotlin.ir.builders.irWhen
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrConstructor
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFile
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrValueDeclaration
+&nbsp;import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
+&nbsp;import org.jetbrains.kotlin.ir.declarations.moduleDescriptor
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrGetValue
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrSimpleType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeProjection
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.typeWith
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.copyTo
+&nbsp;import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
+&nbsp;import org.jetbrains.kotlin.ir.util.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.file
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.ir.util.functions
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.ir.visitors.IrVisitorVoid
+&nbsp;import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import org.jetbrains.kotlin.name.SpecialNames
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates one public, no-argument metadata provider for a compiler module.
+&nbsp; *
+&nbsp; * The provider contributes directly callable KPojo factories and enum-name factories keyed
+&nbsp; * by exact `KType` values. Contributions are emitted in stable declaration-name order and
+&nbsp; * contain no reflective construction or enum lookup. Only declarations visible from the
+&nbsp; * generated package are referenced; unsupported KPojo constructors are reported and omitted.
+&nbsp; *
+&nbsp; * Enum discovery includes concrete enum leaves nested in generic property types. Properties
+&nbsp; * ignored in all mapping directions and cascade-only properties do not contribute enum metadata,
+&nbsp; * while serialized properties may contribute optional metadata for their decoded logical types.
+&nbsp; * Direct non-serialized enum properties and statically typed enum results require metadata and
+&nbsp; * produce a compiler error when the generated package cannot reference the enum declaration.
+&nbsp; */
+&nbsp;internal object GeneratedTypeProviderGenerator {
+&nbsp;    /**
+&nbsp;     * Adds the configured provider class to [moduleFragment].
+&nbsp;     *
+&nbsp;     * @param pluginContext compiler symbols and IR factory used to construct declarations
+&nbsp;     * @param moduleFragment module receiving the generated provider
+&nbsp;     * @param kPojoClasses discovered KPojo declarations, including declarations from dependencies
+&nbsp;     * @param staticallyTypedEnums enum types used directly by generated mapping code
+&nbsp;     * @param provider validated stable provider identity and fully qualified name
+&nbsp;     * @param errorReporter compiler reporter for constructibility warnings
+&nbsp;     * @return generated provider class, or `null` when the module has no files or already contains it
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun generate(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        moduleFragment: IrModuleFragment,
+&nbsp;        kPojoClasses: Collection&lt;IrClass&gt;,
+&nbsp;        staticallyTypedEnums: Set&lt;IrClass&gt;,
+&nbsp;        provider: GeneratedTypeProviderConfiguration,
+&nbsp;        errorReporter: ErrorReporter
+&nbsp;    ): IrClass? {
+<b class="pc">&nbsp;        if (moduleFragment.files.isEmpty()) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val localKPojoClasses = kPojoClasses</b>
+<b class="fc">&nbsp;            .filter { it.isDeclaredIn(moduleFragment) }</b>
+<b class="fc">&nbsp;            .filter { it.isDirectlyConstructibleByGeneratedProvider() }</b>
+<b class="fc">&nbsp;            .filter { it.isAccessibleFromGeneratedProvider(allowLocalClass = true) }</b>
+<b class="pc">&nbsp;            .distinctBy { it.fqNameWhenAvailable ?: it.symbol }</b>
+<b class="pc">&nbsp;            .sortedBy { it.fqNameWhenAvailable?.asString() ?: it.name.asString() }</b>
+<b class="fc">&nbsp;        val requiredEnumClasses = linkedSetOf&lt;IrClass&gt;().apply {</b>
+<b class="fc">&nbsp;            addAll(staticallyTypedEnums)</b>
+<b class="fc">&nbsp;            localKPojoClasses.forEach { kPojo -&gt;</b>
+<b class="fc">&nbsp;                kPojo.properties</b>
+<b class="fc">&nbsp;                    .filter { it.requiresScalarEnumMetadata() }</b>
+<b class="pc">&nbsp;                    .mapNotNullTo(this) { property -&gt; property.declaredType()?.concreteEnumClassOrNull() }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        val discoveredEnumClasses = linkedSetOf&lt;IrClass&gt;().apply {</b>
+<b class="fc">&nbsp;            addAll(requiredEnumClasses)</b>
+<b class="fc">&nbsp;            localKPojoClasses.forEach { kPojo -&gt;</b>
+<b class="fc">&nbsp;                kPojo.properties</b>
+<b class="fc">&nbsp;                    .filter { it.contributesEnumMetadata() }</b>
+<b class="pc">&nbsp;                    .forEach { property -&gt; property.declaredType()?.collectConcreteEnumLeaves(this) }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        requiredEnumClasses</b>
+<b class="fc">&nbsp;            .filterNot { it.isAccessibleFromGeneratedProvider() }</b>
+<b class="fc">&nbsp;            .forEach { enumClass -&gt;</b>
+<b class="nc">&nbsp;                errorReporter.reportError(</b>
+<b class="nc">&nbsp;                    enumClass,</b>
+<b class="nc">&nbsp;                    ErrorMessages.inaccessibleEnumMetadata(enumClass.fqNameWhenAvailable)</b>
+&nbsp;                )
+<b class="nc">&nbsp;            }</b>
+<b class="fc">&nbsp;        val enumClasses = discoveredEnumClasses</b>
+<b class="fc">&nbsp;            .filter { it.isAccessibleFromGeneratedProvider() }</b>
+<b class="pc">&nbsp;            .sortedBy { it.fqNameWhenAvailable?.asString() ?: it.name.asString() }</b>
+&nbsp;
+<b class="fc">&nbsp;        val file = createProviderFile(moduleFragment)</b>
+<b class="fc">&nbsp;        val providerName = provider.fqName.shortName()</b>
+<b class="pc">&nbsp;        if (file.declarations.any { (it as? IrClass)?.name == providerName }) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val providerClass = pluginContext.irFactory.buildClass {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;            name = providerName</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            kind = ClassKind.CLASS</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            parent = file</b>
+<b class="fc">&nbsp;            superTypes = listOf(with(pluginContext) { generatedTypeProviderSymbol.defaultType })</b>
+<b class="fc">&nbsp;            createThisReceiverParameter()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        file.declarations += providerClass</b>
+<b class="fc">&nbsp;        providerClass.addNoArgConstructor(pluginContext)</b>
+<b class="fc">&nbsp;        providerClass.addIdGetter(pluginContext, provider.id)</b>
+<b class="fc">&nbsp;        providerClass.addContributeFunction(pluginContext, localKPojoClasses, enumClasses, errorReporter)</b>
+<b class="fc">&nbsp;        return providerClass</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun createProviderFile(moduleFragment: IrModuleFragment): IrFile {
+<b class="fc">&nbsp;        moduleFragment.files</b>
+<b class="fc">&nbsp;            .firstOrNull { it.packageFqName == GeneratedFactoryPackageFqName }</b>
+<b class="pc">&nbsp;            ?.let { return it }</b>
+<b class="pc">&nbsp;        val sourceFile = moduleFragment.files.firstOrNull()</b>
+<b class="nc">&nbsp;            ?: error(&quot;Kronos generated type provider requires at least one source file&quot;)</b>
+<b class="fc">&nbsp;        val packageFragment = MutablePackageFragmentDescriptor(sourceFile.moduleDescriptor, GeneratedFactoryPackageFqName)</b>
+<b class="fc">&nbsp;        return IrFileImpl(sourceFile.fileEntry, packageFragment, moduleFragment).also { moduleFragment.files += it }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.addIdGetter(pluginContext: IrPluginContext, providerId: String) {
+<b class="fc">&nbsp;        val providerProperty = with(pluginContext) {</b>
+<b class="fc">&nbsp;            generatedTypeProviderSymbol.owner.properties.single { it.name.asString() == &quot;id&quot; }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val providerGetter = providerProperty.getter!!</b>
+<b class="fc">&nbsp;        val property = addProperty {</b>
+<b class="fc">&nbsp;            name = providerProperty.name</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            isVar = false</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            overriddenSymbols = listOf(providerProperty.symbol)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        val getter = property.addGetter {</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            returnType = providerGetter.returnType</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            parameters = listOf(this@addIdGetter.thisReceiver!!.copyTo(this, kind = IrParameterKind.DispatchReceiver))</b>
+<b class="fc">&nbsp;            overriddenSymbols = listOf(providerGetter.symbol)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        getter.body = pluginContext.irBuiltIns.createIrBuilder(getter.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;            +irReturn(irString(providerId))</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.addContributeFunction(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        kPojoClasses: List&lt;IrClass&gt;,
+&nbsp;        enumClasses: List&lt;IrClass&gt;,
+&nbsp;        errorReporter: ErrorReporter
+&nbsp;    ) {
+<b class="fc">&nbsp;        val providerContribute = with(pluginContext) {</b>
+<b class="fc">&nbsp;            generatedTypeProviderSymbol.owner.functions.single { it.name.asString() == &quot;contributeTo&quot; }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val contribute = addFunction {</b>
+<b class="fc">&nbsp;            name = providerContribute.name</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            returnType = providerContribute.returnType</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            val registrarParameter = providerContribute.parameters.single { it.kind == IrParameterKind.Regular }</b>
+<b class="fc">&nbsp;            parameters = listOf(</b>
+<b class="fc">&nbsp;                this@addContributeFunction.thisReceiver!!.copyTo(this, kind = IrParameterKind.DispatchReceiver),</b>
+<b class="fc">&nbsp;                pluginContext.irFactory.buildValueParameter(</b>
+<b class="fc">&nbsp;                    IrValueParameterBuilder().apply {</b>
+<b class="fc">&nbsp;                        name = Name.identifier(&quot;registrar&quot;)</b>
+<b class="fc">&nbsp;                        type = registrarParameter.type</b>
+<b class="fc">&nbsp;                        kind = IrParameterKind.Regular</b>
+<b class="fc">&nbsp;                    },</b>
+<b class="fc">&nbsp;                    this</b>
+&nbsp;                )
+&nbsp;            )
+<b class="fc">&nbsp;            overriddenSymbols = listOf(providerContribute.symbol)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        val kPojoCandidates = kPojoClasses.mapNotNull { klass -&gt;</b>
+<b class="fc">&nbsp;            klass.factoryConstructor(errorReporter)?.let { klass to it }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        contribute.body = pluginContext.irBuiltIns.createIrBuilder(contribute.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;            val registrar = contribute.parameters.single { it.kind == IrParameterKind.Regular }</b>
+<b class="fc">&nbsp;            val registerKPojo = with(pluginContext) {</b>
+<b class="fc">&nbsp;                generatedTypeRegistrarSymbol.owner.functions.single { it.name.asString() == &quot;registerKPojo&quot; }</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val registerEnum = with(pluginContext) {</b>
+<b class="fc">&nbsp;                generatedTypeRegistrarSymbol.owner.functions.single { it.name.asString() == &quot;registerEnum&quot; }</b>
+&nbsp;            }
+<b class="fc">&nbsp;            kPojoCandidates.forEach { (klass, constructor) -&gt;</b>
+<b class="pc">&nbsp;                val ownerId = klass.fqNameWhenAvailable?.asString() ?: klass.name.asString()</b>
+<b class="fc">&nbsp;                +irCall(registerKPojo.symbol).apply {</b>
+<b class="fc">&nbsp;                    arguments[0] = irGet(registrar)</b>
+<b class="fc">&nbsp;                    arguments[1] = irCall(with(pluginContext) { typeOfFunctionSymbol }).apply {</b>
+<b class="fc">&nbsp;                        typeArguments[0] = klass.defaultType</b>
+<b class="fc">&nbsp;                    }</b>
+<b class="fc">&nbsp;                    arguments[2] = irString(ownerId)</b>
+<b class="fc">&nbsp;                    arguments[3] = irString(constructor.signature(klass))</b>
+<b class="fc">&nbsp;                    arguments[4] = buildKPojoFactory(pluginContext, contribute, constructor)</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            enumClasses.forEach { enumClass -&gt;</b>
+<b class="fc">&nbsp;                val entries = enumClass.declarations.filterIsInstance&lt;IrEnumEntry&gt;()</b>
+<b class="fc">&nbsp;                +irCall(registerEnum.symbol).apply {</b>
+<b class="fc">&nbsp;                    arguments[0] = irGet(registrar)</b>
+<b class="fc">&nbsp;                    arguments[1] = irCall(with(pluginContext) { typeOfFunctionSymbol }).apply {</b>
+<b class="fc">&nbsp;                        typeArguments[0] = enumClass.defaultType</b>
+<b class="fc">&nbsp;                    }</b>
+<b class="fc">&nbsp;                    arguments[2] = buildStringList(pluginContext, entries.map { it.name.asString() })</b>
+<b class="fc">&nbsp;                    arguments[3] = buildEnumFactory(pluginContext, contribute, enumClass, entries)</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun IrBuilderWithScope.buildStringList(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        values: List&lt;String&gt;
+<b class="fc">&nbsp;    ): IrExpression = irCall(with(pluginContext) { listOfFunctionSymbol }).apply {</b>
+<b class="fc">&nbsp;        typeArguments[0] = pluginContext.irBuiltIns.stringType</b>
+<b class="fc">&nbsp;        arguments[0] = irVararg(pluginContext.irBuiltIns.stringType, values.map(::irString))</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrBuilderWithScope.buildKPojoFactory(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        parent: IrFunction,
+&nbsp;        constructor: IrConstructor
+<b class="fc">&nbsp;    ): IrExpression = with(pluginContext) {</b>
+<b class="fc">&nbsp;        val factoryCreate = kPojoFactorySymbol.owner.functions.single { it.name.asString() == &quot;create&quot; }</b>
+<b class="fc">&nbsp;        val typeParameter = factoryCreate.parameters.single { it.kind == IrParameterKind.Regular }</b>
+<b class="fc">&nbsp;        val lambda = irFactory.buildFun {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA</b>
+<b class="fc">&nbsp;            name = SpecialNames.ANONYMOUS</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.LOCAL</b>
+<b class="fc">&nbsp;            returnType = kPojoClassSymbol.defaultType</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            this.parent = parent</b>
+<b class="fc">&nbsp;            parameters = parameters + irFactory.buildValueParameter(</b>
+<b class="fc">&nbsp;                IrValueParameterBuilder().apply {</b>
+<b class="fc">&nbsp;                    name = Name.identifier(&quot;type&quot;)</b>
+<b class="fc">&nbsp;                    type = typeParameter.type</b>
+<b class="fc">&nbsp;                    kind = IrParameterKind.Regular</b>
+<b class="fc">&nbsp;                },</b>
+<b class="fc">&nbsp;                this</b>
+&nbsp;            )
+<b class="fc">&nbsp;            body = irBuiltIns.createIrBuilder(symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                +irReturn(irCall(constructor.symbol))</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        val functionType = irBuiltIns.functionN(1).typeWith(typeParameter.type, kPojoClassSymbol.defaultType)</b>
+<b class="fc">&nbsp;        val functionExpression = IrFunctionExpressionImpl(</b>
+<b class="fc">&nbsp;            UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;            UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;            functionType,</b>
+<b class="fc">&nbsp;            lambda,</b>
+<b class="fc">&nbsp;            IrStatementOrigin.LAMBDA</b>
+&nbsp;        )
+<b class="fc">&nbsp;        irSamConversion(functionExpression, kPojoFactorySymbol.defaultType)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrBuilderWithScope.buildEnumFactory(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        parent: IrFunction,
+&nbsp;        enumClass: IrClass,
+&nbsp;        entries: List&lt;IrEnumEntry&gt;
+<b class="fc">&nbsp;    ): IrExpression = with(pluginContext) {</b>
+<b class="fc">&nbsp;        val factoryCreate = enumFactorySymbol.owner.functions.single { it.name.asString() == &quot;create&quot; }</b>
+<b class="fc">&nbsp;        val nameParameter = factoryCreate.parameters.single { it.kind == IrParameterKind.Regular }</b>
+<b class="fc">&nbsp;        val lambda = irFactory.buildFun {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA</b>
+<b class="fc">&nbsp;            name = SpecialNames.ANONYMOUS</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.LOCAL</b>
+<b class="fc">&nbsp;            returnType = factoryCreate.returnType</b>
+<b class="fc">&nbsp;            modality = Modality.FINAL</b>
+<b class="fc">&nbsp;        }.apply {</b>
+<b class="fc">&nbsp;            this.parent = parent</b>
+<b class="fc">&nbsp;            parameters = parameters + irFactory.buildValueParameter(</b>
+<b class="fc">&nbsp;                IrValueParameterBuilder().apply {</b>
+<b class="fc">&nbsp;                    name = Name.identifier(&quot;name&quot;)</b>
+<b class="fc">&nbsp;                    type = nameParameter.type</b>
+<b class="fc">&nbsp;                    kind = IrParameterKind.Regular</b>
+<b class="fc">&nbsp;                },</b>
+<b class="fc">&nbsp;                this</b>
+&nbsp;            )
+<b class="fc">&nbsp;            body = irBuiltIns.createIrBuilder(symbol).irBlockBody {</b>
+<b class="pc">&nbsp;                val nameParameter = parameters.single { it.kind == IrParameterKind.Regular }</b>
+<b class="fc">&nbsp;                val branches = entries.map { entry -&gt;</b>
+<b class="fc">&nbsp;                    irBranch(</b>
+<b class="fc">&nbsp;                        irEquals(irGet(nameParameter), irString(entry.name.asString())),</b>
+<b class="fc">&nbsp;                        IrGetEnumValueImpl(</b>
+<b class="fc">&nbsp;                            startOffset,</b>
+<b class="fc">&nbsp;                            endOffset,</b>
+<b class="fc">&nbsp;                            enumClass.defaultType,</b>
+<b class="fc">&nbsp;                            entry.symbol</b>
+&nbsp;                        )
+<b class="fc">&nbsp;                    )</b>
+<b class="fc">&nbsp;                } + irElseBranch(irNull(factoryCreate.returnType))</b>
+<b class="fc">&nbsp;                +irReturn(irWhen(factoryCreate.returnType, branches))</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        val functionType = irBuiltIns.functionN(1).typeWith(nameParameter.type, factoryCreate.returnType)</b>
+<b class="fc">&nbsp;        val functionExpression = IrFunctionExpressionImpl(</b>
+<b class="fc">&nbsp;            UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;            UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;            functionType,</b>
+<b class="fc">&nbsp;            lambda,</b>
+<b class="fc">&nbsp;            IrStatementOrigin.LAMBDA</b>
+&nbsp;        )
+<b class="fc">&nbsp;        irSamConversion(functionExpression, enumFactorySymbol.defaultType)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Selects a constructor callable without runtime arguments from the generated package.
+&nbsp;     *
+&nbsp;     * Required regular parameters make a class ineligible; parameters with defaults are legal
+&nbsp;     * because the generated IR call uses the compiler-resolved constructor defaults. Failure is
+&nbsp;     * reported at compile time and never replaced with reflective construction.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.factoryConstructor(errorReporter: ErrorReporter): IrConstructor? {
+<b class="fc">&nbsp;        val constructors = try {</b>
+<b class="fc">&nbsp;            constructors</b>
+&nbsp;        } catch (_: IllegalStateException) {
+<b class="nc">&nbsp;            errorReporter.reportWarning(this, ErrorMessages.kpojoNoNoArgConstructor(fqNameWhenAvailable))</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return constructors.firstOrNull { constructor -&gt;</b>
+<b class="fc">&nbsp;            constructor.visibility.isAccessibleFromGeneratedProvider() &amp;&amp;</b>
+<b class="pc">&nbsp;                constructor.parameters.none { it.kind == IrParameterKind.Regular &amp;&amp; it.defaultValue == null }</b>
+<b class="fc">&nbsp;        } ?: run {</b>
+<b class="fc">&nbsp;            errorReporter.reportWarning(this, ErrorMessages.kpojoNoNoArgConstructor(fqNameWhenAvailable))</b>
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun IrConstructor.signature(owner: IrClass): String {
+<b class="pc">&nbsp;        val ownerName = owner.fqNameWhenAvailable?.asString() ?: owner.name.asString()</b>
+<b class="fc">&nbsp;        val parameterTypes = parameters</b>
+<b class="pc">&nbsp;            .filter { it.kind == IrParameterKind.Regular }</b>
+<b class="pc">&nbsp;            .joinToString(&quot;,&quot;) { it.type.classFqName?.asString() ?: it.type.toString() }</b>
+<b class="fc">&nbsp;        return &quot;$ownerName($parameterTypes)&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.addNoArgConstructor(pluginContext: IrPluginContext) {
+<b class="fc">&nbsp;        addConstructor {</b>
+<b class="fc">&nbsp;            origin = IrDeclarationOrigin.DEFINED</b>
+<b class="fc">&nbsp;            visibility = DescriptorVisibilities.PUBLIC</b>
+<b class="fc">&nbsp;            isPrimary = true</b>
+<b class="fc">&nbsp;        }.also { constructor -&gt;</b>
+<b class="fc">&nbsp;            constructor.body = DeclarationIrBuilder(pluginContext, constructor.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                +irDelegatingConstructorCall(pluginContext.irBuiltIns.anyClass.owner.constructors.single())</b>
+<b class="fc">&nbsp;                +IrInstanceInitializerCallImpl(</b>
+<b class="fc">&nbsp;                    UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                    UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                    this@addNoArgConstructor.symbol,</b>
+<b class="fc">&nbsp;                    pluginContext.irBuiltIns.unitType</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun IrClass.isDeclaredIn(moduleFragment: IrModuleFragment): Boolean =
+<b class="fc">&nbsp;        runCatching { file in moduleFragment.files }.getOrDefault(false)</b>
+&nbsp;
+<b class="fc">&nbsp;    private fun IrClass.isAccessibleFromGeneratedProvider(allowLocalClass: Boolean = false): Boolean {</b>
+<b class="fc">&nbsp;        var owner: IrDeclarationParent = this</b>
+<b class="fc">&nbsp;        while (owner is IrClass) {</b>
+<b class="pc">&nbsp;            val isLocalRoot = owner === this &amp;&amp; owner.visibility == DescriptorVisibilities.LOCAL</b>
+<b class="pc">&nbsp;            if (owner.name.isSpecial || (!isLocalRoot &amp;&amp; !owner.visibility.isAccessibleFromGeneratedProvider())) return false</b>
+<b class="pc">&nbsp;            if (isLocalRoot &amp;&amp; !allowLocalClass) return false</b>
+<b class="fc">&nbsp;            owner = owner.parent</b>
+&nbsp;        }
+<b class="pc">&nbsp;        return owner is IrFile || (allowLocalClass &amp;&amp; owner is IrFunction &amp;&amp; !capturesExternalValues())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun IrClass.capturesExternalValues(): Boolean {
+<b class="fc">&nbsp;        val declaredValues = mutableSetOf&lt;IrValueSymbol&gt;()</b>
+<b class="fc">&nbsp;        acceptChildrenVoid(object : IrVisitorVoid() {</b>
+&nbsp;            override fun visitElement(element: IrElement) {
+<b class="fc">&nbsp;                if (element is IrValueDeclaration) declaredValues += element.symbol</b>
+<b class="fc">&nbsp;                element.acceptChildrenVoid(this)</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            override fun visitClass(declaration: IrClass) = Unit</b>
+&nbsp;        })
+&nbsp;
+<b class="fc">&nbsp;        var capturesExternalValue = false</b>
+<b class="fc">&nbsp;        acceptChildrenVoid(object : IrVisitorVoid() {</b>
+&nbsp;            override fun visitElement(element: IrElement) {
+<b class="fc">&nbsp;                if (!capturesExternalValue) element.acceptChildrenVoid(this)</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            override fun visitClass(declaration: IrClass) = Unit</b>
+&nbsp;
+&nbsp;            override fun visitGetValue(expression: IrGetValue) {
+<b class="fc">&nbsp;                if (expression.symbol !in declaredValues) capturesExternalValue = true</b>
+&nbsp;            }
+&nbsp;        })
+<b class="fc">&nbsp;        return capturesExternalValue</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun IrClass.isDirectlyConstructibleByGeneratedProvider(): Boolean =
+<b class="fc">&nbsp;        kind == ClassKind.CLASS &amp;&amp;</b>
+<b class="fc">&nbsp;            modality != Modality.ABSTRACT &amp;&amp;</b>
+<b class="fc">&nbsp;            modality != Modality.SEALED &amp;&amp;</b>
+<b class="fc">&nbsp;            !isInner &amp;&amp;</b>
+<b class="fc">&nbsp;            typeParameters.isEmpty()</b>
+&nbsp;
+&nbsp;    private fun org.jetbrains.kotlin.descriptors.DescriptorVisibility.isAccessibleFromGeneratedProvider(): Boolean =
+<b class="fc">&nbsp;        this == DescriptorVisibilities.PUBLIC || this == DescriptorVisibilities.INTERNAL</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrProperty.contributesEnumMetadata(): Boolean {
+<b class="fc">&nbsp;        if (isIgnoredForAll()) return false</b>
+<b class="fc">&nbsp;        if (hasAnnotation(SerializeAnnotationFqName)) return true</b>
+<b class="fc">&nbsp;        return !hasAnnotation(CascadeAnnotationFqName)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrProperty.requiresScalarEnumMetadata(): Boolean =
+<b class="fc">&nbsp;        !isIgnoredForAll() &amp;&amp;</b>
+<b class="fc">&nbsp;            !hasAnnotation(SerializeAnnotationFqName) &amp;&amp;</b>
+<b class="fc">&nbsp;            !hasAnnotation(CascadeAnnotationFqName)</b>
+&nbsp;
+<b class="pc">&nbsp;    private fun IrProperty.declaredType(): IrType? = getter?.returnType ?: backingField?.type</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrType.concreteEnumClassOrNull(): IrClass? =
+<b class="pc">&nbsp;        (this as? IrSimpleType)</b>
+<b class="pc">&nbsp;            ?.classOrNull</b>
+<b class="pc">&nbsp;            ?.owner</b>
+<b class="pc">&nbsp;            ?.takeIf { it.kind == ClassKind.ENUM_CLASS }</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrType.collectConcreteEnumLeaves(target: MutableSet&lt;IrClass&gt;) {
+<b class="pc">&nbsp;        val simpleType = this as? IrSimpleType ?: return</b>
+<b class="pc">&nbsp;        simpleType.classOrNull?.owner</b>
+<b class="pc">&nbsp;            ?.takeIf { it.kind == ClassKind.ENUM_CLASS }</b>
+<b class="fc">&nbsp;            ?.let(target::add)</b>
+<b class="fc">&nbsp;        simpleType.arguments</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;IrTypeProjection&gt;()</b>
+<b class="fc">&nbsp;            .forEach { it.type.collectConcreteEnumLeaves(target) }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

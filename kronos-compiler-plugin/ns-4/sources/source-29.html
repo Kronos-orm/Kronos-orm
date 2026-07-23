@@ -1,0 +1,226 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ProjectionTypeMangleKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: ProjectionTypeMangleKt (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProjectionTypeMangleKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (21/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (35/35)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.5%
+  </span>
+  <span class="absValue">
+    (262/266)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ProjectionTypeMangleKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (21/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (35/35)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.5%
+  </span>
+  <span class="absValue">
+    (262/266)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeClassLikeType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.ProjectionKind
+&nbsp;import java.security.MessageDigest
+&nbsp;
+&nbsp;private const val PROJECTION_HASH_BYTE_COUNT = 8
+&nbsp;
+&nbsp;/** Generates a stable synthetic class suffix from the source row type and selected field signatures. */
+&nbsp;internal fun mangleProjectionName(sourceType: ConeKotlinType, fields: List&lt;KronosProjectionField&gt;): String {
+<b class="fc">&nbsp;    val sourceClass = sourceType.renderForMangle()</b>
+<b class="fc">&nbsp;    val raw = buildString {</b>
+<b class="fc">&nbsp;        append(sourceClass)</b>
+<b class="fc">&nbsp;        fields.forEach { field -&gt;</b>
+<b class="fc">&nbsp;            append(&#39;|&#39;)</b>
+<b class="fc">&nbsp;            append(field.requestedName.asString())</b>
+<b class="fc">&nbsp;            append(&quot;-&gt;&quot;)</b>
+<b class="fc">&nbsp;            append(field.name.asString())</b>
+<b class="fc">&nbsp;            append(&#39;:&#39;)</b>
+<b class="fc">&nbsp;            append(field.sourceName.asString())</b>
+<b class="fc">&nbsp;            append(&#39;:&#39;)</b>
+<b class="fc">&nbsp;            append(if (field.isSourceAlias) &quot;source&quot; else &quot;expression&quot;)</b>
+<b class="fc">&nbsp;            append(&#39;:&#39;)</b>
+<b class="fc">&nbsp;            append(field.signature)</b>
+<b class="fc">&nbsp;            append(&#39;:&#39;)</b>
+<b class="fc">&nbsp;            append(field.type.renderForMangle())</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    return stableHash(raw)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun stableHash(value: String): String {
+<b class="fc">&nbsp;    val digest = MessageDigest.getInstance(&quot;SHA-256&quot;).digest(value.toByteArray())</b>
+<b class="fc">&nbsp;    return digest.take(PROJECTION_HASH_BYTE_COUNT).joinToString(&quot;&quot;) { byte -&gt; &quot;%02x&quot;.format(byte) }</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun ConeKotlinType.renderForMangle(): String {
+<b class="pc">&nbsp;    if (this !is ConeClassLikeType) return toString()</b>
+<b class="fc">&nbsp;    val arguments = typeArguments.joinToString(&quot;,&quot;, prefix = &quot;&lt;&quot;, postfix = &quot;&gt;&quot;) { argument -&gt;</b>
+<b class="fc">&nbsp;        val projection = argument as? ConeKotlinTypeProjection</b>
+<b class="pc">&nbsp;        val type = projection?.type?.renderForMangle() ?: &quot;*&quot;</b>
+<b class="fc">&nbsp;        when (projection?.kind) {</b>
+<b class="fc">&nbsp;            ProjectionKind.IN -&gt; &quot;in $type&quot;</b>
+<b class="fc">&nbsp;            ProjectionKind.OUT -&gt; &quot;out $type&quot;</b>
+<b class="fc">&nbsp;            else -&gt; type</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }.takeUnless { typeArguments.isEmpty() }.orEmpty()</b>
+<b class="fc">&nbsp;    return buildString {</b>
+<b class="fc">&nbsp;        append(lookupTag.classId.asFqNameString())</b>
+<b class="fc">&nbsp;        append(arguments)</b>
+<b class="fc">&nbsp;        if (isMarkedNullable) append(&#39;?&#39;)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

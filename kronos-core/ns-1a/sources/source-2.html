@@ -1,0 +1,177 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > FromSourceLeaf</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.join</a>
+</div>
+
+<h1>Coverage Summary for Class: FromSourceLeaf (com.kotlinorm.orm.join)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FromSourceLeaf</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.join
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.table.SqlJoinType
+&nbsp;
+&nbsp;internal sealed interface FromSourceNode {
+&nbsp;    val leaves: List&lt;FromSourceLeaf&gt;
+&nbsp;
+&nbsp;    data class Leaf(
+&nbsp;        val source: FromSourceLeaf
+&nbsp;    ) : FromSourceNode {
+&nbsp;        override val leaves: List&lt;FromSourceLeaf&gt; = listOf(source)
+&nbsp;    }
+&nbsp;
+&nbsp;    data class Join(
+&nbsp;        val left: FromSourceNode,
+&nbsp;        val joinType: SqlJoinType,
+&nbsp;        val right: FromSourceNode,
+&nbsp;        val condition: JoinConditionSnapshot?
+&nbsp;    ) : FromSourceNode {
+&nbsp;        override val leaves: List&lt;FromSourceLeaf&gt; = left.leaves + right.leaves
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal data class FromSourceLeaf(
+<b class="fc">&nbsp;    val pojo: KPojo,</b>
+<b class="fc">&nbsp;    val query: KSelectable&lt;*&gt;? = null</b>
+&nbsp;)
+&nbsp;
+&nbsp;internal data class SourceQualifierSnapshot(
+&nbsp;    val source: KPojo,
+&nbsp;    val qualifier: String
+&nbsp;)
+&nbsp;
+&nbsp;internal data class JoinConditionSnapshot(
+&nbsp;    val expression: SqlExpr,
+&nbsp;    val parameters: Map&lt;String, Any?&gt;,
+&nbsp;    val parameterFields: Map&lt;String, Field&gt;,
+&nbsp;    val qualifiers: List&lt;SourceQualifierSnapshot&gt;
+&nbsp;)
+&nbsp;
+&nbsp;internal fun FromSourceNode.rootLeaf(): FromSourceLeaf =
+&nbsp;    when (this) {
+&nbsp;        is FromSourceNode.Leaf -&gt; source
+&nbsp;        is FromSourceNode.Join -&gt; left.rootLeaf()
+&nbsp;    }
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

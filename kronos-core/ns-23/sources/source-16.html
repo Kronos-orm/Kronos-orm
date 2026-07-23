@@ -1,0 +1,429 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ProviderContribution</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: ProviderContribution (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProviderContribution</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (106/106)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ProviderContribution$summary$lambda$0$$inlined$sortedBy$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">ProviderContribution$summary$lambda$0$$inlined$sortedBy$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (106/106)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.InternalKronosApi
+&nbsp;import com.kotlinorm.exceptions.ConflictingEnumMetadata
+&nbsp;import com.kotlinorm.exceptions.ConflictingGeneratedKPojoFactory
+&nbsp;import com.kotlinorm.exceptions.ConflictingGeneratedProvider
+&nbsp;import java.util.ServiceLoader
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves a generated enum name without reflection.
+&nbsp; *
+&nbsp; * Returning `null` means that the name is not one of the generated entries.
+&nbsp; */
+&nbsp;@InternalKronosApi
+&nbsp;fun interface EnumFactory {
+&nbsp;    /**
+&nbsp;     * Returns an enum entry for [name], or `null` when no generated entry matches.
+&nbsp;     *
+&nbsp;     * @param name generated enum entry name selected from a persisted name or ordinal
+&nbsp;     * @return generated enum constant, or `null` for an unknown name
+&nbsp;     */
+&nbsp;    fun create(name: String): Enum&lt;*&gt;?
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Collects module-generated KPojo factories and enum metadata for one runtime
+&nbsp; * snapshot. Registration keys use exact KType structure and reject conflicts.
+&nbsp; */
+&nbsp;@InternalKronosApi
+&nbsp;interface GeneratedTypeRegistrar {
+&nbsp;    /**
+&nbsp;     * Contributes one generated KPojo factory keyed by complete [type].
+&nbsp;     *
+&nbsp;     * @param type exact concrete KPojo type generated in this module
+&nbsp;     * @param ownerId stable generated owner identity used in conflict detection
+&nbsp;     * @param constructorSignature stable description of the generated constructor path
+&nbsp;     * @param factory non-reflective fresh-instance factory
+&nbsp;     * @throws com.kotlinorm.exceptions.UnsupportedType when [type] is not supported
+&nbsp;     */
+&nbsp;    fun registerKPojo(
+&nbsp;        type: KType,
+&nbsp;        ownerId: String,
+&nbsp;        constructorSignature: String,
+&nbsp;        factory: KPojoFactory
+&nbsp;    )
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Contributes generated enum names and a non-reflective decoder for [type].
+&nbsp;     *
+&nbsp;     * @param type exact non-generic enum type
+&nbsp;     * @param entryNames generated names in declaration order
+&nbsp;     * @param factory non-reflective name-to-entry lookup
+&nbsp;     * @throws IllegalArgumentException when the type or names are invalid
+&nbsp;     */
+&nbsp;    fun registerEnum(type: KType, entryNames: List&lt;String&gt;, factory: EnumFactory)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Supplies one module&#39;s generated KPojo and enum metadata to the Kronos runtime.
+&nbsp; * Providers are discovered through the service loader and loaded lazily.
+&nbsp; */
+&nbsp;@InternalKronosApi
+&nbsp;interface GeneratedTypeProvider {
+&nbsp;    /**
+&nbsp;     * Returns the stable module-unique identity used to detect conflicting
+&nbsp;     * provider content.
+&nbsp;     */
+&nbsp;    val id: String
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Contributes generated metadata while a process-wide snapshot is built.
+&nbsp;     *
+&nbsp;     * @param registrar snapshot-local collector that must not be retained
+&nbsp;     */
+&nbsp;    fun contributeTo(registrar: GeneratedTypeRegistrar)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generated construction metadata for one exact KPojo type.
+&nbsp; *
+&nbsp; * @property type complete contributed KPojo type
+&nbsp; * @property ownerId stable generated owner identity
+&nbsp; * @property constructorSignature stable generated construction description
+&nbsp; * @property factory non-reflective fresh-instance factory
+&nbsp; */
+&nbsp;internal data class GeneratedFactoryEntry(
+&nbsp;    val type: KType,
+&nbsp;    val ownerId: String,
+&nbsp;    val constructorSignature: String,
+&nbsp;    val factory: KPojoFactory
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Generated declaration-order metadata and decoder for one exact enum type.
+&nbsp; *
+&nbsp; * @property type complete contributed enum type
+&nbsp; * @property entryNames enum names in declaration order
+&nbsp; * @property factory non-reflective name-to-entry lookup
+&nbsp; */
+&nbsp;internal data class GeneratedEnumMetadata(
+&nbsp;    val type: KType,
+&nbsp;    val entryNames: List&lt;String&gt;,
+&nbsp;    val factory: EnumFactory
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Conflict-checked, immutable view of all generated type contributions visible
+&nbsp; * to one runtime load. Lookups normalize only top-level nullability.
+&nbsp; */
+&nbsp;internal class GeneratedTypeMetadataSnapshot internal constructor(
+&nbsp;    private val kPojoFactories: Map&lt;KTypeKey, GeneratedFactoryEntry&gt;,
+&nbsp;    private val enums: Map&lt;KTypeKey, GeneratedEnumMetadata&gt;
+&nbsp;) {
+&nbsp;    /**
+&nbsp;     * Returns generated construction metadata for an exact supported KPojo type.
+&nbsp;     *
+&nbsp;     * @param type exact KPojo type, with root nullability normalized
+&nbsp;     * @return matching generated metadata, or `null` when absent
+&nbsp;     */
+&nbsp;    internal fun kPojoFactory(type: KType): GeneratedFactoryEntry? = kPojoFactories[type.normalizedKPojoType()]
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns generated enum metadata for an exact concrete enum type.
+&nbsp;     *
+&nbsp;     * @param type exact enum type, with root nullability normalized
+&nbsp;     * @return matching generated metadata, or `null` when absent
+&nbsp;     */
+&nbsp;    internal fun enumMetadata(type: KType): GeneratedEnumMetadata? = enums[type.normalizedEnumType()]
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private data class ProviderContribution(</b>
+<b class="fc">&nbsp;    val providerId: String,</b>
+<b class="fc">&nbsp;    val kPojoFactories: Map&lt;KTypeKey, GeneratedFactoryEntry&gt;,</b>
+<b class="fc">&nbsp;    val enums: Map&lt;KTypeKey, GeneratedEnumMetadata&gt;</b>
+&nbsp;) {
+<b class="fc">&nbsp;    val summary: List&lt;String&gt; = buildList {</b>
+<b class="fc">&nbsp;        kPojoFactories.entries</b>
+<b class="fc">&nbsp;            .sortedBy { it.key.stableSignature() }</b>
+<b class="fc">&nbsp;            .forEach { (type, entry) -&gt;</b>
+<b class="fc">&nbsp;                add(&quot;KPOJO|${type.stableSignature()}|${entry.ownerId}|${entry.constructorSignature}&quot;)</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        enums.entries</b>
+<b class="fc">&nbsp;            .sortedBy { it.key.stableSignature() }</b>
+<b class="fc">&nbsp;            .forEach { (type, metadata) -&gt;</b>
+<b class="fc">&nbsp;                add(&quot;ENUM|${type.stableSignature()}|${metadata.entryNames.joinToString(&quot;\u0000&quot;)}&quot;)</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;private object GeneratedTypeMetadata {
+&nbsp;    private val snapshot: GeneratedTypeMetadataSnapshot by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+&nbsp;        loadGeneratedTypeMetadata(ServiceLoader.load(GeneratedTypeProvider::class.java))
+&nbsp;    }
+&nbsp;
+&nbsp;    fun snapshot(): GeneratedTypeMetadataSnapshot = snapshot
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns the process-wide lazily loaded generated metadata snapshot.
+&nbsp; * Service providers are loaded and conflict-checked on first access only.
+&nbsp; *
+&nbsp; * @return immutable generated metadata for the current class loader
+&nbsp; */
+&nbsp;internal fun generatedTypeMetadata(): GeneratedTypeMetadataSnapshot = GeneratedTypeMetadata.snapshot()
+&nbsp;
+&nbsp;/**
+&nbsp; * Builds a deterministic generated metadata snapshot from explicit providers.
+&nbsp; *
+&nbsp; * Providers with the same id may repeat only equivalent semantic
+&nbsp; * contributions. KPojo ownership and enum names are then checked across ids.
+&nbsp; *
+&nbsp; * @param providers providers to collect, in arbitrary discovery order
+&nbsp; * @return immutable conflict-checked metadata snapshot
+&nbsp; * @throws ConflictingGeneratedProvider when duplicate ids differ
+&nbsp; * @throws ConflictingGeneratedKPojoFactory when exact KPojo metadata conflicts
+&nbsp; * @throws ConflictingEnumMetadata when exact enum names conflict
+&nbsp; */
+&nbsp;internal fun loadGeneratedTypeMetadata(
+&nbsp;    providers: Iterable&lt;GeneratedTypeProvider&gt;
+&nbsp;): GeneratedTypeMetadataSnapshot {
+&nbsp;    val contributionsByProvider = linkedMapOf&lt;String, ProviderContribution&gt;()
+&nbsp;    providers.forEach { provider -&gt;
+&nbsp;        val providerId = provider.id
+&nbsp;        require(providerId.isNotBlank()) { &quot;Generated type provider id must not be blank&quot; }
+&nbsp;        val contribution = provider.collectContribution(providerId)
+&nbsp;        val existing = contributionsByProvider[providerId]
+&nbsp;        when {
+&nbsp;            existing == null -&gt; contributionsByProvider[providerId] = contribution
+&nbsp;            existing.summary != contribution.summary -&gt; throw ConflictingGeneratedProvider(providerId)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    val kPojoFactories = linkedMapOf&lt;KTypeKey, GeneratedFactoryEntry&gt;()
+&nbsp;    val enums = linkedMapOf&lt;KTypeKey, GeneratedEnumMetadata&gt;()
+&nbsp;    contributionsByProvider.values.sortedBy { it.providerId }.forEach { contribution -&gt;
+&nbsp;        contribution.kPojoFactories.forEach { (type, entry) -&gt;
+&nbsp;            val existing = kPojoFactories[type]
+&nbsp;            when {
+&nbsp;                existing == null -&gt; kPojoFactories[type] = entry
+&nbsp;                existing.ownerId != entry.ownerId ||
+&nbsp;                    existing.constructorSignature != entry.constructorSignature -&gt;
+&nbsp;                    throw ConflictingGeneratedKPojoFactory(existing.type)
+&nbsp;            }
+&nbsp;        }
+&nbsp;        contribution.enums.forEach { (type, metadata) -&gt;
+&nbsp;            val existing = enums[type]
+&nbsp;            when {
+&nbsp;                existing == null -&gt; enums[type] = metadata
+&nbsp;                existing.entryNames != metadata.entryNames -&gt; throw ConflictingEnumMetadata(existing.type)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;    return GeneratedTypeMetadataSnapshot(kPojoFactories.toMap(), enums.toMap())
+&nbsp;}
+&nbsp;
+&nbsp;private fun GeneratedTypeProvider.collectContribution(providerId: String): ProviderContribution {
+&nbsp;    val kPojoFactories = linkedMapOf&lt;KTypeKey, GeneratedFactoryEntry&gt;()
+&nbsp;    val enums = linkedMapOf&lt;KTypeKey, GeneratedEnumMetadata&gt;()
+&nbsp;    contributeTo(object : GeneratedTypeRegistrar {
+&nbsp;        override fun registerKPojo(
+&nbsp;            type: KType,
+&nbsp;            ownerId: String,
+&nbsp;            constructorSignature: String,
+&nbsp;            factory: KPojoFactory
+&nbsp;        ) {
+&nbsp;            val key = type.normalizedKPojoType()
+&nbsp;            val entry = GeneratedFactoryEntry(type, ownerId, constructorSignature, factory)
+&nbsp;            val existing = kPojoFactories[key]
+&nbsp;            when {
+&nbsp;                existing == null -&gt; kPojoFactories[key] = entry
+&nbsp;                existing.ownerId != ownerId || existing.constructorSignature != constructorSignature -&gt;
+&nbsp;                    throw ConflictingGeneratedKPojoFactory(existing.type)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        override fun registerEnum(type: KType, entryNames: List&lt;String&gt;, factory: EnumFactory) {
+&nbsp;            val key = type.normalizedEnumType()
+&nbsp;            val names = entryNames.toList()
+&nbsp;            require(names.size == names.distinct().size) { &quot;Enum metadata for $key contains duplicate names&quot; }
+&nbsp;            val metadata = GeneratedEnumMetadata(type, names, factory)
+&nbsp;            val existing = enums[key]
+&nbsp;            when {
+&nbsp;                existing == null -&gt; enums[key] = metadata
+&nbsp;                existing.entryNames != names -&gt; throw ConflictingEnumMetadata(existing.type)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    })
+&nbsp;    return ProviderContribution(providerId, kPojoFactories.toMap(), enums.toMap())
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

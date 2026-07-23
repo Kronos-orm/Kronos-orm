@@ -1,0 +1,655 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > TableOperation</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.ddl</a>
+</div>
+
+<h1>Coverage Summary for Class: TableOperation (com.kotlinorm.orm.ddl)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TableOperation</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.2%
+  </span>
+  <span class="absValue">
+    (38/48)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.8%
+  </span>
+  <span class="absValue">
+    (53/77)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.5%
+  </span>
+  <span class="absValue">
+    (176/216)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.3%
+  </span>
+  <span class="absValue">
+    (1282/1617)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TableOperation$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    79.2%
+  </span>
+  <span class="absValue">
+    (38/48)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.8%
+  </span>
+  <span class="absValue">
+    (53/77)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.5%
+  </span>
+  <span class="absValue">
+    (176/216)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.3%
+  </span>
+  <span class="absValue">
+    (1282/1617)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.ddl
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.database.DatabaseCreateTable
+&nbsp;import com.kotlinorm.database.DatabaseSyncTable
+&nbsp;import com.kotlinorm.database.SqlManager.renderStatement
+&nbsp;import com.kotlinorm.database.SqlManager.statementsOf
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.union.UnionClause
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlType
+&nbsp;import com.kotlinorm.syntax.statement.SqlColumnDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlIndexDefinition
+&nbsp;import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.createKPojo
+&nbsp;import com.kotlinorm.utils.resolveRuntimeMetadata
+&nbsp;
+<b class="fc">&nbsp;class TableOperation(private val wrapper: KronosDataSourceWrapper) {</b>
+<b class="fc">&nbsp;    val dataSource by lazy { wrapper.orDefault() }</b>
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Query table existence
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; exists(instance: T = createKPojo&lt;T&gt;()) =</b>
+<b class="fc">&nbsp;        queryTableExistence(instance.__tableName, dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Query table existence
+&nbsp;     *
+&nbsp;     * @param tableName Table name
+&nbsp;     */
+<b class="nc">&nbsp;    fun exists(tableName: String) = queryTableExistence(tableName, dataSource)</b>
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Create table
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; createTable(instance: T = createKPojo&lt;T&gt;()) {</b>
+<b class="fc">&nbsp;        val metadata = instance.resolveRuntimeMetadata()</b>
+<b class="fc">&nbsp;        val statements = statementsOf(dataSource.dbType).createTable(</b>
+<b class="fc">&nbsp;            DatabaseCreateTable(</b>
+<b class="fc">&nbsp;                tableName = metadata.tableName,</b>
+<b class="fc">&nbsp;                tableComment = instance.__tableComment,</b>
+<b class="fc">&nbsp;                columns = metadata.allColumns,</b>
+<b class="fc">&nbsp;                indexes = metadata.tableIndexes</b>
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        executeDdlStatements(statements, KOperationType.CREATE)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; createTable(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+&nbsp;        query: KSelectable&lt;*&gt;
+&nbsp;    ) {
+<b class="nc">&nbsp;        buildCreateTableAsSelectTask(instance, query).execute(dataSource)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; createTable(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+&nbsp;        query: UnionClause&lt;*&gt;
+&nbsp;    ) {
+<b class="nc">&nbsp;        buildCreateTableAsSelectTask(instance, query).execute(dataSource)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildCreateTableAsSelectTask(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+&nbsp;        query: KSelectable&lt;*&gt;
+&nbsp;    ): KronosActionTask {
+<b class="fc">&nbsp;        return buildCreateTableAsSelectTaskForQuery(instance.__tableName, query)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildCreateTableAsSelectTask(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+&nbsp;        query: UnionClause&lt;*&gt;
+&nbsp;    ): KronosActionTask {
+<b class="fc">&nbsp;        return buildCreateTableAsSelectTaskForQuery(instance.__tableName, query)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun buildCreateTableAsSelectTaskForQuery(
+&nbsp;        tableName: String,
+&nbsp;        query: KSelectable&lt;*&gt;
+&nbsp;    ): KronosActionTask {
+<b class="fc">&nbsp;        val plan = query.toSqlQueryPlan(dataSource)</b>
+<b class="fc">&nbsp;        val statement = SqlDdlStatement.CreateTableAsSelect(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            query = plan.query</b>
+&nbsp;        )
+<b class="fc">&nbsp;        return buildCreateTableAsSelectTaskFromQuery(</b>
+<b class="fc">&nbsp;            statement,</b>
+<b class="fc">&nbsp;            plan.parameters,</b>
+<b class="fc">&nbsp;            query.pojo.resolveRuntimeMetadata().fieldMap + plan.parameterFields</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun buildCreateTableAsSelectTaskFromQuery(
+&nbsp;        statement: SqlDdlStatement.CreateTableAsSelect,
+<b class="nc">&nbsp;        parameterValues: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;        fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;    ): KronosActionTask {
+<b class="fc">&nbsp;        val rendered = renderStatement(dataSource, statement, parameterValues, fieldsMap)</b>
+<b class="fc">&nbsp;        return KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;            rendered.sql,</b>
+<b class="fc">&nbsp;            rendered.parameters,</b>
+<b class="fc">&nbsp;            KOperationType.CREATE,</b>
+<b class="fc">&nbsp;            statement = statement,</b>
+<b class="fc">&nbsp;            listParameterOccurrences = rendered.listParameterOccurrences</b>
+<b class="fc">&nbsp;        ).toKronosActionTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Drop table
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; dropTable(instance: T = createKPojo&lt;T&gt;()) =</b>
+<b class="fc">&nbsp;        buildDropTableTask(instance.__tableName).execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Drop table
+&nbsp;     *
+&nbsp;     * @param tableNames Table names
+&nbsp;     */
+&nbsp;    fun dropTable(vararg tableNames: String) =
+<b class="fc">&nbsp;        tableNames.map { buildDropTableTask(it) }</b>
+<b class="fc">&nbsp;            .merge()</b>
+<b class="fc">&nbsp;            .execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Truncate table
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; truncateTable(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+<b class="nc">&nbsp;        restartIdentity: Boolean = true</b>
+<b class="fc">&nbsp;    ) = buildTruncateTableTask(instance.__tableName, restartIdentity).execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Truncate table
+&nbsp;     *
+&nbsp;     * @param tableName Table name
+&nbsp;     * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
+&nbsp;     */
+<b class="nc">&nbsp;    fun truncateTable(vararg tableName: String, restartIdentity: Boolean = true) =</b>
+<b class="fc">&nbsp;        tableName.map { name -&gt;</b>
+<b class="fc">&nbsp;            buildTruncateTableTask(name, restartIdentity).atomicTasks</b>
+<b class="fc">&nbsp;        }.flatten().toKronosActionTask().execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Synchronize table structure
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     * @return `true` when the table already existed and was synchronized; `false` when it was created
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; syncTable(instance: T = createKPojo&lt;T&gt;()): Boolean {</b>
+&nbsp;        // 表名
+<b class="fc">&nbsp;        val metadata = instance.resolveRuntimeMetadata()</b>
+<b class="fc">&nbsp;        val tableName = metadata.tableName</b>
+&nbsp;
+&nbsp;        // 不存在就创建
+<b class="pc">&nbsp;        if (!queryTableExistence(tableName, dataSource)) {</b>
+<b class="fc">&nbsp;            createTable(instance)</b>
+&nbsp;            // Table does not exist, create it successfully and return false
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+&nbsp;        // 数据库类型
+<b class="fc">&nbsp;        val dbType = dataSource.dbType</b>
+&nbsp;
+&nbsp;        // 实体类列信息
+<b class="fc">&nbsp;        val kronosColumns = metadata.allColumns.forDdlSync(dbType)</b>
+&nbsp;        // 从实例中获取索引(oracle 需要 转大写)
+<b class="fc">&nbsp;        val kronosIndexes = metadata.tableIndexes</b>
+<b class="fc">&nbsp;        val originalTableComment = queryTableComment(tableName, dataSource)</b>
+<b class="fc">&nbsp;        val tableComment = instance.__tableComment</b>
+&nbsp;
+&nbsp;        // 获取实际表字段信息
+<b class="fc">&nbsp;        val tableColumns = queryTableColumns(tableName, dataSource)</b>
+&nbsp;        // 获取实际表索引信息
+<b class="fc">&nbsp;        val tableIndexes = queryTableIndexes(tableName, dataSource)</b>
+&nbsp;
+&nbsp;        // 新增、修改、删除字段
+<b class="fc">&nbsp;        val diffColumns = columnDiffer(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }</b>
+<b class="fc">&nbsp;        val diffIndexes = indexDiffer(kronosIndexes, tableIndexes, dbType)</b>
+&nbsp;
+<b class="fc">&nbsp;        val statements = statementsOf(dataSource.dbType).syncTable(</b>
+<b class="fc">&nbsp;            DatabaseSyncTable(</b>
+<b class="fc">&nbsp;                tableName,</b>
+<b class="fc">&nbsp;                originalTableComment,</b>
+<b class="fc">&nbsp;                tableComment,</b>
+<b class="fc">&nbsp;                kronosColumns,</b>
+<b class="fc">&nbsp;                tableColumns,</b>
+<b class="fc">&nbsp;                diffColumns,</b>
+<b class="fc">&nbsp;                kronosIndexes,</b>
+<b class="fc">&nbsp;                tableIndexes,</b>
+<b class="fc">&nbsp;                diffIndexes</b>
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        executeDdlStatements(statements, KOperationType.ALTER)</b>
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun executeDdlStatements(statements: List&lt;SqlStatement&gt;, operationType: KOperationType) {
+<b class="fc">&nbsp;        val (concurrent, transactional) = statements.partition { it.isConcurrentIndexStatement() }</b>
+<b class="fc">&nbsp;        if (transactional.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            transactional.map { it.toActionTask(operationType) }.toKronosActionTask().execute(dataSource)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        concurrent.forEach { dataSource.update(it.toActionTask(operationType)) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun List&lt;Field&gt;.forDdlSync(dbType: DBType): List&lt;Field&gt; =
+<b class="fc">&nbsp;        if (dbType == DBType.Oracle) {</b>
+<b class="fc">&nbsp;            map { it.copy(columnName = it.columnName.uppercase()) }</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            this</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun SqlStatement.isConcurrentIndexStatement(): Boolean =
+<b class="fc">&nbsp;        this is SqlDdlStatement.CreateIndex &amp;&amp; concurrently</b>
+&nbsp;
+&nbsp;    private fun SqlStatement.toActionTask(operationType: KOperationType): KronosAtomicActionTask {
+<b class="fc">&nbsp;        val rendered = renderStatement(dataSource, this)</b>
+<b class="fc">&nbsp;        return KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;            rendered.sql,</b>
+<b class="fc">&nbsp;            rendered.parameters,</b>
+<b class="fc">&nbsp;            operationType,</b>
+<b class="fc">&nbsp;            statement = this,</b>
+<b class="fc">&nbsp;            listParameterOccurrences = rendered.listParameterOccurrences</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun Field.toSqlColumnDefinition(): SqlColumnDefinition =
+<b class="fc">&nbsp;        SqlColumnDefinition(</b>
+<b class="fc">&nbsp;            name = SqlIdentifier.of(columnName),</b>
+<b class="fc">&nbsp;            type = type.toSqlType(length, scale),</b>
+<b class="fc">&nbsp;            nullable = nullable,</b>
+<b class="fc">&nbsp;            primaryKey = primaryKey.toSqlPrimaryKeyMode(),</b>
+<b class="fc">&nbsp;            defaultValue = defaultValue?.let { SqlExpr.StringLiteral(it) }</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun KTableIndex.toSqlIndexDefinition(): SqlIndexDefinition {
+<b class="fc">&nbsp;        val normalizedType = type.uppercase()</b>
+<b class="fc">&nbsp;        val normalizedMethod = method.uppercase()</b>
+<b class="fc">&nbsp;        return SqlIndexDefinition(</b>
+<b class="fc">&nbsp;            name = SqlIdentifier.of(name),</b>
+<b class="fc">&nbsp;            columns = columns.map { SqlIdentifier.of(it) },</b>
+<b class="fc">&nbsp;            unique = normalizedType == &quot;UNIQUE&quot; || normalizedMethod == &quot;UNIQUE&quot;,</b>
+<b class="fc">&nbsp;            method = method.takeUnless {</b>
+<b class="fc">&nbsp;                it.isBlank() ||</b>
+<b class="fc">&nbsp;                    it.equals(&quot;UNIQUE&quot;, ignoreCase = true) ||</b>
+<b class="fc">&nbsp;                    it.equals(type, ignoreCase = true)</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildCreateTableStatement(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;()</b>
+&nbsp;    ): SqlDdlStatement.CreateTable {
+<b class="fc">&nbsp;        val metadata = instance.resolveRuntimeMetadata()</b>
+<b class="fc">&nbsp;        return SqlDdlStatement.CreateTable(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(metadata.tableName),</b>
+<b class="fc">&nbsp;            columns = metadata.allColumns</b>
+<b class="fc">&nbsp;                .map { it.toSqlColumnDefinition() },</b>
+<b class="fc">&nbsp;            indexes = metadata.tableIndexes.map { it.toSqlIndexDefinition() },</b>
+<b class="fc">&nbsp;            comment = instance.__tableComment</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildCreateTableAsSelectStatement(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+&nbsp;        query: KSelectable&lt;*&gt;,
+<b class="nc">&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf()</b>
+&nbsp;    ): SqlDdlStatement.CreateTableAsSelect {
+<b class="nc">&nbsp;        return buildCreateTableAsSelectSyntaxStatement(instance.__tableName, query, parameterValues)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildCreateTableAsSelectStatement(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+&nbsp;        query: UnionClause&lt;*&gt;,
+<b class="nc">&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf(),</b>
+<b class="nc">&nbsp;        parameterFields: MutableMap&lt;String, Field&gt; = mutableMapOf()</b>
+&nbsp;    ): SqlDdlStatement.CreateTableAsSelect {
+<b class="fc">&nbsp;        return buildCreateTableAsSelectSyntaxStatement(instance.__tableName, query, parameterValues, parameterFields)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun buildCreateTableAsSelectSyntaxStatement(
+&nbsp;        tableName: String,
+&nbsp;        query: KSelectable&lt;*&gt;,
+&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt;,
+<b class="nc">&nbsp;        parameterFields: MutableMap&lt;String, Field&gt; = mutableMapOf()</b>
+&nbsp;    ): SqlDdlStatement.CreateTableAsSelect {
+<b class="fc">&nbsp;        val plan = query.toSqlQueryPlan(dataSource)</b>
+<b class="fc">&nbsp;        parameterValues.putAll(plan.parameters)</b>
+<b class="fc">&nbsp;        parameterFields.putAll(plan.parameterFields)</b>
+<b class="fc">&nbsp;        return SqlDdlStatement.CreateTableAsSelect(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            query = plan.query</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun buildCreateTableAsSelectSyntaxStatement(
+&nbsp;        tableName: String,
+&nbsp;        query: UnionClause&lt;*&gt;,
+&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt;,
+&nbsp;        parameterFields: MutableMap&lt;String, Field&gt;
+&nbsp;    ): SqlDdlStatement.CreateTableAsSelect {
+<b class="fc">&nbsp;        return buildCreateTableAsSelectSyntaxStatement(</b>
+<b class="fc">&nbsp;            tableName,</b>
+<b class="fc">&nbsp;            query as KSelectable&lt;*&gt;,</b>
+<b class="fc">&nbsp;            parameterValues,</b>
+<b class="fc">&nbsp;            parameterFields</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun buildDropTableStatement(tableName: String, ifExists: Boolean = false): SqlDdlStatement.DropTable =</b>
+<b class="fc">&nbsp;        SqlDdlStatement.DropTable(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            ifExists = ifExists</b>
+&nbsp;        )
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildDropTableStatement(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+<b class="nc">&nbsp;        ifExists: Boolean = false</b>
+&nbsp;    ): SqlDdlStatement.DropTable =
+<b class="fc">&nbsp;        buildDropTableStatement(instance.__tableName, ifExists)</b>
+&nbsp;
+&nbsp;    fun buildDropTableTask(tableName: String): KronosActionTask {
+<b class="fc">&nbsp;        return statementsOf(dataSource.dbType)</b>
+<b class="fc">&nbsp;            .dropTable(tableName, true)</b>
+<b class="fc">&nbsp;            .map { it.toActionTask(KOperationType.DROP) }</b>
+<b class="fc">&nbsp;            .toKronosActionTask()</b>
+<b class="fc">&nbsp;            .doBeforeExecute { wrapper -&gt;</b>
+<b class="pc">&nbsp;                if (wrapper.dbType == DBType.Oracle &amp;&amp; !queryTableExistence(tableName, wrapper)) {</b>
+<b class="fc">&nbsp;                    atomicTasks.clear()</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun buildTruncateTableStatement(tableName: String, restartIdentity: Boolean = true): SqlDmlStatement.Truncate =</b>
+<b class="fc">&nbsp;        SqlDmlStatement.Truncate(</b>
+<b class="fc">&nbsp;            table = SqlTable.Ident(tableName),</b>
+<b class="fc">&nbsp;            restartIdentity = restartIdentity</b>
+&nbsp;        )
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; buildTruncateTableStatement(</b>
+<b class="nc">&nbsp;        instance: T = createKPojo&lt;T&gt;(),</b>
+<b class="nc">&nbsp;        restartIdentity: Boolean = true</b>
+&nbsp;    ): SqlDmlStatement.Truncate =
+<b class="fc">&nbsp;        buildTruncateTableStatement(instance.__tableName, restartIdentity)</b>
+&nbsp;
+<b class="nc">&nbsp;    fun buildTruncateTableTask(tableName: String, restartIdentity: Boolean = true): KronosActionTask {</b>
+<b class="fc">&nbsp;        return statementsOf(dataSource.dbType)</b>
+<b class="fc">&nbsp;            .truncateTable(tableName, restartIdentity)</b>
+<b class="fc">&nbsp;            .map { it.toActionTask(KOperationType.TRUNCATE) }</b>
+<b class="fc">&nbsp;            .toKronosActionTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun buildCreateIndexStatement(
+&nbsp;        indexName: String,
+&nbsp;        tableName: String,
+&nbsp;        columns: List&lt;String&gt;,
+<b class="nc">&nbsp;        unique: Boolean = false</b>
+&nbsp;    ): SqlDdlStatement.CreateIndex =
+<b class="fc">&nbsp;        SqlDdlStatement.CreateIndex(</b>
+<b class="fc">&nbsp;            indexName = SqlIdentifier.of(indexName),</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            columns = columns.map { SqlIdentifier.of(it) },</b>
+<b class="fc">&nbsp;            unique = unique</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    fun buildDropIndexStatement(indexName: String, tableName: String): SqlDdlStatement.DropIndex =
+<b class="fc">&nbsp;        SqlDdlStatement.DropIndex(</b>
+<b class="fc">&nbsp;            indexName = SqlIdentifier.of(indexName),</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName)</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    fun buildAddColumnStatement(
+&nbsp;        tableName: String,
+&nbsp;        column: SqlColumnDefinition
+&nbsp;    ): SqlDdlStatement.AlterTable.AddColumn =
+<b class="fc">&nbsp;        SqlDdlStatement.AlterTable.AddColumn(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            column = column</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    fun buildDropColumnStatement(tableName: String, columnName: String): SqlDdlStatement.AlterTable.DropColumn =
+<b class="fc">&nbsp;        SqlDdlStatement.AlterTable.DropColumn(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            columnName = SqlIdentifier.of(columnName)</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    fun buildModifyColumnStatement(
+&nbsp;        tableName: String,
+&nbsp;        column: SqlColumnDefinition
+&nbsp;    ): SqlDdlStatement.AlterTable.ModifyColumn =
+<b class="fc">&nbsp;        SqlDdlStatement.AlterTable.ModifyColumn(</b>
+<b class="fc">&nbsp;            tableName = SqlIdentifier.of(tableName),</b>
+<b class="fc">&nbsp;            column = column</b>
+&nbsp;        )
+&nbsp;
+&nbsp;    private fun PrimaryKeyType.toSqlPrimaryKeyMode(): SqlPrimaryKeyMode =
+<b class="fc">&nbsp;        when (this) {</b>
+<b class="fc">&nbsp;            PrimaryKeyType.NOT -&gt; SqlPrimaryKeyMode.NotPrimary</b>
+<b class="fc">&nbsp;            PrimaryKeyType.DEFAULT -&gt; SqlPrimaryKeyMode.Primary</b>
+<b class="fc">&nbsp;            PrimaryKeyType.IDENTITY -&gt; SqlPrimaryKeyMode.Identity</b>
+<b class="fc">&nbsp;            PrimaryKeyType.UUID -&gt; SqlPrimaryKeyMode.Uuid</b>
+<b class="fc">&nbsp;            PrimaryKeyType.SNOWFLAKE -&gt; SqlPrimaryKeyMode.Snowflake</b>
+<b class="fc">&nbsp;            PrimaryKeyType.CUSTOM -&gt; SqlPrimaryKeyMode.Primary</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun KColumnType.toSqlType(length: Int, scale: Int): SqlType =
+<b class="pc">&nbsp;        when (this) {</b>
+<b class="fc">&nbsp;            KColumnType.BIT -&gt; SqlType.Boolean</b>
+&nbsp;            KColumnType.TINYINT,
+&nbsp;            KColumnType.SMALLINT,
+&nbsp;            KColumnType.INT,
+&nbsp;            KColumnType.MEDIUMINT,
+&nbsp;            KColumnType.YEAR,
+<b class="fc">&nbsp;            KColumnType.SERIAL -&gt; SqlType.Int</b>
+<b class="fc">&nbsp;            KColumnType.BIGINT -&gt; SqlType.Long</b>
+&nbsp;            KColumnType.REAL,
+<b class="fc">&nbsp;            KColumnType.FLOAT -&gt; SqlType.Float</b>
+<b class="fc">&nbsp;            KColumnType.DOUBLE -&gt; SqlType.Double</b>
+&nbsp;            KColumnType.DECIMAL,
+<b class="fc">&nbsp;            KColumnType.NUMERIC -&gt; SqlType.Decimal((length to scale).takeIf { length &gt; 0 })</b>
+&nbsp;            KColumnType.CHAR,
+&nbsp;            KColumnType.VARCHAR,
+&nbsp;            KColumnType.NCHAR,
+<b class="fc">&nbsp;            KColumnType.NVARCHAR -&gt; SqlType.Varchar(length.takeIf { it &gt; 0 })</b>
+&nbsp;            KColumnType.TEXT,
+&nbsp;            KColumnType.LONGTEXT,
+&nbsp;            KColumnType.MEDIUMTEXT,
+&nbsp;            KColumnType.CLOB,
+<b class="fc">&nbsp;            KColumnType.NCLOB -&gt; SqlType.Named(type)</b>
+<b class="fc">&nbsp;            KColumnType.DATE -&gt; SqlType.Date</b>
+<b class="fc">&nbsp;            KColumnType.TIME -&gt; SqlType.Time()</b>
+&nbsp;            KColumnType.DATETIME,
+<b class="fc">&nbsp;            KColumnType.TIMESTAMP -&gt; SqlType.Timestamp()</b>
+<b class="fc">&nbsp;            KColumnType.JSON -&gt; SqlType.Json</b>
+<b class="fc">&nbsp;            KColumnType.GEOMETRY -&gt; SqlType.Geometry</b>
+<b class="fc">&nbsp;            KColumnType.POINT -&gt; SqlType.Point</b>
+<b class="fc">&nbsp;            KColumnType.LINESTRING -&gt; SqlType.LineString</b>
+&nbsp;            KColumnType.BINARY,
+&nbsp;            KColumnType.VARBINARY,
+&nbsp;            KColumnType.LONGVARBINARY,
+&nbsp;            KColumnType.BLOB,
+&nbsp;            KColumnType.MEDIUMBLOB,
+&nbsp;            KColumnType.LONGBLOB,
+&nbsp;            KColumnType.UUID,
+&nbsp;            KColumnType.ENUM,
+&nbsp;            KColumnType.SET,
+&nbsp;            KColumnType.XML,
+<b class="fc">&nbsp;            KColumnType.UNDEFINED -&gt; SqlType.Named(type)</b>
+&nbsp;        }
+&nbsp;    }
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

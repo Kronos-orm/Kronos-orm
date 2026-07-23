@@ -1,0 +1,322 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > DeleteClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.delete</a>
+</div>
+
+<h1>Coverage Summary for Class: DeleteClause (com.kotlinorm.orm.delete)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">DeleteClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.5%
+  </span>
+  <span class="absValue">
+    (10/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (11/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.1%
+  </span>
+  <span class="absValue">
+    (69/84)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.2%
+  </span>
+  <span class="absValue">
+    (356/455)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.delete
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.cascade.CascadeDeleteClause
+&nbsp;import com.kotlinorm.orm.sql.toSqlParameterEq
+&nbsp;import com.kotlinorm.orm.statement.OrmContext
+&nbsp;import com.kotlinorm.orm.statement.OrmDmlRenderer
+&nbsp;import com.kotlinorm.orm.statement.ParameterSource
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.resolveRuntimeMetadata
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+<b class="fc">&nbsp;class DeleteClause&lt;T : KPojo&gt;(pojo: T, private val targetType: KType) {</b>
+<b class="fc">&nbsp;    private val metadata = pojo.resolveRuntimeMetadata()</b>
+<b class="fc">&nbsp;    internal val context = OrmContext(</b>
+<b class="fc">&nbsp;        pojo = pojo,</b>
+<b class="fc">&nbsp;        kType = metadata.kType,</b>
+<b class="fc">&nbsp;        tableName = metadata.tableName,</b>
+<b class="pc">&nbsp;        declaredTableName = metadata.allColumns.firstOrNull { it.tableName.isNotBlank() }?.tableName</b>
+<b class="nc">&nbsp;            ?: metadata.tableName,</b>
+<b class="fc">&nbsp;        operationType = KOperationType.DELETE,</b>
+<b class="fc">&nbsp;        fields = metadata.allColumns,</b>
+<b class="fc">&nbsp;        allFields = metadata.allFields.toList(),</b>
+<b class="fc">&nbsp;        fieldMap = metadata.fieldMap,</b>
+<b class="fc">&nbsp;        updateTimeStrategy = metadata.updateTimeStrategy,</b>
+<b class="fc">&nbsp;        logicDeleteStrategy = metadata.logicDeleteStrategy,</b>
+<b class="fc">&nbsp;        optimisticLockStrategy = metadata.optimisticLockStrategy</b>
+&nbsp;    )
+<b class="fc">&nbsp;    private val planner = DeletePlanner(context)</b>
+&nbsp;
+<b class="nc">&nbsp;    fun logic(enabled: Boolean = true): DeleteClause&lt;T&gt; {</b>
+<b class="fc">&nbsp;        context.logicEnabled = enabled</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据指定的字段构建删除语句的条件部分。
+&nbsp;     *
+&nbsp;     * @param someFields KTableField类型，表示要用于删除条件的字段。不可为null。
+&nbsp;     * @return DeleteClause类型，表示构建完成的删除语句实例。
+&nbsp;     * @throws EmptyFieldsException 如果someFields为空或者最终没有有效的字段用于构建条件时抛出。
+&nbsp;     */
+&nbsp;    fun by(someFields: ToSelect&lt;T, Any?&gt;): DeleteClause&lt;T&gt; {
+&nbsp;        // 检查传入的someFields是否为null，若为null则抛出异常
+<b class="pc">&nbsp;        if (someFields == null) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.pojo.afterSelect {</b>
+<b class="fc">&nbsp;            someFields(it)</b>
+&nbsp;            // 若fields为空，则抛出异常，表示需要至少一个字段来构建删除条件
+<b class="pc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            context.andWhereAll(fields.map { field -&gt;</b>
+<b class="fc">&nbsp;                context.bind(field.name, context.sourceValues[field.name], field, ParameterSource.Condition)</b>
+<b class="fc">&nbsp;                field.toSqlParameterEq(field.name)</b>
+&nbsp;            })
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): DeleteClause&lt;T&gt; {
+<b class="fc">&nbsp;        context.cascadeEnabled = enabled</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(someFields: ToReference&lt;T, Any?&gt;): DeleteClause&lt;T&gt; {
+<b class="nc">&nbsp;        if (someFields == null) throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        context.cascadeEnabled = true</b>
+<b class="nc">&nbsp;        context.pojo.afterReference {</b>
+<b class="nc">&nbsp;            someFields(it)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            context.cascadeAllowed = fields.toSet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 构建删除语句的条件部分。
+&nbsp;     *
+&nbsp;     * 该函数允许用户指定一个删除条件，用于过滤需要被删除的数据。如果未指定条件，则默认删除所有匹配的数据。
+&nbsp;     *
+&nbsp;     * @param deleteCondition 一个函数，用于定义删除操作的条件。该函数接收一个 [ToFilter] 类型的参数，
+&nbsp;     *                        并返回一个 [Boolean?] 类型的值，用于指示是否满足删除条件。如果为 null，则表示删除所有数据。
+&nbsp;     * @return [DeleteClause] 类型的实例，用于链式调用其它删除操作。
+&nbsp;     */
+<b class="nc">&nbsp;    fun where(deleteCondition: ToFilter&lt;T, Boolean?&gt;? = null): DeleteClause&lt;T&gt; {</b>
+<b class="pc">&nbsp;        if (deleteCondition == null) return this</b>
+&nbsp;        // 如果指定了删除条件，执行条件函数，并设置条件
+<b class="fc">&nbsp;        context.pojo.afterFilter(context.sourceBinding) filter@ { filterTable -&gt;</b>
+<b class="fc">&nbsp;            with(context) {</b>
+<b class="fc">&nbsp;                this@filter.sourceValues = sourceValues.toMutableMap()</b>
+<b class="fc">&nbsp;                this@filter.operationType = operationType</b>
+<b class="fc">&nbsp;                deleteCondition(filterTable)</b>
+<b class="pc">&nbsp;                this@filter.sqlExpr?.let { expr -&gt;</b>
+<b class="fc">&nbsp;                    context.andWhere(expr)</b>
+<b class="fc">&nbsp;                    this@filter.parameterValues.forEach { (name, value) -&gt;</b>
+<b class="fc">&nbsp;                        bind(name, value, this@filter.parameterFields[name], ParameterSource.Condition)</b>
+<b class="fc">&nbsp;                    }</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): DeleteClause&lt;T&gt; {
+<b class="fc">&nbsp;        pairs.forEach { (name, value) -&gt;</b>
+<b class="fc">&nbsp;            val field = context.fields.firstOrNull { it.name == name || it.columnName == name }</b>
+<b class="fc">&nbsp;            context.bind(name, value, field, ParameterSource.Patch)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 构建并返回一个KronosAtomicTask对象，用于执行数据库的原子操作。
+&nbsp;     * 该方法根据设定的条件构建对应的UPDATE或DELETE SQL语句，并封装必要的参数与操作类型。
+&nbsp;     *
+&nbsp;     * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
+&nbsp;     */
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="fc">&nbsp;        val sqlStatement = planner.plan(dataSource)</b>
+<b class="fc">&nbsp;        val where = when (sqlStatement) {</b>
+<b class="fc">&nbsp;            is SqlDmlStatement.Delete -&gt; sqlStatement.where</b>
+<b class="pc">&nbsp;            is SqlDmlStatement.Update -&gt; sqlStatement.where</b>
+<b class="nc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val logic = sqlStatement is SqlDmlStatement.Update</b>
+<b class="fc">&nbsp;        val rendered = OrmDmlRenderer.render(context, wrapper, sqlStatement)</b>
+<b class="fc">&nbsp;        val (sql, paramMap) = rendered</b>
+&nbsp;        
+<b class="fc">&nbsp;        return CascadeDeleteClause.build(</b>
+<b class="fc">&nbsp;            context.cascadeEnabled,</b>
+<b class="fc">&nbsp;            context.cascadeAllowed,</b>
+<b class="fc">&nbsp;            targetType,</b>
+<b class="fc">&nbsp;            context.pojo,</b>
+<b class="fc">&nbsp;            where,</b>
+<b class="fc">&nbsp;            paramMap,</b>
+<b class="fc">&nbsp;            logic,</b>
+<b class="fc">&nbsp;            KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;                sql,</b>
+<b class="fc">&nbsp;                paramMap,</b>
+<b class="fc">&nbsp;                operationType = KOperationType.DELETE,</b>
+<b class="fc">&nbsp;                statement = sqlStatement,</b>
+<b class="fc">&nbsp;                listParameterOccurrences = rendered.listParameterOccurrences</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 执行Kronos操作的函数。
+&nbsp;     *
+&nbsp;     * @param wrapper 可选参数，KronosDataSourceWrapper的实例，用于提供数据源配置和上下文。
+&nbsp;     *                如果为null，函数将使用默认配置执行操作。
+&nbsp;     * @return 返回KronosOperationResult对象，包含操作的结果信息。
+&nbsp;     */
+<b class="nc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+&nbsp;        // 构建并执行Kronos操作，根据提供的wrapper配置执行，如果没有提供则使用默认配置
+<b class="nc">&nbsp;        return build(wrapper).execute(wrapper)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

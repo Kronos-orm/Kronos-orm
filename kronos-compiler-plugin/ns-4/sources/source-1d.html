@@ -1,0 +1,333 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosProjectionRegistry</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosProjectionRegistry (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosProjectionRegistry</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (16/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (40/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.6%
+  </span>
+  <span class="absValue">
+    (380/424)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosProjectionRegistry$publishIdeSnapshot$$inlined$sortedBy$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    81.8%
+  </span>
+  <span class="absValue">
+    (9/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (16/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (40/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.6%
+  </span>
+  <span class="absValue">
+    (380/424)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.fir.FirSession
+&nbsp;import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
+&nbsp;import org.jetbrains.kotlin.fir.moduleData
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import java.lang.ref.WeakReference
+&nbsp;import java.util.WeakHashMap
+&nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;
+&nbsp;/**
+&nbsp; * Holds generated projection models shared across FIR callbacks during one compilation.
+&nbsp; */
+&nbsp;object KronosProjectionRegistry {
+<b class="fc">&nbsp;    private val sessionLock = Any()</b>
+<b class="fc">&nbsp;    private val projectionsBySession = WeakHashMap&lt;FirSession, ConcurrentHashMap&lt;ClassId, KronosProjectionModel&gt;&gt;()</b>
+<b class="fc">&nbsp;    private val declarationGeneratorsBySession = WeakHashMap&lt;FirSession, WeakReference&lt;FirDeclarationGenerationExtension&gt;&gt;()</b>
+<b class="fc">&nbsp;    private val ideGenerationTokensBySession = WeakHashMap&lt;FirSession, String&gt;()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers a projection model produced while refining a select call.
+&nbsp;     */
+&nbsp;    fun register(session: FirSession, model: KronosProjectionModel) {
+<b class="fc">&nbsp;        val models = synchronized(sessionLock) {</b>
+<b class="fc">&nbsp;            projectionsBySession.getOrPut(session) { ConcurrentHashMap() }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        models[model.classId] = model</b>
+<b class="fc">&nbsp;        models[model.contextClassId] = model</b>
+<b class="fc">&nbsp;        publishIdeSnapshot(session, models)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Refines fields that were first seen as receiver-less alias literals before
+&nbsp;     * FIR resolved the aliased scalar query call.
+&nbsp;     */
+&nbsp;    fun refineAliasFieldType(
+&nbsp;        session: FirSession,
+&nbsp;        alias: String,
+&nbsp;        occurrence: ProjectionAliasOccurrence,
+&nbsp;        type: ConeKotlinType
+&nbsp;    ) {
+<b class="fc">&nbsp;        val models = synchronized(sessionLock) { projectionsBySession[session] } ?: return</b>
+<b class="fc">&nbsp;        val aliasName = Name.identifier(alias)</b>
+<b class="fc">&nbsp;        val updated = models.values.distinctBy { it.classId }.mapNotNull { model -&gt;</b>
+<b class="fc">&nbsp;            val fields = model.fields.refineAlias(aliasName, occurrence, type)</b>
+<b class="fc">&nbsp;            val contextFields = model.contextFields.refineAlias(aliasName, occurrence, type)</b>
+<b class="pc">&nbsp;            if (fields === model.fields &amp;&amp; contextFields === model.contextFields) {</b>
+<b class="fc">&nbsp;                null</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                model.copy(fields = fields, contextFields = contextFields)</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        updated.forEach { model -&gt;</b>
+<b class="fc">&nbsp;            models[model.classId] = model</b>
+<b class="fc">&nbsp;            models[model.contextClassId] = model</b>
+<b class="fc">&nbsp;            KronosProjectionDeclarationGenerationExtension.invalidateMemberCache(model)</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        if (updated.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            publishIdeSnapshot(session, models)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Looks up a projection model by its generated class id.
+&nbsp;     */
+&nbsp;    fun find(session: FirSession, classId: ClassId): KronosProjectionModel? =
+<b class="fc">&nbsp;        synchronized(sessionLock) { projectionsBySession[session] }?.get(classId)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Looks up a projection model after FIR session information is no longer available.
+&nbsp;     */
+&nbsp;    fun findAny(classId: ClassId): KronosProjectionModel? =
+<b class="fc">&nbsp;        synchronized(sessionLock) {</b>
+<b class="fc">&nbsp;            projectionsBySession.values.asSequence().mapNotNull { it[classId] }.firstOrNull()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns all generated top-level projection class ids known to this compilation.
+&nbsp;     */
+&nbsp;    fun allTopLevelClassIds(session: FirSession): Set&lt;ClassId&gt; =
+<b class="pc">&nbsp;        synchronized(sessionLock) { projectionsBySession[session] }?.keys?.toSet().orEmpty()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns a best-effort snapshot of all known projection models. IDEA integration
+&nbsp;     * uses this to provide generated source backing for FIR synthetic projection classes.
+&nbsp;     */
+&nbsp;    fun allModelsSnapshot(): List&lt;KronosProjectionModel&gt; =
+<b class="nc">&nbsp;        synchronized(sessionLock) {</b>
+<b class="nc">&nbsp;            projectionsBySession.values</b>
+<b class="nc">&nbsp;                .flatMap { it.values }</b>
+<b class="nc">&nbsp;                .distinctBy { it.classId }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Stores the FIR declaration generator registered for the current session.
+&nbsp;     */
+&nbsp;    fun registerDeclarationGenerator(session: FirSession, generator: FirDeclarationGenerationExtension) {
+<b class="fc">&nbsp;        val generationToken = KronosProjectionIdeBridge.beginModuleSession(session.ideModuleName())</b>
+<b class="fc">&nbsp;        synchronized(sessionLock) {</b>
+<b class="fc">&nbsp;            declarationGeneratorsBySession[session] = WeakReference(generator)</b>
+<b class="fc">&nbsp;            ideGenerationTokensBySession[session] = generationToken</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the FIR declaration generator registered for the current session.
+&nbsp;     */
+&nbsp;    fun declarationGenerator(session: FirSession): FirDeclarationGenerationExtension? =
+<b class="pc">&nbsp;        synchronized(sessionLock) { declarationGeneratorsBySession[session]?.get() }</b>
+&nbsp;
+&nbsp;    private fun publishIdeSnapshot(
+&nbsp;        session: FirSession,
+&nbsp;        models: Map&lt;ClassId, KronosProjectionModel&gt;
+&nbsp;    ) {
+<b class="fc">&nbsp;        val snapshot = models.values</b>
+<b class="fc">&nbsp;            .distinctBy { it.classId }</b>
+<b class="fc">&nbsp;            .sortedBy { it.classId.asFqNameString() }</b>
+<b class="pc">&nbsp;        val generationToken = synchronized(sessionLock) { ideGenerationTokensBySession[session] } ?: return</b>
+<b class="fc">&nbsp;        KronosProjectionIdeBridge.publishModule(session.ideModuleName(), generationToken, snapshot)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun FirSession.ideModuleName(): String =
+&nbsp;    moduleData.stableModuleName ?: moduleData.name.asString()
+&nbsp;
+&nbsp;private fun List&lt;KronosProjectionField&gt;.refineAlias(
+&nbsp;    alias: Name,
+&nbsp;    occurrence: ProjectionAliasOccurrence,
+&nbsp;    type: ConeKotlinType
+&nbsp;): List&lt;KronosProjectionField&gt; {
+&nbsp;    val matchingCandidates = indices.filter { index -&gt;
+&nbsp;        this[index].requestedName == alias &amp;&amp; this[index].aliasOccurrence?.overlaps(occurrence) == true
+&nbsp;    }
+&nbsp;    val narrowestMatchingRange = matchingCandidates.minOfOrNull { index -&gt;
+&nbsp;        this[index].aliasOccurrence?.rangeSize ?: Int.MAX_VALUE
+&nbsp;    }
+&nbsp;    val candidateIndexes = matchingCandidates
+&nbsp;        .filter { index -&gt; this[index].aliasOccurrence?.rangeSize == narrowestMatchingRange }
+&nbsp;        .toSet()
+&nbsp;    if (candidateIndexes.isEmpty()) return this
+&nbsp;
+&nbsp;    var changed = false
+&nbsp;    val refined = mapIndexed { index, field -&gt;
+&nbsp;        if (index in candidateIndexes &amp;&amp; field.type != type) {
+&nbsp;            changed = true
+&nbsp;            field.copy(type = type, signature = &quot;${field.signature}:refined:${type}&quot;)
+&nbsp;        } else {
+&nbsp;            field
+&nbsp;        }
+&nbsp;    }
+&nbsp;    return if (changed) refined else this
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

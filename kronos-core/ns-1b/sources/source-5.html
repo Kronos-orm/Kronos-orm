@@ -1,0 +1,397 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CursorResult</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.pagination</a>
+</div>
+
+<h1>Coverage Summary for Class: CursorResult (com.kotlinorm.orm.pagination)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CursorResult</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.orm.pagination
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.database.renderPreparedForCore
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.sql.SqlQueryPlan
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlSelectItem
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.table.SqlTableAlias
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;
+&nbsp;data class PageResult&lt;T&gt;(
+&nbsp;    val total: Int,
+&nbsp;    val records: List&lt;T&gt;,
+&nbsp;    val totalPages: Int,
+&nbsp;    val pageIndex: Int,
+&nbsp;    val pageSize: Int
+&nbsp;)
+&nbsp;
+<b class="fc">&nbsp;data class CursorResult&lt;T&gt;(</b>
+<b class="fc">&nbsp;    val hasNext: Boolean,</b>
+<b class="fc">&nbsp;    val nextCursor: Cursor?,</b>
+<b class="fc">&nbsp;    val records: List&lt;T&gt;</b>
+&nbsp;)
+&nbsp;
+&nbsp;data class TotalPageTasks(
+&nbsp;    val countTask: KronosQueryTask,
+&nbsp;    val recordsTask: KronosQueryTask
+&nbsp;)
+&nbsp;
+&nbsp;class OffsetPageQuery&lt;Selected : KPojo&gt; internal constructor(
+&nbsp;    private val query: KSelectable&lt;Selected&gt;,
+&nbsp;    @PublishedApi
+&nbsp;    internal val pageIndex: Int,
+&nbsp;    @PublishedApi
+&nbsp;    internal val pageSize: Int
+&nbsp;) : KSelectable&lt;Selected&gt;(query.pojo) {
+&nbsp;    @PublishedApi
+&nbsp;    internal override val selectedType = query.selectedType
+&nbsp;
+&nbsp;    override val nullableSelectedType = query.nullableSelectedType
+&nbsp;
+&nbsp;    override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask =
+&nbsp;        query.build(wrapper.orDefault())
+&nbsp;
+&nbsp;    internal override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan =
+&nbsp;        query.toSqlQueryPlan(wrapper.orDefault())
+&nbsp;
+&nbsp;    internal override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask =
+&nbsp;        query.buildTotalCountTask(wrapper.orDefault())
+&nbsp;
+&nbsp;    internal override fun outputStableKeyCandidates(): List&lt;List&lt;String&gt;&gt; =
+&nbsp;        query.outputStableKeyCandidates()
+&nbsp;
+&nbsp;    fun withTotal(): TotalPageQuery&lt;Selected&gt; = TotalPageQuery(this)
+&nbsp;
+&nbsp;    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any?&gt;&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        return build(dataSource).toMapList(dataSource)
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;INVISIBLE_REFERENCE&quot;, &quot;INVISIBLE_MEMBER&quot;)
+&nbsp;    @kotlin.internal.LowPriorityInOverloadResolution
+&nbsp;    inline fun &lt;reified T&gt; toList(wrapper: KronosDataSourceWrapper? = null): List&lt;T&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        return build(dataSource).toList(dataSource)
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;toProjectionList&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    fun toList(wrapper: KronosDataSourceWrapper? = null): List&lt;Selected&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        return build(dataSource).toList(dataSource, selectedType) as List&lt;Selected&gt;
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;class TotalPageQuery&lt;Selected : KPojo&gt; internal constructor(
+&nbsp;    @PublishedApi
+&nbsp;    internal val pageQuery: OffsetPageQuery&lt;Selected&gt;
+&nbsp;) {
+&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): TotalPageTasks {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        val recordsTask = pageQuery.build(dataSource)
+&nbsp;        val countTask = pageQuery.buildTotalCountTask(dataSource)
+&nbsp;        val innerQuery = requireNotNull(countTask.atomicTask.statement) {
+&nbsp;            &quot;Total-page count tasks must retain their SQL query AST.&quot;
+&nbsp;        }
+&nbsp;        val countQuery = SqlQuery.Select(
+&nbsp;            select = listOf(SqlSelectItem.Expr(SqlExpr.CountAsteriskFunc())),
+&nbsp;            from = listOf(
+&nbsp;                SqlTable.Subquery(
+&nbsp;                    query = innerQuery,
+&nbsp;                    alias = SqlTableAlias(&quot;total_count&quot;)
+&nbsp;                )
+&nbsp;            )
+&nbsp;        )
+&nbsp;        val rendered = countQuery.renderPreparedForCore(dataSource, countTask.atomicTask.paramMap)
+&nbsp;        val finalCountTask = KronosQueryTask(
+&nbsp;            countTask.atomicTask.copy(
+&nbsp;                sql = rendered.sql,
+&nbsp;                paramMap = rendered.parameters,
+&nbsp;                statement = countQuery,
+&nbsp;                listParameterOccurrences = rendered.listParameterOccurrences
+&nbsp;            )
+&nbsp;        )
+&nbsp;        return TotalPageTasks(finalCountTask, recordsTask)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun toMapList(wrapper: KronosDataSourceWrapper? = null): PageResult&lt;Map&lt;String, Any?&gt;&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        val tasks = build(dataSource)
+&nbsp;        val total = tasks.countTask.first&lt;Int&gt;(dataSource)
+&nbsp;        return PageResult(
+&nbsp;            total = total,
+&nbsp;            records = tasks.recordsTask.toMapList(dataSource),
+&nbsp;            totalPages = totalPages(total, pageQuery.pageSize),
+&nbsp;            pageIndex = pageQuery.pageIndex,
+&nbsp;            pageSize = pageQuery.pageSize
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;INVISIBLE_REFERENCE&quot;, &quot;INVISIBLE_MEMBER&quot;)
+&nbsp;    @kotlin.internal.LowPriorityInOverloadResolution
+&nbsp;    inline fun &lt;reified T&gt; toList(wrapper: KronosDataSourceWrapper? = null): PageResult&lt;T&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        val tasks = build(dataSource)
+&nbsp;        val total = tasks.countTask.first&lt;Int&gt;(dataSource)
+&nbsp;        return PageResult(
+&nbsp;            total = total,
+&nbsp;            records = tasks.recordsTask.toList&lt;T&gt;(dataSource),
+&nbsp;            totalPages = totalPages(total, pageQuery.pageSize),
+&nbsp;            pageIndex = pageQuery.pageIndex,
+&nbsp;            pageSize = pageQuery.pageSize
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;toProjectionList&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    fun toList(wrapper: KronosDataSourceWrapper? = null): PageResult&lt;Selected&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        val tasks = build(dataSource)
+&nbsp;        val total = tasks.countTask.first&lt;Int&gt;(dataSource)
+&nbsp;        val records = tasks.recordsTask.toList(dataSource, pageQuery.selectedType) as List&lt;Selected&gt;
+&nbsp;        return PageResult(
+&nbsp;            total = total,
+&nbsp;            records = records,
+&nbsp;            totalPages = totalPages(total, pageQuery.pageSize),
+&nbsp;            pageIndex = pageQuery.pageIndex,
+&nbsp;            pageSize = pageQuery.pageSize
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        @PublishedApi
+&nbsp;        internal fun totalPages(total: Int, pageSize: Int): Int =
+&nbsp;            if (total &lt;= 0) 0 else ((total.toLong() + pageSize - 1L) / pageSize).toInt()
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal data class CursorPageField(
+&nbsp;    val name: String,
+&nbsp;    val resultLabel: String,
+&nbsp;    val hidden: Boolean,
+&nbsp;    val key: String = name
+&nbsp;)
+&nbsp;
+&nbsp;class CursorPageQuery&lt;Selected : KPojo&gt; internal constructor(
+&nbsp;    private val query: KSelectable&lt;Selected&gt;,
+&nbsp;    private val pageSize: Int,
+&nbsp;    private val fields: List&lt;CursorPageField&gt;
+&nbsp;) {
+&nbsp;    @PublishedApi
+&nbsp;    internal val selectedType = query.selectedType
+&nbsp;
+&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask =
+&nbsp;        query.build(wrapper.orDefault())
+&nbsp;
+&nbsp;    fun toSqlQuery(wrapper: KronosDataSourceWrapper? = null): SqlQuery =
+&nbsp;        query.toSqlQuery(wrapper.orDefault())
+&nbsp;
+&nbsp;    fun toMapList(wrapper: KronosDataSourceWrapper? = null): CursorResult&lt;Map&lt;String, Any?&gt;&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        val rows = build(dataSource).toMapList(dataSource)
+&nbsp;        val result = pageResult(rows) { row, fieldName -&gt; row.valueCaseInsensitive(fieldName) }
+&nbsp;        return result.copy(records = result.records.map(::stripCursorOnlyValues))
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;INVISIBLE_REFERENCE&quot;, &quot;INVISIBLE_MEMBER&quot;)
+&nbsp;    @kotlin.internal.LowPriorityInOverloadResolution
+&nbsp;    inline fun &lt;reified T&gt; toList(wrapper: KronosDataSourceWrapper? = null): CursorResult&lt;T&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        requireCursorFieldsVisibleForTypedRows()
+&nbsp;        val rows = build(dataSource).toList&lt;T&gt;(dataSource)
+&nbsp;        return pageResult(rows) { row, fieldName -&gt;
+&nbsp;            when (row) {
+&nbsp;                is KPojo -&gt; row[fieldName]
+&nbsp;                is Map&lt;*, *&gt; -&gt; row.valueCaseInsensitive(fieldName)
+&nbsp;                else -&gt; null
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;toProjectionList&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    fun toList(wrapper: KronosDataSourceWrapper? = null): CursorResult&lt;Selected&gt; {
+&nbsp;        val dataSource = wrapper.orDefault()
+&nbsp;        requireCursorFieldsVisibleForTypedRows()
+&nbsp;        val rows = build(dataSource).toList(dataSource, selectedType) as List&lt;Selected&gt;
+&nbsp;        return pageResult(rows) { row, fieldName -&gt; row[fieldName] }
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun &lt;T&gt; pageResult(
+&nbsp;        rows: List&lt;T&gt;,
+&nbsp;        valueOf: (T, String) -&gt; Any?
+&nbsp;    ): CursorResult&lt;T&gt; {
+&nbsp;        val hasNext = rows.size &gt; pageSize
+&nbsp;        val records = if (hasNext) rows.take(pageSize) else rows
+&nbsp;        val nextCursor = if (hasNext &amp;&amp; records.isNotEmpty()) {
+&nbsp;            fields.associate { field -&gt;
+&nbsp;                val value = valueOf(records.last(), field.resultLabel)
+&nbsp;                require(value != null) {
+&nbsp;                    &quot;Cursor pagination requires selected orderBy field &#39;${field.name}&#39; in result rows.&quot;
+&nbsp;                }
+&nbsp;                field.key to value
+&nbsp;            }.toCursor()
+&nbsp;        } else {
+&nbsp;            null
+&nbsp;        }
+&nbsp;        return CursorResult(hasNext, nextCursor, records)
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun requireCursorFieldsVisibleForTypedRows() {
+&nbsp;        val hiddenField = fields.firstOrNull { it.hidden } ?: return
+&nbsp;        require(false) {
+&nbsp;            &quot;Cursor pagination requires selected orderBy field &#39;${hiddenField.name}&#39; in result rows.&quot;
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun Map&lt;*, *&gt;.valueCaseInsensitive(fieldName: String): Any? =
+&nbsp;        this[fieldName] ?: entries.firstOrNull { (key, _) -&gt;
+&nbsp;            key is String &amp;&amp; key.equals(fieldName, ignoreCase = true)
+&nbsp;        }?.value
+&nbsp;
+&nbsp;    private fun stripCursorOnlyValues(row: Map&lt;String, Any?&gt;): Map&lt;String, Any?&gt; {
+&nbsp;        val hiddenLabels = fields.filter { it.hidden }.map { it.resultLabel }
+&nbsp;        if (hiddenLabels.isEmpty()) return row
+&nbsp;        return row.filterKeys { key -&gt; hiddenLabels.none { it.equals(key, ignoreCase = true) } }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal fun checkedPageOffset(pageIndex: Int, pageSize: Int): Int {
+&nbsp;    val offset = (pageIndex.toLong() - 1L) * pageSize
+&nbsp;    require(offset &lt;= Int.MAX_VALUE) { &quot;Page offset exceeds the supported Int range.&quot; }
+&nbsp;    return offset.toInt()
+&nbsp;}
+&nbsp;
+&nbsp;internal fun checkedCursorFetchSize(pageSize: Int): Int {
+&nbsp;    require(pageSize &lt; Int.MAX_VALUE) { &quot;Cursor page size exceeds the supported Int range.&quot; }
+&nbsp;    return pageSize + 1
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,358 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosParserTransformerKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosParserTransformerKt (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosParserTransformerKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (30/30)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.kTableForConditionSymbol
+&nbsp;import com.kotlinorm.compiler.core.kTableForInsertSelectSymbol
+&nbsp;import com.kotlinorm.compiler.core.kTableForReferenceSymbol
+&nbsp;import com.kotlinorm.compiler.core.kTableForSelectSymbol
+&nbsp;import com.kotlinorm.compiler.core.kTableForSetSymbol
+&nbsp;import com.kotlinorm.compiler.core.kTableForSortSymbol
+&nbsp;import com.kotlinorm.compiler.core.firstTypeArgument
+&nbsp;import com.kotlinorm.compiler.core.isKPojoType
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiver
+&nbsp;import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+&nbsp;import org.jetbrains.kotlin.descriptors.ClassKind
+&nbsp;import org.jetbrains.kotlin.ir.IrStatement
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFile
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrClassReference
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrSimpleType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeProjection
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.getClass
+&nbsp;import org.jetbrains.kotlin.ir.util.kotlinFqName
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.ir.util.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.ir.util.statements
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos Parser Transformer
+&nbsp; *
+&nbsp; * The main entry-point IR transformer for the Kronos compiler plugin (K2).
+&nbsp; * It traverses the entire module and performs the following tasks:
+&nbsp; *
+&nbsp; * 1. Collects all classes that implement `KPojo` (from class declarations,
+&nbsp; *    class references, constructor calls, and type arguments).
+&nbsp; * 2. Dispatches each collected KPojo class to [KronosIrClassTransformer] to
+&nbsp; *    generate the required interface method implementations.
+&nbsp; * 3. Identifies DSL extension functions (KTableForSelect, KTableForSet,
+&nbsp; *    KTableForCondition, KTableForSort, KTableForReference) and delegates
+&nbsp; *    to the corresponding transformer ([SelectTransformer], [SetTransformer],
+&nbsp; *    [ConditionTransformer], [SortTransformer], [ReferenceTransformer]).
+&nbsp; */
+&nbsp;class KronosParserTransformer(
+&nbsp;    private val pluginContext: IrPluginContext,
+&nbsp;    messageCollector: MessageCollector
+&nbsp;) : IrElementTransformerVoidWithContext() {
+&nbsp;
+&nbsp;    private val errorReporter = ErrorReporter(messageCollector)
+&nbsp;    val kPojoClasses = mutableSetOf&lt;IrClass&gt;()
+&nbsp;    val enumClasses = mutableSetOf&lt;IrClass&gt;()
+&nbsp;    private val transformedKPojoClasses = mutableSetOf&lt;IrClass&gt;()
+&nbsp;
+&nbsp;    override fun visitFileNew(declaration: IrFile): IrFile {
+&nbsp;        errorReporter.currentFileEntry = declaration.fileEntry
+&nbsp;        return super.visitFileNew(declaration)
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitClassNew(declaration: IrClass): IrStatement =
+&nbsp;        if (declaration.isGeneratedProjectionClass()) declaration else {
+&nbsp;            if (with(pluginContext) { declaration.defaultType.isKPojoType() }) {
+&nbsp;                processKPojoClass(declaration)
+&nbsp;            }
+&nbsp;            super.visitClassNew(declaration)
+&nbsp;        }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitCall(expression: IrCall): IrExpression {
+&nbsp;        for (i in 0 until expression.typeArguments.size) {
+&nbsp;            collectKPojoFactoryCandidate(expression.typeArguments[i])
+&nbsp;        }
+&nbsp;        if (expression.isStaticTypedResultCall()) {
+&nbsp;            expression.type.collectConcreteEnumLeaves()
+&nbsp;            for (i in 0 until expression.typeArguments.size) {
+&nbsp;                expression.typeArguments[i]?.collectConcreteEnumLeaves()
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return super.visitCall(expression) as IrCall
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitClassReference(expression: IrClassReference): IrExpression {
+&nbsp;        collectKPojoFactoryCandidate(expression.classType)
+&nbsp;        return super.visitClassReference(expression)
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
+&nbsp;        collectKPojoFactoryCandidate(expression.type)
+&nbsp;        return super.visitConstructorCall(expression)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Collects and enhances each source KPojo class once.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun processKPojoClass(irClass: IrClass) {
+&nbsp;        if (irClass.kind == ClassKind.INTERFACE || irClass.isGeneratedProjectionClass()) {
+&nbsp;            return
+&nbsp;        }
+&nbsp;        kPojoClasses.add(irClass)
+&nbsp;        collectCascadeTargetKPojoClasses(irClass)
+&nbsp;        if (transformedKPojoClasses.add(irClass)) {
+&nbsp;            irClass.properties.forEach { property -&gt;
+&nbsp;                property.isVar = true
+&nbsp;                property.isConst = false
+&nbsp;            }
+&nbsp;            irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun collectCascadeTargetKPojoClasses(irClass: IrClass) {
+&nbsp;        irClass.properties.forEach { property -&gt;
+&nbsp;            val propertyType = property.getter?.returnType ?: property.backingField?.type ?: return@forEach
+&nbsp;            val targets = sequenceOf(
+&nbsp;                propertyType.toKPojoFactoryCandidate(),
+&nbsp;                propertyType.firstTypeArgument()?.toKPojoFactoryCandidate()
+&nbsp;            )
+&nbsp;            targets
+&nbsp;                .filterNotNull()
+&nbsp;                .forEach { target -&gt; kPojoClasses.add(target) }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun collectKPojoFactoryCandidate(type: IrType?) {
+&nbsp;        type?.toKPojoFactoryCandidate()?.let { kPojoClasses.add(it) }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrCall.isStaticTypedResultCall(): Boolean {
+&nbsp;        if (symbol.owner.name.asString() !in StaticTypedResultFunctionNames) return false
+&nbsp;        return symbol.owner.fqNameWhenAvailable?.asString()?.startsWith(&quot;com.kotlinorm.&quot;) == true
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrType.collectConcreteEnumLeaves() {
+&nbsp;        val simpleType = this as? IrSimpleType ?: return
+&nbsp;        simpleType.classOrNull?.owner
+&nbsp;            ?.takeIf { it.kind == ClassKind.ENUM_CLASS }
+&nbsp;            ?.let(enumClasses::add)
+&nbsp;        simpleType.arguments
+&nbsp;            .filterIsInstance&lt;IrTypeProjection&gt;()
+&nbsp;            .forEach { it.type.collectConcreteEnumLeaves() }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Synthetic projection classes are FIR-backed lazy classes. Expanding their members while
+&nbsp;     * visiting a call type argument can ask FIR2IR for property symbols before they are bound.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrClass.isGeneratedProjectionClass(): Boolean =
+&nbsp;        kotlinFqName.parent() == GeneratedProjectionPackageFqName
+&nbsp;
+&nbsp;    private fun IrType.isGeneratedProjectionClassType(): Boolean =
+&nbsp;        classFqName?.parent() == GeneratedProjectionPackageFqName
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun IrType.toKPojoFactoryCandidate(): IrClass? {
+&nbsp;        if (isGeneratedProjectionClassType()) return null
+&nbsp;        val irClass = getClass() ?: classOrNull?.owner ?: return null
+&nbsp;        if (irClass.kind == ClassKind.INTERFACE || irClass.isGeneratedProjectionClass()) return null
+&nbsp;        return irClass.takeIf { with(pluginContext) { it.defaultType.isKPojoType() } }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+&nbsp;        with(pluginContext) {
+&nbsp;            val extensionReceiverFqName = declaration.parameters.extensionReceiver?.type?.classFqName?.asString()
+&nbsp;            when (extensionReceiverFqName) {
+&nbsp;                kTableForSelectSymbol.owner.kotlinFqName.asString() -&gt;
+&nbsp;                    declaration.body = transformWith(declaration) { SelectTransformer(it, errorReporter) }
+&nbsp;                kTableForInsertSelectSymbol.owner.kotlinFqName.asString() -&gt;
+&nbsp;                    declaration.body = transformWith(declaration) { InsertSelectTransformer(pluginContext, it, errorReporter) }
+&nbsp;                kTableForSetSymbol.owner.kotlinFqName.asString() -&gt;
+&nbsp;                    declaration.body = transformWith(declaration) { SetTransformer(pluginContext, it, errorReporter) }
+&nbsp;                kTableForConditionSymbol.owner.kotlinFqName.asString() -&gt;
+&nbsp;                    declaration.body = transformWith(declaration) { ConditionTransformer(pluginContext, it, errorReporter) }
+&nbsp;                kTableForSortSymbol.owner.kotlinFqName.asString() -&gt;
+&nbsp;                    declaration.body = transformWith(declaration) { SortTransformer(pluginContext, it, errorReporter) }
+&nbsp;                kTableForReferenceSymbol.owner.kotlinFqName.asString() -&gt;
+&nbsp;                    declaration.body = transformWith(declaration) { ReferenceTransformer(pluginContext, it, errorReporter) }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return super.visitFunctionNew(declaration)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun transformWith(
+&nbsp;        declaration: IrFunction,
+&nbsp;        transformerFactory: (IrFunction) -&gt; IrElementTransformerVoidWithContext
+&nbsp;    ) = DeclarationIrBuilder(pluginContext, declaration.symbol).irBlockBody {
+&nbsp;        +irBlock {
+&nbsp;            +declaration.body!!.statements
+&nbsp;        }.transform(transformerFactory(declaration), null)
+&nbsp;    }
+&nbsp;
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private val StaticTypedResultFunctionNames = setOf(</b>
+<b class="fc">&nbsp;    &quot;queryList&quot;,</b>
+<b class="fc">&nbsp;    &quot;queryOne&quot;,</b>
+<b class="fc">&nbsp;    &quot;queryOneOrNull&quot;,</b>
+<b class="fc">&nbsp;    &quot;toList&quot;,</b>
+<b class="fc">&nbsp;    &quot;first&quot;,</b>
+<b class="fc">&nbsp;    &quot;firstOrNull&quot;</b>
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,279 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ParameterSource</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.statement</a>
+</div>
+
+<h1>Coverage Summary for Class: ParameterSource (com.kotlinorm.orm.statement)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ParameterSource</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (36/36)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.statement
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.dsl.KronosFunctionExpr
+&nbsp;import com.kotlinorm.beans.dsl.SourceBinding
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.task.jdbcNullType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.orm.sql.toSqlExpr
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.statement.SqlAssignmentTarget
+&nbsp;import com.kotlinorm.syntax.statement.SqlUpdateSetPair
+&nbsp;import com.kotlinorm.utils.fieldForParameter
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;internal class OrmContext&lt;T : KPojo&gt;(
+&nbsp;    val pojo: T,
+&nbsp;    val kType: KType,
+&nbsp;    val tableName: String,
+&nbsp;    val declaredTableName: String = tableName,
+&nbsp;    val operationType: KOperationType,
+&nbsp;    val fields: List&lt;Field&gt;,
+&nbsp;    val allFields: List&lt;Field&gt; = fields,
+&nbsp;    val fieldMap: Map&lt;String, Field&gt;,
+&nbsp;    val createTimeStrategy: KronosCommonStrategy? = null,
+&nbsp;    val updateTimeStrategy: KronosCommonStrategy? = null,
+&nbsp;    val logicDeleteStrategy: KronosCommonStrategy? = null,
+&nbsp;    val optimisticLockStrategy: KronosCommonStrategy? = null,
+&nbsp;    val sourceValues: Map&lt;String, Any?&gt; = pojo.toDataMap(),
+&nbsp;    val parameterBindings: MutableMap&lt;String, ParameterBinding&gt; = linkedMapOf()
+&nbsp;) {
+&nbsp;    val sourceBinding = SourceBinding(
+&nbsp;        tableName = tableName,
+&nbsp;        dynamicTableNames = setOf(declaredTableName).filterTo(linkedSetOf()) {
+&nbsp;            it.isNotBlank() &amp;&amp; it != tableName
+&nbsp;        },
+&nbsp;        sourceColumnNames = fields.asSequence().filter { it.isColumn }.map { it.columnName }.toSet()
+&nbsp;    )
+&nbsp;    var cascadeEnabled: Boolean = true
+&nbsp;    var cascadeAllowed: Set&lt;Field&gt;? = null
+&nbsp;    var logicEnabled: Boolean? = null
+&nbsp;    var restoreLogicDeleteOnUpdate: Boolean = false
+&nbsp;    var where: SqlExpr? = null
+&nbsp;    val setPairs: MutableList&lt;SqlUpdateSetPair&gt; = mutableListOf()
+&nbsp;
+&nbsp;    fun bind(name: String, value: Any?, field: Field?, source: ParameterSource) {
+&nbsp;        parameterBindings[name] = ParameterBinding(name, value, field, source)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun parameterValues(vararg sources: ParameterSource): Map&lt;String, Any?&gt; {
+&nbsp;        val allowed = sources.takeIf { it.isNotEmpty() }?.toSet()
+&nbsp;        return parameterBindings.values
+&nbsp;            .asSequence()
+&nbsp;            .filter { allowed == null || it.source in allowed }
+&nbsp;            .associate { it.name to it.value }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun parameterFields(): Map&lt;String, Field&gt; = buildMap {
+&nbsp;        putAll(fieldMap)
+&nbsp;        parameterBindings.values.forEach { binding -&gt;
+&nbsp;            binding.field?.let { put(binding.name, it) }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun valueExpression(value: Any?, parameterName: String): SqlExpr =
+&nbsp;        when (value) {
+&nbsp;            is SqlExpr -&gt; value
+&nbsp;            is KronosFunctionExpr -&gt; value.expr
+&nbsp;            is Field -&gt; value.toSqlExpr(false)
+&nbsp;            is KSelectable&lt;*&gt; -&gt; SqlExpr.Subquery(value.toSqlQuery())
+&nbsp;            else -&gt; SqlExpr.Parameter(SqlParameter.Named(parameterName))
+&nbsp;        }
+&nbsp;
+&nbsp;    fun bindValueIfNeeded(parameterName: String, value: Any?, field: Field, source: ParameterSource) {
+&nbsp;        if (value !is SqlExpr &amp;&amp; value !is KronosFunctionExpr &amp;&amp; value !is Field &amp;&amp; value !is KSelectable&lt;*&gt;) {
+&nbsp;            bind(parameterName, value, field, source)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun addOrReplaceSetPair(pair: SqlUpdateSetPair) {
+&nbsp;        val target = pair.target
+&nbsp;        if (target is SqlAssignmentTarget.Column) {
+&nbsp;            setPairs.removeAll { existing -&gt;
+&nbsp;                (existing.target as? SqlAssignmentTarget.Column)
+&nbsp;                    ?.identifier
+&nbsp;                    ?.canonical == target.identifier.canonical
+&nbsp;            }
+&nbsp;        }
+&nbsp;        setPairs += pair
+&nbsp;    }
+&nbsp;
+&nbsp;    fun andWhere(expr: SqlExpr?) {
+&nbsp;        if (expr == null) return
+&nbsp;        where = where?.let { SqlExpr.Binary(it, SqlBinaryOperator.And, expr) } ?: expr
+&nbsp;    }
+&nbsp;
+&nbsp;    fun andWhereAll(expressions: Iterable&lt;SqlExpr&gt;) {
+&nbsp;        val items = expressions.toList()
+&nbsp;        if (items.isEmpty()) return
+&nbsp;        andWhere(items.drop(1).fold(items.first()) { left, right -&gt;
+&nbsp;            SqlExpr.Binary(left, SqlBinaryOperator.And, right)
+&nbsp;        })
+&nbsp;    }
+&nbsp;
+&nbsp;    fun set(field: Field, value: SqlExpr) {
+&nbsp;        addOrReplaceSetPair(
+&nbsp;            SqlUpdateSetPair(
+&nbsp;                target = SqlAssignmentTarget.Column(SqlIdentifier.of(field.columnName)),
+&nbsp;                value = value
+&nbsp;            )
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun removeSetPair(columnName: String) {
+&nbsp;        val canonical = SqlIdentifier.of(columnName).canonical
+&nbsp;        setPairs.removeAll { existing -&gt;
+&nbsp;            (existing.target as? SqlAssignmentTarget.Column)
+&nbsp;                ?.identifier
+&nbsp;                ?.canonical == canonical
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun jdbcNullParameterTypeHints(parameterNames: Set&lt;String&gt;): Map&lt;String, Int&gt; =
+&nbsp;        parameterBindings.values.mapNotNull { binding -&gt;
+&nbsp;            if (binding.name !in parameterNames || binding.value != null) {
+&nbsp;                return@mapNotNull null
+&nbsp;            }
+&nbsp;            val field = binding.field ?: fieldMap.fieldForParameter(binding.name)
+&nbsp;            field?.jdbcNullType()?.let { binding.name to it }
+&nbsp;        }.toMap()
+&nbsp;}
+&nbsp;
+&nbsp;internal data class ParameterBinding(
+&nbsp;    val name: String,
+&nbsp;    val value: Any?,
+&nbsp;    val field: Field?,
+&nbsp;    val source: ParameterSource
+&nbsp;)
+&nbsp;
+&nbsp;internal enum class ParameterSource {
+<b class="fc">&nbsp;    Condition,</b>
+<b class="fc">&nbsp;    Assignment,</b>
+<b class="fc">&nbsp;    Strategy,</b>
+<b class="fc">&nbsp;    Patch,</b>
+<b class="fc">&nbsp;    Renderer</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,219 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ConditionTransformer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: ConditionTransformer (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ConditionTransformer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (4/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (15/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.8%
+  </span>
+  <span class="absValue">
+    (95/112)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.KTableTransformer
+&nbsp;import com.kotlinorm.compiler.core.analyzeAndBuildSqlExpr
+&nbsp;import com.kotlinorm.compiler.core.setConditionSqlExprSymbol
+&nbsp;import com.kotlinorm.compiler.utils.ErrorMessages
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiver
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrReturn
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;
+&nbsp;/**
+&nbsp; * Condition Transformer
+&nbsp; *
+&nbsp; * Transforms the return statement of a condition lambda into a sqlExpr assignment.
+&nbsp; * @author: Jieyao Lu
+&nbsp; *
+&nbsp; * Roughly speaking, the transform will turn the following:
+&nbsp; *
+&nbsp; *     // file: Foo.kt
+&nbsp; *     fun &lt;T: KPojo&gt; T.foo() {
+&nbsp; *          val action: (KTableConditional&lt;T&gt;.(T) -&gt; Unit) = { it: T -&gt;
+&nbsp; *              it.name == &quot;Hello World&quot;
+&nbsp; *          }
+&nbsp; *          KTableConditional&lt;T&gt;().action(this)
+&nbsp; *     }
+&nbsp; *
+&nbsp; * into the following equivalent representation:
+&nbsp; *
+&nbsp; *    sqlExpr = SqlExpr.Binary(Column(&quot;name&quot;), Equal, Parameter(&quot;name&quot;))
+&nbsp; */
+<b class="fc">&nbsp;class ConditionTransformer(</b>
+<b class="fc">&nbsp;    private val pluginContext: IrPluginContext,</b>
+&nbsp;    irFunction: IrFunction,
+&nbsp;    errorReporter: ErrorReporter
+<b class="fc">&nbsp;) : KTableTransformer(irFunction, errorReporter) {</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitReturn(expression: IrReturn): IrExpression {
+<b class="pc">&nbsp;        if (!shouldProcessReturn(expression)) {</b>
+<b class="nc">&nbsp;            return super.visitReturn(expression)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        return try {
+<b class="fc">&nbsp;            with(pluginContext) {</b>
+<b class="fc">&nbsp;                DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {</b>
+<b class="fc">&nbsp;                    val inner = analyzeAndBuildSqlExpr(irFunction, expression.value, errorReporter)</b>
+<b class="fc">&nbsp;                    val receiver = irFunction.parameters.extensionReceiver</b>
+&nbsp;
+<b class="pc">&nbsp;                    if (inner != null &amp;&amp; receiver != null) {</b>
+<b class="fc">&nbsp;                        +irCall(setConditionSqlExprSymbol).apply {</b>
+<b class="fc">&nbsp;                            dispatchReceiver = irGet(receiver)</b>
+<b class="fc">&nbsp;                            arguments[1] = inner</b>
+<b class="fc">&nbsp;                        }</b>
+&nbsp;                    }
+&nbsp;                    // Condition transformer does NOT preserve the original return
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;        } catch (e: RuntimeException) {
+<b class="nc">&nbsp;            errorReporter.reportError(</b>
+<b class="nc">&nbsp;                expression,</b>
+<b class="nc">&nbsp;                ErrorMessages.failedToTransformCondition(e.message),</b>
+<b class="nc">&nbsp;                e</b>
+&nbsp;            )
+<b class="fc">&nbsp;            expression</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

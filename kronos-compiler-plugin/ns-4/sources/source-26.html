@@ -1,0 +1,779 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ProjectionItemResult</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: ProjectionItemResult (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+  <tr>
+    <td class="name">ProjectionItemResult$Named</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ProjectionItemResult$RequiresAlias</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.CompareToFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.ContainsFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.EqualsFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedProjectionFieldIdentifierRegex
+&nbsp;import com.kotlinorm.compiler.utils.InsertClauseClassId
+&nbsp;import com.kotlinorm.compiler.utils.InsertFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.JoinedSelectQueryClassId
+&nbsp;import com.kotlinorm.compiler.utils.KSelectableClassId
+&nbsp;import com.kotlinorm.compiler.utils.CursorPageQueryClassId
+&nbsp;import com.kotlinorm.compiler.utils.OffsetPageQueryClassId
+&nbsp;import com.kotlinorm.compiler.utils.PlainAggregateFunctionNames
+&nbsp;import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationClassId
+&nbsp;import com.kotlinorm.compiler.utils.SelectAliasFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SelectAliasFunctionNameIdentifier
+&nbsp;import com.kotlinorm.compiler.utils.SelectClauseClassId
+&nbsp;import com.kotlinorm.compiler.utils.SelectFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SelectGroupByFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SelectLimitFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SelectOrderByFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SelectPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.SortAscendingFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SortDescendingFunctionName
+&nbsp;import com.kotlinorm.compiler.utils.SubqueryQuantifierFunctionNames
+&nbsp;import com.kotlinorm.compiler.utils.UnsafeProjectionOverrideAnnotationClassId
+&nbsp;import com.kotlinorm.compiler.utils.UnionClauseClassId
+&nbsp;import com.kotlinorm.compiler.utils.isJoinSourceClassId
+&nbsp;import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
+&nbsp;import org.jetbrains.kotlin.diagnostics.reportOn
+&nbsp;import org.jetbrains.kotlin.fir.FirElement
+&nbsp;import org.jetbrains.kotlin.fir.FirSession
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.expression.ExpressionCheckers
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirFunctionCallChecker
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirOptInUsageBaseChecker
+&nbsp;import org.jetbrains.kotlin.fir.analysis.checkers.expression.FirOptInUsageBaseChecker.loadExperimentalityForMarkerAnnotation
+&nbsp;import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtension
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirProperty
+&nbsp;import org.jetbrains.kotlin.fir.declarations.getAnnotationByClassId
+&nbsp;import org.jetbrains.kotlin.fir.declarations.getBooleanArgument
+&nbsp;import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirAnonymousFunctionExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirBlock
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirErrorExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirQualifiedErrorAccessExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirStatement
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
+&nbsp;import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
+&nbsp;import org.jetbrains.kotlin.fir.references.FirErrorNamedReference
+&nbsp;import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
+&nbsp;import org.jetbrains.kotlin.fir.references.FirResolvedErrorReference
+&nbsp;import org.jetbrains.kotlin.fir.symbols.SymbolInternals
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
+&nbsp;import org.jetbrains.kotlin.fir.visitors.FirDefaultVisitorVoid
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeClassLikeType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
+&nbsp;import org.jetbrains.kotlin.fir.types.resolvedType
+&nbsp;import org.jetbrains.kotlin.fir.resolve.toClassSymbol
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;
+&nbsp;/**
+&nbsp; * Registers FIR checkers for projection DSL constraints that must be visible before IR.
+&nbsp; */
+&nbsp;class KronosProjectionCheckersExtension(session: FirSession) : FirAdditionalCheckersExtension(session) {
+&nbsp;    /**
+&nbsp;     * Installs only expression checkers because projection misuse is expressed through DSL calls.
+&nbsp;     */
+&nbsp;    override val expressionCheckers: ExpressionCheckers = object : ExpressionCheckers() {
+&nbsp;        override val functionCallCheckers: Set&lt;FirFunctionCallChecker&gt; = setOf(KronosSelectProjectionChecker)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
+&nbsp;    private val PrimaryKeyIdentityArgumentName = Name.identifier(&quot;identity&quot;)
+&nbsp;    private val ScalarSubqueryCandidateFunctionNames = setOf(
+&nbsp;        SelectAliasFunctionNameIdentifier,
+&nbsp;        CompareToFunctionName,
+&nbsp;        EqualsFunctionName,
+&nbsp;        SortAscendingFunctionName,
+&nbsp;        SortDescendingFunctionName
+&nbsp;    )
+&nbsp;    private val PredicateSubqueryFunctionNames = SubqueryQuantifierFunctionNames + ContainsFunctionName
+&nbsp;    private val ScalarReceiverOnlyFunctionNames = setOf(
+&nbsp;        SelectAliasFunctionNameIdentifier,
+&nbsp;        SortAscendingFunctionName,
+&nbsp;        SortDescendingFunctionName
+&nbsp;    )
+&nbsp;    private val ScalarReceiverAndArgumentFunctionNames = setOf(CompareToFunctionName, EqualsFunctionName)
+&nbsp;    private val SelectedTypeArgumentIndexByClassId = mapOf(
+&nbsp;        SelectClauseClassId to 1,
+&nbsp;        JoinedSelectQueryClassId to 1,
+&nbsp;        KSelectableClassId to 0,
+&nbsp;        UnionClauseClassId to 0,
+&nbsp;        OffsetPageQueryClassId to 0,
+&nbsp;        CursorPageQueryClassId to 0,
+&nbsp;    )
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    override fun check(expression: FirFunctionCall) {
+&nbsp;        val name = expression.calleeReference.name
+&nbsp;        when {
+&nbsp;            name == InsertFunctionName -&gt; checkInsertSelectValueCount(expression)
+&nbsp;            name in ScalarSubqueryCandidateFunctionNames -&gt; checkScalarSubqueryLimitUsage(expression)
+&nbsp;            name in PredicateSubqueryFunctionNames -&gt; checkPredicateSubqueryShape(expression)
+&nbsp;        }
+&nbsp;        if (name == SelectOrderByFunctionName) {
+&nbsp;            checkOrderByProjectionOverride(expression)
+&nbsp;        }
+&nbsp;        if (!expression.isKronosSelectCall()) return
+&nbsp;        checkSelectProjection(expression)
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    private fun checkSelectProjection(expression: FirFunctionCall) {
+&nbsp;        val lambda = expression.argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return
+&nbsp;        val returned = lambda.anonymousFunction.body?.lastExpression()?.projectionExpression() ?: return
+&nbsp;        val items = returned.projectionItems()
+&nbsp;        if (items.isEmpty()) return
+&nbsp;        val sourceType = expression.selectSourceType()
+&nbsp;        val sourceFieldNames = sourceType?.sourceFieldNames().orEmpty()
+&nbsp;        val sourceValues = lambda.anonymousFunction.valueParameters.projectionSourceValueAccessors()
+&nbsp;        val seenNames = linkedSetOf&lt;String&gt;()
+&nbsp;        items.forEach { item -&gt;
+&nbsp;            if (item.hasResolutionError()) return@forEach
+&nbsp;            item.projectionNamesOrDiagnostic(sourceType, sourceFieldNames, sourceValues).forEach { result -&gt;
+&nbsp;                when (result) {
+&nbsp;                    ProjectionItemResult.RequiresAlias -&gt; reporter.reportOn(
+&nbsp;                        item.source,
+&nbsp;                        KronosProjectionDiagnostics.SELECT_ITEM_REQUIRES_ALIAS
+&nbsp;                    )
+&nbsp;
+&nbsp;                    is ProjectionItemResult.Named -&gt; {
+&nbsp;                        if (!seenNames.add(result.name.asString())) {
+&nbsp;                            reportProjectionOverrideOptIn(item)
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    private fun checkOrderByProjectionOverride(call: FirFunctionCall) {
+&nbsp;        if (!call.isKronosOrderByCall()) return
+&nbsp;        val model = call.contextProjectionModel() ?: return
+&nbsp;        if (model.shadowedSourceNames.isEmpty()) return
+&nbsp;        val lambda = call.argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return
+&nbsp;        val accesses = mutableListOf&lt;FirPropertyAccessExpression&gt;()
+&nbsp;        lambda.anonymousFunction.body?.accept(
+&nbsp;            ContextProjectionAccessVisitor(
+&nbsp;                model.contextClassId,
+&nbsp;                model.shadowedSourceNames,
+&nbsp;                accesses::add
+&nbsp;            )
+&nbsp;        )
+&nbsp;        accesses.forEach { access -&gt; reportProjectionOverrideOptIn(access) }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    private fun reportProjectionOverrideOptIn(item: FirStatement) {
+&nbsp;        val marker = context.session.symbolProvider
+&nbsp;            .getClassLikeSymbolByClassId(UnsafeProjectionOverrideAnnotationClassId)
+&nbsp;            as? org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
+&nbsp;            ?: return
+&nbsp;        val experimentality = marker.loadExperimentalityForMarkerAnnotation(context.session)
+&nbsp;            ?: return
+&nbsp;        with(FirOptInUsageBaseChecker) {
+&nbsp;            reportNotAcceptedExperimentalities(
+&nbsp;            listOf(experimentality),
+&nbsp;            item,
+&nbsp;            item.source,
+&nbsp;            false
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    private fun checkScalarSubqueryLimitUsage(call: FirFunctionCall) {
+&nbsp;        call.scalarSubqueryCandidates().forEach { candidate -&gt;
+&nbsp;            if (candidate.hasResolutionError()) return@forEach
+&nbsp;            if (!candidate.isKSelectableExpression()) return@forEach
+&nbsp;            val projectionArity = candidate.scalarProjectionArity()
+&nbsp;            if (projectionArity != null &amp;&amp; projectionArity != 1) {
+&nbsp;                reporter.reportOn(candidate.source, KronosProjectionDiagnostics.SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN)
+&nbsp;                return@forEach
+&nbsp;            }
+&nbsp;            if (!candidate.isAggregateScalarWithoutGroupBy() &amp;&amp; !candidate.hasLimitOneInChain()) {
+&nbsp;                reporter.reportOn(candidate.source, KronosProjectionDiagnostics.SCALAR_SUBQUERY_REQUIRES_LIMIT)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    private fun checkPredicateSubqueryShape(call: FirFunctionCall) {
+&nbsp;        val candidate = call.predicateSubqueryCandidate() ?: return
+&nbsp;        if (candidate.query.hasResolutionError()) return
+&nbsp;        if (candidate.tupleArity == 1) {
+&nbsp;            reporter.reportOn(
+&nbsp;                candidate.left.source,
+&nbsp;                KronosProjectionDiagnostics.ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS
+&nbsp;            )
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+&nbsp;        val rightArity = candidate.query.scalarProjectionArity() ?: return
+&nbsp;        if (candidate.leftArity != rightArity) {
+&nbsp;            reporter.reportOn(
+&nbsp;                candidate.query.source,
+&nbsp;                KronosProjectionDiagnostics.PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext, reporter: DiagnosticReporter)
+&nbsp;    private fun checkInsertSelectValueCount(call: FirFunctionCall) {
+&nbsp;        val targetFieldTypes = call.insertTargetFieldTypes() ?: return
+&nbsp;        val lambda = call.argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return
+&nbsp;        val returned = lambda.anonymousFunction.body?.lastExpression()?.projectionExpression() ?: return
+&nbsp;        if (returned.hasResolutionError()) return
+&nbsp;
+&nbsp;        val values = returned.collectionLiteralItemsOrNull() ?: return
+&nbsp;        val valueCount = values.size
+&nbsp;        if (valueCount != targetFieldTypes.size) {
+&nbsp;            reporter.reportOn(returned.source ?: call.source, KronosProjectionDiagnostics.INSERT_SELECT_VALUE_COUNT_MISMATCH)
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+&nbsp;        values.zip(targetFieldTypes).forEach { (value, targetType) -&gt;
+&nbsp;            if (value.isNullLiteral()) return@forEach
+&nbsp;            val valueType = value.insertSelectValueType()
+&nbsp;            if (valueType == null) return@forEach
+&nbsp;            if (!valueType.hasSameClassId(targetType)) {
+&nbsp;                reporter.reportOn(value.source ?: returned.source ?: call.source, KronosProjectionDiagnostics.INSERT_SELECT_VALUE_TYPE_MISMATCH)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirFunctionCall.insertTargetFieldTypes(): List&lt;ConeKotlinType&gt;? {
+&nbsp;        val returnType = safeResolvedType() as? ConeClassLikeType ?: return null
+&nbsp;        if (returnType.lookupTag.classId != InsertClauseClassId) return null
+&nbsp;
+&nbsp;        val targetArgument = returnType.typeArguments.firstOrNull() as? ConeKotlinTypeProjection ?: return null
+&nbsp;        return targetArgument.type.targetInsertableFieldTypes()
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun ConeKotlinType.targetInsertableFieldTypes(): List&lt;ConeKotlinType&gt;? {
+&nbsp;        val classSymbol = toClassSymbol(context.session) ?: return null
+&nbsp;        val fieldTypes = mutableListOf&lt;ConeKotlinType&gt;()
+&nbsp;        classSymbol.processAllDeclarations(context.session, FirResolvePhase.STATUS) { symbol -&gt;
+&nbsp;            val property = (symbol as? FirPropertySymbol)?.fir ?: return@processAllDeclarations
+&nbsp;            if (property.isTargetInsertableColumn()) {
+&nbsp;                val propertyType = (property.returnTypeRef as? FirResolvedTypeRef)?.coneType ?: return@processAllDeclarations
+&nbsp;                fieldTypes += propertyType
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return fieldTypes
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirProperty.isTargetInsertableColumn(): Boolean {
+&nbsp;        if (!isKronosColumn(context.session)) return false
+&nbsp;        return !isIdentityPrimaryKey()
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirProperty.isIdentityPrimaryKey(): Boolean {
+&nbsp;        val primaryKey = getAnnotationByClassId(PrimaryKeyAnnotationClassId, context.session) ?: return false
+&nbsp;        return primaryKey.getBooleanArgument(PrimaryKeyIdentityArgumentName) == true
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirFunctionCall.scalarSubqueryCandidates(): List&lt;FirExpression&gt; {
+&nbsp;        val name = calleeReference.name
+&nbsp;        if (name in ScalarReceiverOnlyFunctionNames) {
+&nbsp;            return receiverCandidates().filter { it.isKSelectableExpression() }
+&nbsp;        }
+&nbsp;        if (name in ScalarReceiverAndArgumentFunctionNames) {
+&nbsp;            return receiverCandidates().filter { it.isKSelectableExpression() } +
+&nbsp;                argumentList.arguments.filter { it.isKSelectableExpression() }
+&nbsp;        }
+&nbsp;        return emptyList()
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirFunctionCall.predicateSubqueryCandidate(): PredicateSubqueryCandidate? {
+&nbsp;        val name = calleeReference.name
+&nbsp;        if (name == ContainsFunctionName) {
+&nbsp;            val query = receiverCandidates().firstOrNull { it.isKSelectableExpression() } ?: return null
+&nbsp;            val left = argumentList.arguments.firstOrNull() ?: return null
+&nbsp;            val tupleArity = left.rowValueTupleArity()
+&nbsp;            return PredicateSubqueryCandidate(
+&nbsp;                left = left,
+&nbsp;                query = query,
+&nbsp;                leftArity = tupleArity ?: 1,
+&nbsp;                tupleArity = tupleArity,
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        val query = argumentList.arguments.firstOrNull { it.isKSelectableExpression() } ?: return null
+&nbsp;        return PredicateSubqueryCandidate(
+&nbsp;            left = this,
+&nbsp;            query = query,
+&nbsp;            leftArity = 1,
+&nbsp;            tupleArity = null,
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirFunctionCall.receiverCandidates(): List&lt;FirExpression&gt; {
+&nbsp;        return listOfNotNull(explicitReceiver, dispatchReceiver, extensionReceiver).distinct()
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirExpression.rowValueTupleArity(): Int? {
+&nbsp;        return collectionLiteralItemsOrNull()?.size
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirExpression.isKSelectableExpression(): Boolean {
+&nbsp;        val type = safeResolvedType() as? ConeClassLikeType ?: return false
+&nbsp;        return type.lookupTag.classId in SelectedTypeArgumentIndexByClassId
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirExpression.hasLimitOneInChain(): Boolean {
+&nbsp;        val call = projectionStatementOrNull() as? FirFunctionCall ?: return false
+&nbsp;        if (call.calleeReference.name == SelectLimitFunctionName &amp;&amp;
+&nbsp;            call.receiverCandidates().any { it.isKSelectableExpression() } &amp;&amp;
+&nbsp;            call.argumentList.arguments.firstOrNull()?.intLiteralValue() == 1
+&nbsp;        ) {
+&nbsp;            return true
+&nbsp;        }
+&nbsp;
+&nbsp;        return call.receiverCandidates().any { it.hasLimitOneInChain() }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirExpression.scalarProjectionArity(): Int? {
+&nbsp;        return (safeResolvedType() as? ConeClassLikeType)?.selectedFieldCount()
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun ConeClassLikeType.selectedFieldCount(): Int? {
+&nbsp;        val selectedType = selectedTypeArgumentOrNull() ?: return null
+&nbsp;        val selectedClassType = selectedType as? ConeClassLikeType ?: return null
+&nbsp;        val projectionModel = KronosProjectionRegistry.find(context.session, selectedClassType.lookupTag.classId)
+&nbsp;        return projectionModel?.fields?.size
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ConeClassLikeType.selectedTypeArgumentOrNull(): ConeKotlinType? {
+&nbsp;        val selectedArgumentIndex = SelectedTypeArgumentIndexByClassId[lookupTag.classId]
+&nbsp;            ?: if (lookupTag.classId.isJoinSourceClassId()) 0 else return null
+&nbsp;        return (typeArguments.getOrNull(selectedArgumentIndex) as? ConeKotlinTypeProjection)?.type
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirExpression.isAggregateScalarWithoutGroupBy(): Boolean {
+&nbsp;        if (hasCallInReceiverChain(SelectGroupByFunctionName)) return false
+&nbsp;        val selectCall = findSelectCallInChain() ?: return false
+&nbsp;        val item = selectCall.selectProjectionItems()?.singleOrNull() ?: return false
+&nbsp;        return item.containsPlainAggregateCall()
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirExpression.findSelectCallInChain(): FirFunctionCall? {
+&nbsp;        val call = projectionStatementOrNull() as? FirFunctionCall ?: return null
+&nbsp;        if (call.calleeReference.name == SelectFunctionName) return call
+&nbsp;        return call.receiverCandidates().firstNotNullOfOrNull { it.findSelectCallInChain() }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirExpression.hasCallInReceiverChain(name: Name): Boolean {
+&nbsp;        val call = projectionStatementOrNull() as? FirFunctionCall ?: return false
+&nbsp;        return call.calleeReference.name == name || call.receiverCandidates().any { it.hasCallInReceiverChain(name) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirFunctionCall.selectProjectionItems(): List&lt;FirStatement&gt;? {
+&nbsp;        val lambda = argumentList.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return null
+&nbsp;        val returned = lambda.anonymousFunction.body?.lastExpression()?.projectionExpression() ?: return null
+&nbsp;        return returned.projectionItems()
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirStatement.containsPlainAggregateCall(): Boolean {
+&nbsp;        return when (val statement = projectionStatementOrNull()) {
+&nbsp;            is FirCollectionLiteral -&gt; statement.argumentList.arguments.any { it.containsPlainAggregateCall() }
+&nbsp;            is FirVarargArgumentsExpression -&gt; statement.arguments.any { it.containsPlainAggregateCall() }
+&nbsp;            is FirFunctionCall -&gt; {
+&nbsp;                val functionName = statement.calleeReference.name.asString()
+&nbsp;                functionName in PlainAggregateFunctionNames ||
+&nbsp;                    statement.receiverCandidates().any { it.containsPlainAggregateCall() } ||
+&nbsp;                    statement.argumentList.arguments.any { it.containsPlainAggregateCall() }
+&nbsp;            }
+&nbsp;            else -&gt; false
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirStatement.hasResolutionError(): Boolean {
+&nbsp;        val statement = projectionStatementOrNull() ?: return false
+&nbsp;        if (statement is FirErrorExpression || statement is FirQualifiedErrorAccessExpression) return true
+&nbsp;        val access = statement as? FirQualifiedAccessExpression ?: return false
+&nbsp;        return access.calleeReference is FirErrorNamedReference ||
+&nbsp;            access.calleeReference is FirResolvedErrorReference
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirFunctionCall.isKronosSelectCall(): Boolean {
+&nbsp;        if (calleeReference.name != SelectFunctionName) return false
+&nbsp;        val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirNamedFunctionSymbol
+&nbsp;        val callableId = symbol?.callableId ?: return false
+&nbsp;        return callableId.callableName == SelectFunctionName &amp;&amp; (
+&nbsp;            callableId.packageName == SelectPackageFqName || callableId.classId?.isJoinSourceClassId() == true
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirFunctionCall.isKronosOrderByCall(): Boolean {
+&nbsp;        val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirNamedFunctionSymbol
+&nbsp;        val callableId = symbol?.callableId ?: return false
+&nbsp;        return callableId.callableName == SelectOrderByFunctionName &amp;&amp; (
+&nbsp;            callableId.classId == SelectClauseClassId || callableId.classId == JoinedSelectQueryClassId
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirFunctionCall.contextProjectionModel(): KronosProjectionModel? {
+&nbsp;        val receiverType = explicitReceiver?.safeResolvedType() as? ConeClassLikeType ?: return null
+&nbsp;        val contextType = (receiverType.typeArguments.getOrNull(2) as? ConeKotlinTypeProjection)?.type
+&nbsp;            as? ConeClassLikeType
+&nbsp;            ?: return null
+&nbsp;        return KronosProjectionRegistry.find(context.session, contextType.lookupTag.classId)
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirFunctionCall.selectSourceType(): ConeKotlinType? {
+&nbsp;        val receiverType = explicitReceiver?.safeResolvedType() ?: return null
+&nbsp;        val receiverClassType = receiverType as? ConeClassLikeType ?: return receiverType
+&nbsp;        return receiverClassType.selectedTypeArgumentOrNull() ?: receiverType
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirStatement.safeResolvedType(): ConeKotlinType? {
+&nbsp;        val expression = this as? FirExpression ?: return null
+&nbsp;        return runCatching { expression.resolvedType }.getOrNull()
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirStatement.insertSelectValueType(): ConeKotlinType? {
+&nbsp;        val statement = projectionStatementOrNull() ?: return null
+&nbsp;        return when (statement) {
+&nbsp;            is FirPropertyAccessExpression,
+&nbsp;            is FirLiteralExpression -&gt; statement.safeResolvedType()
+&nbsp;            else -&gt; null
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun ConeKotlinType.sourceFieldNames(): Set&lt;String&gt; {
+&nbsp;        val classSymbol = toClassSymbol(context.session) ?: return emptySet()
+&nbsp;        val names = linkedSetOf&lt;String&gt;()
+&nbsp;        classSymbol.processAllDeclarations(context.session, FirResolvePhase.STATUS) { symbol -&gt;
+&nbsp;            val property = (symbol as? FirPropertySymbol)?.fir ?: return@processAllDeclarations
+&nbsp;            if (property.isKronosColumn(context.session)) names += property.name.asString()
+&nbsp;        }
+&nbsp;        return names
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirStatement.projectionExpression(): FirStatement {
+&nbsp;        return projectionStatementOrNull() ?: this
+&nbsp;    }
+&nbsp;
+&nbsp;    context(context: CheckerContext)
+&nbsp;    private fun FirStatement.projectionNamesOrDiagnostic(
+&nbsp;        sourceType: ConeKotlinType?,
+&nbsp;        sourceFieldNames: Set&lt;String&gt;,
+&nbsp;        sourceValues: ProjectionSourceValueAccessors
+&nbsp;    ): List&lt;ProjectionItemResult&gt; {
+&nbsp;        val statement = projectionStatementOrNull() ?: return listOf(ProjectionItemResult.RequiresAlias)
+&nbsp;
+&nbsp;        val propertyAccess = statement as? FirPropertyAccessExpression
+&nbsp;        if (propertyAccess != null) {
+&nbsp;            if (
+&nbsp;                sourceType != null &amp;&amp; propertyAccess.isProjectionSourceValueAccess(
+&nbsp;                    sourceType,
+&nbsp;                    sourceValues,
+&nbsp;                    propertyAccess.safeResolvedType()
+&nbsp;                )
+&nbsp;            ) {
+&nbsp;                return sourceFieldNames.map { fieldName -&gt;
+&nbsp;                    ProjectionItemResult.Named(Name.identifier(fieldName), ProjectionItemOrigin.SourceField)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            return listOf(
+&nbsp;                ProjectionItemResult.Named(propertyAccess.calleeReference.name, ProjectionItemOrigin.SourceField)
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        val call = statement as? FirFunctionCall
+&nbsp;        if (call != null &amp;&amp; sourceType != null) {
+&nbsp;            call.sourceMinusExcludedProjectionFieldNames(
+&nbsp;                sourceType,
+&nbsp;                sourceFieldNames,
+&nbsp;                sourceValues
+&nbsp;            ) { sourceMinusStatement -&gt; sourceMinusStatement.safeResolvedType() }?.let { excludedNames -&gt;
+&nbsp;                return sourceFieldNames
+&nbsp;                    .filterNot { it in excludedNames }
+&nbsp;                    .map { fieldName -&gt;
+&nbsp;                        ProjectionItemResult.Named(Name.identifier(fieldName), ProjectionItemOrigin.SourceField)
+&nbsp;                    }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        if (call != null &amp;&amp; call.calleeReference.name.asString() == SelectAliasFunctionName) {
+&nbsp;            val alias = call.argumentList.arguments.firstOrNull()?.stringLiteralValue()
+&nbsp;            if (alias != null &amp;&amp; GeneratedProjectionFieldIdentifierRegex.matches(alias)) {
+&nbsp;                return listOf(ProjectionItemResult.Named(Name.identifier(alias), ProjectionItemOrigin.ExplicitAlias))
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        val aliasLiteral = stringLiteralValue()
+&nbsp;        if (aliasLiteral != null &amp;&amp; GeneratedProjectionFieldIdentifierRegex.matches(aliasLiteral)) {
+&nbsp;            return listOf(
+&nbsp;                ProjectionItemResult.Named(Name.identifier(aliasLiteral), ProjectionItemOrigin.ExplicitAlias)
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        return listOf(ProjectionItemResult.RequiresAlias)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirStatement.intLiteralValue(): Int? {
+&nbsp;        val literal = projectionStatementOrNull() as? FirLiteralExpression ?: return null
+&nbsp;        return when (val value = literal.value) {
+&nbsp;            is Int -&gt; value
+&nbsp;            is Number -&gt; value.toInt()
+&nbsp;            else -&gt; null
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun FirStatement.isNullLiteral(): Boolean {
+&nbsp;        val literal = projectionStatementOrNull() as? FirLiteralExpression ?: return false
+&nbsp;        return literal.value == null
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ConeKotlinType.hasSameClassId(other: ConeKotlinType): Boolean {
+&nbsp;        val left = this as? ConeClassLikeType ?: return true
+&nbsp;        val right = other as? ConeClassLikeType ?: return true
+&nbsp;        return left.lookupTag.classId == right.lookupTag.classId
+&nbsp;    }
+&nbsp;
+&nbsp;}
+&nbsp;
+&nbsp;private class ContextProjectionAccessVisitor(
+&nbsp;    private val contextClassId: org.jetbrains.kotlin.name.ClassId,
+&nbsp;    private val shadowedNames: Set&lt;Name&gt;,
+&nbsp;    private val report: (FirPropertyAccessExpression) -&gt; Unit
+&nbsp;) : FirDefaultVisitorVoid() {
+&nbsp;    override fun visitElement(element: FirElement) {
+&nbsp;        element.acceptChildren(this)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun visitPropertyAccessExpression(propertyAccessExpression: FirPropertyAccessExpression) {
+&nbsp;        val symbol = (propertyAccessExpression.calleeReference as? FirResolvedNamedReference)
+&nbsp;            ?.resolvedSymbol as? FirPropertySymbol
+&nbsp;        if (
+&nbsp;            symbol?.callableId?.classId == contextClassId &amp;&amp;
+&nbsp;            propertyAccessExpression.calleeReference.name in shadowedNames
+&nbsp;        ) {
+&nbsp;            report(propertyAccessExpression)
+&nbsp;        }
+&nbsp;        propertyAccessExpression.acceptChildren(this)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private sealed interface ProjectionItemResult {
+<b class="fc">&nbsp;    data object RequiresAlias : ProjectionItemResult</b>
+&nbsp;
+<b class="fc">&nbsp;    data class Named(val name: Name, val origin: ProjectionItemOrigin) : ProjectionItemResult</b>
+&nbsp;}
+&nbsp;
+&nbsp;private enum class ProjectionItemOrigin {
+&nbsp;    SourceField,
+&nbsp;    ExplicitAlias
+&nbsp;}
+&nbsp;
+&nbsp;private data class PredicateSubqueryCandidate(
+&nbsp;    val left: FirExpression,
+&nbsp;    val query: FirExpression,
+&nbsp;    val leftArity: Int,
+&nbsp;    val tupleArity: Int?,
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

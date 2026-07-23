@@ -1,0 +1,332 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ValueCodecSupportKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils.codec</a>
+</div>
+
+<h1>Coverage Summary for Class: ValueCodecSupportKt (com.kotlinorm.utils.codec)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ValueCodecSupportKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.9%
+  </span>
+  <span class="absValue">
+    (62/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.7%
+  </span>
+  <span class="absValue">
+    (35/39)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.9%
+  </span>
+  <span class="absValue">
+    (256/267)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils.codec
+&nbsp;
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.ValueCodec
+&nbsp;import com.kotlinorm.interfaces.ValueCodecContext
+&nbsp;import com.kotlinorm.utils.GeneratedTypeMetadataSnapshot
+&nbsp;import com.kotlinorm.utils.isStructurallyAssignableTo
+&nbsp;import kotlin.reflect.KClass
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.full.isSubtypeOf
+&nbsp;import kotlin.reflect.full.withNullability
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Internal adapter contract shared by user and built-in codecs.
+&nbsp; *
+&nbsp; * The registry supplies the complete request and invokes one selected codec at
+&nbsp; * most once; implementations must not dispatch to another conversion registry.
+&nbsp; */
+&nbsp;internal interface RegistryCodec {
+&nbsp;    /**
+&nbsp;     * Human-readable identity included in contextual mapping failures.
+&nbsp;     */
+&nbsp;    val description: String
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Matches one non-null request without changing registry or application state.
+&nbsp;     * Matching should include direction, origin, storage and complete target type.
+&nbsp;     *
+&nbsp;     * @param value non-null request value
+&nbsp;     * @param request internal conversion policy and physical target
+&nbsp;     * @param context public logical type/direction context
+&nbsp;     * @return whether this codec can perform the request&#39;s single conversion
+&nbsp;     */
+&nbsp;    fun supports(value: Any, request: ValueConversionRequest, context: ValueCodecContext): Boolean
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Performs the single semantic conversion selected for this request.
+&nbsp;     * The registry validates nullability and logical/physical output types.
+&nbsp;     *
+&nbsp;     * @param value source previously accepted by [supports]
+&nbsp;     * @param request internal conversion policy
+&nbsp;     * @param context public logical type/direction context
+&nbsp;     * @param generatedTypes optional deterministic generated metadata snapshot
+&nbsp;     * @return converted logical value or encoded database scalar
+&nbsp;     */
+&nbsp;    fun convert(
+&nbsp;        value: Any,
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        context: ValueCodecContext,
+&nbsp;        generatedTypes: GeneratedTypeMetadataSnapshot?
+&nbsp;    ): Any?
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Adapts the public [ValueCodec] contract without exposing internal request
+&nbsp; * fields such as physical target, date format or batch index.
+&nbsp; */
+&nbsp;internal class UserRegistryCodec(private val codec: ValueCodec) : RegistryCodec {
+&nbsp;    override val description: String =
+&nbsp;        &quot;user ValueCodec ${codec::class.qualifiedName ?: codec::class.simpleName ?: &quot;&lt;anonymous&gt;&quot;}&quot;
+&nbsp;
+&nbsp;    override fun supports(value: Any, request: ValueConversionRequest, context: ValueCodecContext): Boolean =
+&nbsp;        codec.supports(value, context)
+&nbsp;
+&nbsp;    override fun convert(
+&nbsp;        value: Any,
+&nbsp;        request: ValueConversionRequest,
+&nbsp;        context: ValueCodecContext,
+&nbsp;        generatedTypes: GeneratedTypeMetadataSnapshot?
+&nbsp;    ): Any? = codec.convert(value, context)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fixed built-in fallback order used only after all current user registrations.
+&nbsp; * Serialized storage deliberately omits this list.
+&nbsp; */
+<b class="fc">&nbsp;internal val builtInCodecs: List&lt;RegistryCodec&gt; = listOf(</b>
+<b class="fc">&nbsp;    EnumValueCodec,</b>
+<b class="fc">&nbsp;    TemporalValueCodec,</b>
+<b class="fc">&nbsp;    BasicValueCodec</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Built-ins allowed to accept a non-assignable logical input during parameter
+&nbsp; * ENCODE. This exception does not apply to serialized values or DECODE.
+&nbsp; */
+<b class="fc">&nbsp;internal val builtInEncodeCoercionCodecs: List&lt;RegistryCodec&gt; = listOf(</b>
+<b class="fc">&nbsp;    TemporalValueCodec,</b>
+<b class="fc">&nbsp;    BasicValueCodec</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Chooses the physical ENCODE target when present while keeping DECODE on the
+&nbsp; * logical Kotlin type supplied by the caller.
+&nbsp; *
+&nbsp; * @return the exact KType the selected codec must produce
+&nbsp; */
+&nbsp;internal fun ValueConversionRequest.effectiveTargetType(): KType =
+<b class="fc">&nbsp;    if (direction == ValueCodecDirection.ENCODE) physicalTargetType ?: targetType else targetType</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks runtime assignability and, for known generic collection/map arguments,
+&nbsp; * validates each contained value against the complete target KType.
+&nbsp; *
+&nbsp; * @param value non-null runtime value to validate
+&nbsp; * @return whether runtime classifier and inspectable generic elements match
+&nbsp; */
+<b class="fc">&nbsp;internal fun KType.accepts(value: Any): Boolean = acceptsRuntimeValue(value)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Combines runtime validation with complete declared source-to-target KType
+&nbsp; * assignability. A missing source type means runtime validation is sufficient.
+&nbsp; *
+&nbsp; * @param value non-null runtime value to validate
+&nbsp; * @param sourceType complete declared source type when available
+&nbsp; * @return whether runtime contents and declared structure are assignable
+&nbsp; */
+&nbsp;internal fun KType.accepts(value: Any, sourceType: KType?): Boolean {
+<b class="fc">&nbsp;    if (!acceptsRuntimeValue(value)) return false</b>
+<b class="fc">&nbsp;    return sourceType == null || sourceType.isStructurallyAssignableTo(this)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun KType.acceptsRuntimeValue(value: Any?): Boolean {
+<b class="fc">&nbsp;    if (value == null) return isMarkedNullable</b>
+<b class="pc">&nbsp;    if ((classifier as? KClass&lt;*&gt;)?.isInstance(value) != true) return false</b>
+<b class="fc">&nbsp;    val argumentTypes = arguments.map { it.type }</b>
+<b class="fc">&nbsp;    return when (value) {</b>
+<b class="fc">&nbsp;        is Map&lt;*, *&gt; -&gt; {</b>
+<b class="fc">&nbsp;            val keyType = argumentTypes.getOrNull(0)</b>
+<b class="fc">&nbsp;            val valueType = argumentTypes.getOrNull(1)</b>
+<b class="fc">&nbsp;            value.all { (key, element) -&gt;</b>
+<b class="fc">&nbsp;                (keyType == null || keyType.acceptsRuntimeValue(key)) &amp;&amp;</b>
+<b class="fc">&nbsp;                    (valueType == null || valueType.acceptsRuntimeValue(element))</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        is Iterable&lt;*&gt; -&gt; argumentTypes.firstOrNull()?.let { value.all(it::acceptsRuntimeValue) } ?: true</b>
+<b class="fc">&nbsp;        is Array&lt;*&gt; -&gt; argumentTypes.firstOrNull()?.let { value.all(it::acceptsRuntimeValue) } ?: true</b>
+<b class="fc">&nbsp;        else -&gt; true</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns true only for a non-generic concrete enum KType suitable for the
+&nbsp; * generated name-to-entry metadata lookup.
+&nbsp; *
+&nbsp; * Top-level nullability is normalized only for the subtype check; generic enum
+&nbsp; * arguments remain rejected. The subtype operation is intentionally guarded so
+&nbsp; * synthetic/foreign KTypes fall back to `false` instead of being recognized by
+&nbsp; * a runtime classifier name.
+&nbsp; *
+&nbsp; * @return whether this complete KType can be keyed in generated enum metadata
+&nbsp; */
+&nbsp;internal fun KType.isConcreteEnumType(): Boolean {
+<b class="fc">&nbsp;    if (arguments.isNotEmpty()) return false</b>
+<b class="fc">&nbsp;    val normalized = try {</b>
+<b class="fc">&nbsp;        withNullability(false)</b>
+&nbsp;    } catch (_: LinkageError) {
+<b class="nc">&nbsp;        return false</b>
+&nbsp;    } catch (_: IllegalArgumentException) {
+<b class="nc">&nbsp;        return false</b>
+&nbsp;    } catch (_: ClassCastException) {
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;    return try {
+<b class="fc">&nbsp;        normalized.isSubtypeOf(typeOf&lt;Enum&lt;*&gt;&gt;())</b>
+&nbsp;    } catch (_: LinkageError) {
+<b class="nc">&nbsp;        false</b>
+&nbsp;    } catch (_: IllegalArgumentException) {
+<b class="nc">&nbsp;        false</b>
+&nbsp;    } catch (_: ClassCastException) {
+<b class="fc">&nbsp;        false</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Rejects logical containers, KPojo values and enum values that JDBC binding
+&nbsp; * must not accept implicitly. Serialized codecs must produce a scalar instead.
+&nbsp; *
+&nbsp; * @return whether this value can cross the database binding boundary directly
+&nbsp; */
+<b class="fc">&nbsp;internal fun Any.isBindableScalar(): Boolean = when (this) {</b>
+<b class="fc">&nbsp;    is KPojo, is Collection&lt;*&gt;, is Map&lt;*, *&gt;, is Sequence&lt;*&gt;, is Enum&lt;*&gt;, is Unit -&gt; false</b>
+<b class="fc">&nbsp;    is Array&lt;*&gt;, is BooleanArray, is CharArray, is DoubleArray, is FloatArray,</b>
+<b class="fc">&nbsp;    is IntArray, is LongArray, is ShortArray -&gt; false</b>
+<b class="fc">&nbsp;    else -&gt; true</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

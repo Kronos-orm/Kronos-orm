@@ -1,0 +1,241 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosAtomicBatchTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosAtomicBatchTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosAtomicBatchTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.2%
+  </span>
+  <span class="absValue">
+    (13/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.4%
+  </span>
+  <span class="absValue">
+    (27/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.8%
+  </span>
+  <span class="absValue">
+    (201/219)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
+&nbsp;import com.kotlinorm.beans.parser.ParsedSql
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.KAtomicActionTask
+&nbsp;import com.kotlinorm.interfaces.KBatchTask
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;
+&nbsp;/**
+&nbsp; * Batch execution metadata for one SQL shape and zero or more parameter maps.
+&nbsp; *
+&nbsp; * Every entry in [paramMapArr] is parsed independently with the same SQL and list-expansion
+&nbsp; * occurrence metadata. Callers must ensure all parsed entries produce a compatible JDBC SQL
+&nbsp; * shape before passing the task to a wrapper. [parsed] is intentionally unsupported because
+&nbsp; * a batch has multiple parameter sequences; use [parsedSqlArr] for lossless metadata.
+&nbsp; *
+&nbsp; * @property sql named-parameter SQL shared by every batch entry
+&nbsp; * @property paramMapArr parameter maps in execution order; `null` represents an empty batch
+&nbsp; * @property operationType action operation classification
+&nbsp; * @property statement optional structured statement that produced [sql]
+&nbsp; * @property stash mutable operation-local metadata shared with the data-source wrapper
+&nbsp; * @property generatedKeyRequest generated-key request metadata retained from the source task
+&nbsp; * @property generatedKeys raw generated values when a wrapper supports them for this batch
+&nbsp; * @property lastInsertId numeric representation of the first generated key, when available
+&nbsp; * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
+&nbsp; */
+&nbsp;data class KronosAtomicBatchTask(
+<b class="fc">&nbsp;    override val sql: String,</b>
+<b class="fc">&nbsp;    override val paramMapArr: Array&lt;Map&lt;String, Any?&gt;&gt;? = null,</b>
+<b class="fc">&nbsp;    override val operationType: KOperationType = KOperationType.UPDATE,</b>
+<b class="fc">&nbsp;    override val statement: SqlStatement? = null,</b>
+<b class="fc">&nbsp;    override val stash: MutableMap&lt;String, Any?&gt; = mutableMapOf(),</b>
+<b class="fc">&nbsp;    override var generatedKeyRequest: GeneratedKeyRequest? = null,</b>
+<b class="fc">&nbsp;    override val generatedKeys: MutableList&lt;Any?&gt; = mutableListOf(),</b>
+<b class="fc">&nbsp;    override var lastInsertId: Long? = null,</b>
+<b class="fc">&nbsp;    val listParameterOccurrences: Set&lt;Int&gt; = emptySet()</b>
+&nbsp;) : KAtomicActionTask, KBatchTask {
+&nbsp;
+&nbsp;    @Deprecated(&quot;Please use &#39;paramMapArr&#39; instead.&quot;)
+<b class="fc">&nbsp;    override val paramMap: Map&lt;String, Any?&gt; = mapOf()</b>
+&nbsp;
+&nbsp;    override fun parsed(): ParsedSql {
+<b class="fc">&nbsp;        throw UnsupportedOperationException(&quot;Please use `parsedArr()` instead of `parsed()`&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the legacy batch representation of shared JDBC SQL and ordered value arrays.
+&nbsp;     *
+&nbsp;     * @return shared JDBC SQL, or `null` for an empty batch, paired with each value array
+&nbsp;     */
+<b class="fc">&nbsp;    fun parsedArr() = parsedSqlArr().let {</b>
+<b class="pc">&nbsp;        Pair(it.firstOrNull()?.jdbcSql, it.map { parsedSql -&gt; parsedSql.jdbcParamList })</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Parses every parameter map while preserving JDBC parameter names alongside values.
+&nbsp;     *
+&nbsp;     * @return parsed statements in the same order as [paramMapArr], or an empty list
+&nbsp;     */
+&nbsp;    fun parsedSqlArr(): List&lt;ParsedSql&gt; =
+<b class="pc">&nbsp;        (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it, listParameterOccurrences) }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if this object is equal to another object.
+&nbsp;     *
+&nbsp;     * @param other the object to compare to
+&nbsp;     * @return true if the objects are equal, false otherwise
+&nbsp;     */
+&nbsp;    override fun equals(other: Any?): Boolean {
+<b class="fc">&nbsp;        if (this === other) return true</b>
+<b class="pc">&nbsp;        if (javaClass != other?.javaClass) return false</b>
+&nbsp;
+<b class="fc">&nbsp;        other as KronosAtomicBatchTask</b>
+&nbsp;
+<b class="fc">&nbsp;        if (sql != other.sql) return false</b>
+<b class="pc">&nbsp;        if (paramMapArr != null) {</b>
+<b class="pc">&nbsp;            if (other.paramMapArr == null) return false</b>
+<b class="pc">&nbsp;            if (!paramMapArr.contentEquals(other.paramMapArr)) return false</b>
+<b class="nc">&nbsp;        } else if (other.paramMapArr != null) return false</b>
+<b class="pc">&nbsp;        if (operationType != other.operationType) return false</b>
+&nbsp;
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the hash code value for the object.
+&nbsp;     *
+&nbsp;     * @return the hash code value of the object.
+&nbsp;     */
+&nbsp;    override fun hashCode(): Int {
+<b class="fc">&nbsp;        var result = sql.hashCode()</b>
+<b class="pc">&nbsp;        result = 31 * result + (paramMapArr?.contentHashCode() ?: 0)</b>
+<b class="fc">&nbsp;        result = 31 * result + operationType.hashCode()</b>
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

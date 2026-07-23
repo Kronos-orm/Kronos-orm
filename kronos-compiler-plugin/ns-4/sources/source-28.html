@@ -1,0 +1,448 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ProjectionSourceValueAccessors</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: ProjectionSourceValueAccessors (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProjectionSourceValueAccessors</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
+&nbsp;import com.kotlinorm.compiler.utils.CascadeAnnotationClassId
+&nbsp;import com.kotlinorm.compiler.utils.IgnoreAnnotationClassId
+&nbsp;import com.kotlinorm.compiler.utils.KPojoClassId
+&nbsp;import com.kotlinorm.compiler.utils.SerializeAnnotationClassId
+&nbsp;import org.jetbrains.kotlin.fir.FirSession
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirProperty
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirValueParameter
+&nbsp;import org.jetbrains.kotlin.fir.declarations.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirBlock
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirCallableReferenceAccess
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirStatement
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirThisReceiverExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
+&nbsp;import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
+&nbsp;import org.jetbrains.kotlin.fir.resolve.toClassSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.SymbolInternals
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeClassLikeType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;
+&nbsp;internal fun FirBlock.lastExpression(): FirStatement? {
+&nbsp;    val statement = statements.lastOrNull() ?: return null
+&nbsp;    return (statement as? FirReturnExpression)?.result ?: statement
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirStatement.projectionStatementOrNull(): FirStatement? {
+&nbsp;    var statement = this
+&nbsp;    while (true) {
+&nbsp;        statement = when (statement) {
+&nbsp;            is FirReturnExpression -&gt; statement.result
+&nbsp;            is FirBlock -&gt; statement.lastExpression() ?: return null
+&nbsp;            is FirWrappedExpression -&gt; statement.expression
+&nbsp;            else -&gt; return statement
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirStatement.projectionItems(): List&lt;FirStatement&gt; {
+&nbsp;    val statement = projectionStatementOrNull() ?: return emptyList()
+&nbsp;    statement.projectionCollectionItemsOrNull()?.let { return it }
+&nbsp;    return listOf(statement)
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirStatement.collectionLiteralItemsOrNull(): List&lt;FirStatement&gt;? {
+&nbsp;    val statement = projectionStatementOrNull() ?: return null
+&nbsp;    return statement.projectionCollectionItemsOrNull()
+&nbsp;}
+&nbsp;
+&nbsp;private fun FirStatement.projectionCollectionItemsOrNull(): List&lt;FirStatement&gt;? =
+&nbsp;    when (this) {
+&nbsp;        is FirCollectionLiteral -&gt; argumentList.arguments
+&nbsp;        is FirFunctionCall -&gt; {
+&nbsp;            if (calleeReference.name.asString() !in DslCollectionFunctionNames) return null
+&nbsp;            val arguments = argumentList.arguments
+&nbsp;            arguments.singleVarargArgumentsOrNull() ?: arguments
+&nbsp;        }
+&nbsp;        else -&gt; null
+&nbsp;    }
+&nbsp;
+&nbsp;internal fun FirStatement.stringLiteralValue(): String? {
+&nbsp;    val literal = projectionStatementOrNull() as? FirLiteralExpression ?: return null
+&nbsp;    return literal.value as? String
+&nbsp;}
+&nbsp;
+&nbsp;private fun List&lt;FirStatement&gt;.singleVarargArgumentsOrNull(): List&lt;FirStatement&gt;? =
+&nbsp;    (singleOrNull() as? FirVarargArgumentsExpression)?.arguments
+&nbsp;
+&nbsp;private val ImplicitItName = Name.identifier(&quot;it&quot;)
+&nbsp;
+<b class="fc">&nbsp;internal data class ProjectionSourceValueAccessors(</b>
+<b class="fc">&nbsp;    val names: Set&lt;Name&gt;,</b>
+<b class="fc">&nbsp;    val symbols: Set&lt;FirValueParameterSymbol&gt;</b>
+&nbsp;)
+&nbsp;
+&nbsp;internal fun List&lt;FirValueParameter&gt;.projectionSourceValueAccessors(): ProjectionSourceValueAccessors {
+&nbsp;    val names = mapTo(linkedSetOf()) { it.name }.apply {
+&nbsp;        if (isEmpty()) add(ImplicitItName)
+&nbsp;    }
+&nbsp;    val symbols = mapTo(linkedSetOf()) { it.symbol }
+&nbsp;    return ProjectionSourceValueAccessors(names, symbols)
+&nbsp;}
+&nbsp;
+&nbsp;internal fun ConeKotlinType?.hasSameClassIdAs(other: ConeKotlinType): Boolean {
+&nbsp;    val thisClass = this as? ConeClassLikeType ?: return false
+&nbsp;    val otherClass = other as? ConeClassLikeType ?: return false
+&nbsp;    return thisClass.lookupTag.classId == otherClass.lookupTag.classId
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnresolvedExpressionTypeAccess::class, SymbolInternals::class)
+&nbsp;internal fun FirPropertyAccessExpression.resolvedProjectionAccessType(): ConeKotlinType? {
+&nbsp;    coneTypeOrNull?.let { return it }
+&nbsp;    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirVariableSymbol&lt;*&gt;
+&nbsp;    return (symbol?.fir?.returnTypeRef as? FirResolvedTypeRef)?.coneType
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirPropertyAccessExpression.isProjectionSourceValueParameter(
+&nbsp;    sourceValues: ProjectionSourceValueAccessors
+&nbsp;): Boolean {
+&nbsp;    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol
+&nbsp;    if (symbol == null) return calleeReference.name in sourceValues.names
+&nbsp;    return symbol is FirValueParameterSymbol &amp;&amp;
+&nbsp;        (sourceValues.symbols.isEmpty() || symbol in sourceValues.symbols)
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirPropertyAccessExpression.isProjectionSourceValueAccess(
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    sourceValues: ProjectionSourceValueAccessors,
+&nbsp;    resolvedType: ConeKotlinType?
+&nbsp;): Boolean {
+&nbsp;    if (!isProjectionSourceValueParameter(sourceValues)) return false
+&nbsp;    return (resolvedType ?: resolvedProjectionAccessType())?.hasSameClassIdAs(sourceType) != false
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirStatement.excludedProjectionSourceFieldNames(
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    sourceFieldNames: Set&lt;String&gt;,
+&nbsp;    sourceValues: ProjectionSourceValueAccessors,
+&nbsp;    resolvedType: (FirStatement) -&gt; ConeKotlinType?
+&nbsp;): Set&lt;String&gt;? {
+&nbsp;    val statement = projectionStatementOrNull() ?: return null
+&nbsp;    statement.collectionLiteralItemsOrNull()?.let { items -&gt;
+&nbsp;        val excludedNames = linkedSetOf&lt;String&gt;()
+&nbsp;        items.forEach { item -&gt;
+&nbsp;            excludedNames += item.excludedProjectionSourceFieldNames(
+&nbsp;                sourceType,
+&nbsp;                sourceFieldNames,
+&nbsp;                sourceValues,
+&nbsp;                resolvedType
+&nbsp;            ) ?: return null
+&nbsp;        }
+&nbsp;        return excludedNames
+&nbsp;    }
+&nbsp;    val propertyName = when (statement) {
+&nbsp;        is FirPropertyAccessExpression -&gt; statement.sourcePropertyName(sourceType, sourceValues, resolvedType)
+&nbsp;        is FirCallableReferenceAccess -&gt; statement.sourcePropertyName(sourceType)
+&nbsp;        else -&gt; null
+&nbsp;    } ?: return null
+&nbsp;    return if (propertyName in sourceFieldNames) setOf(propertyName) else emptySet()
+&nbsp;}
+&nbsp;
+&nbsp;private fun FirPropertyAccessExpression.sourcePropertyName(
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    sourceValues: ProjectionSourceValueAccessors,
+&nbsp;    resolvedType: (FirStatement) -&gt; ConeKotlinType?
+&nbsp;): String? =
+&nbsp;    resolvedSourcePropertyName(sourceType, calleeReference.name)
+&nbsp;        ?: calleeReference.name.asString().takeIf {
+&nbsp;            listOfNotNull(explicitReceiver, extensionReceiver, dispatchReceiver)
+&nbsp;                .filterIsInstance&lt;FirStatement&gt;()
+&nbsp;                .any { receiver -&gt;
+&nbsp;                    val sourceAccess = receiver.projectionStatementOrNull() as? FirPropertyAccessExpression
+&nbsp;                    sourceAccess?.isProjectionSourceValueAccess(
+&nbsp;                        sourceType,
+&nbsp;                        sourceValues,
+&nbsp;                        resolvedType(sourceAccess)
+&nbsp;                    ) == true
+&nbsp;                }
+&nbsp;        }
+&nbsp;
+&nbsp;private fun FirCallableReferenceAccess.sourcePropertyName(sourceType: ConeKotlinType): String? =
+&nbsp;    resolvedSourcePropertyName(sourceType, calleeReference.name)
+&nbsp;
+&nbsp;private fun org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression.resolvedSourcePropertyName(
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    name: Name
+&nbsp;): String? {
+&nbsp;    val sourceClassId = (sourceType as? ConeClassLikeType)?.lookupTag?.classId ?: return null
+&nbsp;    val symbol = (calleeReference as? FirResolvedNamedReference)?.resolvedSymbol as? FirPropertySymbol
+&nbsp;        ?: return null
+&nbsp;    return name.asString().takeIf { symbol.callableId?.classId == sourceClassId }
+&nbsp;}
+&nbsp;
+&nbsp;internal fun FirFunctionCall.sourceMinusExcludedProjectionFieldNames(
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    sourceFieldNames: Set&lt;String&gt;,
+&nbsp;    sourceValues: ProjectionSourceValueAccessors,
+&nbsp;    resolvedType: (FirStatement) -&gt; ConeKotlinType?
+&nbsp;): Set&lt;String&gt;? {
+&nbsp;    if (calleeReference.name.asString() != &quot;minus&quot;) return null
+&nbsp;    val match = sourceMinusReceiverMatch(sourceType, sourceFieldNames, sourceValues, resolvedType)
+&nbsp;        ?: return null
+&nbsp;    val excludedNames = match.excludedNames
+&nbsp;    sourceMinusExcludedOperands(match.receiver, sourceType, sourceValues, resolvedType).forEach { argument -&gt;
+&nbsp;        val names = argument.excludedProjectionSourceFieldNames(
+&nbsp;            sourceType,
+&nbsp;            sourceFieldNames,
+&nbsp;            sourceValues,
+&nbsp;            resolvedType
+&nbsp;        )
+&nbsp;        excludedNames += names ?: return null
+&nbsp;    }
+&nbsp;    return excludedNames
+&nbsp;}
+&nbsp;
+&nbsp;private fun FirFunctionCall.sourceMinusReceiverMatch(
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    sourceFieldNames: Set&lt;String&gt;,
+&nbsp;    sourceValues: ProjectionSourceValueAccessors,
+&nbsp;    resolvedType: (FirStatement) -&gt; ConeKotlinType?
+&nbsp;): SourceMinusReceiverMatch? {
+&nbsp;    return sourceMinusReceiverCandidates().firstNotNullOfOrNull { candidate -&gt;
+&nbsp;        when (val receiver = candidate.projectionStatementOrNull()) {
+&nbsp;            is FirPropertyAccessExpression -&gt; {
+&nbsp;                if (!receiver.isProjectionSourceValueAccess(sourceType, sourceValues, resolvedType(receiver))) {
+&nbsp;                    null
+&nbsp;                } else {
+&nbsp;                    SourceMinusReceiverMatch(candidate, linkedSetOf())
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            is FirFunctionCall -&gt; receiver.sourceMinusExcludedProjectionFieldNames(
+&nbsp;                sourceType,
+&nbsp;                sourceFieldNames,
+&nbsp;                sourceValues,
+&nbsp;                resolvedType
+&nbsp;            )?.toCollection(linkedSetOf())?.let { excludedNames -&gt;
+&nbsp;                SourceMinusReceiverMatch(candidate, excludedNames)
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; null
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun FirFunctionCall.sourceMinusReceiverCandidates(): List&lt;FirStatement&gt; =
+&nbsp;    listOfNotNull(explicitReceiver, extensionReceiver, dispatchReceiver)
+&nbsp;        .filterIsInstance&lt;FirStatement&gt;()
+&nbsp;
+&nbsp;private fun FirFunctionCall.sourceMinusExcludedOperands(
+&nbsp;    sourceReceiver: FirStatement,
+&nbsp;    sourceType: ConeKotlinType,
+&nbsp;    sourceValues: ProjectionSourceValueAccessors,
+&nbsp;    resolvedType: (FirStatement) -&gt; ConeKotlinType?
+&nbsp;): List&lt;FirStatement&gt; {
+&nbsp;    val receiverStatement = sourceReceiver.projectionStatementOrNull()
+&nbsp;    return (argumentList.arguments + sourceMinusReceiverCandidates()).filter { candidate -&gt;
+&nbsp;        if (candidate === sourceReceiver || candidate.projectionStatementOrNull() === receiverStatement) {
+&nbsp;            return@filter false
+&nbsp;        }
+&nbsp;        if (candidate.projectionStatementOrNull() is FirThisReceiverExpression) return@filter false
+&nbsp;        val propertyAccess = candidate.projectionStatementOrNull() as? FirPropertyAccessExpression
+&nbsp;        val resolvedAccessType = propertyAccess?.let(resolvedType)
+&nbsp;        val isSourceValue = propertyAccess?.isProjectionSourceValueAccess(
+&nbsp;            sourceType,
+&nbsp;            sourceValues,
+&nbsp;            resolvedAccessType
+&nbsp;        ) == true || propertyAccess?.let { access -&gt;
+&nbsp;            access.calleeReference.name in sourceValues.names &amp;&amp;
+&nbsp;                (resolvedAccessType ?: access.resolvedProjectionAccessType())?.hasSameClassIdAs(sourceType) != false
+&nbsp;        } == true
+&nbsp;        !isSourceValue
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private data class SourceMinusReceiverMatch(
+&nbsp;    val receiver: FirStatement,
+&nbsp;    val excludedNames: LinkedHashSet&lt;String&gt;
+&nbsp;)
+&nbsp;
+&nbsp;internal fun FirProperty.isKronosColumn(session: FirSession): Boolean {
+&nbsp;    if (hasAnnotation(IgnoreAnnotationClassId, session)) return false
+&nbsp;    if (hasAnnotation(CascadeAnnotationClassId, session)) return false
+&nbsp;    if (hasAnnotation(SerializeAnnotationClassId, session)) return true
+&nbsp;    val propertyType = (returnTypeRef as? FirResolvedTypeRef)?.coneType ?: return false
+&nbsp;    if (propertyType.isKPojoLikeType(session)) return false
+&nbsp;    return propertyType.typeArguments.none { projection -&gt;
+&nbsp;        (projection as? ConeKotlinTypeProjection)?.type?.isKPojoLikeType(session) == true
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks this type and its recursively declared FIR supertypes for [KPojoClassId].
+&nbsp; * Visited class IDs prevent cycles and repeated traversal of shared supertype graphs.
+&nbsp; *
+&nbsp; * @receiver the type whose resolved class hierarchy is inspected
+&nbsp; * @param session the FIR session used to resolve class-like symbols
+&nbsp; * @return `true` when this type is KPojo-like, otherwise `false`
+&nbsp; */
+&nbsp;internal fun ConeKotlinType.isKPojoLikeType(session: FirSession): Boolean =
+&nbsp;    isKPojoLikeType(session, mutableSetOf())
+&nbsp;
+&nbsp;@OptIn(SymbolInternals::class)
+&nbsp;private fun ConeKotlinType.isKPojoLikeType(
+&nbsp;    session: FirSession,
+&nbsp;    visitedClassIds: MutableSet&lt;ClassId&gt;
+&nbsp;): Boolean {
+&nbsp;    val classLike = this as? ConeClassLikeType ?: return false
+&nbsp;    val classId = classLike.lookupTag.classId
+&nbsp;    if (classId == KPojoClassId) return true
+&nbsp;    if (!visitedClassIds.add(classId)) return false
+&nbsp;    val symbol = classLike.toClassSymbol(session) ?: return false
+&nbsp;    return symbol.fir.superTypeRefs
+&nbsp;        .mapNotNull { ref -&gt; (ref as? FirResolvedTypeRef)?.coneType as? ConeClassLikeType }
+&nbsp;        .any { superType -&gt; superType.isKPojoLikeType(session, visitedClassIds) }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

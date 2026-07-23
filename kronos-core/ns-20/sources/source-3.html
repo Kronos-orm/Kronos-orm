@@ -1,0 +1,244 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UpdatePlanner</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.update</a>
+</div>
+
+<h1>Coverage Summary for Class: UpdatePlanner (com.kotlinorm.orm.update)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UpdatePlanner</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.9%
+  </span>
+  <span class="absValue">
+    (20/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.3%
+  </span>
+  <span class="absValue">
+    (59/60)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.4%
+  </span>
+  <span class="absValue">
+    (414/425)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.update
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.sql.toSqlExpr
+&nbsp;import com.kotlinorm.orm.statement.OrmContext
+&nbsp;import com.kotlinorm.orm.statement.ParameterSource
+&nbsp;import com.kotlinorm.syntax.SqlIdentifier
+&nbsp;import com.kotlinorm.syntax.expr.SqlBinaryOperator
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.statement.SqlAssignmentTarget
+&nbsp;import com.kotlinorm.syntax.statement.SqlDmlStatement
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.utils.databaseBooleanLiteral
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.codec.PreparedValue
+&nbsp;import com.kotlinorm.utils.codec.PreparedValueKind
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+<b class="fc">&nbsp;internal class UpdatePlanner&lt;T : KPojo&gt;(</b>
+<b class="fc">&nbsp;    private val context: OrmContext&lt;T&gt;</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private val createTimeStrategy = context.createTimeStrategy</b>
+<b class="fc">&nbsp;    private val updateTimeStrategy = context.updateTimeStrategy</b>
+<b class="fc">&nbsp;    private val logicDeleteStrategy = context.logicDeleteStrategy</b>
+<b class="fc">&nbsp;    private val optimisticStrategy = context.optimisticLockStrategy</b>
+&nbsp;
+&nbsp;    fun plan(dataSource: KronosDataSourceWrapper): SqlDmlStatement.Update {
+<b class="fc">&nbsp;        ensureDefaultAssignments()</b>
+<b class="fc">&nbsp;        applyStrategies(dataSource)</b>
+<b class="fc">&nbsp;        return SqlDmlStatement.Update(</b>
+<b class="fc">&nbsp;            table = SqlTable.Ident(</b>
+<b class="fc">&nbsp;                name = context.tableName,</b>
+<b class="fc">&nbsp;                identifier = SqlIdentifier.of(context.tableName)</b>
+&nbsp;            ),
+<b class="fc">&nbsp;            setPairs = context.setPairs,</b>
+<b class="fc">&nbsp;            where = context.where</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ensureDefaultAssignments() {
+<b class="fc">&nbsp;        if (context.setPairs.isNotEmpty()) return</b>
+<b class="fc">&nbsp;        context.allFields.filter { it.isColumn }.forEach { field -&gt;</b>
+<b class="fc">&nbsp;            val parameterName = &quot;${field.name}New&quot;</b>
+<b class="fc">&nbsp;            context.bind(parameterName, context.sourceValues[field.name], field, ParameterSource.Assignment)</b>
+<b class="fc">&nbsp;            context.set(field, SqlExpr.Parameter(SqlParameter.Named(parameterName)))</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun applyStrategies(dataSource: KronosDataSourceWrapper) {
+<b class="pc">&nbsp;        createTimeStrategy?.field?.let { field -&gt;</b>
+<b class="fc">&nbsp;            context.removeSetPair(field.columnName)</b>
+<b class="fc">&nbsp;            context.parameterBindings.remove(&quot;${field.name}New&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        updateTimeStrategy?.execute(true) { field, value -&gt;</b>
+<b class="fc">&nbsp;            val parameterName = &quot;${field.name}New&quot;</b>
+<b class="fc">&nbsp;            context.bind(parameterName, value, field, ParameterSource.Strategy)</b>
+<b class="fc">&nbsp;            context.set(field, SqlExpr.Parameter(SqlParameter.Named(parameterName)))</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (context.logicEnabled != false) {</b>
+<b class="fc">&nbsp;            logicDeleteStrategy?.execute(defaultValue = false) { field, _ -&gt;</b>
+<b class="fc">&nbsp;                context.removeSetPair(field.columnName)</b>
+<b class="fc">&nbsp;                context.parameterBindings.remove(&quot;${field.name}New&quot;)</b>
+<b class="fc">&nbsp;                context.andWhere(</b>
+<b class="fc">&nbsp;                    SqlExpr.Binary(</b>
+<b class="fc">&nbsp;                        field.toSqlExpr(false),</b>
+<b class="fc">&nbsp;                        SqlBinaryOperator.Equal,</b>
+<b class="fc">&nbsp;                        databaseBooleanLiteral(dataSource, field, false)</b>
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;        } else if (context.restoreLogicDeleteOnUpdate) {</b>
+<b class="pc">&nbsp;            logicDeleteStrategy?.execute(defaultValue = false) { field, _ -&gt;</b>
+<b class="fc">&nbsp;                val parameterName = &quot;${field.name}New&quot;</b>
+<b class="fc">&nbsp;                context.bind(parameterName, false, field, ParameterSource.Strategy)</b>
+<b class="fc">&nbsp;                context.set(field, SqlExpr.Parameter(SqlParameter.Named(parameterName)))</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        optimisticStrategy?.execute { field, _ -&gt;</b>
+<b class="fc">&nbsp;            val targetName = SqlIdentifier.of(field.columnName).canonical</b>
+<b class="pc">&nbsp;            if (context.setPairs.any { (it.target as? SqlAssignmentTarget.Column)?.identifier?.canonical == targetName }) {</b>
+<b class="nc">&nbsp;                throw IllegalArgumentException(&quot;The version field cannot be updated manually.&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val parameterName = &quot;${field.name}2PlusNew&quot;</b>
+<b class="fc">&nbsp;            context.bind(</b>
+<b class="fc">&nbsp;                parameterName,</b>
+<b class="fc">&nbsp;                PreparedValue(</b>
+<b class="fc">&nbsp;                    value = 1,</b>
+<b class="fc">&nbsp;                    sourceType = typeOf&lt;Int&gt;(),</b>
+<b class="fc">&nbsp;                    kind = PreparedValueKind.READY_DATABASE_VALUE</b>
+&nbsp;                ),
+<b class="fc">&nbsp;                field,</b>
+<b class="fc">&nbsp;                ParameterSource.Strategy</b>
+&nbsp;            )
+<b class="fc">&nbsp;            context.set(</b>
+<b class="fc">&nbsp;                field,</b>
+<b class="fc">&nbsp;                SqlExpr.Binary(</b>
+<b class="fc">&nbsp;                    field.toSqlExpr(false),</b>
+<b class="fc">&nbsp;                    SqlBinaryOperator.Plus,</b>
+<b class="fc">&nbsp;                    SqlExpr.Parameter(SqlParameter.Named(parameterName))</b>
+&nbsp;                )
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,307 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlQuery</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.statement</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlQuery (com.kotlinorm.syntax.statement)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+  <tr>
+    <td class="name">SqlQuery$Select</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (77/77)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlQuery$Set</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (36/36)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlQuery$Values</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (48/48)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlQuery$With</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (40/40)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (3/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (30/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (201/201)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.statement
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.group.SqlGroup
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.order.SqlOrderingItem
+&nbsp;import com.kotlinorm.syntax.quantifier.SqlQuantifier
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlWindowItem
+&nbsp;
+&nbsp;sealed interface SqlQuery : SqlStatement {
+&nbsp;    val lock: SqlLock?
+&nbsp;
+&nbsp;    data class Select(
+<b class="fc">&nbsp;        val quantifier: SqlQuantifier? = null,</b>
+<b class="fc">&nbsp;        val select: List&lt;SqlSelectItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;        val from: List&lt;SqlTable&gt; = emptyList(),</b>
+<b class="fc">&nbsp;        val where: SqlExpr? = null,</b>
+<b class="fc">&nbsp;        val groupBy: SqlGroup? = null,</b>
+<b class="fc">&nbsp;        val having: SqlExpr? = null,</b>
+<b class="fc">&nbsp;        val window: List&lt;SqlWindowItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;        val qualify: SqlExpr? = null,</b>
+<b class="fc">&nbsp;        val orderBy: List&lt;SqlOrderingItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;        val limit: SqlLimit? = null,</b>
+<b class="fc">&nbsp;        override val lock: SqlLock? = null</b>
+&nbsp;    ) : SqlQuery
+&nbsp;
+&nbsp;    data class Set(
+<b class="fc">&nbsp;        val left: SqlQuery,</b>
+<b class="fc">&nbsp;        val operator: SqlSetOperator,</b>
+<b class="fc">&nbsp;        val right: SqlQuery,</b>
+<b class="fc">&nbsp;        val orderBy: List&lt;SqlOrderingItem&gt; = emptyList(),</b>
+<b class="fc">&nbsp;        val limit: SqlLimit? = null,</b>
+<b class="fc">&nbsp;        override val lock: SqlLock? = null</b>
+&nbsp;    ) : SqlQuery
+&nbsp;
+&nbsp;    data class Values(
+<b class="fc">&nbsp;        val values: List&lt;List&lt;SqlExpr&gt;&gt;,</b>
+<b class="fc">&nbsp;        override val lock: SqlLock? = null</b>
+&nbsp;    ) : SqlQuery {
+<b class="fc">&nbsp;        init {</b>
+<b class="pc">&nbsp;            require(values.isNotEmpty()) { &quot;VALUES query requires at least one row.&quot; }</b>
+<b class="pc">&nbsp;            require(values.all { it.isNotEmpty() }) { &quot;VALUES query rows must not be empty.&quot; }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    data class With(
+<b class="fc">&nbsp;        val withRecursive: Boolean = false,</b>
+<b class="fc">&nbsp;        val withItems: List&lt;SqlWithItem&gt;,</b>
+<b class="fc">&nbsp;        val query: SqlQuery,</b>
+<b class="fc">&nbsp;        override val lock: SqlLock? = null</b>
+&nbsp;    ) : SqlQuery {
+<b class="fc">&nbsp;        init {</b>
+<b class="pc">&nbsp;            require(withItems.isNotEmpty()) { &quot;WITH query requires at least one item.&quot; }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

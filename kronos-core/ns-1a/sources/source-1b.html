@@ -1,0 +1,444 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > JoinedSelectQuery</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.join</a>
+</div>
+
+<h1>Coverage Summary for Class: JoinedSelectQuery (com.kotlinorm.orm.join)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">JoinedSelectQuery</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (54/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.7%
+  </span>
+  <span class="absValue">
+    (32/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.4%
+  </span>
+  <span class="absValue">
+    (168/169)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.4%
+  </span>
+  <span class="absValue">
+    (936/971)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.orm.join
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSort
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.database.SqlManager.renderStatement
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.functions.KronosFunctionExpressions.withQualifiedFieldArgs
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.cascade.CascadeJoinClause
+&nbsp;import com.kotlinorm.orm.pagination.Cursor
+&nbsp;import com.kotlinorm.orm.pagination.CursorPageField
+&nbsp;import com.kotlinorm.orm.pagination.CursorPageQuery
+&nbsp;import com.kotlinorm.orm.pagination.CursorSpec
+&nbsp;import com.kotlinorm.orm.pagination.OffsetPageQuery
+&nbsp;import com.kotlinorm.orm.pagination.checkedCursorFetchSize
+&nbsp;import com.kotlinorm.orm.pagination.checkedPageOffset
+&nbsp;import com.kotlinorm.orm.sql.SqlQueryPlan
+&nbsp;import com.kotlinorm.orm.sql.toSqlParameterEq
+&nbsp;import com.kotlinorm.syntax.limit.SqlLimit
+&nbsp;import com.kotlinorm.syntax.statement.SqlLock
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.types.ToSort
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.toLinkedSet
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;class JoinedSelectQuery&lt;Source : KPojo, Selected : KPojo, Context : KPojo&gt; @PublishedApi internal constructor(
+<b class="fc">&nbsp;    @PublishedApi internal val state: JoinSourceState&lt;Source&gt;,</b>
+&nbsp;    projectionType: KType,
+&nbsp;    nullableProjectionType: KType,
+&nbsp;    contextPojo: Context,
+<b class="fc">&nbsp;    fields: ToSelect&lt;Source, Any?&gt; = null</b>
+<b class="fc">&nbsp;) : KSelectable&lt;Selected&gt;(state.root), JoinResult {</b>
+<b class="fc">&nbsp;    override val pojo: Source = state.root</b>
+<b class="fc">&nbsp;    override val selectedType: KType = projectionType</b>
+<b class="fc">&nbsp;    override val nullableSelectedType: KType = nullableProjectionType</b>
+<b class="fc">&nbsp;    internal val context = JoinedSelectContext&lt;Source, Selected, Context&gt;(</b>
+<b class="fc">&nbsp;        state,</b>
+<b class="fc">&nbsp;        contextPojo,</b>
+<b class="fc">&nbsp;        projectionType,</b>
+<b class="fc">&nbsp;        nullableProjectionType</b>
+&nbsp;    )
+<b class="fc">&nbsp;    private val planner = JoinedSelectPlanner(context)</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        if (fields != null) {</b>
+<b class="fc">&nbsp;            context.withSourceScope {</b>
+<b class="fc">&nbsp;                pojo.afterSelect {</b>
+<b class="fc">&nbsp;                    withQualifiedFieldArgs { fields.invoke(this@afterSelect, pojo) }</b>
+<b class="pc">&nbsp;                    if (this.fields.isEmpty() &amp;&amp; selectItems.isEmpty()) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;                    context.registerProjectionItems(projectionItems.toList(), this.fields)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan =
+<b class="fc">&nbsp;        planner.plan(wrapper.orDefault())</b>
+&nbsp;
+&nbsp;    internal override fun buildTotalCountTask(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="fc">&nbsp;        val plan = planner.planTotalCount(dataSource)</b>
+<b class="fc">&nbsp;        val rendered = renderStatement(</b>
+<b class="fc">&nbsp;            dataSource,</b>
+<b class="fc">&nbsp;            plan.query,</b>
+<b class="fc">&nbsp;            plan.parameters,</b>
+<b class="fc">&nbsp;            context.fieldsMap() + plan.parameterFields</b>
+&nbsp;        )
+<b class="fc">&nbsp;        return KronosQueryTask(</b>
+<b class="fc">&nbsp;            KronosAtomicQueryTask(</b>
+<b class="fc">&nbsp;                sql = rendered.sql,</b>
+<b class="fc">&nbsp;                paramMap = rendered.parameters,</b>
+<b class="fc">&nbsp;                operationType = KOperationType.SELECT,</b>
+<b class="fc">&nbsp;                statement = plan.query,</b>
+<b class="fc">&nbsp;                targetType = typeOf&lt;Int&gt;(),</b>
+<b class="fc">&nbsp;                listParameterOccurrences = rendered.listParameterOccurrences</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun single(): JoinedSelectQuery&lt;Source, Selected, Context&gt; = limit(1)</b>
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal override fun prepareFirstResult() {
+<b class="fc">&nbsp;        limit(1)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun limit(capacity: Int): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        context.limit = if (capacity &gt;= 0) SqlLimit.limit(capacity) else null</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun db(vararg databaseOfSources: Pair&lt;KPojo, String&gt;): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        databaseOfSources.forEach { (source, database) -&gt; context.setDatabase(source, database) }</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun orderBy(fields: ToSort&lt;Context, Any?&gt;): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        fields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.withSourceScope {</b>
+<b class="fc">&nbsp;            context.receiverPojo.afterSort {</b>
+<b class="fc">&nbsp;                withQualifiedFieldArgs { fields.invoke(this@afterSort, context.receiverPojo) }</b>
+<b class="fc">&nbsp;                context.orderByItems = sortedItems.toList()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun groupBy(fields: ToSelect&lt;Source, Any?&gt;): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        fields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.withSourceScope {</b>
+<b class="fc">&nbsp;            pojo.afterSelect {</b>
+<b class="fc">&nbsp;                withQualifiedFieldArgs { fields.invoke(this@afterSelect, pojo) }</b>
+<b class="pc">&nbsp;                if (this.fields.isEmpty()) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;                context.groupByFields = this.fields.toLinkedSet()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun distinct(): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        context.distinct = true</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun applyOffsetPage(offset: Int, pageSize: Int) {
+<b class="fc">&nbsp;        context.limit = SqlLimit.limit(pageSize, offset)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun page(pageIndex: Int, pageSize: Int): OffsetPageQuery&lt;Selected&gt; {
+<b class="pc">&nbsp;        require(pageIndex &gt; 0) { &quot;Page index must be greater than zero.&quot; }</b>
+<b class="pc">&nbsp;        require(pageSize &gt; 0) { &quot;Page size must be greater than zero.&quot; }</b>
+<b class="fc">&nbsp;        val offset = checkedPageOffset(pageIndex, pageSize)</b>
+<b class="fc">&nbsp;        val query = paginationSnapshot()</b>
+<b class="fc">&nbsp;        query.applyOffsetPage(offset, pageSize)</b>
+<b class="fc">&nbsp;        return OffsetPageQuery(query, pageIndex, pageSize)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun cursor(pageSize: Int, after: Cursor? = null): CursorPageQuery&lt;Selected&gt; {</b>
+<b class="pc">&nbsp;        require(pageSize &gt; 0) { &quot;Page size must be greater than zero.&quot; }</b>
+<b class="fc">&nbsp;        val fetchSize = checkedCursorFetchSize(pageSize)</b>
+<b class="fc">&nbsp;        val query = paginationSnapshot()</b>
+<b class="fc">&nbsp;        query.context.cursorSpec = CursorSpec(after, pageSize)</b>
+<b class="fc">&nbsp;        query.context.prepareCursorOrder()</b>
+<b class="fc">&nbsp;        query.context.limit = SqlLimit.limit(fetchSize)</b>
+<b class="fc">&nbsp;        val fields = query.context.orderByItems.map { item -&gt;</b>
+<b class="pc">&nbsp;            require(item is KTableForSort.SortItem.FieldItem) {</b>
+<b class="nc">&nbsp;                &quot;Cursor pagination requires field-based orderBy items.&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val resultLabel = query.context.cursorValueLabel(item.field)</b>
+<b class="fc">&nbsp;            CursorPageField(</b>
+<b class="fc">&nbsp;                name = item.field.name,</b>
+<b class="fc">&nbsp;                key = query.context.cursorKey(item.field),</b>
+<b class="fc">&nbsp;                resultLabel = resultLabel,</b>
+<b class="fc">&nbsp;                hidden = query.context.cursorOnlySelectFields.any { (_, label) -&gt; label == resultLabel }</b>
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return CursorPageQuery(query, pageSize, fields)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun paginationSnapshot(): JoinedSelectQuery&lt;Source, Selected, Context&gt; =
+<b class="fc">&nbsp;        JoinedSelectQuery&lt;Source, Selected, Context&gt;(</b>
+<b class="fc">&nbsp;            state = state,</b>
+<b class="fc">&nbsp;            projectionType = selectedType,</b>
+<b class="fc">&nbsp;            nullableProjectionType = nullableSelectedType,</b>
+<b class="fc">&nbsp;            contextPojo = context.receiverPojo</b>
+<b class="fc">&nbsp;        ).also { snapshot -&gt; snapshot.context.copyStateFrom(context) }</b>
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        context.cascadeEnabled = enabled</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(fields: ToReference&lt;Source, Any?&gt;): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="pc">&nbsp;        fields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.cascadeEnabled = true</b>
+<b class="fc">&nbsp;        context.withSourceScope {</b>
+<b class="fc">&nbsp;            pojo.afterReference {</b>
+<b class="fc">&nbsp;                fields.invoke(this@afterReference, pojo)</b>
+<b class="fc">&nbsp;                if (this.fields.isEmpty()) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;                context.cascadeAllowed = this.fields.toSet()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun by(fields: ToSelect&lt;Source, Any?&gt;): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        fields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.withSourceScope {</b>
+<b class="fc">&nbsp;            pojo.afterSelect {</b>
+<b class="fc">&nbsp;                fields.invoke(this@afterSelect, pojo)</b>
+<b class="pc">&nbsp;                if (this.fields.isEmpty()) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;                val expressions = this.fields.map { field -&gt;</b>
+<b class="fc">&nbsp;                    val parameterName = context.bindParameter(field.name, context.sourceValue(field), field)</b>
+<b class="fc">&nbsp;                    field.toSqlParameterEq(parameterName, useTableAlias = true)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                context.andWhere(context.andAll(expressions))</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun where(condition: ToFilter&lt;Source, Boolean?&gt;? = null): JoinedSelectQuery&lt;Source, Selected, Context&gt; {</b>
+<b class="fc">&nbsp;        if (condition == null) return this</b>
+<b class="fc">&nbsp;        context.withSourceScope {</b>
+<b class="fc">&nbsp;            pojo.afterFilter {</b>
+<b class="fc">&nbsp;                sourceValues = context.sourceValues</b>
+<b class="fc">&nbsp;                operationType = context.operationType</b>
+<b class="fc">&nbsp;                withQualifiedFieldArgs { condition.invoke(this@afterFilter, pojo) }</b>
+<b class="fc">&nbsp;                context.andWhere(sqlExpr, parameterValues, parameterFields)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun having(condition: ToFilter&lt;Source, Boolean?&gt;? = null): JoinedSelectQuery&lt;Source, Selected, Context&gt; {</b>
+<b class="fc">&nbsp;        condition ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        context.withSourceScope {</b>
+<b class="fc">&nbsp;            pojo.afterFilter {</b>
+<b class="fc">&nbsp;                sourceValues = context.sourceValues</b>
+<b class="fc">&nbsp;                operationType = context.operationType</b>
+<b class="fc">&nbsp;                withQualifiedFieldArgs { condition.invoke(this@afterFilter, pojo) }</b>
+<b class="fc">&nbsp;                context.andHaving(sqlExpr, parameterValues, parameterFields)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): JoinedSelectQuery&lt;Source, Selected, Context&gt; {
+<b class="fc">&nbsp;        context.sourceValues.putAll(pairs)</b>
+<b class="fc">&nbsp;        context.patchValues.putAll(pairs)</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun lock(lock: SqlLock? = SqlLock.Update()): JoinedSelectQuery&lt;Source, Selected, Context&gt; {</b>
+<b class="fc">&nbsp;        context.lock = lock</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="fc">&nbsp;        val plan = toSqlQueryPlan(dataSource)</b>
+<b class="fc">&nbsp;        val rendered = renderStatement(</b>
+<b class="fc">&nbsp;            dataSource,</b>
+<b class="fc">&nbsp;            plan.query,</b>
+<b class="fc">&nbsp;            plan.parameters,</b>
+<b class="fc">&nbsp;            context.fieldsMap() + plan.parameterFields</b>
+&nbsp;        )
+<b class="fc">&nbsp;        val resultFieldsByLabel = if (context.selectAll) {</b>
+<b class="fc">&nbsp;            context.allFields.associateBy { it.name }</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            context.selectedFieldsByOutputName</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return CascadeJoinClause.build(</b>
+<b class="fc">&nbsp;            context.cascadeEnabled,</b>
+<b class="fc">&nbsp;            context.cascadeAllowed,</b>
+<b class="fc">&nbsp;            context.listOfPojo,</b>
+<b class="fc">&nbsp;            KronosAtomicQueryTask(</b>
+<b class="fc">&nbsp;                sql = rendered.sql,</b>
+<b class="fc">&nbsp;                paramMap = rendered.parameters,</b>
+<b class="fc">&nbsp;                operationType = KOperationType.SELECT,</b>
+<b class="fc">&nbsp;                statement = plan.query,</b>
+<b class="fc">&nbsp;                targetType = selectedType,</b>
+<b class="fc">&nbsp;                resultColumns = resultColumns(resultFieldsByLabel),</b>
+<b class="fc">&nbsp;                listParameterOccurrences = rendered.listParameterOccurrences</b>
+&nbsp;            ),
+<b class="fc">&nbsp;            context.operationType,</b>
+<b class="fc">&nbsp;            resultFieldsByLabel.toMutableMap(),</b>
+<b class="pc">&nbsp;            context.cascadeSelectedProps ?: emptySet()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any?&gt;&gt; =</b>
+<b class="fc">&nbsp;        build(wrapper).toMapList(wrapper)</b>
+&nbsp;
+&nbsp;    @Suppress(&quot;INVISIBLE_REFERENCE&quot;, &quot;INVISIBLE_MEMBER&quot;)
+&nbsp;    @kotlin.internal.LowPriorityInOverloadResolution
+<b class="fc">&nbsp;    inline fun &lt;reified T&gt; toList(wrapper: KronosDataSourceWrapper? = null): List&lt;T&gt; =</b>
+<b class="fc">&nbsp;        build(wrapper).toList(wrapper)</b>
+&nbsp;
+&nbsp;    @JvmName(&quot;toProjectionList&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;    fun toList(wrapper: KronosDataSourceWrapper? = null): List&lt;Selected&gt; =</b>
+<b class="fc">&nbsp;        build(wrapper).toList(wrapper, selectedType) as List&lt;Selected&gt;</b>
+&nbsp;
+<b class="fc">&nbsp;    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any?&gt; {</b>
+<b class="fc">&nbsp;        limit(1)</b>
+<b class="fc">&nbsp;        return build(wrapper).toMap(wrapper)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any?&gt;? {</b>
+<b class="fc">&nbsp;        limit(1)</b>
+<b class="fc">&nbsp;        return build(wrapper).toMapOrNull(wrapper)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

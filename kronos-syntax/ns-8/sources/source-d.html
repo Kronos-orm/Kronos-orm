@@ -1,0 +1,282 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlDialectLowerer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlDialectLowerer (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlDialectLowerer</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (16/20)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SqlDialectLowerer$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlDialectLowerer$Companion$None$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SqlDialectLowerer$DefaultImpls</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/16)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    54.5%
+  </span>
+  <span class="absValue">
+    (6/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.5%
+  </span>
+  <span class="absValue">
+    (6/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (30/50)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;
+&nbsp;interface SqlDialectLowerer {
+<b class="pc">&nbsp;    fun lowerStatement(statement: SqlStatement, dialect: SqlDialect): SqlStatement = statement</b>
+&nbsp;
+<b class="nc">&nbsp;    fun lowerQuery(query: SqlQuery, dialect: SqlDialect): SqlQuery =</b>
+<b class="pc">&nbsp;        lowerStatement(query, dialect) as? SqlQuery ?: query</b>
+&nbsp;
+<b class="pc">&nbsp;    fun lowerExpr(expr: SqlExpr, dialect: SqlDialect): SqlExpr = expr</b>
+&nbsp;
+<b class="nc">&nbsp;    fun lowerTable(table: SqlTable, dialect: SqlDialect): SqlTable = table</b>
+&nbsp;
+&nbsp;    companion object {
+<b class="fc">&nbsp;        val None: SqlDialectLowerer = object : SqlDialectLowerer {}</b>
+&nbsp;
+&nbsp;        fun composite(vararg lowerers: SqlDialectLowerer): SqlDialectLowerer =
+<b class="fc">&nbsp;            CompositeSqlDialectLowerer(lowerers.toList())</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;class CompositeSqlDialectLowerer(
+&nbsp;    private val lowerers: List&lt;SqlDialectLowerer&gt;
+&nbsp;) : SqlDialectLowerer {
+&nbsp;    override fun lowerStatement(statement: SqlStatement, dialect: SqlDialect): SqlStatement =
+&nbsp;        lowerers.fold(statement) { current, lowerer -&gt; lowerer.lowerStatement(current, dialect) }
+&nbsp;
+&nbsp;    override fun lowerQuery(query: SqlQuery, dialect: SqlDialect): SqlQuery =
+&nbsp;        lowerers.fold(query) { current, lowerer -&gt; lowerer.lowerQuery(current, dialect) }
+&nbsp;
+&nbsp;    override fun lowerExpr(expr: SqlExpr, dialect: SqlDialect): SqlExpr =
+&nbsp;        lowerers.fold(expr) { current, lowerer -&gt; lowerer.lowerExpr(current, dialect) }
+&nbsp;
+&nbsp;    override fun lowerTable(table: SqlTable, dialect: SqlDialect): SqlTable =
+&nbsp;        lowerers.fold(table) { current, lowerer -&gt; lowerer.lowerTable(current, dialect) }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

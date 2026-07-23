@@ -1,0 +1,168 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlLimitStyle</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlLimitStyle (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlLimitStyle</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;data class SqlDialect(
+&nbsp;    val leftQuote: String = &quot;\&quot;&quot;,
+&nbsp;    val rightQuote: String = &quot;\&quot;&quot;,
+&nbsp;    val standardEscapeStrings: Boolean = true,
+&nbsp;    val limitStyle: SqlLimitStyle = SqlLimitStyle.Fetch,
+&nbsp;    val family: SqlDialectFamily = SqlDialectFamily.Standard,
+&nbsp;    val nativeBooleanValues: Boolean = false,
+&nbsp;    val timestampParametersAsSqlTimestamp: Boolean = true,
+&nbsp;    val datetimeParametersAsSqlTimestamp: Boolean = false
+&nbsp;) {
+&nbsp;    companion object {
+&nbsp;        val Standard = SqlDialect()
+&nbsp;        val MySql = SqlDialect(&quot;`&quot;, &quot;`&quot;, standardEscapeStrings = false, limitStyle = SqlLimitStyle.LimitOffset, family = SqlDialectFamily.MySql)
+&nbsp;        val PostgreSql = SqlDialect(
+&nbsp;            limitStyle = SqlLimitStyle.LimitOffset,
+&nbsp;            family = SqlDialectFamily.PostgreSql,
+&nbsp;            nativeBooleanValues = true,
+&nbsp;            datetimeParametersAsSqlTimestamp = true
+&nbsp;        )
+&nbsp;        val SQLite = SqlDialect(limitStyle = SqlLimitStyle.LimitOffset, family = SqlDialectFamily.SQLite)
+&nbsp;        val Oracle = SqlDialect(family = SqlDialectFamily.Oracle)
+&nbsp;        val SqlServer = SqlDialect(&quot;[&quot;, &quot;]&quot;, family = SqlDialectFamily.SqlServer)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlDialectFamily {
+&nbsp;    Standard,
+&nbsp;    MySql,
+&nbsp;    PostgreSql,
+&nbsp;    SQLite,
+&nbsp;    Oracle,
+&nbsp;    SqlServer
+&nbsp;}
+&nbsp;
+&nbsp;enum class SqlLimitStyle {
+<b class="fc">&nbsp;    Fetch,</b>
+<b class="fc">&nbsp;    LimitOffset</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

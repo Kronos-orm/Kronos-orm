@@ -1,0 +1,197 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SyntaxSqlRenderingKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database</a>
+</div>
+
+<h1>Coverage Summary for Class: SyntaxSqlRenderingKt (com.kotlinorm.database)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SyntaxSqlRenderingKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.7%
+  </span>
+  <span class="absValue">
+    (29/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.3%
+  </span>
+  <span class="absValue">
+    (117/119)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.parser.NamedParameterUtils
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.syntax.render.RenderedSql
+&nbsp;import com.kotlinorm.syntax.render.SqlRenderContext
+&nbsp;import com.kotlinorm.syntax.render.toRenderedSql
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.utils.toDatabaseParameterValue
+&nbsp;
+&nbsp;internal fun SqlStatement.renderForCore(
+&nbsp;    dataSource: KronosDataSourceWrapper,
+&nbsp;    parameterValues: Map&lt;String, Any?&gt;,
+<b class="nc">&nbsp;    fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+<b class="fc">&nbsp;): RenderedSql = renderCore(dataSource, parameterValues, fieldsMap, parametersArePrepared = false)</b>
+&nbsp;
+&nbsp;internal fun SqlStatement.renderPreparedForCore(
+&nbsp;    dataSource: KronosDataSourceWrapper,
+&nbsp;    parameterValues: Map&lt;String, Any?&gt;
+<b class="fc">&nbsp;): RenderedSql = renderCore(dataSource, parameterValues, emptyMap(), parametersArePrepared = true)</b>
+&nbsp;
+&nbsp;private fun SqlStatement.renderCore(
+&nbsp;    dataSource: KronosDataSourceWrapper,
+&nbsp;    parameterValues: Map&lt;String, Any?&gt;,
+&nbsp;    fieldsMap: Map&lt;String, Field&gt;,
+&nbsp;    parametersArePrepared: Boolean
+&nbsp;): RenderedSql {
+<b class="fc">&nbsp;    val rendered = toRenderedSql(</b>
+<b class="fc">&nbsp;        SqlRenderContext(</b>
+<b class="fc">&nbsp;            dialect = dataSource.sqlDialect,</b>
+<b class="fc">&nbsp;            parameterValues = parameterValues</b>
+&nbsp;        )
+&nbsp;    )
+<b class="fc">&nbsp;    val parameterNames = NamedParameterUtils.parseSqlStatement(</b>
+<b class="fc">&nbsp;        rendered.sql,</b>
+<b class="fc">&nbsp;        listParameterOccurrences = rendered.listParameterOccurrences</b>
+<b class="fc">&nbsp;    ).parameterNames</b>
+<b class="fc">&nbsp;    val usedParameterNames = parameterNames.toSet()</b>
+<b class="fc">&nbsp;    val listParameterNames = parameterNames.mapIndexedNotNull { index, name -&gt;</b>
+<b class="fc">&nbsp;        name.takeIf { index in rendered.listParameterOccurrences }</b>
+<b class="fc">&nbsp;    }.toSet()</b>
+<b class="fc">&nbsp;    val parameters = rendered.parameters</b>
+<b class="fc">&nbsp;        .filterKeys { it in usedParameterNames }</b>
+<b class="fc">&nbsp;        .mapValues { (key, value) -&gt;</b>
+<b class="fc">&nbsp;            if (parametersArePrepared) {</b>
+<b class="fc">&nbsp;                value</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                toDatabaseParameterValue(</b>
+<b class="fc">&nbsp;                    dataSource,</b>
+<b class="fc">&nbsp;                    fieldsMap,</b>
+<b class="fc">&nbsp;                    key,</b>
+<b class="fc">&nbsp;                    value,</b>
+<b class="fc">&nbsp;                    expandAsList = key in listParameterNames</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;    return rendered.copy(</b>
+<b class="fc">&nbsp;        parameters = parameters,</b>
+<b class="fc">&nbsp;        parameterNames = parameterNames.filter { it in parameters }</b>
+&nbsp;    )
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

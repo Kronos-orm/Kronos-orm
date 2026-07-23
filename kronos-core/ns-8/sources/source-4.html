@@ -1,0 +1,290 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > JdbcParameterTypeHints</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: JdbcParameterTypeHints (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">JdbcParameterTypeHints</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (81/81)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.utils.KTypeKey
+&nbsp;import java.sql.Types
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * Transfers JDBC null-type hints from ORM planning to statement binding through a task stash.
+&nbsp; *
+&nbsp; * Hints are keyed by named SQL parameter and contain constants from [Types]. Consumers
+&nbsp; * ignore malformed stash entries rather than failing query execution. Expanded list
+&nbsp; * parameters may reuse the unsuffixed source parameter&#39;s hint at the binding boundary.
+&nbsp; */
+&nbsp;object JdbcParameterTypeHints {
+&nbsp;    /** Stash key reserved for a `Map&lt;String, Int&gt;` of JDBC SQL type constants. */
+&nbsp;    const val STASH_KEY: String = &quot;kronos.jdbc.parameterTypeHints&quot;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads valid parameter type hints from [stash].
+&nbsp;     *
+&nbsp;     * Non-string keys and non-numeric values are discarded. Numeric values are converted
+&nbsp;     * to [Int], matching the JDBC `Types` representation.
+&nbsp;     *
+&nbsp;     * @param stash operation-local task metadata; `null` is treated as empty
+&nbsp;     * @return an immutable empty map when no valid hints exist, otherwise the valid entries
+&nbsp;     */
+&nbsp;    fun from(stash: Map&lt;String, Any?&gt;?): Map&lt;String, Int&gt; {
+<b class="fc">&nbsp;        val value = stash?.get(STASH_KEY) as? Map&lt;*, *&gt; ?: return emptyMap()</b>
+<b class="fc">&nbsp;        return value.mapNotNull { (key, sqlType) -&gt;</b>
+<b class="fc">&nbsp;            val name = key as? String ?: return@mapNotNull null</b>
+<b class="fc">&nbsp;            val type = when (sqlType) {</b>
+<b class="fc">&nbsp;                is Int -&gt; sqlType</b>
+<b class="fc">&nbsp;                is Number -&gt; sqlType.toInt()</b>
+<b class="fc">&nbsp;                else -&gt; return@mapNotNull null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            name to type</b>
+<b class="fc">&nbsp;        }.toMap()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a task stash containing [hints], omitting the reserved entry when empty.
+&nbsp;     *
+&nbsp;     * @return a new mutable stash suitable for an atomic task
+&nbsp;     */
+&nbsp;    fun stashFor(hints: Map&lt;String, Int&gt;): MutableMap&lt;String, Any?&gt; =
+<b class="fc">&nbsp;        if (hints.isEmpty()) mutableMapOf() else mutableMapOf(STASH_KEY to hints)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Derives JDBC type hints only for declared fields whose supplied parameter value is null.
+&nbsp; * Missing and non-null parameters do not contribute entries.
+&nbsp; */
+&nbsp;internal fun Iterable&lt;Field&gt;.jdbcNullParameterTypeHints(parameterValues: Map&lt;String, Any?&gt;): Map&lt;String, Int&gt; =
+&nbsp;    mapNotNull { field -&gt;
+&nbsp;        if (!parameterValues.containsKey(field.name) || parameterValues[field.name] != null) {
+&nbsp;            return@mapNotNull null
+&nbsp;        }
+&nbsp;        field.jdbcNullType()?.let { field.name to it }
+&nbsp;    }.toMap()
+&nbsp;
+&nbsp;/**
+&nbsp; * Maps field storage metadata to the JDBC type used by `PreparedStatement.setNull`.
+&nbsp; *
+&nbsp; * Undefined column types fall back to the declared Kotlin type when it has an unambiguous
+&nbsp; * JDBC representation. `null` means the binder must use the generic JDBC null type.
+&nbsp; */
+&nbsp;internal fun Field.jdbcNullType(): Int? =
+&nbsp;    when (type) {
+&nbsp;        KColumnType.BIT -&gt; Types.BIT
+&nbsp;        KColumnType.TINYINT -&gt; Types.TINYINT
+&nbsp;        KColumnType.SMALLINT,
+&nbsp;        KColumnType.YEAR -&gt; Types.SMALLINT
+&nbsp;        KColumnType.INT,
+&nbsp;        KColumnType.MEDIUMINT,
+&nbsp;        KColumnType.SERIAL -&gt; Types.INTEGER
+&nbsp;        KColumnType.BIGINT -&gt; Types.BIGINT
+&nbsp;        KColumnType.REAL -&gt; Types.REAL
+&nbsp;        KColumnType.FLOAT -&gt; Types.FLOAT
+&nbsp;        KColumnType.DOUBLE -&gt; Types.DOUBLE
+&nbsp;        KColumnType.DECIMAL,
+&nbsp;        KColumnType.NUMERIC -&gt; Types.DECIMAL
+&nbsp;        KColumnType.CHAR -&gt; Types.CHAR
+&nbsp;        KColumnType.NCHAR -&gt; Types.NCHAR
+&nbsp;        KColumnType.VARCHAR,
+&nbsp;        KColumnType.JSON,
+&nbsp;        KColumnType.ENUM,
+&nbsp;        KColumnType.SET,
+&nbsp;        KColumnType.UUID,
+&nbsp;        KColumnType.XML -&gt; Types.VARCHAR
+&nbsp;        KColumnType.NVARCHAR -&gt; Types.NVARCHAR
+&nbsp;        KColumnType.TEXT,
+&nbsp;        KColumnType.MEDIUMTEXT,
+&nbsp;        KColumnType.LONGTEXT,
+&nbsp;        KColumnType.CLOB -&gt; Types.LONGVARCHAR
+&nbsp;        KColumnType.NCLOB -&gt; Types.NCLOB
+&nbsp;        KColumnType.DATE -&gt; Types.DATE
+&nbsp;        KColumnType.TIME -&gt; Types.TIME
+&nbsp;        KColumnType.DATETIME,
+&nbsp;        KColumnType.TIMESTAMP -&gt; Types.TIMESTAMP
+&nbsp;        KColumnType.BINARY -&gt; Types.BINARY
+&nbsp;        KColumnType.VARBINARY -&gt; Types.VARBINARY
+&nbsp;        KColumnType.LONGVARBINARY,
+&nbsp;        KColumnType.BLOB,
+&nbsp;        KColumnType.MEDIUMBLOB,
+&nbsp;        KColumnType.LONGBLOB -&gt; Types.LONGVARBINARY
+&nbsp;        KColumnType.GEOMETRY,
+&nbsp;        KColumnType.POINT,
+&nbsp;        KColumnType.LINESTRING -&gt; Types.VARBINARY
+&nbsp;        KColumnType.UNDEFINED -&gt; kType?.unambiguousJdbcType()
+&nbsp;    }
+&nbsp;
+&nbsp;private fun KType.unambiguousJdbcType(): Int? {
+&nbsp;    val key = KTypeKey.from(this, ignoreTopLevelNullability = true)
+&nbsp;    return standardJdbcTypes[key] ?: optionalJdbcTypes?.get(key)
+&nbsp;}
+&nbsp;
+&nbsp;private inline fun &lt;reified T&gt; typeKey(): KTypeKey =
+&nbsp;    KTypeKey.from(typeOf&lt;T&gt;(), ignoreTopLevelNullability = true)
+&nbsp;
+&nbsp;private val standardJdbcTypes = mapOf(
+&nbsp;    typeKey&lt;Boolean&gt;() to Types.BIT,
+&nbsp;    typeKey&lt;Byte&gt;() to Types.TINYINT,
+&nbsp;    typeKey&lt;Short&gt;() to Types.SMALLINT,
+&nbsp;    typeKey&lt;Int&gt;() to Types.INTEGER,
+&nbsp;    typeKey&lt;Long&gt;() to Types.BIGINT,
+&nbsp;    typeKey&lt;Float&gt;() to Types.FLOAT,
+&nbsp;    typeKey&lt;Double&gt;() to Types.DOUBLE,
+&nbsp;    typeKey&lt;String&gt;() to Types.VARCHAR,
+&nbsp;    typeKey&lt;Char&gt;() to Types.VARCHAR,
+&nbsp;    typeKey&lt;java.util.UUID&gt;() to Types.VARCHAR,
+&nbsp;    typeKey&lt;ByteArray&gt;() to Types.VARBINARY,
+&nbsp;    typeKey&lt;java.time.LocalDate&gt;() to Types.DATE,
+&nbsp;    typeKey&lt;java.time.LocalTime&gt;() to Types.TIME,
+&nbsp;    typeKey&lt;java.time.LocalDateTime&gt;() to Types.TIMESTAMP,
+&nbsp;    typeKey&lt;java.time.Instant&gt;() to Types.TIMESTAMP,
+&nbsp;    typeKey&lt;java.time.ZonedDateTime&gt;() to Types.TIMESTAMP,
+&nbsp;    typeKey&lt;java.time.OffsetDateTime&gt;() to Types.TIMESTAMP
+&nbsp;)
+&nbsp;
+&nbsp;private val optionalJdbcTypes: Map&lt;KTypeKey, Int&gt;? by lazy {
+&nbsp;    try {
+&nbsp;        mapOf(
+&nbsp;            typeKey&lt;java.sql.Date&gt;() to Types.DATE,
+&nbsp;            typeKey&lt;java.sql.Time&gt;() to Types.TIME,
+&nbsp;            typeKey&lt;java.sql.Timestamp&gt;() to Types.TIMESTAMP
+&nbsp;        )
+&nbsp;    } catch (_: LinkageError) {
+&nbsp;        null
+&nbsp;    } catch (_: IllegalArgumentException) {
+&nbsp;        null
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,268 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosProjectionDiagnosticMessages</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosProjectionDiagnosticMessages (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosProjectionDiagnosticMessages</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (28/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (54/54)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactory0
+&nbsp;import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactoryToRendererMap
+&nbsp;import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
+&nbsp;import org.jetbrains.kotlin.diagnostics.Severity
+&nbsp;import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
+&nbsp;import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
+&nbsp;
+&nbsp;/**
+&nbsp; * FIR diagnostics emitted for projection DSL misuse that Kotlin&#39;s normal type system cannot express.
+&nbsp; */
+&nbsp;object KronosProjectionDiagnostics : KtDiagnosticsContainer() {
+&nbsp;    val SELECT_ITEM_REQUIRES_ALIAS: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_SELECT_ITEM_REQUIRES_ALIAS&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val DUPLICATE_PROJECTION_FIELD: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_DUPLICATE_PROJECTION_FIELD&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val SELECTED_FIELD_CONFLICTS_WITH_SOURCE: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_SELECTED_FIELD_CONFLICTS_WITH_SOURCE&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val SCALAR_SUBQUERY_REQUIRES_LIMIT: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val INSERT_SELECT_VALUE_COUNT_MISMATCH: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_INSERT_SELECT_VALUE_COUNT_MISMATCH&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    val INSERT_SELECT_VALUE_TYPE_MISMATCH: KtDiagnosticFactory0 = KtDiagnosticFactory0(
+&nbsp;        &quot;KRONOS_INSERT_SELECT_VALUE_TYPE_MISMATCH&quot;,
+&nbsp;        Severity.ERROR,
+&nbsp;        SourceElementPositioningStrategies.DEFAULT,
+&nbsp;        kronosDiagnosticPsiElementClass(),
+&nbsp;        getRendererFactory()
+&nbsp;    )
+&nbsp;
+&nbsp;    override fun getRendererFactory(): BaseDiagnosticRendererFactory = KronosProjectionDiagnosticMessages
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * User-facing messages for Kronos projection diagnostics.
+&nbsp; */
+&nbsp;object KronosProjectionDiagnosticMessages : BaseDiagnosticRendererFactory() {
+<b class="fc">&nbsp;    override val MAP by KtDiagnosticFactoryToRendererMap(&quot;KronosProjection&quot;) { map -&gt;</b>
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.SELECT_ITEM_REQUIRES_ALIAS,</b>
+<b class="fc">&nbsp;            &quot;Non-field select item must declare .alias(\&quot;name\&quot;)&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.DUPLICATE_PROJECTION_FIELD,</b>
+<b class="fc">&nbsp;            &quot;Duplicate selected field name&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.SELECTED_FIELD_CONFLICTS_WITH_SOURCE,</b>
+<b class="fc">&nbsp;            &quot;Selected alias conflicts with a source field name&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.SCALAR_SUBQUERY_REQUIRES_LIMIT,</b>
+<b class="fc">&nbsp;            &quot;Scalar subquery must explicitly use limit(1)&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN,</b>
+<b class="fc">&nbsp;            &quot;Scalar subquery must select exactly one column or expression&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.PREDICATE_SUBQUERY_COLUMN_COUNT_MISMATCH,</b>
+<b class="fc">&nbsp;            &quot;Predicate subquery column count does not match the left expression&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.ROW_VALUE_TUPLE_REQUIRES_MULTIPLE_FIELDS,</b>
+<b class="fc">&nbsp;            &quot;Row-value tuple IN requires at least two fields; use field in query for a single column&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.INSERT_SELECT_VALUE_COUNT_MISMATCH,</b>
+<b class="fc">&nbsp;            &quot;Insert-select value count must match target insertable field count&quot;</b>
+&nbsp;        )
+<b class="fc">&nbsp;        map.put(</b>
+<b class="fc">&nbsp;            KronosProjectionDiagnostics.INSERT_SELECT_VALUE_TYPE_MISMATCH,</b>
+<b class="fc">&nbsp;            &quot;Insert-select value type must match the target insertable field type&quot;</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

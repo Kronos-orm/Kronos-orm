@@ -1,0 +1,363 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SourceIdentityScope</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: SourceIdentityScope (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SourceIdentityScope</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.6%
+  </span>
+  <span class="absValue">
+    (29/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (30/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99%
+  </span>
+  <span class="absValue">
+    (192/194)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SourceIdentityScope$Frame</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.3%
+  </span>
+  <span class="absValue">
+    (28/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (33/33)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.9%
+  </span>
+  <span class="absValue">
+    (230/235)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">SourceIdentityScope$Frame$special$$inlined$groupingBy$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">SourceIdentityScope$Source</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    85%
+  </span>
+  <span class="absValue">
+    (17/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.9%
+  </span>
+  <span class="absValue">
+    (57/62)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (67/67)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.4%
+  </span>
+  <span class="absValue">
+    (439/446)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import java.util.IdentityHashMap
+&nbsp;
+&nbsp;/**
+&nbsp; * Runtime source-identity scope used by compiler-lowered DSL field access.
+&nbsp; *
+&nbsp; * The public methods are runtime plumbing for generated code; applications should
+&nbsp; * not call them directly.
+&nbsp; */
+&nbsp;object SourceIdentityScope {
+<b class="fc">&nbsp;    private val frames = ThreadLocal.withInitial { mutableListOf&lt;Frame&gt;() }</b>
+&nbsp;
+&nbsp;    fun frame(sources: List&lt;KPojo&gt;): Frame =
+<b class="fc">&nbsp;        Frame(sources.mapIndexed { index, source -&gt; Source(source, source.__tableName, index) })</b>
+&nbsp;
+&nbsp;    fun &lt;T&gt; withFrame(frame: Frame, block: () -&gt; T): T {
+<b class="fc">&nbsp;        val stack = frames.get()</b>
+<b class="fc">&nbsp;        stack += frame</b>
+&nbsp;        return try {
+<b class="fc">&nbsp;            block()</b>
+&nbsp;        } finally {
+<b class="fc">&nbsp;            stack.removeAt(stack.lastIndex)</b>
+<b class="pc">&nbsp;            if (stack.isEmpty()) {</b>
+<b class="fc">&nbsp;                frames.remove()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun resolveTableName(receiver: Any?, declaredTableName: String): String {
+<b class="fc">&nbsp;        val source = receiver as? KPojo ?: return declaredTableName</b>
+<b class="fc">&nbsp;        val stack = frames.get()</b>
+<b class="fc">&nbsp;        if (stack.isEmpty()) return declaredTableName</b>
+&nbsp;
+<b class="fc">&nbsp;        val frameIndex = stack.indexOfLast { it.contains(source) }</b>
+<b class="fc">&nbsp;        if (frameIndex &lt; 0) return declaredTableName</b>
+&nbsp;
+<b class="fc">&nbsp;        val frame = stack[frameIndex]</b>
+<b class="fc">&nbsp;        val currentFrame = stack.last()</b>
+<b class="pc">&nbsp;        val matched = frame.sourceOf(source) ?: return declaredTableName</b>
+<b class="fc">&nbsp;        val physicalTableName = matched.tableName.ifBlank { declaredTableName }</b>
+<b class="fc">&nbsp;        val crossesIntoSameTableNestedScope = frameIndex != stack.lastIndex &amp;&amp;</b>
+<b class="fc">&nbsp;            currentFrame.hasPhysicalTable(physicalTableName)</b>
+<b class="fc">&nbsp;        val currentSourceShadowsCorrelatedOuterAlias = frameIndex == stack.lastIndex &amp;&amp;</b>
+<b class="fc">&nbsp;            stack.dropLast(1).any { parent -&gt;</b>
+<b class="fc">&nbsp;                parent.hasAliasForPhysicalTable(physicalTableName) &amp;&amp;</b>
+<b class="fc">&nbsp;                    !parent.hasDuplicatePhysicalTable(physicalTableName)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        val sharesTableInCurrentFrame = frame.hasDuplicatePhysicalTable(physicalTableName)</b>
+&nbsp;
+<b class="fc">&nbsp;        return if (crossesIntoSameTableNestedScope || sharesTableInCurrentFrame || currentSourceShadowsCorrelatedOuterAlias) {</b>
+<b class="fc">&nbsp;            val reservedAliases = if (currentSourceShadowsCorrelatedOuterAlias) {</b>
+<b class="fc">&nbsp;                stack.dropLast(1).flatMap { it.allAliases() }.toSet()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                emptySet()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            frame.aliasFor(source, reservedAliases)</b>
+&nbsp;        } else {
+<b class="pc">&nbsp;            frame.existingAliasFor(source) ?: physicalTableName</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    class Frame internal constructor(</b>
+<b class="fc">&nbsp;        private val sources: List&lt;Source&gt;</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        private val aliases = IdentityHashMap&lt;KPojo, String&gt;()</b>
+<b class="fc">&nbsp;        private val sourceTableCounts = sources</b>
+<b class="fc">&nbsp;            .groupingBy { it.tableName }</b>
+<b class="fc">&nbsp;            .eachCount()</b>
+&nbsp;
+&nbsp;        fun contains(source: KPojo): Boolean =
+<b class="fc">&nbsp;            sources.any { it.pojo === source }</b>
+&nbsp;
+&nbsp;        fun sourceOf(source: KPojo): Source? =
+<b class="fc">&nbsp;            sources.firstOrNull { it.pojo === source }</b>
+&nbsp;
+&nbsp;        fun hasPhysicalTable(tableName: String): Boolean =
+<b class="fc">&nbsp;            sources.any { it.tableName == tableName }</b>
+&nbsp;
+&nbsp;        fun hasDuplicatePhysicalTable(tableName: String): Boolean =
+<b class="fc">&nbsp;            sourceTableCounts.getOrDefault(tableName, 0) &gt; 1</b>
+&nbsp;
+<b class="fc">&nbsp;        fun aliasFor(source: KPojo, reservedAliases: Set&lt;String&gt; = emptySet()): String =</b>
+<b class="fc">&nbsp;            aliases.getOrPut(source) {</b>
+<b class="fc">&nbsp;                val sourceInfo = sourceOf(source)</b>
+<b class="pc">&nbsp;                val base = sourceInfo?.tableName?.takeIf { it.isNotBlank() } ?: source.__tableName</b>
+<b class="fc">&nbsp;                var index = sourceInfo?.index ?: aliases.size</b>
+<b class="fc">&nbsp;                var alias: String</b>
+&nbsp;                do {
+<b class="fc">&nbsp;                    alias = &quot;${base}__k${index + 1}&quot;</b>
+<b class="fc">&nbsp;                    index++</b>
+<b class="fc">&nbsp;                } while (alias in reservedAliases)</b>
+<b class="fc">&nbsp;                alias</b>
+&nbsp;            }
+&nbsp;
+&nbsp;        fun aliasForSource(source: KPojo): String? {
+<b class="fc">&nbsp;            val sourceInfo = sourceOf(source) ?: return null</b>
+<b class="fc">&nbsp;            return if (hasDuplicatePhysicalTable(sourceInfo.tableName) || aliases.containsKey(source)) {</b>
+<b class="fc">&nbsp;                aliasFor(source)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        fun existingAliasFor(source: KPojo): String? =
+<b class="fc">&nbsp;            aliases[source]</b>
+&nbsp;
+&nbsp;        fun hasAliasForPhysicalTable(tableName: String): Boolean =
+<b class="fc">&nbsp;            sources.any { source -&gt; source.tableName == tableName &amp;&amp; aliases.containsKey(source.pojo) }</b>
+&nbsp;
+&nbsp;        fun allAliases(): Collection&lt;String&gt; =
+<b class="fc">&nbsp;            aliases.values</b>
+&nbsp;
+&nbsp;        fun aliasesByTableName(): Map&lt;String, String&gt; =
+<b class="fc">&nbsp;            sources.mapNotNull { source -&gt;</b>
+<b class="fc">&nbsp;                if (hasDuplicatePhysicalTable(source.tableName)) {</b>
+<b class="fc">&nbsp;                    null</b>
+&nbsp;                } else {
+<b class="pc">&nbsp;                    aliases[source.pojo]?.let { alias -&gt; source.tableName to alias }</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }.toMap()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    class Source internal constructor(</b>
+<b class="fc">&nbsp;        val pojo: KPojo,</b>
+<b class="fc">&nbsp;        val tableName: String,</b>
+<b class="fc">&nbsp;        val index: Int</b>
+&nbsp;    )
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:48</div>
+</div>
+</body>
+</html>

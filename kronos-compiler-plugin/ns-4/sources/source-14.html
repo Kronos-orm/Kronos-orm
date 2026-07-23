@@ -1,0 +1,521 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosProjectionDeclarationGenerationExtensionKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosProjectionDeclarationGenerationExtensionKt (com.kotlinorm.compiler.fir)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosProjectionDeclarationGenerationExtensionKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.1%
+  </span>
+  <span class="absValue">
+    (8/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (8/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65%
+  </span>
+  <span class="absValue">
+    (39/60)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;INVISIBLE_MEMBER&quot;, &quot;INVISIBLE_REFERENCE&quot;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+&nbsp;import com.kotlinorm.compiler.utils.KPojoClassId
+&nbsp;import org.jetbrains.kotlin.GeneratedDeclarationKey
+&nbsp;import org.jetbrains.kotlin.KtSourceElement
+&nbsp;import org.jetbrains.kotlin.descriptors.EffectiveVisibility
+&nbsp;import org.jetbrains.kotlin.descriptors.ClassKind
+&nbsp;import org.jetbrains.kotlin.descriptors.Modality
+&nbsp;import org.jetbrains.kotlin.descriptors.Visibilities
+&nbsp;import org.jetbrains.kotlin.fir.containingClassForStaticMemberAttr
+&nbsp;import org.jetbrains.kotlin.fir.correspondingProperty
+&nbsp;import org.jetbrains.kotlin.fir.FirImplementationDetail
+&nbsp;import org.jetbrains.kotlin.fir.FirSession
+&nbsp;import org.jetbrains.kotlin.fir.moduleData
+&nbsp;import org.jetbrains.kotlin.fir.ownerGenerator
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirConstructor
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirProperty
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirValueParameter
+&nbsp;import org.jetbrains.kotlin.fir.declarations.FirValueParameterKind
+&nbsp;import org.jetbrains.kotlin.fir.declarations.builder.buildPrimaryConstructor
+&nbsp;import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
+&nbsp;import org.jetbrains.kotlin.fir.declarations.builder.buildRegularClass
+&nbsp;import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
+&nbsp;import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
+&nbsp;import org.jetbrains.kotlin.fir.expressions.builder.buildLiteralExpression
+&nbsp;import org.jetbrains.kotlin.fir.expressions.builder.buildPropertyAccessExpression
+&nbsp;import org.jetbrains.kotlin.fir.extensions.ExperimentalTopLevelDeclarationsGenerationApi
+&nbsp;import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
+&nbsp;import org.jetbrains.kotlin.fir.extensions.MemberGenerationContext
+&nbsp;import org.jetbrains.kotlin.fir.references.builder.buildPropertyFromParameterResolvedNamedReference
+&nbsp;import org.jetbrains.kotlin.fir.scopes.FirKotlinScopeProvider
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirRegularPropertySymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
+&nbsp;import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeAttributes
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeKotlinType
+&nbsp;import org.jetbrains.kotlin.fir.types.ConeTypeProjection
+&nbsp;import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
+&nbsp;import org.jetbrains.kotlin.fir.types.impl.ConeClassLikeTypeImpl
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import org.jetbrains.kotlin.name.CallableId
+&nbsp;import org.jetbrains.kotlin.name.SpecialNames
+&nbsp;import org.jetbrains.kotlin.types.ConstantValueKind
+&nbsp;import java.util.concurrent.ConcurrentHashMap
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates FIR declarations for compiler-created select projection classes.
+&nbsp; */
+&nbsp;@OptIn(FirImplementationDetail::class, ExperimentalTopLevelDeclarationsGenerationApi::class)
+&nbsp;class KronosProjectionDeclarationGenerationExtension(
+&nbsp;    session: FirSession
+&nbsp;) : FirDeclarationGenerationExtension(session) {
+&nbsp;    init {
+&nbsp;        KronosProjectionRegistry.registerDeclarationGenerator(session, this)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Projection classes are created on demand from the call-refinement registry.
+&nbsp;     */
+&nbsp;    override fun getTopLevelClassIds(): Set&lt;ClassId&gt; =
+&nbsp;        KronosProjectionRegistry.allTopLevelClassIds(session)
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Makes the generated projection package visible to top-level class lookup and backend output.
+&nbsp;     */
+&nbsp;    override fun hasPackage(packageFqName: FqName): Boolean =
+&nbsp;        packageFqName == GeneratedProjectionPackageFqName || super.hasPackage(packageFqName)
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resolves a generated top-level projection class from registry state.
+&nbsp;     */
+&nbsp;    override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol&lt;*&gt;? {
+&nbsp;        val model = KronosProjectionRegistry.find(session, classId) ?: return null
+&nbsp;        val symbol = model.symbolFor(classId)
+&nbsp;        if (symbol.isBound) return symbol
+&nbsp;        val fir = buildProjectionClass(session, symbol, model, classId)
+&nbsp;        fir.ownerGenerator = this
+&nbsp;        symbol.bind(fir)
+&nbsp;        return symbol
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Exposes generated projection field names to FIR member scope lookup.
+&nbsp;     */
+&nbsp;    override fun getCallableNamesForClass(
+&nbsp;        classSymbol: FirClassSymbol&lt;*&gt;,
+&nbsp;        context: MemberGenerationContext
+&nbsp;    ): Set&lt;Name&gt; {
+&nbsp;        val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptySet()
+&nbsp;        return model.fieldsFor(classSymbol.classId).mapTo(mutableSetOf(SpecialNames.INIT)) { it.name }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates projection field symbols when FIR asks for members of the synthetic class.
+&nbsp;     */
+&nbsp;    override fun generateProperties(
+&nbsp;        callableId: CallableId,
+&nbsp;        context: MemberGenerationContext?
+&nbsp;    ): List&lt;FirPropertySymbol&gt; {
+&nbsp;        val classSymbol = context?.owner as? FirRegularClassSymbol ?: return emptyList()
+&nbsp;        val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptyList()
+&nbsp;        return projectionMembers(session, classSymbol, model).properties
+&nbsp;            .filter { it.name == callableId.callableName }
+&nbsp;            .map { it.symbol }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Exposes the primary constructor of the generated data class to FIR scopes.
+&nbsp;     */
+&nbsp;    override fun generateConstructors(context: MemberGenerationContext): List&lt;FirConstructorSymbol&gt; {
+&nbsp;        val classSymbol = context.owner as? FirRegularClassSymbol ?: return emptyList()
+&nbsp;        val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptyList()
+&nbsp;        return listOf(projectionMembers(session, classSymbol, model).constructor.symbol)
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Binds the projection class early so refined call return types can reference a concrete FIR symbol.
+&nbsp;         */
+&nbsp;        fun ensureProjectionClassBound(
+&nbsp;            session: FirSession,
+&nbsp;            model: KronosProjectionModel
+&nbsp;        ) {
+&nbsp;            val symbol = model.symbol
+&nbsp;            if (symbol.isBound) return
+&nbsp;            val generator = KronosProjectionRegistry.declarationGenerator(session)
+&nbsp;                ?: error(&quot;Kronos projection declaration generator is not registered for this FIR session&quot;)
+&nbsp;            val fir = buildProjectionClass(session, symbol, model, model.classId)
+&nbsp;            fir.ownerGenerator = generator
+&nbsp;            symbol.bind(fir)
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Binds the generated Context class early so SelectClause&#39;s third type argument resolves in FIR.
+&nbsp;         */
+&nbsp;        fun ensureContextClassBound(
+&nbsp;            session: FirSession,
+&nbsp;            model: KronosProjectionModel
+&nbsp;        ) {
+&nbsp;            val symbol = model.contextSymbol
+&nbsp;            if (symbol.isBound) return
+&nbsp;            val generator = KronosProjectionRegistry.declarationGenerator(session)
+&nbsp;                ?: error(&quot;Kronos projection declaration generator is not registered for this FIR session&quot;)
+&nbsp;            val fir = buildProjectionClass(session, symbol, model, model.contextClassId)
+&nbsp;            fir.ownerGenerator = generator
+&nbsp;            symbol.bind(fir)
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Drops generated member cache when a projection model is refined before
+&nbsp;         * member lookup, for example after a scalar subquery alias type becomes known.
+&nbsp;         */
+&nbsp;        fun invalidateMemberCache(model: KronosProjectionModel) {
+&nbsp;            projectionMemberCache.remove(model.symbol)
+&nbsp;            projectionMemberCache.remove(model.contextSymbol)
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds the synthetic projection class and attaches generated projection fields directly to it.
+&nbsp;         */
+&nbsp;        fun buildProjectionClass(
+&nbsp;            session: FirSession,
+&nbsp;            symbol: FirRegularClassSymbol,
+&nbsp;            model: KronosProjectionModel,
+&nbsp;            classId: ClassId
+&nbsp;        ) = buildRegularClass {
+&nbsp;            source = model.generatedDeclarationSource()
+&nbsp;            resolvePhase = FirResolvePhase.BODY_RESOLVE
+&nbsp;            moduleData = session.moduleData
+&nbsp;            origin = projectionOriginForIde()
+&nbsp;            scopeProvider = FirKotlinScopeProvider()
+&nbsp;            status = projectionStatus().apply {
+&nbsp;                isData = true
+&nbsp;            }
+&nbsp;            classKind = ClassKind.CLASS
+&nbsp;            name = model.nameFor(classId)
+&nbsp;            this.symbol = symbol
+&nbsp;            superTypeRefs += buildResolvedTypeRef {
+&nbsp;                coneType = ConeClassLikeTypeImpl(
+&nbsp;                    ConeClassLikeLookupTagImpl(KPojoClassId),
+&nbsp;                    ConeTypeProjection.EMPTY_ARRAY,
+&nbsp;                    false,
+&nbsp;                    ConeAttributes.Empty
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Returns generated constructor and property declarations for a projection class.
+&nbsp;         */
+&nbsp;        fun projectionMembers(
+&nbsp;            session: FirSession,
+&nbsp;            classSymbol: FirRegularClassSymbol,
+&nbsp;            model: KronosProjectionModel
+&nbsp;        ): KronosProjectionGeneratedMembers = projectionMemberCache.computeIfAbsent(classSymbol) {
+&nbsp;            val primaryConstructor = buildProjectionPrimaryConstructor(session, classSymbol, model)
+&nbsp;            val properties = model.fieldsFor(classSymbol.classId).map { field -&gt;
+&nbsp;                val parameter = primaryConstructor.valueParameters.single { it.name == field.name }
+&nbsp;                buildProjectionProperty(session, classSymbol, field.name, field.type, parameter)
+&nbsp;            }
+&nbsp;            KronosProjectionGeneratedMembers(primaryConstructor, properties)
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds a primary constructor whose parameters all default to null, giving KPojo a no-arg path.
+&nbsp;         */
+&nbsp;        private fun buildProjectionPrimaryConstructor(
+&nbsp;            session: FirSession,
+&nbsp;            classSymbol: FirRegularClassSymbol,
+&nbsp;            model: KronosProjectionModel
+&nbsp;        ) = buildPrimaryConstructor {
+&nbsp;            source = model.generatedDeclarationSource()
+&nbsp;            resolvePhase = FirResolvePhase.BODY_RESOLVE
+&nbsp;            moduleData = session.moduleData
+&nbsp;            origin = projectionOriginForIde()
+&nbsp;            status = projectionStatus()
+&nbsp;            isLocal = false
+&nbsp;            returnTypeRef = buildResolvedTypeRef {
+&nbsp;                coneType = ConeClassLikeTypeImpl(
+&nbsp;                    classSymbol.toLookupTag(),
+&nbsp;                    ConeTypeProjection.EMPTY_ARRAY,
+&nbsp;                    false,
+&nbsp;                    ConeAttributes.Empty
+&nbsp;                )
+&nbsp;            }
+&nbsp;            symbol = FirConstructorSymbol(classSymbol.classId)
+&nbsp;            valueParameters += model.fieldsFor(classSymbol.classId).map { field -&gt;
+&nbsp;                buildProjectionConstructorParameter(session, symbol, field, model.generatedMemberSource(field))
+&nbsp;            }
+&nbsp;        }.apply {
+&nbsp;            containingClassForStaticMemberAttr = classSymbol.toLookupTag()
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds one constructor parameter with a null default value for the generated data class.
+&nbsp;         */
+&nbsp;        private fun buildProjectionConstructorParameter(
+&nbsp;            session: FirSession,
+&nbsp;            constructorSymbol: FirConstructorSymbol,
+&nbsp;            field: KronosProjectionField,
+&nbsp;            fallbackSource: KtSourceElement?,
+&nbsp;        ) = buildValueParameter {
+&nbsp;            source = fallbackSource
+&nbsp;            resolvePhase = FirResolvePhase.BODY_RESOLVE
+&nbsp;            moduleData = session.moduleData
+&nbsp;            origin = projectionOriginForIde()
+&nbsp;            returnTypeRef = buildResolvedTypeRef { coneType = field.type }
+&nbsp;            this.name = field.name
+&nbsp;            this.symbol = FirValueParameterSymbol()
+&nbsp;            containingDeclarationSymbol = constructorSymbol
+&nbsp;            valueParameterKind = FirValueParameterKind.Regular
+&nbsp;            defaultValue = buildLiteralExpression(
+&nbsp;                source = null,
+&nbsp;                kind = ConstantValueKind.Null,
+&nbsp;                value = null,
+&nbsp;                setType = true
+&nbsp;            ).apply {
+&nbsp;                replaceConeTypeOrNull(session.builtinTypes.nullableNothingType.coneType)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds one public mutable field on the generated projection class.
+&nbsp;         */
+&nbsp;        fun buildProjectionProperty(
+&nbsp;            session: FirSession,
+&nbsp;            classSymbol: FirRegularClassSymbol,
+&nbsp;            name: Name,
+&nbsp;            type: ConeKotlinType,
+&nbsp;            constructorParameter: FirValueParameter?,
+&nbsp;        ) = buildProperty {
+&nbsp;            source = constructorParameter?.source
+&nbsp;            resolvePhase = FirResolvePhase.BODY_RESOLVE
+&nbsp;            moduleData = session.moduleData
+&nbsp;            origin = projectionOriginForIde()
+&nbsp;            this.isLocal = false
+&nbsp;            status = projectionStatus()
+&nbsp;            this.dispatchReceiverType = ConeClassLikeTypeImpl(
+&nbsp;                classSymbol.toLookupTag(),
+&nbsp;                ConeTypeProjection.EMPTY_ARRAY,
+&nbsp;                false,
+&nbsp;                ConeAttributes.Empty
+&nbsp;            )
+&nbsp;            this.name = name
+&nbsp;            this.symbol = FirRegularPropertySymbol(CallableId(classSymbol.classId, name))
+&nbsp;            returnTypeRef = buildResolvedTypeRef { coneType = type }
+&nbsp;            initializer = if (constructorParameter != null) {
+&nbsp;                buildPropertyAccessExpression {
+&nbsp;                    source = null
+&nbsp;                    coneTypeOrNull = type
+&nbsp;                    calleeReference = buildPropertyFromParameterResolvedNamedReference {
+&nbsp;                        source = null
+&nbsp;                        this.name = name
+&nbsp;                        resolvedSymbol = constructorParameter.symbol
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            } else {
+&nbsp;                null
+&nbsp;            }
+&nbsp;            isVar = true
+&nbsp;        }.apply {
+&nbsp;            if (constructorParameter != null) {
+&nbsp;                constructorParameter.correspondingProperty = this
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Marks projection declarations as compiler-plugin generated.
+&nbsp;         */
+&nbsp;        private fun projectionOrigin(): FirDeclarationOrigin =
+&nbsp;            FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
+&nbsp;
+&nbsp;        private fun projectionOriginForIde(): FirDeclarationOrigin =
+&nbsp;            projectionOrigin()
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Creates the public final status shared by generated projection declarations.
+&nbsp;         */
+&nbsp;        private fun projectionStatus(): FirResolvedDeclarationStatusImpl {
+&nbsp;            return FirResolvedDeclarationStatusImpl(
+&nbsp;                Visibilities.Public,
+&nbsp;                Modality.FINAL,
+&nbsp;                EffectiveVisibility.Public
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;data class KronosProjectionGeneratedMembers(
+&nbsp;    val constructor: FirConstructor,
+&nbsp;    val properties: List&lt;FirProperty&gt;,
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Marks FIR declarations synthesized for generated select projection classes.
+&nbsp; */
+&nbsp;object KronosProjectionGeneratedDeclarationKey : GeneratedDeclarationKey()
+&nbsp;
+&nbsp;/**
+&nbsp; * Caches generated constructor/property FIR per projection class symbol within the compiler session.
+&nbsp; */
+<b class="fc">&nbsp;private val projectionMemberCache = ConcurrentHashMap&lt;FirRegularClassSymbol, KronosProjectionGeneratedMembers&gt;()</b>
+&nbsp;
+&nbsp;private fun KronosProjectionModel.fieldsFor(classId: ClassId): List&lt;KronosProjectionField&gt; =
+<b class="fc">&nbsp;    if (classId == contextClassId) contextFields else fields</b>
+&nbsp;
+&nbsp;private fun KronosProjectionModel.nameFor(classId: ClassId): Name =
+<b class="fc">&nbsp;    if (classId == contextClassId) contextName else name</b>
+&nbsp;
+&nbsp;private fun KronosProjectionModel.symbolFor(classId: ClassId): FirRegularClassSymbol =
+<b class="nc">&nbsp;    if (classId == contextClassId) contextSymbol else symbol</b>
+&nbsp;
+&nbsp;private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement? =
+<b class="fc">&nbsp;    if (KronosProjectionIdeBridge.isIdeActive()) {</b>
+<b class="fc">&nbsp;        sourceDeclaration</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        sourceDeclaration</b>
+&nbsp;    }
+&nbsp;
+&nbsp;private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement? =
+<b class="pc">&nbsp;    if (KronosProjectionIdeBridge.isIdeActive()) {</b>
+<b class="nc">&nbsp;        field.source ?: anchor</b>
+&nbsp;    } else {
+<b class="pc">&nbsp;        field.source ?: anchor</b>
+&nbsp;    }
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-07-23 03:52</div>
+</div>
+</body>
+</html>

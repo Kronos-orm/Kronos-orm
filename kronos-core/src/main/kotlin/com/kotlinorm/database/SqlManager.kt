@@ -9,11 +9,15 @@ package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.database.mssql.MssqlStatements
+import com.kotlinorm.database.dm8.Dm8Statements
+import com.kotlinorm.database.h2.H2Statements
 import com.kotlinorm.database.mysql.MysqlStatements
 import com.kotlinorm.database.oracle.OracleStatements
 import com.kotlinorm.database.postgres.PostgresqlStatements
 import com.kotlinorm.database.sqlite.SqliteStatements
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.DBType.DM8
+import com.kotlinorm.enums.DBType.H2
 import com.kotlinorm.enums.DBType.Mssql
 import com.kotlinorm.enums.DBType.Mysql
 import com.kotlinorm.enums.DBType.Oracle
@@ -30,16 +34,20 @@ object SqlManager {
         Mysql to SqlDialect.MySql,
         Postgres to SqlDialect.PostgreSql,
         SQLite to SqlDialect.SQLite,
+        H2 to SqlDialect.H2,
         Mssql to SqlDialect.SqlServer,
-        Oracle to SqlDialect.Oracle
+        Oracle to SqlDialect.Oracle,
+        DM8 to SqlDialect.Oracle
     )
 
     private val statements: MutableMap<DBType, DatabaseStatements> = mutableMapOf(
         Mysql to MysqlStatements,
         Postgres to PostgresqlStatements,
         SQLite to SqliteStatements,
+        H2 to H2Statements,
         Mssql to MssqlStatements,
-        Oracle to OracleStatements
+        Oracle to OracleStatements,
+        DM8 to Dm8Statements
     )
 
     fun registerDialect(dbType: DBType, dialect: SqlDialect) {

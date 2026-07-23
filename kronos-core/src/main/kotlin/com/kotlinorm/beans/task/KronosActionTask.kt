@@ -105,7 +105,7 @@ class KronosActionTask {
                         first.operationType,
                         first.statement,
                         stash = first.stash.toMutableMap(),
-                        generatedKeyRequest = first.generatedKeyRequest,
+                        generatedKeyField = first.generatedKeyField,
                         listParameterOccurrences = first.listParameterOccurrences
                     )
                 } else {

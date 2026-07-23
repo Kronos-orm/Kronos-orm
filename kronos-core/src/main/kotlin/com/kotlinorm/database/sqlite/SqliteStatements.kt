@@ -47,6 +47,11 @@ object SqliteStatements : DatabaseStatements() {
     override fun databaseName(wrapper: KronosDataSourceWrapper): String =
         wrapper.url.substringAfter("//")
 
+    override fun lastInsertIdFallback(insert: SqlDmlStatement.Insert, generatedKey: Field): SqlQuery =
+        SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.Function(SqlIdentifier.of("last_insert_rowid"))))
+        )
+
     override fun tableExists(): SqlQuery = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw("COUNT(*)"))),
         from = listOf(SqlTable.Ident("sqlite_master")),

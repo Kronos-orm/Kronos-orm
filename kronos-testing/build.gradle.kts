@@ -25,7 +25,9 @@ dependencies {
     testImplementation(libs.dbcp2)
     testImplementation(libs.driver.jdbc.mysql)
     testImplementation(libs.driver.jdbc.sqlite)
+    testImplementation(libs.driver.jdbc.h2)
     testImplementation(libs.driver.jdbc.mssql)
     testImplementation(libs.driver.jdbc.postgresql)
     testImplementation(libs.driver.jdbc.oracle)
+    testImplementation(libs.driver.jdbc.dameng)
 }

@@ -49,6 +49,11 @@ object MysqlStatements : DatabaseStatements() {
     override fun databaseName(wrapper: KronosDataSourceWrapper): String =
         wrapper.url.substringBefore("?").substringAfter("//").substringAfter("/")
 
+    override fun lastInsertIdFallback(insert: SqlDmlStatement.Insert, generatedKey: Field): SqlQuery =
+        SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.Function(SqlIdentifier.of("LAST_INSERT_ID"))))
+        )
+
     override fun tableExists(): SqlQuery = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw("COUNT(*)"))),
         from = listOf(SqlTable.Ident("INFORMATION_SCHEMA.TABLES", identifier = SqlIdentifier.of("INFORMATION_SCHEMA", "TABLES"))),

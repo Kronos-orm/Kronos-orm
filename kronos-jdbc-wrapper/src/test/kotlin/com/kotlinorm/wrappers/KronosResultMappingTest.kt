@@ -37,6 +37,7 @@ import com.kotlinorm.utils.KPojoFactory
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import java.io.ByteArrayInputStream
 import java.io.StringReader
 import java.math.BigDecimal
@@ -359,7 +360,7 @@ class KronosResultMappingTest {
                 rows
             )
             assertEquals(listOf(requestedType, requestedType), seenTargets)
-            assertEquals(listOf(field, field), seenFields)
+            assertEquals(listOf<Field?>(field, field), seenFields)
             assertEquals(listOf(ValueStorage.SERIALIZED, ValueStorage.SERIALIZED), seenStorage)
         } finally {
             registration.close()
@@ -849,6 +850,39 @@ class KronosResultMappingTest {
     }
 
     @Test
+    fun `DM8 LONG override is read before preceding columns`() {
+        val metaData = mockk<ResultSetMetaData>()
+        every { metaData.columnCount } returns 2
+        every { metaData.getColumnLabel(1) } returns "id"
+        every { metaData.getColumnLabel(2) } returns "payload"
+        every { metaData.getColumnTypeName(1) } returns "INT"
+        every { metaData.getColumnTypeName(2) } returns "LONG"
+        every { metaData.getColumnType(1) } returns Types.INTEGER
+        every { metaData.getColumnType(2) } returns Types.LONGVARCHAR
+        val resultSet = mockk<ResultSet>()
+        every { resultSet.metaData } returns metaData
+        every { resultSet.next() } returnsMany listOf(true, false)
+        every { resultSet.getObject(1) } returns 7
+        every { resultSet.getObject(2) } returns "raw-long"
+        val context = dm8Context().also {
+            it.config.oracleLongColumnStrategy = KronosOracleLongColumnStrategy.READ_FIRST
+        }
+
+        val rows = KronosResultMappers.toList(
+            resultSet,
+            KronosAtomicQueryTask("SELECT id, payload", targetType = typeOf<Map<String, Any?>>()),
+            context
+        )
+
+        assertEquals(listOf(mapOf("id" to 7, "payload" to "raw-long")), rows)
+        verifyOrder {
+            resultSet.getObject(2)
+            resultSet.getObject(1)
+        }
+        verify(exactly = 1) { resultSet.getObject(2) }
+    }
+
+    @Test
     fun `custom vendor reader remains a physical extension for raw Map results`() {
         val readers = KronosColumnMapperRegistry.defaults().apply {
             registerVendorReader(KronosVendorValueReader { _, _, value, _ ->
@@ -1043,6 +1077,24 @@ class KronosResultMappingTest {
         operationType = KOperationType.SELECT,
         dbType = DBType.Oracle,
         databaseProductName = "Oracle",
+        config = config
+    )
+
+    private fun dm8Context(
+        config: KronosJdbcConfig = KronosJdbcConfig(
+            DBType.DM8,
+            "DM DBMS",
+            "jdbc:dm://localhost:5236",
+            "DM JDBC"
+        )
+    ) = KronosStatementContext(
+        originalSql = "SELECT id FROM kt_integration_user",
+        jdbcSql = "SELECT id FROM kt_integration_user",
+        params = emptyList(),
+        parameterNames = emptyList(),
+        operationType = KOperationType.SELECT,
+        dbType = DBType.DM8,
+        databaseProductName = "DM DBMS",
         config = config
     )
 }

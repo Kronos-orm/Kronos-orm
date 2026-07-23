@@ -267,7 +267,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
 
     private fun shouldReturnGeneratedKeys(task: KAtomicActionTask): Boolean =
         task.operationType == KOperationType.INSERT &&
-            task.generatedKeyRequest != null
+            task.generatedKeyField != null
 
     private fun readGeneratedKeys(
         statement: PreparedStatement,

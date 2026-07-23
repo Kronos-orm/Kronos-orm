@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KAtomicActionTask
@@ -25,7 +26,7 @@ import com.kotlinorm.syntax.statement.SqlStatement
  * Execution metadata for one insert, update, or delete statement.
  *
  * [stash] carries operation-local binding hints to the data-source wrapper. Generated-key
- * output remains raw JDBC data: when [generatedKeyRequest] is non-null for an insert, the
+ * output remains raw JDBC data: when [generatedKeyField] is non-null for an insert, the
  * wrapper replaces [generatedKeys] with the returned values and derives [lastInsertId]
  * from the first numeric key when possible.
  *
@@ -34,7 +35,7 @@ import com.kotlinorm.syntax.statement.SqlStatement
  * @property operationType action operation classification
  * @property statement optional structured statement that produced [sql]
  * @property stash mutable operation-local metadata shared with the data-source wrapper
- * @property generatedKeyRequest requested generated-key assignment, or `null` when disabled
+ * @property generatedKeyField identity field whose generated value should be captured, or `null` when disabled
  * @property generatedKeys raw generated values returned by the JDBC driver
  * @property lastInsertId numeric representation of the first generated key, when available
  * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
@@ -45,7 +46,7 @@ data class KronosAtomicActionTask(
     override val operationType: KOperationType = KOperationType.UPDATE,
     override val statement: SqlStatement? = null,
     override val stash: MutableMap<String, Any?> = mutableMapOf(),
-    override var generatedKeyRequest: GeneratedKeyRequest? = null,
+    override var generatedKeyField: Field? = null,
     override val generatedKeys: MutableList<Any?> = mutableListOf(),
     override var lastInsertId: Long? = null,
     val listParameterOccurrences: Set<Int> = emptySet()

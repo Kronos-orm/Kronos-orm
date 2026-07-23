@@ -65,3 +65,21 @@ services:
       interval: 10s
       timeout: 10s
       retries: 60
+
+  dm8:
+    image: toyangdon/dm:8-arm64
+    container_name: kronos-testing-dm8
+    platform: linux/arm64
+    environment:
+      SYSDBA_PWD: SYSDBA
+    ports:
+      - "${DM_DOCKER_PORT:-5237}:5236"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "echo 'SELECT 1 FROM DUAL;' | timeout 10s /home/dmdba/dmdbms/tool/disql SYSDBA/SYSDBA@127.0.0.1:5236 >/dev/null 2>&1",
+        ]
+      interval: 10s
+      timeout: 15s
+      retries: 60

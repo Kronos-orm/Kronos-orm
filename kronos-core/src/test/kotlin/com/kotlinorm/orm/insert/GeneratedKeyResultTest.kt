@@ -1,64 +1,34 @@
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.ActionEvent
-import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
-import com.kotlinorm.beans.task.lastInsertIdFallbackSql
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.syntax.SqlIdentifier
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlParameter
+import com.kotlinorm.syntax.statement.SqlDmlStatement
+import com.kotlinorm.syntax.statement.SqlInsertMode
+import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.execute
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class GeneratedKeyResultTest : MysqlTestBase() {
     @Test
-    fun generatedKeyFallbackSqlReturnsExactSqlForSupportedDbTypes() {
-        val request = GeneratedKeyRequest("tb_user", "id")
-
-        assertEquals("SELECT LAST_INSERT_ID()", request.lastInsertIdFallbackSql(DBType.Mysql))
-        assertEquals("SELECT LAST_INSERT_ID()", request.lastInsertIdFallbackSql(DBType.H2))
-        assertEquals("SELECT LAST_INSERT_ID()", request.lastInsertIdFallbackSql(DBType.OceanBase))
-        assertEquals("SELECT MAX(\"ID\") FROM \"TB_USER\"", request.lastInsertIdFallbackSql(DBType.Oracle))
-        assertEquals("SELECT SCOPE_IDENTITY()", request.lastInsertIdFallbackSql(DBType.Mssql))
-        assertEquals("SELECT LASTVAL()", request.lastInsertIdFallbackSql(DBType.Postgres))
-        assertEquals("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1", request.lastInsertIdFallbackSql(DBType.DB2))
-        assertEquals("SELECT @@IDENTITY", request.lastInsertIdFallbackSql(DBType.Sybase))
-        assertEquals("SELECT last_insert_rowid()", request.lastInsertIdFallbackSql(DBType.SQLite))
-    }
-
-    @Test
-    fun generatedKeyFallbackSqlQuotesOracleQualifiedIdentifiers() {
-        val request = GeneratedKeyRequest("app_user.tb_user", "user_id")
-
-        assertEquals(
-            "SELECT MAX(\"USER_ID\") FROM \"APP_USER\".\"TB_USER\"",
-            request.lastInsertIdFallbackSql(DBType.Oracle)
-        )
-    }
-
-    @Test
-    fun generatedKeyFallbackSqlThrowsForUnsupportedDbType() {
-        assertEquals(
-            "Unsupported database type: Unknown",
-            assertFailsWith<UnsupportedOperationException> {
-                GeneratedKeyRequest("tb_user", "id").lastInsertIdFallbackSql(DBType.Unknown)
-            }.message
-        )
-    }
-
-    @Test
-    fun withIdAddsGeneratedKeyRequestOnlyForDatabaseGeneratedIdentity() {
+    fun withIdAddsGeneratedKeyFieldOnlyForDatabaseGeneratedIdentity() {
         val generatedTask = TestUser(username = "alpha")
             .insert()
             .withId()
@@ -77,9 +47,9 @@ class GeneratedKeyResultTest : MysqlTestBase() {
             .component3()
             .single()
 
-        assertEquals(GeneratedKeyRequest("tb_user", "id"), generatedTask.generatedKeyRequest)
-        assertEquals(null, assignedTask.generatedKeyRequest)
-        assertEquals(null, plainTask.generatedKeyRequest)
+        assertEquals(identityField(), generatedTask.generatedKeyField)
+        assertEquals(null, assignedTask.generatedKeyField)
+        assertEquals(null, plainTask.generatedKeyField)
     }
 
     @Test
@@ -89,7 +59,8 @@ class GeneratedKeyResultTest : MysqlTestBase() {
             sql = "INSERT INTO user(name) VALUES(:name)",
             paramMap = mapOf("name" to "alpha"),
             operationType = KOperationType.INSERT,
-            generatedKeyRequest = GeneratedKeyRequest("tb_user", "id")
+            statement = generatedKeyInsert(),
+            generatedKeyField = identityField()
         )
         val plainInsert = KronosAtomicActionTask(
             sql = "INSERT INTO user(name) VALUES(:name)",
@@ -100,7 +71,7 @@ class GeneratedKeyResultTest : MysqlTestBase() {
             sql = "UPDATE user SET name = :name",
             paramMap = mapOf("name" to "gamma"),
             operationType = KOperationType.UPDATE,
-            generatedKeyRequest = GeneratedKeyRequest("tb_user", "id")
+            generatedKeyField = identityField()
         )
 
         val requestedResult = requestedInsert.execute(wrapper)
@@ -122,7 +93,8 @@ class GeneratedKeyResultTest : MysqlTestBase() {
             sql = "INSERT INTO user(name) VALUES(:name)",
             paramMap = mapOf("name" to "alpha"),
             operationType = KOperationType.INSERT,
-            generatedKeyRequest = GeneratedKeyRequest("tb_user", "id")
+            statement = generatedKeyInsert(),
+            generatedKeyField = identityField()
         )
 
         val result = task.execute(wrapper)
@@ -134,13 +106,48 @@ class GeneratedKeyResultTest : MysqlTestBase() {
     }
 
     @Test
+    fun executeSkipsUnsafeGeneratedKeyFallbackForDM8() {
+        val wrapper = GeneratedKeyRecordingWrapper(databaseType = DBType.DM8, fallbackResult = 404L)
+        val task = KronosAtomicActionTask(
+            sql = "INSERT INTO user(name) VALUES(:name)",
+            paramMap = mapOf("name" to "alpha"),
+            operationType = KOperationType.INSERT,
+            statement = generatedKeyInsert(),
+            generatedKeyField = identityField()
+        )
+
+        val result = task.execute(wrapper)
+
+        assertEquals(null, result.lastInsertId)
+        assertEquals(emptyList(), wrapper.querySql)
+    }
+
+    @Test
+    fun executeSkipsFallbackWhenH2HasNoSafeGeneratedKeyQuery() {
+        val wrapper = GeneratedKeyRecordingWrapper(databaseType = DBType.H2, fallbackResult = 404L)
+        val task = KronosAtomicActionTask(
+            sql = "INSERT INTO user(name) VALUES(:name)",
+            paramMap = mapOf("name" to "alpha"),
+            operationType = KOperationType.INSERT,
+            statement = generatedKeyInsert(),
+            generatedKeyField = identityField()
+        )
+
+        val result = task.execute(wrapper)
+
+        assertEquals(null, result.lastInsertId)
+        assertEquals(emptyList(), wrapper.querySql)
+    }
+
+    @Test
     fun afterActionAndAfterExecuteCanReadGeneratedKeyProperty() {
         val wrapper = GeneratedKeyRecordingWrapper(fallbackResult = 202L)
         val task = KronosAtomicActionTask(
             sql = "INSERT INTO user(name) VALUES(:name)",
             paramMap = mapOf("name" to "alpha"),
             operationType = KOperationType.INSERT,
-            generatedKeyRequest = GeneratedKeyRequest("tb_user", "id")
+            statement = generatedKeyInsert(),
+            generatedKeyField = identityField()
         )
         val oldAfterEvents = ActionEvent.afterActionEvents.toList()
         var eventObservedLastInsertId: Long? = null
@@ -163,14 +170,29 @@ class GeneratedKeyResultTest : MysqlTestBase() {
         }
     }
 
+    private fun identityField(): Field = Field(
+        columnName = "id",
+        primaryKey = PrimaryKeyType.IDENTITY,
+        tableName = "tb_user"
+    )
+
+    private fun generatedKeyInsert(): SqlDmlStatement.Insert = SqlDmlStatement.Insert(
+        table = SqlTable.Ident("tb_user"),
+        columns = listOf(SqlIdentifier.of("name")),
+        mode = SqlInsertMode.Values(
+            listOf(listOf(SqlExpr.Parameter(SqlParameter.Named("name"))))
+        )
+    )
+
     private class GeneratedKeyRecordingWrapper(
+        private val databaseType: DBType = DBType.Mysql,
         private val generatedKeyFromUpdate: Long? = null,
         private val fallbackResult: Any? = null
     ) : KronosDataSourceWrapper {
         val querySql = mutableListOf<String>()
         override val url: String = "jdbc:mysql://localhost:3306/kronos"
         override val userName: String = "kronos"
-        override val dbType: DBType = DBType.Mysql
+        override val dbType: DBType = databaseType
 
         override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 

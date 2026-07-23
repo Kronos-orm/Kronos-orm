@@ -26,7 +26,8 @@ import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.beans.task.lastInsertIdFallbackSql
+import com.kotlinorm.database.SqlManager.renderStatement
+import com.kotlinorm.database.SqlManager.statementsOf
 import com.kotlinorm.enums.KOperationType.SELECT
 import com.kotlinorm.enums.KOperationType.INSERT
 import com.kotlinorm.enums.QueryType
@@ -38,6 +39,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import kotlin.reflect.typeOf
 
@@ -69,13 +71,21 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
 }
 
 private fun KAtomicActionTask.captureGeneratedKeyFallback(dataSource: KronosDataSourceWrapper) {
-    val request = generatedKeyRequest ?: return
+    val keyField = generatedKeyField ?: return
     if (operationType != INSERT || lastInsertId != null) return
+    val insert = statement as? SqlDmlStatement.Insert ?: return
+    val fallbackStatement = statementsOf(dataSource.dbType)
+        .lastInsertIdFallback(insert, keyField)
+        ?: return
+    val rendered = renderStatement(dataSource, fallbackStatement)
 
     val fallbackValue = dataSource.first(
         KronosAtomicQueryTask(
-            request.lastInsertIdFallbackSql(dataSource.dbType),
-            targetType = typeOf<Long?>()
+            sql = rendered.sql,
+            paramMap = rendered.parameters,
+            statement = fallbackStatement,
+            targetType = typeOf<Long?>(),
+            listParameterOccurrences = rendered.listParameterOccurrences
         )
     )
     lastInsertId = fallbackValue.toLongOrZero()
@@ -151,7 +161,7 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
     )
 }
 
-fun <T : Any?> KAtomicTask.logAndReturn(
+fun <T> KAtomicTask.logAndReturn(
     result: T, queryType: QueryType? = null
 ) = result.also {
     handleLogResult(this, it, queryType)

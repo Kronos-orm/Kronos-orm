@@ -21,8 +21,10 @@ The complete built-in dialects map to these `DBType` values:
 | MySQL | `DBType.Mysql` |
 | PostgreSQL | `DBType.Postgres` |
 | SQLite | `DBType.SQLite` |
+| H2 | `DBType.H2` |
 | SQL Server | `DBType.Mssql` |
 | Oracle | `DBType.Oracle` |
+| DM8 (Dameng) | `DBType.DM8` |
 
 > **Note**
 > For database connection and JDBC driver examples, see {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }}.
@@ -282,7 +284,7 @@ FROM "TB_USER"
 
 ## Database Enum Values and Extension
 
-`DBType` also contains DB2, Sybase, H2, OceanBase, DM8, and GaussDB for connection identification and dialect extension entry points.
+`DBType` also contains DB2, Sybase, OceanBase, and GaussDB for connection identification and dialect extension entry points.
 
 ```kotlin
 val dbType = DBType.fromName(connection.metaData.databaseProductName)

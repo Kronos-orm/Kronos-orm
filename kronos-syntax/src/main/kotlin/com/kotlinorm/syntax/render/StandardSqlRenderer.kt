@@ -1487,11 +1487,11 @@ open class StandardSqlRenderer(
         is SqlAssignmentTarget.Column -> renderQualifiedIdentifier(target.qualifier, target.identifier)
     }
 
-    private fun qualifyAssignmentTarget(target: SqlAssignmentTarget, qualifier: SqlIdentifier): SqlAssignmentTarget = when (target) {
+    protected fun qualifyAssignmentTarget(target: SqlAssignmentTarget, qualifier: SqlIdentifier): SqlAssignmentTarget = when (target) {
         is SqlAssignmentTarget.Column -> target.copy(qualifier = target.qualifier ?: qualifier)
     }
 
-    private fun renderMergeSourceExpr(expr: SqlExpr, targetTable: SqlIdentifier): String {
+    protected fun renderMergeSourceExpr(expr: SqlExpr, targetTable: SqlIdentifier): String {
         val rewritten = object : SqlNodeRewriter {
             override fun rewriteExpr(expr: SqlExpr): SqlExpr = when (expr) {
                 is SqlExpr.ExcludedColumn -> SqlExpr.SourceColumn(expr.identifier, SqlIdentifier.of("t2"))

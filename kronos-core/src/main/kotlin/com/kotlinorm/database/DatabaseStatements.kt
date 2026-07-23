@@ -12,6 +12,7 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
+import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlStatement
 
@@ -71,6 +72,7 @@ abstract class DatabaseStatements {
     abstract fun tableIndexes(tableName: String): SqlQuery
     abstract fun mapColumns(tableName: String, rows: List<Map<String, Any>>): List<Field>
     abstract fun mapIndexes(tableName: String, rows: List<Map<String, Any>>): List<KTableIndex>
+    open fun lastInsertIdFallback(insert: SqlDmlStatement.Insert, generatedKey: Field): SqlQuery? = null
     abstract fun createTable(input: DatabaseCreateTable): List<SqlStatement>
     abstract fun dropTable(tableName: String, ifExists: Boolean): List<SqlStatement>
     abstract fun truncateTable(tableName: String, restartIdentity: Boolean): List<SqlStatement>

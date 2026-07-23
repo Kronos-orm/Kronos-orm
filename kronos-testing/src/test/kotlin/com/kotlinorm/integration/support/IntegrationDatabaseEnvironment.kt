@@ -1,6 +1,7 @@
 package com.kotlinorm.integration.support
 
 import com.kotlinorm.database.SqlExecutor
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 import org.apache.commons.dbcp2.BasicDataSource
@@ -70,10 +71,27 @@ object IntegrationDatabaseEnvironments {
         probeSql = "SELECT 1 FROM DUAL",
     )
 
+    val dm8 = IntegrationDatabaseEnvironment(
+        displayName = "DM8",
+        driverClassName = "dm.jdbc.driver.DmDriver",
+        url = env("DM_JDBC_URL") ?: "jdbc:dm://localhost:5237",
+        username = env("DM_USERNAME") ?: "SYSDBA",
+        password = env("DM_PASSWORD") ?: "SYSDBA",
+        wrapperFactory = { dataSource -> KronosJdbcWrapper(dataSource, databaseType = DBType.DM8) },
+    )
+
     val sqlite = IntegrationDatabaseEnvironment(
         displayName = "SQLite",
         driverClassName = "org.sqlite.JDBC",
         url = env("SQLITE_URL") ?: sqliteTempUrl(),
+    )
+
+    val h2 = IntegrationDatabaseEnvironment(
+        displayName = "H2",
+        driverClassName = "org.h2.Driver",
+        url = env("H2_JDBC_URL") ?: "jdbc:h2:mem:kronos_testing;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE",
+        username = env("H2_USERNAME") ?: "sa",
+        password = env("H2_PASSWORD") ?: "",
     )
 
     private fun env(name: String): String? = System.getenv(name)?.takeIf { it.isNotBlank() }

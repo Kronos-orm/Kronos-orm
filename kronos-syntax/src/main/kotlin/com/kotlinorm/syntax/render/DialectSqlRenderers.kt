@@ -32,6 +32,48 @@ import com.kotlinorm.syntax.statement.SqlUpsertAction
 import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.syntax.token.SqlUnsafeToken
 
+open class H2SqlRenderer : StandardSqlRenderer(SqlDialect.H2) {
+    override fun shouldQuoteSelectItemAlias(metadata: SqlSelectItemAliasMetadata?): Boolean = true
+
+    override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
+        is SqlDdlStatement.AlterTable.ModifyColumn -> {
+            val column = statement.column.copy(primaryKey = SqlPrimaryKeyMode.NotPrimary)
+            "ALTER TABLE ${renderIdentifier(statement.tableName)} ALTER COLUMN ${renderColumnDefinition(column)}"
+        }
+        else -> super.renderDdl(statement)
+    }
+
+    override fun renderUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
+        append("MERGE INTO ")
+        append(renderTable(statement.table.copy(alias = SqlTableAlias("t1"))))
+        append(" USING (VALUES (")
+        append(statement.values.joinToString(", ") { renderExpr(it) })
+        append(")) ")
+        append(renderTableAlias(SqlTableAlias("t2", statement.columns.map { it.canonical })))
+        append(" ON (")
+        append(statement.primaryKeys.joinToString(" AND ") {
+            "${quoteIdent("t1")}.${renderIdentifier(it)} = ${quoteIdent("t2")}.${renderIdentifier(it)}"
+        })
+        append(")")
+        when (val action = statement.action) {
+            SqlUpsertAction.DoNothing -> {}
+            is SqlUpsertAction.Update -> {
+                append(" WHEN MATCHED THEN UPDATE SET ")
+                append(action.setPairs.joinToString(", ") {
+                    "${renderAssignmentTarget(qualifyAssignmentTarget(it.target, SqlIdentifier.of("t1")))} = ${renderMergeSourceExpr(it.value, statement.table.identifier)}"
+                })
+                action.where?.let { append(" WHERE ${renderPredicate(it)}") }
+            }
+        }
+        append(" WHEN NOT MATCHED THEN INSERT (")
+        append(statement.columns.joinToString(", ") { renderIdentifier(it) })
+        append(") VALUES (")
+        append(statement.columns.joinToString(", ") { "${quoteIdent("t2")}.${renderIdentifier(it)}" })
+        append(")")
+        statement.returning?.let { append(" ${renderReturning(it)}") }
+    }
+}
+
 open class MysqlSqlRenderer(
     standardEscapeStrings: Boolean = false
 ) : StandardSqlRenderer(SqlDialect.MySql.copy(standardEscapeStrings = standardEscapeStrings)) {

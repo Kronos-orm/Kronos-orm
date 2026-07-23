@@ -46,6 +46,11 @@ object MssqlStatements : DatabaseStatements() {
 
     private fun table(tableName: String) = SqlIdentifier.of("dbo", tableName)
 
+    override fun lastInsertIdFallback(insert: SqlDmlStatement.Insert, generatedKey: Field): SqlQuery =
+        SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.Function(SqlIdentifier.of("SCOPE_IDENTITY"))))
+        )
+
     private fun metadataTable(schema: String, name: String, alias: String? = null): SqlTable.Ident =
         SqlTable.Ident(
             name = name,

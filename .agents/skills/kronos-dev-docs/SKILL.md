@@ -64,7 +64,7 @@ Use the current repository implementation as the source of truth.
 - README files, homepage TypeScript snippets, module READMEs, and blog assets do not share the `kronos-docs` Markdown macro pipeline; keep their version text explicit or use local constants when the file already has that pattern.
 - Verify the current repository development version from `build-logic/src/main/kotlin/publishing.gradle.kts` before changing source-development or snapshot-specific text.
 - Current Kotlin catalog is in `gradle/libs.versions.toml`; verify before updating Kotlin requirements.
-- Complete database dialects are MySQL, PostgreSQL, SQLite, SQL Server, and Oracle.
+- Complete database dialects are MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8. H2 uses standard quoted identifiers, a dedicated MERGE renderer, INFORMATION_SCHEMA metadata, and JDBC generated keys for identity inserts. DM8 uses Oracle-compatible query and metadata SQL with DM8-native identity-column DDL.
 - `Kronos` global configuration is direct property assignment on the `Kronos` object; do not document `Kronos.init { ... }` unless it exists again.
 - `KronosJdbcWrapper` lives in `com.kotlinorm.wrappers`, takes a `DataSource`, optional `DBType`, and `KronosJdbcConfig` block; database type is inferred from JDBC metadata when `databaseType` is not supplied.
 - Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, service-discovery details, and implementation pipeline details out of ordinary docs navigation.
@@ -155,9 +155,9 @@ Use code fence metadata consistently, for example ` ```kotlin group="Case 1" nam
 
 Use `group="..."` only for code fences that should render as tabs for one example unit. A group is appropriate when the fenced blocks are alternative views of the same example, such as Kotlin plus MySQL/PostgreSQL/SQLite/SQLServer/Oracle SQL, or Kotlin plus the direct result/params for the same call. Do not reuse a page-level topic name as the group across unrelated sections. When a page has multiple independent examples under different headings, give each example its own group, for example `Table column model`, `Default value`, and `Timestamp fields` instead of one shared `TableColumn`.
 
-Before finalizing pages with multiple fenced blocks, scan repeated `group` values. A repeated group that spans multiple `##` / `###` headings is usually a tab-merging bug unless the headings are deliberately part of one continuous example. Good groups typically have names like `kotlin`, `Mysql`, `PostgreSQL`, `SQLite`, `SQLServer`, `Oracle`, `result`, or `params` for the same scenario; risky groups have many unrelated names such as `model`, `default`, `timestamps`, `insert params`, and `update params` under one broad topic.
+Before finalizing pages with multiple fenced blocks, scan repeated `group` values. A repeated group that spans multiple `##` / `###` headings is usually a tab-merging bug unless the headings are deliberately part of one continuous example. Good groups typically have names like `kotlin`, `Mysql`, `PostgreSQL`, `SQLite`, `H2`, `SQLServer`, `Oracle`, `DM8`, `result`, or `params` for the same scenario; risky groups have many unrelated names such as `model`, `default`, `timestamps`, `insert params`, and `update params` under one broad topic.
 
-For SQL examples, preserve the existing dialect order when showing multiple outputs: MySQL, PostgreSQL, SQLite, SQLServer, Oracle.
+For SQL examples, preserve the existing dialect order when showing multiple outputs: MySQL, PostgreSQL, SQLite, H2, SQLServer, Oracle, DM8.
 
 ## Writing Rules
 

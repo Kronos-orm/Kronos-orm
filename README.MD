@@ -54,7 +54,7 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 
 - **Zero reflection** — Compiler plugin generates all mapping code at build time. No runtime overhead, no GC pressure.
 - **Kotlin-native DSL** — Write conditions with `==`, `>`, `<`, `in`, `like` directly. No `.eq()`, `.gt()`, `.lt()` boilerplate.
-- **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server and Oracle.
+- **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng).
 - **Full-featured** — Transactions, cascading (1:1 / 1:N / M:N), schema sync, serialization, cross-database joins.
 - **Built-in strategies** — Logical deletion, optimistic lock, create/update timestamps. All configurable.
 - **Framework and platform integration** — Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLite.
@@ -262,7 +262,7 @@ Android/JVM support is available in `0.3.0`. It uses `kronos-core`, the Gradle p
 
 ## Supported Databases
 
-MySQL | PostgreSQL | SQLite | SQL Server | Oracle
+MySQL | PostgreSQL | SQLite | H2 | SQL Server | Oracle | DM8 (Dameng)
 
 > Kronos selects SQL rendering and table-structure statements from the active database dialect.
 
@@ -519,7 +519,7 @@ Kronos provides an AI skill guide that helps coding assistants understand and ge
 
 If the target directory already exists, add `--force` after `degit`.
 
-Claude Code loads project skills from `.claude/skills/`; Codex loads project skills from `.agents/skills/`. Use the default command for Windsurf and other tools that read agent skills from `.agents/skills/`.
+Claude Code loads project skills from `.claude/skills/`; Codex loads project skills from `.codex/skills/`. Use the default command for Windsurf and other tools that read agent skills from `.agents/skills/`.
 
 --------
 

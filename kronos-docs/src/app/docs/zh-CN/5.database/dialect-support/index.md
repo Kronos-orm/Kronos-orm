@@ -21,8 +21,10 @@ println(wrapper.sqlDialect)
 | MySQL | `DBType.Mysql` |
 | PostgreSQL | `DBType.Postgres` |
 | SQLite | `DBType.SQLite` |
+| H2 | `DBType.H2` |
 | SQL Server | `DBType.Mssql` |
 | Oracle | `DBType.Oracle` |
+| DM8（达梦） | `DBType.DM8` |
 
 > **Note**
 > 连接数据库和 JDBC driver 示例请参考{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
@@ -282,7 +284,7 @@ FROM "TB_USER"
 
 ## 数据库枚举与扩展
 
-`DBType` 还包含 DB2、Sybase、H2、OceanBase、DM8、GaussDB 等枚举值，用于连接识别和方言扩展入口。
+`DBType` 还包含 DB2、Sybase、OceanBase、GaussDB 等枚举值，用于连接识别和方言扩展入口。
 
 ```kotlin
 val dbType = DBType.fromName(connection.metaData.databaseProductName)

@@ -172,7 +172,7 @@ When a removed behavior needs coverage:
 
 ### Writing Integration Tests (kronos-testing)
 
-Tests connect to real databases. CI spins up MySQL, PostgreSQL, SQL Server automatically.
+Tests connect to real databases or in-process JDBC databases. CI starts MySQL, PostgreSQL, SQL Server, Oracle, and DM8 through Compose; H2 and SQLite run inside the test JVM.
 
 ```kotlin
 // kronos-testing/build.gradle.kts
@@ -184,8 +184,10 @@ dependencies {
     implementation(libs.driver.jdbc.mysql)
     implementation(libs.driver.jdbc.postgres)
     implementation(libs.driver.jdbc.sqlite)
+    implementation(libs.driver.jdbc.h2)
     implementation(libs.driver.jdbc.mssql)
     implementation(libs.driver.jdbc.oracle)
+    implementation(libs.driver.jdbc.dameng)
     // Connection pool
     implementation(libs.dbcp2)
 }
@@ -232,6 +234,16 @@ class MysqlTest {
 | `POSTGRES_USERNAME` | `postgres` | PostgreSQL 17 |
 | `POSTGRES_PASSWORD` | (empty) | PostgreSQL 17 |
 | SQL Server | SA / `YourStrong!Passw0rd` | SQL Server 2022 |
+| `ORACLE_JDBC_URL` | `jdbc:oracle:thin:@localhost:1521/FREEPDB1` | Oracle Free |
+| `ORACLE_USERNAME` | `kronos` | Oracle Free |
+| `ORACLE_PASSWORD` | `KronosPassw0rd1` | Oracle Free |
+| `DM_JDBC_URL` | `jdbc:dm://localhost:5237` | DM8 |
+| `DM_USERNAME` | `SYSDBA` | DM8 |
+| `DM_PASSWORD` | `SYSDBA` | DM8 |
+| `H2_JDBC_URL` | `jdbc:h2:mem:kronos_testing;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE` | H2 (in-process) |
+| `H2_USERNAME` | `sa` | H2 (in-process) |
+| `H2_PASSWORD` | (empty) | H2 (in-process) |
+| `SQLITE_URL` | Temporary file URL | SQLite (in-process) |
 
 ### Running Tests Locally
 
@@ -247,7 +259,7 @@ class MysqlTest {
 ./gradlew :kronos-compiler-plugin:test
 ./gradlew :kronos-codegen:test
 
-# Integration tests (requires running DBs + env vars)
+# Integration tests (external services use env vars; H2 and SQLite use in-process defaults)
 source envsetup.sh  # sets DB env vars
 ./gradlew :kronos-testing:test --info --stacktrace
 ```
@@ -277,7 +289,7 @@ All workflows in `.github/workflows/`:
 | `kronos-core-testing.yml` | push/PR to `main` | `./gradlew :kronos-core:test` (JDK 21) |
 | `kronos-compiler-plugin-testing.yml` | push/PR to `main` | `./gradlew :kronos-compiler-plugin:test` (JDK 21) |
 | `kronos-codegen-testing.yml` | push/PR to `main` | `./gradlew :kronos-codegen:test` (JDK 21) |
-| `kronos-testing.yml` | push/PR to `main` | Integration tests with real DBs (MySQL 8.0, PostgreSQL 17, SQL Server 2022 via `ankane/setup-*` actions) |
+| `kronos-testing.yml` | push/PR to `main` | Integration tests with real databases from `kronos-testing/docker-compose.integration.yml` (MySQL 8.0, PostgreSQL 17, SQL Server 2022, Oracle Free, and DM8; H2 and SQLite run in the test JVM) |
 | `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out the external Ktor, Spring Boot, Solon, and Vert.x examples, rewires their coordinates to the current version, and runs their smoke tests |
 | `kronos-android-example.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out the Android example, rewires its coordinates to the current version, and runs `:app:assembleDebug` plus `:app:lintDebug` |
 | `kronos-docs-testing.yml` | docs/workflow push or PR to `main` | Installs locked pnpm dependencies and builds the Angular/ng-doc documentation site |
@@ -288,15 +300,11 @@ All workflows in `.github/workflows/`:
 | `stale.yml` | daily 15:40 UTC | Marks stale issues (60d) and PRs, closes after grace period |
 
 ### Integration Test CI Setup
-`kronos-testing.yml` spins up real databases:
-```yaml
-- uses: ankane/setup-mysql@v1
-  with: { mysql-version: "8.0", database: kronos_testing }
-- uses: ankane/setup-postgres@v1
-  with: { postgres-version: 17, database: kronos_testing }
-- uses: ankane/setup-sqlserver@v1
-  with: { sqlserver-version: 2022, accept-eula: true, sa-password: "YourStrong!Passw0rd" }
-```
+`kronos-testing.yml` loads the integration defaults, starts `kronos-testing/docker-compose.integration.yml`, prepares the SQL Server database, and runs `:kronos-testing:test`.
+
+The regular integration gate starts `dm8` directly alongside the other integration databases using `toyangdon/dm:8-arm64`. That image is ARM64-only, so the job registers QEMU before Compose. It uses the image's public `SYSDBA` / `SYSDBA` defaults on a dedicated host port; no developer-local password, repository secret, job-specific DM8 variables, Compose profile, or Gradle exclusion is involved. Local installations override the tracked test defaults through ignored local environment settings.
+
+H2 is supplied by `com.h2database:h2` and uses `IntegrationDatabaseEnvironments.h2` with an in-memory URL. `H2IntegrationTest` applies the shared integration suites, while `H2GeneratedKeyIntegrationTest` verifies identity inserts through JDBC generated keys. The H2 test environment is initialized inside the Gradle test process; Compose services cover the external databases.
 
 ---
 

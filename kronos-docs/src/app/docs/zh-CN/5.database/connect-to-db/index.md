@@ -153,6 +153,35 @@ dependencies {
 }
 ```
 
+## 配置H2
+
+H2 可以使用内存 JDBC URL 进行本地开发和测试。
+
+```kotlin group="H2" name="H2KronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "org.h2.Driver"
+            url = "jdbc:h2:mem:kronos;DB_CLOSE_DELAY=-1"
+            username = "sa"
+            password = ""
+        }
+    )
+}
+
+Kronos.dataSource = { wrapper }
+```
+
+```kotlin group="H2" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.h2database:h2:<latest-stable>")
+}
+```
+
 ## 配置SQL Server
 
 使用SQL Server JDBC Driver，并按数据库服务端要求设置加密参数。
@@ -208,6 +237,37 @@ Kronos.dataSource = { wrapper }
 ```kotlin group="Oracle" name="Driver coordinate" icon="gradlekts"
 dependencies {
     implementation("com.oracle.database.jdbc:ojdbc8:<latest-stable>")
+}
+```
+
+## 配置DM8（达梦）
+
+使用 DM8 JDBC Driver 和 `DBType.DM8`。
+
+```kotlin group="DM8" name="Dm8KronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        dataSource = BasicDataSource().apply {
+            driverClassName = "dm.jdbc.driver.DmDriver"
+            url = "jdbc:dm://localhost:5236"
+            username = "SYSDBA"
+            password = "******"
+        },
+        databaseType = DBType.DM8
+    )
+}
+
+Kronos.dataSource = { wrapper }
+```
+
+```kotlin group="DM8" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.dameng:DmJdbcDriver8:<latest-stable>")
 }
 ```
 

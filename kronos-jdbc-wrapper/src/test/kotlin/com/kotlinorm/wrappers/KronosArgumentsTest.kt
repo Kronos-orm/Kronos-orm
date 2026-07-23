@@ -10,7 +10,7 @@
 package com.kotlinorm.wrappers
 
 import com.kotlinorm.beans.task.JdbcParameterTypeHints
-import com.kotlinorm.beans.task.GeneratedKeyRequest
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
@@ -136,7 +136,7 @@ class KronosArgumentsTest {
         val task = KronosAtomicActionTask(
             sql = "INSERT INTO events DEFAULT VALUES",
             operationType = KOperationType.INSERT,
-            generatedKeyRequest = GeneratedKeyRequest("events", "id")
+            generatedKeyField = Field("id", tableName = "events")
         )
 
         KronosJdbcWrapper(generatedKeyDataSource(statement), DBType.H2).update(task)

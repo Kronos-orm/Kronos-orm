@@ -1,6 +1,6 @@
 # kronos-testing
 
-Integration test module for Kronos ORM. Default tests run against real database instances through `com.kotlinorm.integration.*`.
+Integration test module for Kronos ORM. Default tests cover external database instances and in-process JDBC databases through `com.kotlinorm.integration.*`.
 
 ## Supported Databases
 
@@ -8,6 +8,8 @@ Integration test module for Kronos ORM. Default tests run against real database 
 - PostgreSQL 17
 - SQL Server 2022
 - Oracle Free
+- DM8 (Dameng)
+- H2 through JDBC (in-memory by default)
 - SQLite through JDBC
 
 ## Environment Variables
@@ -26,9 +28,15 @@ Integration test module for Kronos ORM. Default tests run against real database 
 | `ORACLE_JDBC_URL` | `jdbc:oracle:thin:@localhost:1521/FREEPDB1` |
 | `ORACLE_USERNAME` | `kronos` |
 | `ORACLE_PASSWORD` | `KronosPassw0rd1` |
+| `DM_JDBC_URL` | `jdbc:dm://localhost:5237` |
+| `DM_USERNAME` | `SYSDBA` |
+| `DM_PASSWORD` | `SYSDBA` |
+| `H2_JDBC_URL` | `jdbc:h2:mem:kronos_testing;DB_CLOSE_DELAY=-1` |
+| `H2_USERNAME` | `sa` |
+| `H2_PASSWORD` | empty |
 | `SQLITE_URL` | Temp-file SQLite database |
 
-Local defaults live in the tracked `envsetup.defaults` file. `envsetup.sh` and `envsetup.bat` load that file and keep any environment variable you set before calling them.
+Local defaults live in the tracked `envsetup.defaults` file. `envsetup.sh` and `envsetup.bat` load that file and keep any environment variable you set before calling them. Put local overrides in the ignored `envsetup.local.properties`, or set them in the environment before loading the defaults.
 
 ## Running
 
@@ -43,7 +51,7 @@ source envsetup.sh
 ./test.sh
 ```
 
-External databases that are not reachable in a local run are skipped by JUnit assumptions. SQLite is in-process and should still execute without external services.
+External database suites require their matching database service. SQLite and H2 run in-process and require no Compose service.
 
 For fast local feedback without external services:
 
@@ -65,4 +73,4 @@ docker compose -f kronos-testing/docker-compose.integration.yml down
 
 ## CI
 
-`kronos-testing.yml` workflow spins up MySQL, PostgreSQL, SQL Server, and Oracle. SQLite runs in the test JVM.
+`kronos-testing.yml` runs MySQL, PostgreSQL, SQL Server, Oracle, and DM8 in one required integration gate. SQLite and H2 run in the test JVM.

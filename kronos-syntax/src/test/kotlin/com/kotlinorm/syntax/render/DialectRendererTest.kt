@@ -20,6 +20,7 @@ import com.kotlinorm.syntax.statement.SqlColumnDefinition
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlQuery
+import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
@@ -47,6 +48,42 @@ class DialectRendererTest {
         assertEquals(
             """INSERT INTO "user" ("id", "name") VALUES (1, 'Ada') ON CONFLICT ("id") DO UPDATE SET "name" = EXCLUDED."name"""",
             upsert.toSql(SqlDialect.SQLite)
+        )
+    }
+
+    @Test
+    fun rendersH2MergeWithValuesSourceAndQuotedAliases() {
+        val upsert = SqlDmlStatement.Upsert(
+            table = table("user"),
+            columns = cols("id", "name"),
+            values = listOf(named("id"), named("name")),
+            primaryKeys = cols("id")
+        )
+        val aliasQuery = SqlQuery.Select(
+            select = listOf(
+                SqlSelectItem.Expr(
+                    SqlExpr.Function(id("LENGTH"), args = listOf(col("name"))),
+                    alias = "nameLength"
+                )
+            ),
+            from = listOf(table("user"))
+        )
+        val modifyColumn = SqlDdlStatement.AlterTable.ModifyColumn(
+            tableName = id("user"),
+            column = SqlColumnDefinition(id("id"), SqlType.Int, nullable = false, primaryKey = com.kotlinorm.syntax.statement.SqlPrimaryKeyMode.Primary)
+        )
+
+        assertEquals(
+            "MERGE INTO \"user\" AS \"t1\" USING (VALUES (:id, :name)) AS \"t2\" (\"id\", \"name\") ON (\"t1\".\"id\" = \"t2\".\"id\") WHEN MATCHED THEN UPDATE SET \"t1\".\"name\" = \"t2\".\"name\" WHEN NOT MATCHED THEN INSERT (\"id\", \"name\") VALUES (\"t2\".\"id\", \"t2\".\"name\")",
+            upsert.toSql(SqlDialect.H2)
+        )
+        assertEquals(
+            "SELECT LENGTH(\"name\") AS \"nameLength\" FROM \"user\"",
+            aliasQuery.toSql(SqlDialect.H2)
+        )
+        assertEquals(
+            "ALTER TABLE \"user\" ALTER COLUMN \"id\" INTEGER NOT NULL",
+            modifyColumn.toSql(SqlDialect.H2)
         )
     }
 

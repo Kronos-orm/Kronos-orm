@@ -181,6 +181,7 @@ class PrettySqlRenderer(
                 SqlDialectFamily.MySql -> renderPrettyMysqlUpsert(statement)
                 SqlDialectFamily.PostgreSql -> renderPrettyPostgresqlUpsert(statement)
                 SqlDialectFamily.SQLite -> renderPrettySqliteUpsert(statement)
+                SqlDialectFamily.H2 -> renderPrettyH2Upsert(statement)
                 SqlDialectFamily.Standard,
                 SqlDialectFamily.Oracle,
                 SqlDialectFamily.SqlServer -> renderPrettyMergeUpsert(statement)
@@ -285,6 +286,42 @@ class PrettySqlRenderer(
         append(renderColumnList(statement.columns))
         append("\nVALUES (")
         append(statement.values.joinToString(", ") { renderExprPretty(it) })
+        append(")")
+        statement.returning?.let {
+            append("\n")
+            append(renderReturning(it))
+        }
+    }
+
+    private fun renderPrettyH2Upsert(statement: SqlDmlStatement.Upsert): String = buildString {
+        append("MERGE INTO ")
+        append(renderCompactTable(statement.table.copy(alias = SqlTableAlias("t1"))))
+        append("\nUSING (VALUES (")
+        append(statement.values.joinToString(", ") { renderExprPretty(it) })
+        append(")) ")
+        append(renderTableAlias(SqlTableAlias("t2", statement.columns.map { it.canonical })))
+        append("\nON (")
+        append(statement.primaryKeys.joinToString(" AND ") {
+            "${quoteIdent("t1")}.${renderIdentifier(it)} = ${quoteIdent("t2")}.${renderIdentifier(it)}"
+        })
+        append(")")
+        when (val action = statement.action) {
+            SqlUpsertAction.DoNothing -> {}
+            is SqlUpsertAction.Update -> {
+                append("\nWHEN MATCHED THEN UPDATE SET\n")
+                append(action.setPairs.joinToString(",\n") {
+                    "${renderIndent(1)}${renderQualifiedAssignmentTarget(it.target, SqlIdentifier.of("t1"))} = ${renderPrettyMergeSourceExpr(it.value)}"
+                })
+                action.where?.let {
+                    append("\nWHERE\n")
+                    append("${renderIndent(1)}${renderPredicatePretty(it)}")
+                }
+            }
+        }
+        append("\nWHEN NOT MATCHED THEN INSERT ")
+        append(renderColumnList(statement.columns))
+        append("\nVALUES (")
+        append(statement.columns.joinToString(", ") { "${quoteIdent("t2")}.${renderIdentifier(it)}" })
         append(")")
         statement.returning?.let {
             append("\n")

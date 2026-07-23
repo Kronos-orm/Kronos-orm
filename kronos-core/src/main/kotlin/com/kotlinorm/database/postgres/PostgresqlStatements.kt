@@ -48,6 +48,11 @@ object PostgresqlStatements : DatabaseStatements() {
 
     private fun table(tableName: String) = SqlIdentifier.of("public", tableName)
 
+    override fun lastInsertIdFallback(insert: SqlDmlStatement.Insert, generatedKey: Field): SqlQuery =
+        SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.Function(SqlIdentifier.of("LASTVAL"))))
+        )
+
     override fun tableExists(): SqlQuery = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw("COUNT(*)"))),
         from = listOf(SqlTable.Ident("information_schema.tables", identifier = SqlIdentifier.of("information_schema", "tables"))),

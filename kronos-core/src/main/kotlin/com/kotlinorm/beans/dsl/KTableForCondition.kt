@@ -703,12 +703,15 @@ open class KTableForCondition<T : KPojo>(
 
     fun exists(@Suppress("UNUSED_PARAMETER") query: KSelectable<*>): Boolean = true
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> any(query: KSelectable<*>): T? =
         QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.Any) as T?
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> some(query: KSelectable<*>): T? =
         QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.Some) as T?
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> all(query: KSelectable<*>): T? =
         QuantifiedSubqueryValue(query, SqlSubqueryQuantifier.All) as T?
 

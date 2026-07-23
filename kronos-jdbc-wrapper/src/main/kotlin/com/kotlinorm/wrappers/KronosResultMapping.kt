@@ -402,7 +402,7 @@ internal object KronosResultMappers {
 
     /**
      * Advances every row, applies the mapping callback, and records the returned row count.
-     * Oracle `LONG`/`LONG RAW` values are prefetched when the configured workaround requires it.
+     * Oracle-family `LONG`/`LONG RAW` values are prefetched when the configured workaround requires it.
      */
     private inline fun <T> mapRows(
         resultSet: ResultSet,
@@ -432,7 +432,7 @@ internal object KronosResultMappers {
 
     private fun oracleLongColumns(resultSet: ResultSet, context: KronosStatementContext): Set<Int> {
         if (context.config.oracleLongColumnStrategy != KronosOracleLongColumnStrategy.READ_FIRST ||
-            context.dbType != DBType.Oracle
+            (context.dbType != DBType.Oracle && context.dbType != DBType.DM8)
         ) {
             return emptySet()
         }

@@ -9,9 +9,23 @@
 
 ### 0.3.0
 
-- ✨ 新增 Android/JVM SQLite 接入：使用 Gradle 插件、`kronos-core` 和 Android `SQLiteDatabase` wrapper。
-- ✨ 新增 [Android SQLite](/documentation/zh-CN/database/android-sqlite) 指南与 [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) 参考应用，其中包含 `AndroidSQLiteDataSourceWrapper` 实现。
-- 📚 将 Android/JVM 的安装、wrapper、事务和日志入口统一链接到 Android SQLite 独立指南。
+- ✨ 新增面向 `KType` 的 `ValueCodec` 转换与序列化链路、生成 KPojo factory 和 enum metadata。`ValueTransformer` 与 `KronosSerializeProcessor` 统一替换为 `Kronos.registerValueCodec(...)`（[#283](https://github.com/Kronos-orm/Kronos-orm/pull/283)）。
+- ✨ 新增 `KSelectable<Selected>.filter { ... }`，可通过明确的派生查询边界继续筛选已选择的结果（[#282](https://github.com/Kronos-orm/Kronos-orm/pull/282)）。
+- ✨ 新增 Android/JVM SQLite 接入：使用 Gradle 插件、`kronos-core` 和 Android `SQLiteDatabase` wrapper。[Android SQLite](/documentation/zh-CN/database/android-sqlite) 指南与 [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) 参考应用覆盖 `AndroidSQLiteDataSourceWrapper`、配置、事务和日志（[#284](https://github.com/Kronos-orm/Kronos-orm/pull/284)）。
+- ✨ 扩展 iterable predicate 和 SQL 字符串函数的条件 lowering（[#284](https://github.com/Kronos-orm/Kronos-orm/pull/284)）。
+- 🐛 通过归一化 schema 列类型、索引定义和默认访问方法，提升 `syncTable()` 的跨方言稳定性；自动生成的 `Long` 时间字段会以 epoch milliseconds 绑定（[#270](https://github.com/Kronos-orm/Kronos-orm/pull/270)、[#276](https://github.com/Kronos-orm/Kronos-orm/pull/276)）。
+- 🐛 级联插入会将 assigned、custom、UUID 和 Snowflake 主键继续传递到子节点外键（[#274](https://github.com/Kronos-orm/Kronos-orm/pull/274)）。
+- 🐛 在编译期诊断条件中未注册的捕获 KPojo 字段，同时保留普通 Kotlin 捕获值，并新增 `takeUnless` 条件 gate（[#271](https://github.com/Kronos-orm/Kronos-orm/pull/271)、[#272](https://github.com/Kronos-orm/Kronos-orm/pull/272)）。
+- 🐛 在 FIR 分析阶段报告不支持的泛型 KPojo 声明，避免后续 IR 生成阶段失败（[#278](https://github.com/Kronos-orm/Kronos-orm/pull/278)）。
+- 🧩 为重复 projection 输出新增 source alias override opt-in，并为映射、生成和派生字段使用 `id_1` 这类稳定的 `_N` 名称（[#279](https://github.com/Kronos-orm/Kronos-orm/pull/279)）。
+- 📚 补充方言相关的 `@Default` 表达式、逻辑删除默认值和 IDEA 插件发布使用说明（[#275](https://github.com/Kronos-orm/Kronos-orm/pull/275)、[#277](https://github.com/Kronos-orm/Kronos-orm/pull/277)）。
+- 🔧 在 CI 中使用当前 Maven Local 构件检查外部 Ktor、Spring Boot、Solon、Vert.x 和 Android 示例（[#285](https://github.com/Kronos-orm/Kronos-orm/pull/285)）。
+
+#### 升级说明
+
+- 将 `ValueTransformer` 和 `KronosSerializeProcessor` 注册替换为 `Kronos.registerValueCodec(...)` 与 `ValueCodec` API。
+- 当前条件 source 之外的捕获 KPojo 读取 Kotlin 属性时需要通过 `.value`。泛型 KPojo 需要改为使用具体属性类型，而不是类类型参数。
+- 重复 projection 输出需要使用 `@OptIn(UnsafeProjectionOverride::class)`。自动消歧名称改为 `_N`，读取 `id@1` 这类 key 的代码需要改用 `id_1` 或显式 alias。
 
 ### 0.2.4
 

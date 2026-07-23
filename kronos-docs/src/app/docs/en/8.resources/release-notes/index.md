@@ -9,9 +9,23 @@
 
 ### 0.3.0
 
-- ✨ Add Android/JVM SQLite integration through the Gradle plugin, `kronos-core`, and an Android `SQLiteDatabase` wrapper.
-- ✨ Add the [Android SQLite](/documentation/en/database/android-sqlite) guide and the [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) reference application, including the `AndroidSQLiteDataSourceWrapper` implementation.
-- 📚 Link Android/JVM installation, wrapper, transaction, and logging entry points to the dedicated Android SQLite guide.
+- ✨ Add a `KType`-aware `ValueCodec` pipeline for custom conversion and serialization, generated KPojo factories, and enum metadata. `ValueTransformer` and `KronosSerializeProcessor` are replaced by `Kronos.registerValueCodec(...)` ([#283](https://github.com/Kronos-orm/Kronos-orm/pull/283)).
+- ✨ Add `KSelectable<Selected>.filter { ... }` for querying a selected result through an explicit derived-query boundary ([#282](https://github.com/Kronos-orm/Kronos-orm/pull/282)).
+- ✨ Add Android/JVM SQLite integration through the Gradle plugin, `kronos-core`, and an Android `SQLiteDatabase` wrapper. The [Android SQLite](/documentation/en/database/android-sqlite) guide and [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) reference application cover `AndroidSQLiteDataSourceWrapper`, setup, transactions, and logging ([#284](https://github.com/Kronos-orm/Kronos-orm/pull/284)).
+- ✨ Expand condition lowering for iterable predicates and SQL string functions ([#284](https://github.com/Kronos-orm/Kronos-orm/pull/284)).
+- 🐛 Make `syncTable()` stable across dialects by normalizing schema column types, index definitions, and default access methods. Automatically generated `Long` temporal values now bind as epoch milliseconds ([#270](https://github.com/Kronos-orm/Kronos-orm/pull/270), [#276](https://github.com/Kronos-orm/Kronos-orm/pull/276)).
+- 🐛 Cascade inserts now carry assigned, custom, UUID, and Snowflake primary keys through child foreign keys ([#274](https://github.com/Kronos-orm/Kronos-orm/pull/274)).
+- 🐛 Diagnose unregistered captured KPojo fields in conditions at compile time while preserving ordinary captured Kotlin values, and add `takeUnless` condition gates ([#271](https://github.com/Kronos-orm/Kronos-orm/pull/271), [#272](https://github.com/Kronos-orm/Kronos-orm/pull/272)).
+- 🐛 Report unsupported generic KPojo declarations during FIR analysis instead of failing later in IR generation ([#278](https://github.com/Kronos-orm/Kronos-orm/pull/278)).
+- 🧩 Add opt-in source alias overrides for duplicate projection outputs and use stable `_N` names such as `id_1` for mapped, generated, and derived fields ([#279](https://github.com/Kronos-orm/Kronos-orm/pull/279)).
+- 📚 Document dialect-specific `@Default` expressions, logic-delete defaults, and IDEA plugin release usage ([#275](https://github.com/Kronos-orm/Kronos-orm/pull/275), [#277](https://github.com/Kronos-orm/Kronos-orm/pull/277)).
+- 🔧 Check the external Ktor, Spring Boot, Solon, Vert.x, and Android examples against the current Maven Local artifacts in CI ([#285](https://github.com/Kronos-orm/Kronos-orm/pull/285)).
+
+#### Upgrade notes
+
+- Replace `ValueTransformer` and `KronosSerializeProcessor` registrations with `Kronos.registerValueCodec(...)` and the `ValueCodec` APIs.
+- A captured KPojo that is not a source of the current condition must read a Kotlin property through `.value`. Generic KPojo declarations need concrete property types instead of class type parameters.
+- Duplicate projection outputs require `@OptIn(UnsafeProjectionOverride::class)`. Automatically disambiguated output names now use `_N`, so code that reads keys such as `id@1` should use `id_1` or an explicit alias.
 
 ### 0.2.4
 

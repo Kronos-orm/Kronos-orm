@@ -416,9 +416,8 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 The IDEA plugin version comes from `rootProject.version`; do not hard-code a
 release number in the plugin build. Snapshot pushes never upload to Marketplace.
 The formal release job must fail if Marketplace credentials are absent, plugin
-signing fails, upload fails, or the expected signed zip is missing. Plugin
-Verifier runs as a visible, non-blocking compatibility report, while signing,
-structure/signature validation, and artifact validation remain release gates.
+signing fails, upload fails, or the expected signed zip is missing.
+Structure/signature validation and artifact validation remain release gates.
 Only the signed zip for the current release version may be attached to the
 GitHub Release.
 
@@ -427,8 +426,8 @@ the complete PEM certificate chain, matching complete PEM private key, and key
 password in the other three repository secrets. Never commit or print these
 values. For local verification, prefer the file-backed
 `CERTIFICATE_CHAIN_FILE` and `PRIVATE_KEY_FILE` inputs and run `signPlugin`,
-`verifyPluginStructure`, `verifyPluginSignature`, and Plugin Verifier without
-invoking `publishPlugin`.
+`verifyPluginStructure`, and `verifyPluginSignature` without invoking
+`publishPlugin`.
 
 ### Publishing Convention Plugin
 `build-logic/src/main/kotlin/publishing.gradle.kts`:

@@ -12,6 +12,7 @@ import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.dm8
 import com.kotlinorm.integration.support.IntegrationSuiteSupport
+import com.kotlinorm.wrappers.KronosJdbcWrapper
 import org.apache.commons.dbcp2.BasicDataSource
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -66,7 +67,7 @@ class Dm8CodegenIntegrationTest : IntegrationSuiteSupport(dm8, StandardIntegrati
                             CodegenFieldShape("created_at", "createdAt", KColumnType.TIMESTAMP, true, PrimaryKeyType.NOT, "created time", "java.time.Instant"),
                         ),
                         indexes = listOf(
-                            CodegenIndexShape("idx_codegen_dm8_user_age", listOf("age"), "NORMAL", ""),
+                            CodegenIndexShape("index_codegen_dm8_user_age", listOf("age"), "NORMAL", ""),
                             CodegenIndexShape("uk_codegen_dm8_user_username", listOf("username"), "UNIQUE", ""),
                         ),
                     ),
@@ -123,6 +124,9 @@ class Dm8CodegenIntegrationTest : IntegrationSuiteSupport(dm8, StandardIntegrati
                 File(outputDir, "Dm8CodegenUser.kt").readText(),
             )
         } finally {
+            (codeGenConfig?.wrapper as? KronosJdbcWrapper)?.dataSource?.let { dataSource ->
+                (dataSource as? AutoCloseable)?.close()
+            }
             codeGenConfig = null
             tempDir.deleteRecursively()
             dropCodegenTables()
@@ -143,7 +147,7 @@ class Dm8CodegenIntegrationTest : IntegrationSuiteSupport(dm8, StandardIntegrati
             )
             """.trimIndent(),
         )
-        wrapper.execute("CREATE INDEX IDX_CODEGEN_DM8_USER_AGE ON KT_CODEGEN_DM8_USER (AGE)")
+        wrapper.execute("CREATE INDEX INDEX_CODEGEN_DM8_USER_AGE ON KT_CODEGEN_DM8_USER (AGE)")
         wrapper.execute("COMMENT ON TABLE KT_CODEGEN_DM8_USER IS 'Generated DM8 user table'")
         wrapper.execute("COMMENT ON COLUMN KT_CODEGEN_DM8_USER.ID IS 'identifier'")
         wrapper.execute("COMMENT ON COLUMN KT_CODEGEN_DM8_USER.USERNAME IS 'login name'")
@@ -191,7 +195,7 @@ class Dm8CodegenIntegrationTest : IntegrationSuiteSupport(dm8, StandardIntegrati
         // table=kt_codegen_dm8_user
         // class=Dm8CodegenUser
         // comment=Generated DM8 user table
-        // indexes=@TableIndex(name = "IDX_CODEGEN_DM8_USER_AGE", columns = ["age"], type = "NORMAL") | @TableIndex(name = "UK_CODEGEN_DM8_USER_USERNAME", columns = ["username"], type = "UNIQUE")
+        // indexes=@TableIndex(name = "INDEX_CODEGEN_DM8_USER_AGE", columns = ["age"], type = "NORMAL") | @TableIndex(name = "UK_CODEGEN_DM8_USER_USERNAME", columns = ["username"], type = "UNIQUE")
         // field=id,id,INT,false,IDENTITY,identifier,Int
         // field=username,username,VARCHAR,false,NOT,login name,String
         // field=age,age,INT,true,NOT,age value,Int

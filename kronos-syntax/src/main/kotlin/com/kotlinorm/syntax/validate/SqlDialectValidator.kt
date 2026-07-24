@@ -11,6 +11,7 @@ import com.kotlinorm.syntax.SqlNode
 import com.kotlinorm.syntax.render.SqlDialect
 import com.kotlinorm.syntax.render.SqlDialectFamily
 import com.kotlinorm.syntax.statement.SqlDmlStatement
+import com.kotlinorm.syntax.statement.SqlLock
 import com.kotlinorm.syntax.statement.SqlQuery
 
 interface SqlDialectValidator {
@@ -52,6 +53,9 @@ object DefaultSqlDialectValidator : SqlDialectValidator {
         if (dialect.family == SqlDialectFamily.SQLite && query.lock != null) {
             error("dialect.lock.unsupported", "SQLite does not support row-level SELECT locks.")
         }
+        if (dialect.family == SqlDialectFamily.H2 && query.lock is SqlLock.Share) {
+            error("dialect.lock.unsupported", "H2 does not support FOR SHARE locks.")
+        }
         if (query is SqlQuery.Select && dialect.family == SqlDialectFamily.SqlServer && query.limit != null && query.orderBy.isEmpty()) {
             error("dialect.sqlserver.limit.requires.order", "SQL Server OFFSET/FETCH pagination requires ORDER BY.")
         }
@@ -65,7 +69,7 @@ object DefaultSqlDialectValidator : SqlDialectValidator {
             is SqlDmlStatement.Upsert -> statement.returning != null
             is SqlDmlStatement.Truncate -> false
         }
-        if (hasReturning && dialect.family in setOf(SqlDialectFamily.MySql, SqlDialectFamily.SqlServer)) {
+        if (hasReturning && dialect.family in setOf(SqlDialectFamily.H2, SqlDialectFamily.MySql, SqlDialectFamily.SqlServer)) {
             error("dialect.returning.unsupported", "${dialect.family} does not support RETURNING in this syntax layer.")
         }
     }

@@ -16,11 +16,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up QEMU for DM8
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -46,6 +41,10 @@ jobs:
             echo "ORACLE_PASSWORD=${ORACLE_PASSWORD}"
             echo "ORACLE_SYS_PASSWORD=${ORACLE_SYS_PASSWORD}"
             echo "ORACLE_DOCKER_IMAGE=${ORACLE_DOCKER_IMAGE:-ghcr.io/gvenzl/oracle-free:23.9-slim}"
+            echo "DM_JDBC_URL=${DM_JDBC_URL}"
+            echo "DM_USERNAME=${DM_USERNAME}"
+            echo "DM_PASSWORD=${DM_PASSWORD}"
+            echo "DM_SYSAUDITOR_PASSWORD=${DM_SYSAUDITOR_PASSWORD}"
           } >> "$GITHUB_ENV"
 
       - name: Start integration databases

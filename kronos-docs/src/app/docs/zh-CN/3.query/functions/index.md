@@ -82,6 +82,8 @@ val totalAmount: java.math.BigDecimal? = first.totalAmount
 | `min` | `f.min(x)` | 最小值。 |
 | `groupConcat` | `f.groupConcat(x)` | 分组后拼接值，具体 SQL 按方言渲染。 |
 
+`groupConcat` 适合生成分组展示值，结果顺序由各数据库的聚合输入顺序决定。
+
 ## 数学函数和运算符
 
 加、减、乘、除和取模优先使用 Kotlin 运算符；其他数学函数通过 `f` 调用。
@@ -117,20 +119,22 @@ FROM `user`
 | 除法 | `it.score / 2` 或 `f.div(...)` |
 | 取模 | `it.score % 2` 或 `f.mod(x, y)` |
 | 绝对值 | `f.abs(x)` |
-| 二进制表示 | `f.bin(x)` |
+| 二进制表示 | `f.bin(x)`（MySQL） |
 | 向上取整 | `f.ceil(x)` |
 | 指数 | `f.exp(x)` |
 | 向下取整 | `f.floor(x)` |
 | 多值最大 | `f.greatest(x, y, ...)` |
 | 多值最小 | `f.least(x, y, ...)` |
 | 自然对数 | `f.ln(x)` |
-| 指定底数对数 | `f.log(x, y)` |
+| 指定底数对数 | `f.log(value, base)` |
 | 圆周率 | `f.pi()` |
 | 随机数 | `f.rand()` |
 | 四舍五入 | `f.round(x, scale)` |
 | 符号 | `f.sign(x)` |
 | 平方根 | `f.sqrt(x)` |
 | 截断 | `f.trunc(x, scale)` |
+
+`f.log(value, base)` 在已支持方言中保持 value 在前、base 在后的 Kotlin 调用顺序。`f.bin(x)` 用于 MySQL 表达式。
 
 ## 字符串函数
 
@@ -174,9 +178,22 @@ WHERE LENGTH(`name`) > :nameLength
 | 拼接 | `f.concat(x, y, ...)` |
 | 使用分隔符拼接 | `f.join(separator, x, y, ...)` |
 
+`f.join(separator, x, y, ...)` 会拼接传入值并跳过 `null` 参数。H2 应用需要文本反转时，可以注册自定义数据库函数；内置 H2 方言会明确提示 `f.reverse` 不可用。
+
+## 函数可用范围
+
+| API | 可用范围 |
+|-----|----------|
+| `f.log(value, base)`、`f.trunc(x, scale)`、`f.right(x, length)` | MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle 和 DM8 使用相同的 Kotlin 调用方式。 |
+| `f.join(separator, x, y, ...)` | 七种内置方言都会拼接存在的值。 |
+| `f.groupConcat(x)` | 七种内置方言均可使用，结果顺序由数据库聚合输入顺序决定。 |
+| `f.bin(x)` | MySQL。 |
+| `f.reverse(x)` | 当前 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 和 DM8 Driver 可用；H2 应用可以注册自定义函数。 |
+| `f.any(...)`、`f.all(...)` | PostgreSQL 数组比较。 |
+
 ### 条件中的 Kotlin 原生大小写调用
 
-在条件中，source `String` 字段的无参 Kotlin `lowercase()` 和 `uppercase()` 会生成 SQL `LOWER` 和 `UPPER`。
+在条件中，source `String` 字段的无参 Kotlin `lowercase()` 和 `uppercase()` 与 `f.lower(...)`、`f.upper(...)` 一样生成 SQL `LOWER` 和 `UPPER`。
 
 ```kotlin group="Native string case equality" name="kotlin" icon="kotlin"
 val name = "Ada"
@@ -222,7 +239,7 @@ source 字段和普通变量直接使用即可。需要读取 KPojo 属性实际
 
 ## 使用窗口函数
 
-Kronos 当前提供 `f.rowNumber()` 作为窗口函数入口。需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`。
+Kronos 当前提供 `f.rowNumber()` 作为窗口函数入口。需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`，并在 `over { ... }` 中提供 `orderBy(...)`。
 
 ```kotlin group="Window function 1" name="kotlin" icon="kotlin"
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber

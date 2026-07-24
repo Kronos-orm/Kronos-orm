@@ -36,9 +36,10 @@ println(wrapper.sqlDialect)
 
 | 行为 | 查阅位置 |
 |------|----------|
-| 分页 | 见[分页](#分页)，查看 `page(pageIndex, pageSize)` 在 MySQL、PostgreSQL、SQLite、SQL Server 和 Oracle 中的 SQL。 |
+| 分页 | 见[分页](#分页)，查看 `page(pageIndex, pageSize)` 生成的 SQL。 |
 | Upsert 和 `onConflict()` | 见 [Upsert](#upsert) 与 {{ $.keyword("mutation/upsert", ["Upsert"]) }}，查看按匹配字段 upsert、唯一约束冲突 upsert 和动态冲突赋值。 |
 | 自增主键读取 | 见 [Last Insert Id](#last-insert-id) 与 {{ $.keyword("mutation/last-insert-id", ["Last Insert Id"]) }}。 |
+| H2 和 DM8 | 见下方独立章节，了解 H2 `MERGE` upsert、DM8 自增列和 JDBC generated key。 |
 | DDL 和表结构同步 | 见[表结构操作](#表结构操作)、{{ $.keyword("database/table-operations", ["表操作"]) }}和{{ $.keyword("database/schema-sync", ["表结构同步"]) }}。 |
 | 字段类型渲染 | 见 {{ $.keyword("mapping/column-types", ["字段类型"]) }} 中的 `KColumnType` 示例和方言输出。 |
 | 标识符引用 | 见[标识符引用](#标识符引用)，查看表名和字段名引用规则。 |
@@ -249,7 +250,7 @@ changed == true   // Kronos 按差异同步已有表
 
 ## 内置函数
 
-函数 DSL 保持相同调用方式，数据库专属函数由当前方言渲染。
+函数 DSL 保持相同的 Kotlin 调用方式，由当前方言选择对应 SQL 形式。函数可用范围和参数语义见{{ $.keyword("query/functions", ["函数"]) }}。
 
 ```kotlin group="Functions" name="kotlin" icon="kotlin"
 val rows = User()
@@ -268,7 +269,12 @@ FROM "tb_user"
 ```
 
 ```sql group="Functions" name="SQLite" icon="sqlite"
-SELECT RANDOM() AS rand
+SELECT (RANDOM() / 9223372036854775808.0 + 0.5) AS rand
+FROM "tb_user"
+```
+
+```sql group="Functions" name="H2" icon="h2"
+SELECT RAND() AS rand
 FROM "tb_user"
 ```
 
@@ -281,6 +287,43 @@ FROM [tb_user]
 SELECT DBMS_RANDOM.VALUE AS RAND
 FROM "TB_USER"
 ```
+
+```sql group="Functions" name="DM8"
+SELECT DBMS_RANDOM.VALUE AS RAND
+FROM "TB_USER"
+```
+
+## H2
+
+H2 使用双引号引用标识符，并通过 H2 `MERGE` 语法处理唯一约束冲突的 upsert。内存库和服务端连接配置见{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
+
+```kotlin group="H2 Upsert" name="kotlin" icon="kotlin"
+User(id = 1, name = "Ada")
+    .upsert { it.name }
+    .onConflict()
+    .execute()
+```
+
+```sql group="H2 Upsert" name="H2" icon="h2"
+MERGE INTO "user" AS "t1"
+USING (VALUES (:id, :name)) AS "t2" ("id", "name")
+ON ("t1"."id" = "t2"."id")
+WHEN MATCHED THEN UPDATE SET "name" = "t2"."name"
+WHEN NOT MATCHED THEN INSERT ("id", "name") VALUES ("t2"."id", "t2"."name")
+```
+
+H2 自增字段使用 H2 的 identity 列定义。带 `.withId()` 的插入任务会返回 JDBC generated key。
+
+## DM8（达梦）
+
+DM8 的查询使用 Oracle 兼容语法，表结构使用 DM8 原生自增列。JDBC Driver 配置见{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
+
+```kotlin group="DM8 Identity" name="kotlin" icon="kotlin"
+@PrimaryKey(identity = true)
+var id: Int? = null
+```
+
+Kronos 会将该字段渲染为 DM8 DDL 中的 `INT IDENTITY(1,1)`。带 `.withId()` 的插入任务会返回 JDBC generated key。
 
 ## 数据库枚举与扩展
 

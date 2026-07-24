@@ -9,10 +9,13 @@ package com.kotlinorm.syntax.render
 
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlBuiltinFunction
+import com.kotlinorm.syntax.expr.SqlCaseBranch
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlTimeType
 import com.kotlinorm.syntax.expr.SqlTimeZoneMode
 import com.kotlinorm.syntax.expr.SqlType
+import com.kotlinorm.syntax.expr.SqlUnaryOperator
 import com.kotlinorm.syntax.inspect.SqlParameterCollector
 import com.kotlinorm.syntax.limit.SqlFetchMode
 import com.kotlinorm.syntax.limit.SqlFetchUnit
@@ -20,6 +23,7 @@ import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.order.SqlNullsOrdering
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.order.SqlOrderingItem
+import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlInsertMode
@@ -58,11 +62,12 @@ open class H2SqlRenderer : StandardSqlRenderer(SqlDialect.H2) {
         when (val action = statement.action) {
             SqlUpsertAction.DoNothing -> {}
             is SqlUpsertAction.Update -> {
-                append(" WHEN MATCHED THEN UPDATE SET ")
+                append(" WHEN MATCHED")
+                action.where?.let { append(" AND ${renderMergeSourceExpr(it, statement.table.identifier)}") }
+                append(" THEN UPDATE SET ")
                 append(action.setPairs.joinToString(", ") {
-                    "${renderAssignmentTarget(qualifyAssignmentTarget(it.target, SqlIdentifier.of("t1")))} = ${renderMergeSourceExpr(it.value, statement.table.identifier)}"
+                    "${renderH2AssignmentTarget(it.target)} = ${renderMergeSourceExpr(it.value, statement.table.identifier)}"
                 })
-                action.where?.let { append(" WHERE ${renderPredicate(it)}") }
             }
         }
         append(" WHEN NOT MATCHED THEN INSERT (")
@@ -71,6 +76,27 @@ open class H2SqlRenderer : StandardSqlRenderer(SqlDialect.H2) {
         append(statement.columns.joinToString(", ") { "${quoteIdent("t2")}.${renderIdentifier(it)}" })
         append(")")
         statement.returning?.let { append(" ${renderReturning(it)}") }
+    }
+
+    private fun renderH2AssignmentTarget(target: SqlAssignmentTarget): String = when (target) {
+        is SqlAssignmentTarget.Column -> renderIdentifier(target.identifier)
+    }
+
+    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.builtinFunction) {
+        SqlBuiltinFunction.Log -> renderValueBaseLog(expr)
+        SqlBuiltinFunction.Binary -> unsupportedBuiltinFunction(SqlBuiltinFunction.Binary)
+        SqlBuiltinFunction.Reverse -> unsupportedBuiltinFunction(SqlBuiltinFunction.Reverse)
+        else -> super.renderFunction(expr)
+    }
+
+    private fun renderValueBaseLog(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val base = expr.args.getOrNull(1)
+        return if (value != null && base != null && expr.args.size == 2) {
+            super.renderFunction(expr.copy(args = listOf(base, value)))
+        } else {
+            super.renderFunction(expr)
+        }
     }
 }
 
@@ -208,28 +234,32 @@ open class MysqlSqlRenderer(
         }
     }
 
-    override fun renderFunction(expr: SqlExpr.Function): String {
-        if (expr.name.last.equals("TRUNC", ignoreCase = true)) {
-            return renderFunction(expr.copy(name = SqlIdentifier.of("TRUNCATE")))
-        }
-        if (expr.name.last.equals("JOIN", ignoreCase = true)) {
-            return renderFunction(expr.copy(name = SqlIdentifier.of("CONCAT_WS")))
-        }
-        if (expr.name.last.equals("CONCAT", ignoreCase = true)) {
-            val args = flattenConcatArgs(expr.args)
-            return super.renderFunction(expr.copy(args = args))
-        }
-        return super.renderFunction(expr)
+    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.builtinFunction) {
+        SqlBuiltinFunction.Truncate -> super.renderFunction(expr.copy(name = SqlIdentifier.of("TRUNCATE")))
+        SqlBuiltinFunction.JoinWithSeparator -> super.renderFunction(expr.copy(name = SqlIdentifier.of("CONCAT_WS")))
+        SqlBuiltinFunction.Concatenate -> super.renderFunction(expr.copy(args = flattenConcatArgs(expr.args)))
+        SqlBuiltinFunction.Log -> renderValueBaseLog(expr)
+        else -> super.renderFunction(expr)
     }
 
     private fun flattenConcatArgs(args: List<SqlExpr>): List<SqlExpr> =
         args.flatMap { arg ->
-            if (arg is SqlExpr.Function && arg.name.last.equals("CONCAT", ignoreCase = true)) {
+            if (arg is SqlExpr.Function && arg.builtinFunction == SqlBuiltinFunction.Concatenate) {
                 flattenConcatArgs(arg.args)
             } else {
                 listOf(arg)
             }
         }
+
+    private fun renderValueBaseLog(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val base = expr.args.getOrNull(1)
+        return if (value != null && base != null && expr.args.size == 2) {
+            super.renderFunction(expr.copy(args = listOf(base, value)))
+        } else {
+            super.renderFunction(expr)
+        }
+    }
 
     override fun renderType(type: SqlType): String = when (type) {
         is SqlType.Varchar -> "CHAR${type.maxLength?.let { "($it)" } ?: ""}"
@@ -330,28 +360,55 @@ open class PostgresqlSqlRenderer : StandardSqlRenderer(SqlDialect.PostgreSql) {
         return renderExpr(function)
     }
 
-    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
-        "RAND" -> "RANDOM()"
-        "SUBSTR" -> renderPostgresSubstring(expr.args)
-        "LEFT" -> renderPostgresSubstring(listOfNotNull(expr.args.getOrNull(0), SqlExpr.NumberLiteral("1"), expr.args.getOrNull(1)))
-        "RIGHT" -> {
-            val source = expr.args.getOrNull(0)
-            val length = expr.args.getOrNull(1)
-            if (source != null && length != null) "SUBSTRING(${renderExpr(source)} FROM -${renderExpr(length)})" else super.renderFunction(expr)
-        }
+    override fun renderBinaryOperator(operator: SqlBinaryOperator): String = when (operator) {
+        SqlBinaryOperator.Regexp -> "~"
+        SqlBinaryOperator.NotRegexp -> "!~"
+        else -> super.renderBinaryOperator(operator)
+    }
+
+    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.builtinFunction) {
+        SqlBuiltinFunction.Binary -> unsupportedBuiltinFunction(SqlBuiltinFunction.Binary)
+        SqlBuiltinFunction.Random -> "RANDOM()"
+        SqlBuiltinFunction.Log -> renderValueBaseLog(expr)
+        SqlBuiltinFunction.GroupConcat -> renderPostgresGroupConcat(expr)
+        SqlBuiltinFunction.Substring -> renderPostgresSubstring(expr)
         else -> super.renderFunction(expr)
     }
 
-    private fun renderPostgresSubstring(args: List<SqlExpr>): String {
-        val source = args.getOrNull(0) ?: return "SUBSTRING()"
-        val start = args.getOrNull(1)
-        val length = args.getOrNull(2)
-        return buildString {
-            append("SUBSTRING(${renderExpr(source)}")
-            start?.let { append(" FROM ${renderExpr(it)}") }
-            length?.let { append(" FOR ${renderExpr(it)}") }
-            append(")")
+    private fun renderValueBaseLog(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val base = expr.args.getOrNull(1)
+        return if (value != null && base != null && expr.args.size == 2) {
+            super.renderFunction(expr.copy(args = listOf(base, value)))
+        } else {
+            super.renderFunction(expr)
         }
+    }
+
+    private fun renderPostgresGroupConcat(expr: SqlExpr.Function): String {
+        val value = expr.args.singleOrNull()
+        return if (
+            value != null &&
+            expr.quantifier == null &&
+            expr.orderBy.isEmpty() &&
+            expr.withinGroup.isEmpty() &&
+            expr.filter == null
+        ) {
+            super.renderFunction(
+                expr.copy(
+                    name = SqlIdentifier.of("STRING_AGG"),
+                    args = listOf(SqlExpr.Cast(value, SqlType.Named("TEXT")), SqlExpr.StringLiteral(","))
+                )
+            )
+        } else {
+            super.renderFunction(expr)
+        }
+    }
+
+    private fun renderPostgresSubstring(expr: SqlExpr.Function): String {
+        val source = expr.args.getOrNull(0) ?: return super.renderFunction(expr)
+        val start = expr.args.getOrNull(1) ?: return super.renderFunction(expr)
+        return super.renderExpr(SqlExpr.SubstringFunc(source, start, expr.args.getOrNull(2)))
     }
 }
 
@@ -428,9 +485,105 @@ open class SqliteSqlRenderer : StandardSqlRenderer(SqlDialect.SQLite) {
         return renderExpr(function)
     }
 
-    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
-        "RAND" -> "RANDOM()"
+    override fun renderBinary(expr: SqlExpr.Binary): String = when (expr.operator) {
+        SqlBinaryOperator.Regexp,
+        SqlBinaryOperator.NotRegexp -> unsupportedRegexpOperator()
+        else -> super.renderBinary(expr)
+    }
+
+    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.builtinFunction) {
+        SqlBuiltinFunction.Binary -> unsupportedBuiltinFunction(SqlBuiltinFunction.Binary)
+        SqlBuiltinFunction.Random -> "(RANDOM() / 9223372036854775808.0 + 0.5)"
+        SqlBuiltinFunction.Log -> renderValueBaseLog(expr)
+        SqlBuiltinFunction.Greatest -> renderRenamedFunction(expr, "MAX")
+        SqlBuiltinFunction.Least -> renderRenamedFunction(expr, "MIN")
+        SqlBuiltinFunction.Left -> renderLeft(expr)
+        SqlBuiltinFunction.Right -> renderRight(expr)
+        SqlBuiltinFunction.Repeat -> renderRepeat(expr)
+        SqlBuiltinFunction.Truncate -> renderTrunc(expr)
         else -> super.renderFunction(expr)
+    }
+
+    private fun renderValueBaseLog(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val base = expr.args.getOrNull(1)
+        return if (value != null && base != null && expr.args.size == 2) {
+            super.renderFunction(expr.copy(args = listOf(base, value)))
+        } else {
+            super.renderFunction(expr)
+        }
+    }
+
+    private fun renderRenamedFunction(expr: SqlExpr.Function, name: String): String =
+        super.renderFunction(expr.copy(name = SqlIdentifier.of(name)))
+
+    private fun renderLeft(expr: SqlExpr.Function): String {
+        val source = expr.args.getOrNull(0)
+        val length = expr.args.getOrNull(1)
+        return if (source != null && length != null && expr.args.size == 2) {
+            super.renderFunction(
+                expr.copy(name = SqlIdentifier.of("SUBSTR"), args = listOf(source, SqlExpr.NumberLiteral("1"), length))
+            )
+        } else {
+            super.renderFunction(expr)
+        }
+    }
+
+    private fun renderRight(expr: SqlExpr.Function): String {
+        val source = expr.args.getOrNull(0)
+        val length = expr.args.getOrNull(1)
+        return if (source != null && length != null && expr.args.size == 2) {
+            super.renderFunction(
+                expr.copy(
+                    name = SqlIdentifier.of("SUBSTR"),
+                    args = listOf(source, SqlExpr.Unary(SqlUnaryOperator.Negative, length))
+                )
+            )
+        } else {
+            super.renderFunction(expr)
+        }
+    }
+
+    private fun renderRepeat(expr: SqlExpr.Function): String {
+        val source = expr.args.getOrNull(0)
+        val times = expr.args.getOrNull(1)
+        return if (source != null && times != null && expr.args.size == 2) {
+            super.renderExpr(
+                SqlExpr.Function(
+                    name = SqlIdentifier.of("REPLACE"),
+                    args = listOf(
+                        SqlExpr.Function(
+                            name = SqlIdentifier.of("HEX"),
+                            args = listOf(SqlExpr.Function(SqlIdentifier.of("ZEROBLOB"), args = listOf(times)))
+                        ),
+                        SqlExpr.StringLiteral("00"),
+                        source
+                    )
+                )
+            )
+        } else {
+            super.renderFunction(expr)
+        }
+    }
+
+    private fun renderTrunc(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val scale = expr.args.getOrNull(1)
+        return if (value != null && scale != null && expr.args.size == 2) {
+            val power = SqlExpr.Function(
+                name = SqlIdentifier.of("POWER"),
+                args = listOf(SqlExpr.NumberLiteral("10"), scale)
+            )
+            super.renderExpr(
+                SqlExpr.Binary(
+                    SqlExpr.Cast(SqlExpr.Binary(value, SqlBinaryOperator.Times, power), SqlType.Int),
+                    SqlBinaryOperator.Div,
+                    power
+                )
+            )
+        } else {
+            super.renderFunction(expr)
+        }
     }
 }
 
@@ -520,6 +673,8 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
 
     override fun renderBinary(expr: SqlExpr.Binary): String = when (expr.operator) {
         SqlBinaryOperator.Mod -> "MOD(${renderExpr(expr.left)}, ${renderExpr(expr.right)})"
+        SqlBinaryOperator.Regexp -> "REGEXP_LIKE(${renderExpr(expr.left)}, ${renderExpr(expr.right)})"
+        SqlBinaryOperator.NotRegexp -> "NOT REGEXP_LIKE(${renderExpr(expr.left)}, ${renderExpr(expr.right)})"
         else -> super.renderBinary(expr)
     }
 
@@ -529,26 +684,69 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
     override fun renderSelectItemExpr(expr: SqlExpr): String =
         if (expr is SqlExpr.Binary && expr.operator === SqlBinaryOperator.Mod) renderExpr(expr) else super.renderSelectItemExpr(expr)
 
-    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
-        "RAND" -> "DBMS_RANDOM.VALUE"
-        "CONCAT_WS",
-        "JOIN" -> renderOracleConcatWs(expr.args)
-        "LEFT" -> {
+    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.builtinFunction) {
+        SqlBuiltinFunction.Binary -> unsupportedBuiltinFunction(SqlBuiltinFunction.Binary)
+        SqlBuiltinFunction.Random -> "DBMS_RANDOM.VALUE"
+        SqlBuiltinFunction.Pi -> if (expr.args.isEmpty()) "ACOS(-1)" else super.renderFunction(expr)
+        SqlBuiltinFunction.Log -> renderValueBaseLog(expr)
+        SqlBuiltinFunction.GroupConcat -> {
+            val value = expr.args.singleOrNull()
+            if (
+                value != null &&
+                expr.quantifier == null &&
+                expr.orderBy.isEmpty() &&
+                expr.withinGroup.isEmpty() &&
+                expr.filter == null
+            ) {
+                renderOracleGroupConcat(value)
+            } else {
+                super.renderFunction(expr)
+            }
+        }
+        SqlBuiltinFunction.JoinWithSeparator -> renderOracleConcatWs(expr.args)
+        SqlBuiltinFunction.Left -> {
             val source = expr.args.getOrNull(0)
             val length = expr.args.getOrNull(1)
-            if (source != null && length != null) "SUBSTR(${renderExpr(source)}, 1, ${renderExpr(length)})" else super.renderFunction(expr)
+            if (source != null && length != null && expr.args.size == 2) {
+                super.renderFunction(
+                    expr.copy(name = SqlIdentifier.of("SUBSTR"), args = listOf(source, SqlExpr.NumberLiteral("1"), length))
+                )
+            } else {
+                super.renderFunction(expr)
+            }
         }
-        "RIGHT" -> {
+        SqlBuiltinFunction.Right -> {
             val source = expr.args.getOrNull(0)
             val length = expr.args.getOrNull(1)
-            if (source != null && length != null) "SUBSTR(${renderExpr(source)}, -${renderExpr(length)})" else super.renderFunction(expr)
+            if (source != null && length != null && expr.args.size == 2) {
+                super.renderFunction(
+                    expr.copy(
+                        name = SqlIdentifier.of("SUBSTR"),
+                        args = listOf(source, SqlExpr.Unary(SqlUnaryOperator.Negative, length))
+                    )
+                )
+            } else {
+                super.renderFunction(expr)
+            }
         }
-        "REPEAT" -> {
+        SqlBuiltinFunction.Repeat -> {
             val source = expr.args.getOrNull(0)
             val times = expr.args.getOrNull(1)
-            if (source != null && times != null) {
-                val sourceSql = renderExpr(source)
-                "RPAD($sourceSql, ${renderExpr(times)} * LENGTH($sourceSql), $sourceSql)"
+            if (source != null && times != null && expr.args.size == 2) {
+                super.renderExpr(
+                    SqlExpr.Function(
+                        name = SqlIdentifier.of("RPAD"),
+                        args = listOf(
+                            source,
+                            SqlExpr.Binary(
+                                times,
+                                SqlBinaryOperator.Times,
+                                SqlExpr.Function(SqlIdentifier.of("LENGTH"), args = listOf(source))
+                            ),
+                            source
+                        )
+                    )
+                )
             } else {
                 super.renderFunction(expr)
             }
@@ -556,11 +754,49 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
         else -> super.renderFunction(expr)
     }
 
-    private fun renderOracleConcatWs(args: List<SqlExpr>): String {
-        if (args.size < 2) return "''"
-        val separator = renderExpr(args.first())
-        return args.drop(1).joinToString(" || $separator || ") { renderExpr(it) }
+    private fun renderValueBaseLog(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val base = expr.args.getOrNull(1)
+        return if (value != null && base != null && expr.args.size == 2) {
+            super.renderFunction(expr.copy(args = listOf(base, value)))
+        } else {
+            super.renderFunction(expr)
+        }
     }
+
+    private fun renderOracleGroupConcat(value: SqlExpr): String = super.renderFunction(
+        SqlExpr.Function(
+            name = SqlIdentifier.of("LISTAGG"),
+            args = listOf(value, SqlExpr.StringLiteral(",")),
+            withinGroup = listOf(SqlOrderingItem(value, SqlOrdering.Asc))
+        )
+    )
+
+    private fun renderOracleConcatWs(args: List<SqlExpr>): String {
+        val separator = args.firstOrNull() ?: return super.renderExpr(SqlExpr.StringLiteral(""))
+        val combined = args.drop(1).reduceOrNull { current, next ->
+            SqlExpr.Case(
+                branches = listOf(
+                    SqlCaseBranch(isNull(current), next),
+                    SqlCaseBranch(isNull(next), current)
+                ),
+                default = SqlExpr.Binary(
+                    SqlExpr.Binary(current, SqlBinaryOperator.Concat, separator),
+                    SqlBinaryOperator.Concat,
+                    next
+                )
+            )
+        } ?: SqlExpr.StringLiteral("")
+        return super.renderExpr(
+            SqlExpr.Case(
+                branches = listOf(SqlCaseBranch(isNull(separator), SqlExpr.NullLiteral)),
+                default = combined
+            )
+        )
+    }
+
+    private fun isNull(expr: SqlExpr): SqlExpr =
+        SqlExpr.Binary(expr, SqlBinaryOperator.Is(), SqlExpr.NullLiteral)
 
     override fun renderType(type: SqlType): String = when (type) {
         is SqlType.Varchar -> if (type.maxLength == null) "VARCHAR(4000)" else super.renderType(type)
@@ -734,6 +970,13 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
 
     override fun renderExpr(expr: SqlExpr): String = when (expr) {
         is SqlExpr.StringLiteral -> "N${super.renderExpr(expr)}"
+        is SqlExpr.Window -> {
+            val function = expr.expr as? SqlExpr.Function
+            require(function?.builtinFunction != SqlBuiltinFunction.RowNumber || expr.window.orderBy.isNotEmpty()) {
+                "Kronos built-in function 'rowNumber' requires orderBy(...) in its SQL Server window."
+            }
+            super.renderExpr(expr)
+        }
         is SqlExpr.TimeLiteral -> when (expr.type) {
             is SqlTimeType.Timestamp -> renderExpr(
                 SqlExpr.Cast(
@@ -750,28 +993,70 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
     override fun renderPredicateBooleanLiteral(value: Boolean): String =
         if (value) "1 = 1" else "1 = 0"
 
-    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.name.last.uppercase()) {
-        "CEIL" -> renderRenamedFunction("CEILING", expr.args)
-        "LN" -> {
+    override fun renderBinary(expr: SqlExpr.Binary): String = when (expr.operator) {
+        SqlBinaryOperator.Regexp,
+        SqlBinaryOperator.NotRegexp -> unsupportedRegexpOperator()
+        else -> super.renderBinary(expr)
+    }
+
+    override fun renderFunction(expr: SqlExpr.Function): String = when (expr.builtinFunction) {
+        SqlBuiltinFunction.Binary -> unsupportedBuiltinFunction(SqlBuiltinFunction.Binary)
+        SqlBuiltinFunction.Ceiling -> renderRenamedFunction(expr, "CEILING")
+        SqlBuiltinFunction.NaturalLog -> {
             val arg = expr.args.getOrNull(0)
-            if (arg != null) "LOG(${renderExpr(arg)}, EXP(1))" else super.renderFunction(expr)
+            if (arg != null && expr.args.size == 1) {
+                super.renderFunction(
+                    expr.copy(
+                        name = SqlIdentifier.of("LOG"),
+                        args = listOf(arg, SqlExpr.Function(SqlIdentifier.of("EXP"), args = listOf(SqlExpr.NumberLiteral("1"))))
+                    )
+                )
+            } else {
+                super.renderFunction(expr)
+            }
         }
-        "LENGTH" -> renderRenamedFunction("LEN", expr.args)
-        "REPEAT" -> "REPLICATE(${expr.args.joinToString(", ") { renderSqlServerFunctionArg(it) }})"
-        "TRUNC" -> renderRenamedFunction("ROUND", expr.args)
+        SqlBuiltinFunction.Length -> renderRenamedFunction(expr, "LEN")
+        SqlBuiltinFunction.Substring -> renderRenamedFunction(expr, "SUBSTRING")
+        SqlBuiltinFunction.Repeat -> renderRenamedFunction(expr, "REPLICATE")
+        SqlBuiltinFunction.Truncate -> renderTrunc(expr)
+        SqlBuiltinFunction.GroupConcat -> renderSqlServerGroupConcat(expr)
         else -> super.renderFunction(expr)
     }
 
-    private fun renderRenamedFunction(name: String, args: List<SqlExpr>): String =
-        args.joinToString(", ", "$name(", ")") { renderExpr(it) }
+    private fun renderRenamedFunction(expr: SqlExpr.Function, name: String): String =
+        super.renderFunction(expr.copy(name = SqlIdentifier.of(name)))
 
-    private fun renderSqlServerFunctionArg(expr: SqlExpr): String = when (expr) {
-        is SqlExpr.StringLiteral -> plainString(expr.string)
-        else -> renderExpr(expr)
+    private fun renderTrunc(expr: SqlExpr.Function): String {
+        val value = expr.args.getOrNull(0)
+        val scale = expr.args.getOrNull(1)
+        return if (value != null && scale != null && expr.args.size == 2) {
+            super.renderFunction(
+                expr.copy(name = SqlIdentifier.of("ROUND"), args = listOf(value, scale, SqlExpr.NumberLiteral("1")))
+            )
+        } else {
+            super.renderFunction(expr)
+        }
     }
 
-    private fun plainString(value: String): String =
-        "'" + value.replace("'", "''") + "'"
+    private fun renderSqlServerGroupConcat(expr: SqlExpr.Function): String {
+        val value = expr.args.singleOrNull()
+        return if (
+            value != null &&
+            expr.quantifier == null &&
+            expr.orderBy.isEmpty() &&
+            expr.withinGroup.isEmpty() &&
+            expr.filter == null
+        ) {
+            super.renderFunction(
+                expr.copy(
+                    name = SqlIdentifier.of("STRING_AGG"),
+                    args = listOf(SqlExpr.Cast(value, SqlType.Varchar()), SqlExpr.StringLiteral(","))
+                )
+            )
+        } else {
+            super.renderFunction(expr)
+        }
+    }
 
     override fun renderType(type: SqlType): String = when (type) {
         is SqlType.Varchar -> "NVARCHAR(${type.maxLength?.toString() ?: "MAX"})"

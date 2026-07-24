@@ -54,9 +54,19 @@ class DialectPipelineTest {
                 SqlRenderContext(dialect = SqlDialect.SqlServer, validator = SqlDialectValidator.Default)
             )
         }
+        val h2ShareLock = assertFailsWith<SqlValidationException> {
+            SqlQuery.Select(lock = SqlLock.Share()).toRenderedSql(
+                SqlRenderContext(dialect = SqlDialect.H2, validator = SqlDialectValidator.Default)
+            )
+        }
 
         assertEquals("dialect.lock.unsupported", sqliteLock.diagnostics.single().code)
         assertEquals("dialect.sqlserver.limit.requires.order", sqlServerLimit.diagnostics.single().code)
+        assertEquals("dialect.lock.unsupported", h2ShareLock.diagnostics.single().code)
+        assertEquals(
+            emptyList(),
+            SqlDialectValidator.Default.validate(SqlQuery.Select(lock = SqlLock.Update()), SqlDialect.H2)
+        )
     }
 
     @Test
@@ -72,6 +82,35 @@ class DialectPipelineTest {
         }
 
         assertEquals("dialect.returning.unsupported", error.diagnostics.single().code)
+    }
+
+    @Test
+    fun defaultDialectValidatorRejectsReturningForEveryH2DmlStatement() {
+        val returning = SqlReturning(listOf(SqlSelectItem.Expr(col("id"))))
+        val statements = listOf(
+            SqlDmlStatement.Insert(
+                table = table("user"),
+                mode = SqlInsertMode.Values(listOf(listOf(num("1")))),
+                returning = returning
+            ),
+            SqlDmlStatement.Update(table("user"), setPairs = listOf(set("name", str("Ada"))), returning = returning),
+            SqlDmlStatement.Delete(table("user"), returning = returning),
+            SqlDmlStatement.Upsert(
+                table = table("user"),
+                columns = cols("id", "name"),
+                values = listOf(num("1"), str("Ada")),
+                primaryKeys = cols("id"),
+                returning = returning
+            )
+        )
+
+        val diagnostics = statements.map { statement ->
+            assertFailsWith<SqlValidationException> {
+                statement.toRenderedSql(SqlRenderContext(dialect = SqlDialect.H2, validator = SqlDialectValidator.Default))
+            }.diagnostics.single().code
+        }
+
+        assertEquals(List(statements.size) { "dialect.returning.unsupported" }, diagnostics)
     }
 
     @Test

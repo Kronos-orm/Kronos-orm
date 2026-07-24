@@ -20,13 +20,13 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testRandInSelect() {
         val (sql, _) = user.select { f.rand().alias("rand") }.build()
-        assertEquals("""SELECT RANDOM() AS rand FROM "tb_user" WHERE "deleted" = 0""", sql)
+        assertEquals("""SELECT (RANDOM() / 9223372036854775808.0 + 0.5) AS rand FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
     fun testRandInWhere() {
         val (sql, _) = user.select { it.id }.where { f.rand() > 0.5 }.build()
-        assertEquals("""SELECT "id" FROM "tb_user" WHERE RANDOM() > :randMin AND "deleted" = 0""", sql)
+        assertEquals("""SELECT "id" FROM "tb_user" WHERE (RANDOM() / 9223372036854775808.0 + 0.5) > :randMin AND "deleted" = 0""", sql)
     }
 
     @Test
@@ -44,12 +44,12 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testTruncInSelect() {
         val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
-        assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "deleted" = 0""", sql)
+        assertEquals("""SELECT CAST("score" * POWER(10, 2) AS INTEGER) / POWER(10, 2) AS trunc FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
     fun testTruncInWhere() {
         val (sql, _) = user.select { it.id }.where { f.trunc(it.score, 0) > 50 }.build()
-        assertEquals("""SELECT "id" FROM "tb_user" WHERE TRUNC("score", 0) > :truncMin AND "deleted" = 0""", sql)
+        assertEquals("""SELECT "id" FROM "tb_user" WHERE (CAST("score" * POWER(10, 0) AS INTEGER) / POWER(10, 0)) > :truncMin AND "deleted" = 0""", sql)
     }
 }

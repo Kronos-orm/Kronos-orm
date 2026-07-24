@@ -8,9 +8,11 @@
 package com.kotlinorm.syntax.render
 
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlBuiltinFunction
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlTimeType
 import com.kotlinorm.syntax.expr.SqlType
+import com.kotlinorm.syntax.expr.SqlWindow
 import com.kotlinorm.syntax.limit.SqlFetch
 import com.kotlinorm.syntax.limit.SqlFetchMode
 import com.kotlinorm.syntax.limit.SqlFetchUnit
@@ -36,6 +38,7 @@ import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.token.SqlUnsafeToken
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class DialectRendererCoverageTest {
     @Test
@@ -93,12 +96,13 @@ class DialectRendererCoverageTest {
             "SELECT * ORDER BY CASE WHEN `name` IS NULL THEN 1 ELSE 0 END DESC, `name` DESC",
             orderBy(SqlOrdering.Desc, SqlNullsOrdering.First).toSql(SqlDialect.MySql)
         )
-        assertEquals("TRUNCATE(1.9)", SqlExpr.Function(id("TRUNC"), args = listOf(num("1.9"))).toSql(SqlDialect.MySql))
+        assertEquals("TRUNCATE(1.9)", builtin(SqlBuiltinFunction.Truncate, num("1.9")).toSql(SqlDialect.MySql))
         assertEquals(
             "CONCAT('a', 'b', 'c')",
-            SqlExpr.Function(
-                id("CONCAT"),
-                args = listOf(str("a"), SqlExpr.Function(id("CONCAT"), args = listOf(str("b"), str("c"))))
+            builtin(
+                SqlBuiltinFunction.Concatenate,
+                str("a"),
+                builtin(SqlBuiltinFunction.Concatenate, str("b"), str("c"))
             ).toSql(SqlDialect.MySql)
         )
         assertEquals("false", SqlExpr.BooleanLiteral(false).toSql(SqlDialect.MySql))
@@ -140,8 +144,8 @@ class DialectRendererCoverageTest {
                 )
             ).toSql(SqlDialect.PostgreSql)
         )
-        assertEquals("""SUBSTRING("name" FROM 1 FOR 2)""", SqlExpr.Function(id("SUBSTR"), args = listOf(col("name"), num("1"), num("2"))).toSql(SqlDialect.PostgreSql))
-        assertEquals("""SUBSTRING("name" FROM -3)""", SqlExpr.Function(id("RIGHT"), args = listOf(col("name"), num("3"))).toSql(SqlDialect.PostgreSql))
+        assertEquals("""SUBSTRING("name" FROM 1 FOR 2)""", builtin(SqlBuiltinFunction.Substring, col("name"), num("1"), num("2")).toSql(SqlDialect.PostgreSql))
+        assertEquals("""RIGHT("name", 3)""", builtin(SqlBuiltinFunction.Right, col("name"), num("3")).toSql(SqlDialect.PostgreSql))
         assertEquals("RIGHT()", SqlExpr.Function(id("RIGHT")).toSql(SqlDialect.PostgreSql))
         assertEquals(
             """INSERT OR IGNORE INTO "user" ("id", "name") VALUES (1, 'Ada')""",
@@ -151,19 +155,37 @@ class DialectRendererCoverageTest {
             """SELECT * FROM "user" LIMIT 9223372036854775807 OFFSET 4""",
             SqlQuery.Select(from = listOf(table("user")), limit = SqlLimit(offset = num("4"))).toSql(SqlDialect.SQLite)
         )
-        assertEquals("RANDOM()", SqlExpr.Function(id("RAND"), args = listOf(num("1"))).toSql(SqlDialect.SQLite))
+        assertEquals(
+            "(RANDOM() / 9223372036854775808.0 + 0.5)",
+            builtin(SqlBuiltinFunction.Random).toSql(SqlDialect.SQLite)
+        )
     }
 
     @Test
     fun rendersOracleSpecificBranches() {
         assertEquals("MOD(7, 3)", SqlExpr.Binary(num("7"), SqlBinaryOperator.Mod, num("3")).toSql(SqlDialect.Oracle))
-        assertEquals("DBMS_RANDOM.VALUE", SqlExpr.Function(id("RAND")).toSql(SqlDialect.Oracle))
-        assertEquals("'a' || ',' || 'b' || ',' || 'c'", SqlExpr.Function(id("JOIN"), args = listOf(str(","), str("a"), str("b"), str("c"))).toSql(SqlDialect.Oracle))
-        assertEquals("''", SqlExpr.Function(id("JOIN"), args = listOf(str(","))).toSql(SqlDialect.Oracle))
-        assertEquals("SUBSTR(\"NAME\", 1, 2)", SqlExpr.Function(id("LEFT"), args = listOf(col("name"), num("2"))).toSql(SqlDialect.Oracle))
-        assertEquals("SUBSTR(\"NAME\", -2)", SqlExpr.Function(id("RIGHT"), args = listOf(col("name"), num("2"))).toSql(SqlDialect.Oracle))
+        assertEquals(
+            "REGEXP_LIKE(\"NAME\", '^A.*')",
+            SqlExpr.Binary(col("name"), SqlBinaryOperator.Regexp, str("^A.*")).toSql(SqlDialect.Oracle)
+        )
+        assertEquals(
+            "NOT REGEXP_LIKE(\"NAME\", '^A.*')",
+            SqlExpr.Binary(col("name"), SqlBinaryOperator.NotRegexp, str("^A.*")).toSql(SqlDialect.Oracle)
+        )
+        assertEquals("DBMS_RANDOM.VALUE", builtin(SqlBuiltinFunction.Random).toSql(SqlDialect.Oracle))
+        assertEquals(
+            "LISTAGG(\"NAME\", ',') WITHIN GROUP (ORDER BY \"NAME\" ASC)",
+            builtin(SqlBuiltinFunction.GroupConcat, col("name")).toSql(SqlDialect.Oracle)
+        )
+        assertEquals(
+            "CASE WHEN ',' IS NULL THEN NULL ELSE CASE WHEN CASE WHEN 'a' IS NULL THEN 'b' WHEN 'b' IS NULL THEN 'a' ELSE ('a' || ',') || 'b' END IS NULL THEN 'c' WHEN 'c' IS NULL THEN CASE WHEN 'a' IS NULL THEN 'b' WHEN 'b' IS NULL THEN 'a' ELSE ('a' || ',') || 'b' END ELSE (CASE WHEN 'a' IS NULL THEN 'b' WHEN 'b' IS NULL THEN 'a' ELSE ('a' || ',') || 'b' END || ',') || 'c' END END",
+            builtin(SqlBuiltinFunction.JoinWithSeparator, str(","), str("a"), str("b"), str("c")).toSql(SqlDialect.Oracle)
+        )
+        assertEquals("CASE WHEN ',' IS NULL THEN NULL ELSE '' END", builtin(SqlBuiltinFunction.JoinWithSeparator, str(",")).toSql(SqlDialect.Oracle))
+        assertEquals("SUBSTR(\"NAME\", 1, 2)", builtin(SqlBuiltinFunction.Left, col("name"), num("2")).toSql(SqlDialect.Oracle))
+        assertEquals("SUBSTR(\"NAME\", -2)", builtin(SqlBuiltinFunction.Right, col("name"), num("2")).toSql(SqlDialect.Oracle))
         assertEquals("LEFT()", SqlExpr.Function(id("LEFT")).toSql(SqlDialect.Oracle))
-        assertEquals("RPAD('x', 3 * LENGTH('x'), 'x')", SqlExpr.Function(id("REPEAT"), args = listOf(str("x"), num("3"))).toSql(SqlDialect.Oracle))
+        assertEquals("RPAD('x', 3 * LENGTH('x'), 'x')", builtin(SqlBuiltinFunction.Repeat, str("x"), num("3")).toSql(SqlDialect.Oracle))
         assertEquals("REPEAT()", SqlExpr.Function(id("REPEAT")).toSql(SqlDialect.Oracle))
         assertEquals("TIME '12:30:00'", SqlExpr.TimeLiteral(SqlTimeType.Time(), "12:30:00").toSql(SqlDialect.Oracle))
         assertEquals(
@@ -206,12 +228,12 @@ class DialectRendererCoverageTest {
             "DROP INDEX [idx_user_name] ON [user]",
             SqlDdlStatement.DropIndex(id("idx_user_name"), id("user")).toSql(SqlDialect.SqlServer)
         )
-        assertEquals("CEILING(1.2)", SqlExpr.Function(id("CEIL"), args = listOf(num("1.2"))).toSql(SqlDialect.SqlServer))
-        assertEquals("LOG(10, EXP(1))", SqlExpr.Function(id("LN"), args = listOf(num("10"))).toSql(SqlDialect.SqlServer))
+        assertEquals("CEILING(1.2)", builtin(SqlBuiltinFunction.Ceiling, num("1.2")).toSql(SqlDialect.SqlServer))
+        assertEquals("LOG(10, EXP(1))", builtin(SqlBuiltinFunction.NaturalLog, num("10")).toSql(SqlDialect.SqlServer))
         assertEquals("LN()", SqlExpr.Function(id("LN")).toSql(SqlDialect.SqlServer))
-        assertEquals("LEN([name])", SqlExpr.Function(id("LENGTH"), args = listOf(col("name"))).toSql(SqlDialect.SqlServer))
-        assertEquals("REPLICATE('x', 3)", SqlExpr.Function(id("REPEAT"), args = listOf(str("x"), num("3"))).toSql(SqlDialect.SqlServer))
-        assertEquals("ROUND(1.25, 1)", SqlExpr.Function(id("TRUNC"), args = listOf(num("1.25"), num("1"))).toSql(SqlDialect.SqlServer))
+        assertEquals("LEN([name])", builtin(SqlBuiltinFunction.Length, col("name")).toSql(SqlDialect.SqlServer))
+        assertEquals("REPLICATE(N'x', 3)", builtin(SqlBuiltinFunction.Repeat, str("x"), num("3")).toSql(SqlDialect.SqlServer))
+        assertEquals("ROUND(1.25, 1, 1)", builtin(SqlBuiltinFunction.Truncate, num("1.25"), num("1")).toSql(SqlDialect.SqlServer))
         assertEquals(
             "EXEC sys.sp_dropextendedproperty @name = N'MS_Description', @level0type = N'SCHEMA', @level0name = N'dbo', @level1type = N'TABLE', @level1name = N'user'",
             SqlDdlStatement.SqlServerExtendedPropertyComment(
@@ -362,6 +384,68 @@ class DialectRendererCoverageTest {
         )
     }
 
+    @Test
+    fun rendersBundledFunctionCompatibilityMappings() {
+        val log = builtin(SqlBuiltinFunction.Log, num("100"), num("10"))
+        val groupConcat = builtin(SqlBuiltinFunction.GroupConcat, col("name"))
+
+        assertEquals("LOG(10, 100)", log.toSql(SqlDialect.H2))
+        assertEquals("LOG(10, 100)", log.toSql(SqlDialect.MySql))
+        assertEquals("LOG(10, 100)", log.toSql(SqlDialect.PostgreSql))
+        assertEquals("LOG(10, 100)", log.toSql(SqlDialect.SQLite))
+        assertEquals("LOG(10, 100)", log.toSql(SqlDialect.Oracle))
+        assertEquals("LOG(100, 10)", log.toSql(SqlDialect.SqlServer))
+
+        assertEquals(
+            "STRING_AGG(CAST(\"name\" AS TEXT), ',')",
+            groupConcat.toSql(SqlDialect.PostgreSql)
+        )
+        assertEquals(
+            "STRING_AGG(CAST([name] AS NVARCHAR(MAX)), N',')",
+            groupConcat.toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
+            "\"name\" ~ '^A'",
+            SqlExpr.Binary(col("name"), SqlBinaryOperator.Regexp, str("^A")).toSql(SqlDialect.PostgreSql)
+        )
+        assertEquals(
+            "\"name\" !~ '^A'",
+            SqlExpr.Binary(col("name"), SqlBinaryOperator.NotRegexp, str("^A")).toSql(SqlDialect.PostgreSql)
+        )
+
+        assertEquals("ACOS(-1)", builtin(SqlBuiltinFunction.Pi).toSql(SqlDialect.Oracle))
+        assertEquals("SUBSTRING(N'abc', 1, 2)", builtin(SqlBuiltinFunction.Substring, str("abc"), num("1"), num("2")).toSql(SqlDialect.SqlServer))
+        assertEquals("ROUND(12.345, 2, 1)", builtin(SqlBuiltinFunction.Truncate, num("12.345"), num("2")).toSql(SqlDialect.SqlServer))
+
+        assertEquals("MAX(2, 3)", builtin(SqlBuiltinFunction.Greatest, num("2"), num("3")).toSql(SqlDialect.SQLite))
+        assertEquals("MIN(2, 3)", builtin(SqlBuiltinFunction.Least, num("2"), num("3")).toSql(SqlDialect.SQLite))
+        assertEquals("SUBSTR('abc', 1, 2)", builtin(SqlBuiltinFunction.Left, str("abc"), num("2")).toSql(SqlDialect.SQLite))
+        assertEquals("SUBSTR('abc', -2)", builtin(SqlBuiltinFunction.Right, str("abc"), num("2")).toSql(SqlDialect.SQLite))
+        assertEquals("REPLACE(HEX(ZEROBLOB(2)), '00', 'ab')", builtin(SqlBuiltinFunction.Repeat, str("ab"), num("2")).toSql(SqlDialect.SQLite))
+        assertEquals(
+            "CAST(12.345 * POWER(10, 2) AS INTEGER) / POWER(10, 2)",
+            builtin(SqlBuiltinFunction.Truncate, num("12.345"), num("2")).toSql(SqlDialect.SQLite)
+        )
+    }
+
+    @Test
+    fun keepsRawFunctionNamesUntouchedAndRejectsUnsupportedBuiltinFunctions() {
+        assertEquals("LOG(100, 10)", SqlExpr.Function(id("LOG"), args = listOf(num("100"), num("10"))).toSql(SqlDialect.H2))
+        assertFailsWith<UnsupportedOperationException> {
+            builtin(SqlBuiltinFunction.Binary, num("10")).toSql(SqlDialect.H2)
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            SqlExpr.Binary(col("name"), SqlBinaryOperator.Regexp, str("^A")).toSql(SqlDialect.SQLite)
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            builtin(SqlBuiltinFunction.Any, num("1")).toSql(SqlDialect.H2)
+        }
+        assertEquals("ANY(1)", builtin(SqlBuiltinFunction.Any, num("1")).toSql(SqlDialect.PostgreSql))
+        assertFailsWith<IllegalArgumentException> {
+            SqlExpr.Window(builtin(SqlBuiltinFunction.RowNumber), SqlWindow()).toSql(SqlDialect.SqlServer)
+        }
+    }
+
     private fun orderBy(ordering: SqlOrdering, nullsOrdering: SqlNullsOrdering) =
         SqlQuery.Select(orderBy = listOf(SqlOrderingItem(col("name"), ordering, nullsOrdering)))
 
@@ -374,5 +458,12 @@ class DialectRendererCoverageTest {
                 select = listOf(SqlSelectItem.Expr(col("score"))),
                 from = listOf(table("user"))
             )
+        )
+
+    private fun builtin(function: SqlBuiltinFunction, vararg args: SqlExpr): SqlExpr.Function =
+        SqlExpr.Function(
+            name = id(function.standardSqlName),
+            args = args.toList(),
+            builtinFunction = function
         )
 }

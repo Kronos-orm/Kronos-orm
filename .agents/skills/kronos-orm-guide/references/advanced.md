@@ -150,7 +150,7 @@ val firstPerUser = ranked
 val rowNumber: Int? = rows.first().rn
 ```
 
-函数 SQL 由当前数据库方言渲染。窗口 alias 可以在同层 `orderBy` 中使用；谓词需要读取窗口 alias 时，先生成投影，再使用 `filter` 建立派生查询。`filter` receiver 只有当前 `Selected` 字段，并保持该投影作为结果类型。
+函数 SQL 由当前数据库方言渲染。`f.log(value, base)` 保持 value 在前、base 在后，`f.join(separator, ...)` 会拼接存在的值并跳过 `null` 参数。`f.bin(x)` 用于 MySQL；H2 应用需要文本反转时可以通过自定义函数提供实现。窗口 alias 可以在同层 `orderBy` 中使用；谓词需要读取窗口 alias 时，先生成投影，再使用 `filter` 建立派生查询。`filter` receiver 只有当前 `Selected` 字段，并保持该投影作为结果类型。
 
 ### PostgreSQL 数组比较
 
@@ -329,13 +329,41 @@ data class ProfileSetting(
 ## 原生SQL
 
 ```kotlin
-import com.kotlinorm.database.SqlExecutor.queryList
+import com.kotlinorm.database.SqlExecutor.toList
+import com.kotlinorm.database.SqlExecutor.first
+import com.kotlinorm.database.SqlExecutor.firstOrNull
 
-val users = dataSource.queryList<User>(
-    "SELECT * FROM user WHERE name = :name AND age > :age",
-    mapOf("name" to "Kronos", "age" to 18)
+data class UserRow(
+    val id: Int?,
+    val displayName: String?
 )
+
+val users: List<UserRow> = dataSource.toList(
+    "SELECT id, name AS display_name FROM user WHERE age >= :age",
+    mapOf("age" to 18)
+) { row ->
+    UserRow(
+        id = row.get<Int?>(1),
+        displayName = row.get<String?>("display_name")
+    )
+}
+
+val user: UserRow = dataSource.first(
+    "SELECT id, name AS display_name FROM user WHERE id = :id",
+    mapOf("id" to 1)
+) { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("display_name"))
+}
+
+val missing: UserRow? = dataSource.firstOrNull(
+    "SELECT id, name AS display_name FROM user WHERE id = :id",
+    mapOf("id" to 404)
+) { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("display_name"))
+}
 ```
+
+`row.get<T>("label")` 按 JDBC 列名或 alias 读取，`row.get<T>(field)` 使用 `Field` 的投影输出名，名称为空时回退到数据库列名，`row.get<T>(position)` 按 JDBC 列位置读取，位置从 `1` 开始；值按目标 `KType` 经过当前结果映射和 `ValueCodec` 转换。`rowNumber` 从 `0` 开始，`row` 在映射回调执行期间有效。`KronosJdbcWrapper` 支持该行映射能力。
 
 ---
 

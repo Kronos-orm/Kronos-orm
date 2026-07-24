@@ -14,6 +14,7 @@ import com.kotlinorm.syntax.group.SqlGroupingItem
 import com.kotlinorm.syntax.order.SqlNullsOrdering
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.order.SqlOrderingItem
+import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlInsertMode
@@ -308,14 +309,12 @@ class PrettySqlRenderer(
         when (val action = statement.action) {
             SqlUpsertAction.DoNothing -> {}
             is SqlUpsertAction.Update -> {
-                append("\nWHEN MATCHED THEN UPDATE SET\n")
+                append("\nWHEN MATCHED")
+                action.where?.let { append(" AND ${renderMergeSourceExpr(it, statement.table.identifier)}") }
+                append(" THEN UPDATE SET\n")
                 append(action.setPairs.joinToString(",\n") {
-                    "${renderIndent(1)}${renderQualifiedAssignmentTarget(it.target, SqlIdentifier.of("t1"))} = ${renderPrettyMergeSourceExpr(it.value)}"
+                    "${renderIndent(1)}${renderH2AssignmentTarget(it.target)} = ${renderPrettyMergeSourceExpr(it.value)}"
                 })
-                action.where?.let {
-                    append("\nWHERE\n")
-                    append("${renderIndent(1)}${renderPredicatePretty(it)}")
-                }
             }
         }
         append("\nWHEN NOT MATCHED THEN INSERT ")
@@ -416,6 +415,10 @@ class PrettySqlRenderer(
     ): String = when (target) {
         is com.kotlinorm.syntax.statement.SqlAssignmentTarget.Column ->
             renderQualifiedIdentifier(target.qualifier ?: qualifier, target.identifier)
+    }
+
+    private fun renderH2AssignmentTarget(target: SqlAssignmentTarget): String = when (target) {
+        is SqlAssignmentTarget.Column -> renderIdentifier(target.identifier)
     }
 
     private fun SqlRenderer.renderWindowItemForPretty(item: com.kotlinorm.syntax.expr.SqlWindowItem): String =

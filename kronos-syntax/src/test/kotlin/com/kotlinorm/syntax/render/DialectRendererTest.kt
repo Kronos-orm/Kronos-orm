@@ -16,12 +16,15 @@ import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.order.SqlNullsOrdering
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.order.SqlOrderingItem
+import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlColumnDefinition
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
+import com.kotlinorm.syntax.statement.SqlUpsertAction
+import com.kotlinorm.syntax.statement.SqlUpdateSetPair
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 import kotlin.test.Test
@@ -74,7 +77,7 @@ class DialectRendererTest {
         )
 
         assertEquals(
-            "MERGE INTO \"user\" AS \"t1\" USING (VALUES (:id, :name)) AS \"t2\" (\"id\", \"name\") ON (\"t1\".\"id\" = \"t2\".\"id\") WHEN MATCHED THEN UPDATE SET \"t1\".\"name\" = \"t2\".\"name\" WHEN NOT MATCHED THEN INSERT (\"id\", \"name\") VALUES (\"t2\".\"id\", \"t2\".\"name\")",
+            "MERGE INTO \"user\" AS \"t1\" USING (VALUES (:id, :name)) AS \"t2\" (\"id\", \"name\") ON (\"t1\".\"id\" = \"t2\".\"id\") WHEN MATCHED THEN UPDATE SET \"name\" = \"t2\".\"name\" WHEN NOT MATCHED THEN INSERT (\"id\", \"name\") VALUES (\"t2\".\"id\", \"t2\".\"name\")",
             upsert.toSql(SqlDialect.H2)
         )
         assertEquals(
@@ -84,6 +87,30 @@ class DialectRendererTest {
         assertEquals(
             "ALTER TABLE \"user\" ALTER COLUMN \"id\" INTEGER NOT NULL",
             modifyColumn.toSql(SqlDialect.H2)
+        )
+    }
+
+    @Test
+    fun rendersConditionalH2MergeWithUnqualifiedUpdateTarget() {
+        val upsert = SqlDmlStatement.Upsert(
+            table = table("user"),
+            columns = cols("id", "name", "status"),
+            values = listOf(num("1"), str("Ada"), num("2")),
+            primaryKeys = cols("id"),
+            action = SqlUpsertAction.Update(
+                setPairs = listOf(
+                    SqlUpdateSetPair(
+                        SqlAssignmentTarget.Column(id("name")),
+                        SqlExpr.ExcludedColumn(id("name"))
+                    )
+                ),
+                where = col("user", "status").eq(num("1"))
+            )
+        )
+
+        assertEquals(
+            "MERGE INTO \"user\" AS \"t1\" USING (VALUES (1, 'Ada', 2)) AS \"t2\" (\"id\", \"name\", \"status\") ON (\"t1\".\"id\" = \"t2\".\"id\") WHEN MATCHED AND \"t1\".\"status\" = 1 THEN UPDATE SET \"name\" = \"t2\".\"name\" WHEN NOT MATCHED THEN INSERT (\"id\", \"name\", \"status\") VALUES (\"t2\".\"id\", \"t2\".\"name\", \"t2\".\"status\")",
+            upsert.toSql(SqlDialect.H2)
         )
     }
 

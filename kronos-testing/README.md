@@ -30,13 +30,16 @@ Integration test module for Kronos ORM. Default tests cover external database in
 | `ORACLE_PASSWORD` | `KronosPassw0rd1` |
 | `DM_JDBC_URL` | `jdbc:dm://localhost:5237` |
 | `DM_USERNAME` | `SYSDBA` |
-| `DM_PASSWORD` | `SYSDBA` |
+| `DM_PASSWORD` | `DMdba_123` |
+| `DM_SYSAUDITOR_PASSWORD` | `DMAuditor_123` |
 | `H2_JDBC_URL` | `jdbc:h2:mem:kronos_testing;DB_CLOSE_DELAY=-1` |
 | `H2_USERNAME` | `sa` |
 | `H2_PASSWORD` | empty |
 | `SQLITE_URL` | Temp-file SQLite database |
 
 Local defaults live in the tracked `envsetup.defaults` file. `envsetup.sh` and `envsetup.bat` load that file and keep any environment variable you set before calling them. Put local overrides in the ignored `envsetup.local.properties`, or set them in the environment before loading the defaults.
+
+The bundled DM8 service uses `DM_USERNAME` and `DM_PASSWORD` for the test connection. `DM_SYSAUDITOR_PASSWORD` configures the service's SYSAUDITOR account. Override these values together with `DM_JDBC_URL` when connecting to an externally managed DM8 instance.
 
 ## Running
 

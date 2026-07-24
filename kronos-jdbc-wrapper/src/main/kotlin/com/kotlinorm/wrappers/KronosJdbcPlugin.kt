@@ -63,13 +63,13 @@ object KronosJdbcPlugins {
             "postgres" in marker || "pgsql" in marker -> DBType.Postgres
             "mysql" in marker || "mariadb" in marker -> DBType.Mysql
             "oracle" in marker -> DBType.Oracle
-            "sql server" in marker || "mssql" in marker -> DBType.Mssql
+            "sql server" in marker || "mssql" in marker || "sqlserver" in marker -> DBType.Mssql
             "sqlite" in marker -> DBType.SQLite
             "db2" in marker -> DBType.DB2
             "sybase" in marker -> DBType.Sybase
             "h2" in marker -> DBType.H2
             "oceanbase" in marker -> DBType.OceanBase
-            "dameng" in marker || "dm dbms" in marker -> DBType.DM8
+            "dameng" in marker || "dm dbms" in marker || "jdbc:dm:" in marker -> DBType.DM8
             "gauss" in marker -> DBType.GaussDB
             else -> DBType.Unknown
         }

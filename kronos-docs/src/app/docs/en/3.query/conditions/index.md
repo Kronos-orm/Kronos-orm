@@ -443,6 +443,16 @@ FROM `user`
 WHERE `user`.`name` REGEXP :namePattern
 ```
 
+Kronos renders the same predicate with each database's regular-expression syntax.
+
+| Database | `regexp` | `notRegexp` |
+|----------|----------|-------------|
+| MySQL, H2 | `name REGEXP pattern` | `name NOT REGEXP pattern` |
+| PostgreSQL | `name ~ pattern` | `name !~ pattern` |
+| Oracle, DM8 | `REGEXP_LIKE(name, pattern)` | `NOT REGEXP_LIKE(name, pattern)` |
+
+SQLite applications can register a regular-expression function through {{ $.keyword("advanced/custom-functions", ["Custom Functions"]) }}. SQL Server applications can expose their chosen regular-expression implementation through the same extension point.
+
 ## Match normalized text
 
 `f.lower(x)` and `f.upper(x)` return nullable `String?` expressions. Use them with equality, `contains`, `like`, `startsWith`, `endsWith`, and membership conditions.

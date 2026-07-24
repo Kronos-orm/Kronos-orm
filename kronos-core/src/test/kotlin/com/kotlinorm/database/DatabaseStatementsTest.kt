@@ -39,6 +39,7 @@ import com.kotlinorm.syntax.token.SqlUnsafeToken
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class DatabaseStatementsTest {
 
@@ -91,6 +92,35 @@ class DatabaseStatementsTest {
     }
 
     @Test
+    fun `H2 normalizes type aliases and temporal precision metadata for schema sync`() {
+        assertEquals(
+            "COALESCE(C.NUMERIC_SCALE, C.DATETIME_PRECISION) AS SCALE",
+            H2Statements.tableColumns("account").toQueryShape().select[4]
+        )
+
+        val currentColumns = H2Statements.mapColumns(
+            "account",
+            listOf(
+                h2Column("approximate_value", "DOUBLE PRECISION", precision = 53),
+                h2Column("exact_value", "NUMERIC", precision = 12, scale = 4),
+                h2Column("local_time", "TIME", scale = 3),
+                h2Column("local_datetime", "TIMESTAMP", scale = 6),
+            )
+        )
+
+        assertEquals(
+            listOf(KColumnType.DOUBLE, KColumnType.NUMERIC, KColumnType.TIME, KColumnType.TIMESTAMP),
+            currentColumns.map { it.type }
+        )
+        assertEquals(listOf(0, 4, 3, 6), currentColumns.map { it.scale })
+        assertTrue(H2Statements.sameColumnDefinition(statementField("approximate_value", KColumnType.FLOAT), currentColumns[0]))
+        assertTrue(H2Statements.sameColumnDefinition(statementField("exact_value", KColumnType.DECIMAL, length = 12, scale = 4), currentColumns[1]))
+        assertTrue(H2Statements.sameColumnDefinition(statementField("local_time", KColumnType.TIME, scale = 3), currentColumns[2]))
+        assertTrue(H2Statements.sameColumnDefinition(statementField("local_datetime", KColumnType.DATETIME, scale = 6), currentColumns[3]))
+        assertTrue(H2Statements.sameColumnDefinition(statementField("default_datetime", KColumnType.DATETIME), currentColumns[3]))
+    }
+
+    @Test
     fun `generated key fallbacks are defined as dialect queries`() {
         val insert = SqlDmlStatement.Insert(
             table = SqlTable.Ident(
@@ -133,7 +163,7 @@ class DatabaseStatementsTest {
     }
 
     @Test
-    fun `DM8 index metadata excludes only primary key backing indexes`() {
+    fun `DM8 index metadata excludes primary key backing and native system indexes`() {
         assertEquals(
             QueryShape(
                 select = listOf(
@@ -152,7 +182,10 @@ class DatabaseStatementsTest {
                     "AND i.INDEX_NAME NOT LIKE UPPER('SYS_%') AND NOT EXISTS (" +
                     "SELECT 1 FROM ALL_CONSTRAINTS c WHERE c.OWNER = i.OWNER " +
                     "AND c.TABLE_NAME = i.TABLE_NAME AND c.INDEX_NAME = i.INDEX_NAME " +
-                    "AND c.CONSTRAINT_TYPE = 'P')",
+                    "AND c.CONSTRAINT_TYPE = 'P') AND (i.GENERATED = 'N' OR EXISTS (" +
+                    "SELECT 1 FROM ALL_CONSTRAINTS c WHERE c.OWNER = i.OWNER " +
+                    "AND c.TABLE_NAME = i.TABLE_NAME AND c.INDEX_NAME = i.INDEX_NAME " +
+                    "AND c.CONSTRAINT_TYPE = 'U'))",
             ),
             Dm8Statements.tableIndexes("account").toQueryShape(),
         )
@@ -1741,6 +1774,22 @@ class DatabaseStatementsTest {
         nullable = nullable,
         defaultValue = defaultValue,
         kDoc = kDoc
+    )
+
+    private fun h2Column(
+        columnName: String,
+        dataType: String,
+        precision: Int = 0,
+        scale: Int = 0,
+    ): Map<String, Any> = mapOf(
+        "COLUMN_NAME" to columnName,
+        "DATA_TYPE" to dataType,
+        "LENGTH" to 0,
+        "PRECISION" to precision,
+        "SCALE" to scale,
+        "IS_NULLABLE" to true,
+        "IDENTITY" to false,
+        "PRIMARY_KEY" to false,
     )
 
     private data class TypeCase(

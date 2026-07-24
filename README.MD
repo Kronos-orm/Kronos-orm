@@ -274,12 +274,28 @@ MySQL | PostgreSQL | SQLite | H2 | SQL Server | Oracle | DM8 (Dameng)
 
 ```kotlin
 import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+`Kronos.connect(...)` returns a `KronosJdbcWrapper` and registers it as the default data source.
+
+For an application service, add the selected connection-pool and JDBC driver dependencies, then provide its `DataSource` directly:
+
+```kotlin
+import com.kotlinorm.Kronos
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 
 Kronos.dataSource = { KronosJdbcWrapper(SomeDataSource()) }
 ```
 
-`KronosJdbcWrapper` can also receive `databaseType = DBType.Mysql` and a configuration block for JDBC statement settings, warning handling, parameter binding, and result mapping. See [Connect to Database](https://kotlinorm.com/#/documentation/en/database/connect-to-db) for dynamic / multiple data sources.
+`KronosJdbcWrapper` also accepts `databaseType = DBType.Mysql` and a configuration block. For multiple or dynamic data sources, create independent wrappers with `DriverManagerDataSource`. See [Data Source Wrapper](https://kotlinorm.com/#/documentation/en/database/datasource-wrapper) for examples.
 
 ### Android/JVM SQLite
 

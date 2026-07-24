@@ -7,7 +7,7 @@ Core module of the Kronos ORM framework. Zero runtime dependencies.
 - **Syntax-based SQL generation** — Kronos DSL lowers SQL expressions toward `kronos-syntax` trees while legacy AST adapters are being retired
 - **ORM operations** — `select/`, `insert/`, `update/`, `delete/`, `upsert/`, `join/`, `union/`, `cascade/`, `ddl/`, `pagination/`
 - **DSL beans** — `Field`, `Criteria`, `KronosFunctionExpr`, `KTableForCondition/Select/Set/Sort/Reference`
-- **Database dialects** — MySQL, PostgreSQL, SQLite, SQL Server, Oracle (extensible via `RegisteredDBTypeManager`)
+- **Database dialects** — MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, DM8 (extensible via `RegisteredDBTypeManager`)
 - **Interfaces** — `KPojo`, `KronosDataSourceWrapper`, `KLogger`, `KronosNamingStrategy`
 - **Annotations** — `@Table`, `@PrimaryKey`, `@Column`, `@ColumnType`, `@CreateTime`, `@UpdateTime`, `@LogicDelete`, `@Version`, `@Cascade`, `@TableIndex`, `@Serialize`, `@KronosFunction`, etc.
 - **Built-in strategies** — primary key generation, logical deletion, optimistic lock, timestamps, naming

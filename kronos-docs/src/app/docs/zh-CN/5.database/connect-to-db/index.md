@@ -1,35 +1,62 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos通过{{ $.keyword("database/datasource-wrapper", ["数据源包装器"]) }}执行数据库操作。`KronosJdbcWrapper`接收任意JDBC `DataSource`，读取数据库元信息，并提供给`Kronos.dataSource`使用。
+Kronos通过{{ $.keyword("database/datasource-wrapper", ["数据源包装器"]) }}执行数据库操作。默认连接直接使用`Kronos.connect(...)`配置。
 
-## 添加`kronos-jdbc-wrapper`
+## 使用JDBC URL连接
 
-项目中已经有JDBC `DataSource`，或可以通过连接池创建`DataSource`时，可以使用`kronos-jdbc-wrapper`。
+在应用启动时调用`Kronos.connect(...)`配置默认数据源。
 
-```kotlin group="kronos-jdbc-wrapper" name="gradle(kts)" icon="gradlekts"
+```kotlin group="Direct JDBC connection" name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+该调用返回已注册的`KronosJdbcWrapper`。
+
+## 添加JDBC依赖
+
+添加`kronos-jdbc-wrapper`和数据库对应的JDBC Driver。
+
+```kotlin group="JDBC dependencies" name="gradle(kts)" icon="gradlekts"
 dependencies {
     implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
 
-```groovy group="kronos-jdbc-wrapper" name="gradle(groovy)" icon="gradle"
+```groovy group="JDBC dependencies" name="gradle(groovy)" icon="gradle"
 dependencies {
     implementation 'com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}'
+    implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
 
-```xml group="kronos-jdbc-wrapper" name="maven" icon="maven"
-<dependency>
-    <groupId>com.kotlinorm</groupId>
-    <artifactId>kronos-jdbc-wrapper</artifactId>
-    <version>{{ $.kronosVersion() }}</version>
-</dependency>
+```xml group="JDBC dependencies" name="maven" icon="maven"
+<dependencies>
+    <dependency>
+        <groupId>com.kotlinorm</groupId>
+        <artifactId>kronos-jdbc-wrapper</artifactId>
+        <version>{{ $.kronosVersion() }}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>${mysql-connector-j.version}</version>
+    </dependency>
+</dependencies>
 ```
 
-## 添加连接池和JDBC Driver
+## 使用连接池
 
-连接池和JDBC Driver选择与数据库服务端、JDK匹配的最新稳定版。
+应用服务使用连接池时，添加与数据库服务端、JDK匹配的连接池和JDBC Driver。
 
 ```kotlin group="Driver" name="gradle(kts)" icon="gradlekts"
 dependencies {

@@ -443,6 +443,16 @@ FROM `user`
 WHERE `user`.`name` REGEXP :namePattern
 ```
 
+Kronos 会按数据库的正则语法渲染同一个谓词。
+
+| 数据库 | `regexp` | `notRegexp` |
+|--------|----------|-------------|
+| MySQL、H2 | `name REGEXP pattern` | `name NOT REGEXP pattern` |
+| PostgreSQL | `name ~ pattern` | `name !~ pattern` |
+| Oracle、DM8 | `REGEXP_LIKE(name, pattern)` | `NOT REGEXP_LIKE(name, pattern)` |
+
+SQLite 应用可以通过{{ $.keyword("advanced/custom-functions", ["自定义函数"]) }}注册正则函数。SQL Server 应用可以通过同一扩展点接入选定的正则实现。
+
 ## 归一化文本匹配
 
 `f.lower(x)` 和 `f.upper(x)` 返回可空 `String?` 表达式，可以用于相等比较、`contains`、`like`、`startsWith`、`endsWith` 和集合成员条件。

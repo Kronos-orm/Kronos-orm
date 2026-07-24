@@ -63,7 +63,10 @@ object Dm8Statements : DatabaseStatements() {
                     "SELECT 1 FROM ALL_CONSTRAINTS c " +
                     "WHERE c.OWNER = i.OWNER AND c.TABLE_NAME = i.TABLE_NAME " +
                     "AND c.INDEX_NAME = i.INDEX_NAME AND c.CONSTRAINT_TYPE = 'P'" +
-                    ")"
+                    ") AND (i.GENERATED = 'N' OR EXISTS (" +
+                    "SELECT 1 FROM ALL_CONSTRAINTS c " +
+                    "WHERE c.OWNER = i.OWNER AND c.TABLE_NAME = i.TABLE_NAME " +
+                    "AND c.INDEX_NAME = i.INDEX_NAME AND c.CONSTRAINT_TYPE = 'U'))"
             )
         )
     }

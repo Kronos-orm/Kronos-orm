@@ -183,6 +183,34 @@ val user: User? = User()
 null
 ```
 
+```kotlin group="DSL row mapper" name="kotlin" icon="kotlin"
+data class UserRow(
+    val id: Int?,
+    val displayName: String?
+)
+
+val query = User()
+    .select { [it.id, it.name.alias("displayName")] }
+    .where { it.age >= 18 }
+
+val users: List<UserRow> = query.toList<UserRow> { row ->
+    UserRow(
+        id = row.get<Int?>(1),
+        displayName = row.get<String?>("displayName")
+    )
+}
+
+val first: UserRow = query.first<UserRow> { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("displayName"))
+}
+
+val missing: UserRow? = query.firstOrNull<UserRow> { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("displayName"))
+}
+```
+
+`row.get<T>("label")` reads by column label or alias, `row.get<T>(field)` uses the `Field` output name and falls back to its database column name, and `row.get<T>(position)` reads by JDBC column position, starting at `1`; values use the requested `KType` and the current result mapping and `ValueCodec` conversion. `rowNumber` starts at `0`, and `row` is valid while the mapping callback runs. `KronosJdbcWrapper` provides this row-mapping capability.
+
 ## Use result methods after joins
 
 Join queries use the same result methods as `select`.

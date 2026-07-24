@@ -24,6 +24,9 @@ import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.enums.QueryType.ToMap
 import com.kotlinorm.enums.QueryType.ToMapList
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
+import com.kotlinorm.interfaces.requireKronosRowMapping
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn
 import kotlin.reflect.KType
@@ -45,6 +48,9 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
 
     /** Hook invoked after global after-query events with the decoded result. Its return value is ignored. */
     var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)? = null
+
+    /** Set by query features whose post-processing requires materialized KPojo results. */
+    internal var supportsKronosRowMapping: Boolean = true
 
     /**
      * Replaces the operation-local before-query hook.
@@ -115,6 +121,21 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
     }
 
     /**
+     * Executes the query and maps each active database row without materializing the selected type first.
+     *
+     * The wrapper must implement [com.kotlinorm.interfaces.KronosRowMappingDataSourceWrapper].
+     */
+    fun <T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> T
+    ): List<T> {
+        requireKronosRowMapping()
+        return executeQuery(wrapper, ToList) { dataSource, queryTask ->
+            dataSource.requireKronosRowMapping().toList(queryTask, mapper)
+        }
+    }
+
+    /**
      * Executes the query and decodes the first row as [targetType].
      *
      * @param wrapper wrapper to use, or `null` to resolve the configured default
@@ -138,6 +159,49 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
             throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
         }
         return result
+    }
+
+    /**
+     * Executes the query and maps its first active database row.
+     *
+     * The wrapper advances at most one row. An empty result raises [NoSuchElementException].
+     */
+    fun <T> first(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> T
+    ): T {
+        return when (val result = firstRow(wrapper, mapper)) {
+            KronosRowFirstResult.Empty -> throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+            is KronosRowFirstResult.Present -> result.value
+        }
+    }
+
+    /** Executes the query and maps its first active database row, or returns null when no row exists. */
+    fun <T> firstOrNull(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> T
+    ): T? {
+        return when (val result = firstRow(wrapper, mapper)) {
+            KronosRowFirstResult.Empty -> null
+            is KronosRowFirstResult.Present -> result.value
+        }
+    }
+
+    private fun <T> firstRow(
+        wrapper: KronosDataSourceWrapper?,
+        mapper: (KronosRow) -> T
+    ): KronosRowFirstResult<T> {
+        requireKronosRowMapping()
+        var rowResult: KronosRowFirstResult<T>? = null
+        executeQuery(wrapper, First) { dataSource, queryTask ->
+            val result = dataSource.requireKronosRowMapping().first(queryTask, mapper)
+            rowResult = result
+            when (result) {
+                KronosRowFirstResult.Empty -> null
+                is KronosRowFirstResult.Present -> result.value
+            }
+        }
+        return checkNotNull(rowResult)
     }
 
     /** Returns every row as a raw, string-keyed map without a declared value type. */
@@ -181,6 +245,12 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
     /** Decodes the first row as nullable [T], returning `null` for an empty result. */
     inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
         return first(wrapper, typeOf<T?>()) as T?
+    }
+
+    private fun requireKronosRowMapping() {
+        if (!supportsKronosRowMapping) {
+            throw UnsupportedOperationException("KronosRow mapping does not support cascade queries")
+        }
     }
 
     companion object {

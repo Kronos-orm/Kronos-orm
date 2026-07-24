@@ -18,6 +18,7 @@ package com.kotlinorm.functions
 
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlBuiltinFunction
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlWindow
 import kotlin.test.Test
@@ -41,7 +42,8 @@ class FunctionHandlerTest {
         assertEquals(
             SqlExpr.Function(
                 name = SqlIdentifier.of("COUNT"),
-                args = listOf(SqlExpr.NumberLiteral("1"))
+                args = listOf(SqlExpr.NumberLiteral("1")),
+                builtinFunction = SqlBuiltinFunction.Count
             ),
             count.expr
         )
@@ -63,7 +65,9 @@ class FunctionHandlerTest {
         val window = SqlWindow(partitionBy = listOf(SqlExpr.Column(columnName = "user_id")))
         val rowNumber = KronosFunctionExpressions.callWindowArgs("rowNumber", window = window)
         val windowExpr = assertIs<SqlExpr.Window>(rowNumber.expr)
-        assertEquals(SqlIdentifier.of("ROW_NUMBER"), (windowExpr.expr as SqlExpr.Function).name)
+        val rowNumberFunction = windowExpr.expr as SqlExpr.Function
+        assertEquals(SqlIdentifier.of("ROW_NUMBER"), rowNumberFunction.name)
+        assertEquals(SqlBuiltinFunction.RowNumber, rowNumberFunction.builtinFunction)
         assertEquals(window, windowExpr.window)
     }
 }

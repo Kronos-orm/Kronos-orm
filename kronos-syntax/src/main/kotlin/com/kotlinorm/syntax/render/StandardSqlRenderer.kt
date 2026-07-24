@@ -605,23 +605,39 @@ open class StandardSqlRenderer(
         expr.nullsMode?.let { append(" ${renderWindowNullsMode(it)}") }
     }
 
-    protected open fun renderFunction(expr: SqlExpr.Function): String = buildString {
-        append(renderFunctionName(expr.name))
-        append("(")
-        expr.quantifier?.let {
-            append(renderQuantifier(it))
-            if (expr.args.isNotEmpty()) append(" ")
+    protected open fun renderFunction(expr: SqlExpr.Function): String {
+        if (
+            expr.builtinFunction in setOf(SqlBuiltinFunction.Any, SqlBuiltinFunction.All) &&
+            dialect.family != SqlDialectFamily.PostgreSql
+        ) {
+            return unsupportedBuiltinFunction(expr.builtinFunction!!)
         }
-        append(expr.args.joinToString(", ") { renderExpr(it) })
-        if (expr.orderBy.isNotEmpty()) {
-            append(expr.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
+        return buildString {
+            append(renderFunctionName(expr.name))
+            append("(")
+            expr.quantifier?.let {
+                append(renderQuantifier(it))
+                if (expr.args.isNotEmpty()) append(" ")
+            }
+            append(expr.args.joinToString(", ") { renderExpr(it) })
+            if (expr.orderBy.isNotEmpty()) {
+                append(expr.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
+            }
+            append(")")
+            if (expr.withinGroup.isNotEmpty()) {
+                append(expr.withinGroup.joinToString(", ", " WITHIN GROUP (ORDER BY ", ")") { renderOrderingItem(it) })
+            }
+            expr.filter?.let { append(" ${renderFilter(it)}") }
         }
-        append(")")
-        if (expr.withinGroup.isNotEmpty()) {
-            append(expr.withinGroup.joinToString(", ", " WITHIN GROUP (ORDER BY ", ")") { renderOrderingItem(it) })
-        }
-        expr.filter?.let { append(" ${renderFilter(it)}") }
     }
+
+    protected fun unsupportedBuiltinFunction(function: SqlBuiltinFunction): Nothing =
+        throw UnsupportedOperationException(
+            "Kronos built-in function '${function.dslName}' is not supported by ${dialect.family}."
+        )
+
+    protected fun unsupportedRegexpOperator(): Nothing =
+        throw UnsupportedOperationException("Regular expression predicates are not supported by ${dialect.family}.")
 
     private fun StringBuilder.isNotEmptyAfterOpen(prefix: String): Boolean = length > prefix.length
 

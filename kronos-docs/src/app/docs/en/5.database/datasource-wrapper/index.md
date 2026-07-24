@@ -2,6 +2,46 @@
 
 `KronosDataSourceWrapper` connects Kronos SQL tasks to a database execution engine. The built-in JDBC implementation is `KronosJdbcWrapper`, and custom wrappers can delegate execution to Spring JDBC, JDBI, MyBatis, or another data access layer.
 
+## Configure the default data source
+
+`Kronos.connect(...)` configures `Kronos.dataSource` and returns the `KronosJdbcWrapper`.
+
+```kotlin group="Connect" name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:postgresql://localhost:5432/kronos",
+    userName = "postgres",
+    password = "******",
+    driverClassName = "org.postgresql.Driver"
+)
+```
+
+Pass `databaseType` when the dialect needs to be explicit, and use the configuration block for JDBC wrapper settings.
+
+## Create wrappers for multiple data sources
+
+Use `DriverManagerDataSource` to create an independent wrapper for a reader database, writer database, or tenant.
+
+```kotlin group="DriverManager data source" name="kotlin" icon="kotlin"
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.wrappers.DriverManagerDataSource
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+
+val reportingWrapper = KronosJdbcWrapper(
+    dataSource = DriverManagerDataSource(
+        url = "jdbc:postgresql://localhost:5432/kronos",
+        userName = "postgres",
+        password = "******",
+        driverClassName = "org.postgresql.Driver"
+    ),
+    databaseType = DBType.Postgres
+)
+```
+
+Use `Kronos.transact(reportingWrapper)` when a transaction must run on that data source. For application services, add a connection-pool and JDBC driver, then pass the pool's `DataSource` to `KronosJdbcWrapper`.
+
 ## Android SQLite
 
 For Android/JVM `SQLiteDatabase` setup and a complete wrapper reference, see {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}.
@@ -10,12 +50,12 @@ For Android/JVM `SQLiteDatabase` setup and a complete wrapper reference, see {{ 
 
 {{ $.members([
     ['url', 'Database connection URL', 'String'],
-    ['userName', 'Database username from JDBC metadata', 'String'],
+    ['userName', 'Database username', 'String'],
     ['dbType', 'Database type used by SQL rendering and DDL statements', 'DBType'],
     ['sqlDialect', 'SQL dialect resolved from dbType', 'SqlDialect']
 ]) }}
 
-Read the metadata after creating the wrapper.
+Use these properties to inspect the configured wrapper.
 
 ```kotlin group="Properties" name="kotlin" icon="kotlin"
 val wrapper = KronosJdbcWrapper(dataSource)
@@ -35,7 +75,7 @@ PostgreSql
 
 ## Configure the built-in JDBC wrapper
 
-`KronosJdbcWrapper` accepts a `DataSource`, an optional `DBType`, and a configuration block. Pass `databaseType` when the JDBC metadata name does not map to the dialect you want Kronos to use.
+`KronosJdbcWrapper` accepts a `DataSource`, including `DriverManagerDataSource` or a connection-pool data source, an optional `DBType`, and a configuration block. Pass `databaseType` when the dialect should be explicit.
 
 ```kotlin group="Jdbc config 1" name="database type" icon="kotlin"
 import com.kotlinorm.enums.DBType

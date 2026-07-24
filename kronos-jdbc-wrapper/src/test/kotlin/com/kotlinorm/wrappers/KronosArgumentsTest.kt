@@ -146,6 +146,30 @@ class KronosArgumentsTest {
     }
 
     @Test
+    fun `DM8 generated keys request the identity column explicitly`() {
+        val generatedColumns = mutableListOf<List<String>>()
+        val statement = generatedKeyStatement(42L)
+        val task = KronosAtomicActionTask(
+            sql = "INSERT INTO events DEFAULT VALUES",
+            operationType = KOperationType.INSERT,
+            generatedKeyField = Field("id", tableName = "events")
+        )
+
+        KronosJdbcWrapper(
+            generatedKeyDataSource(statement, DBType.DM8) { args ->
+                generatedColumns += (args?.getOrNull(1) as? Array<*>)
+                    ?.map { it as String }
+                    .orEmpty()
+            },
+            DBType.DM8
+        ).update(task)
+
+        assertEquals(listOf(listOf("ID")), generatedColumns)
+        assertEquals(42L, task.generatedKeys.single())
+        assertEquals(42L, task.lastInsertId)
+    }
+
+    @Test
     fun `binder keeps physical temporal handling but does not encode enum names`() {
         val bindings = mutableListOf<ValueBinding>()
         val statement = proxy(PreparedStatement::class.java) { method, args ->
@@ -296,20 +320,26 @@ class KronosArgumentsTest {
         }
     }
 
-    private fun generatedKeyDataSource(statement: PreparedStatement): DataSource {
+    private fun generatedKeyDataSource(
+        statement: PreparedStatement,
+        dbType: DBType = DBType.H2,
+        onPrepare: (Array<Any?>?) -> Unit = {}
+    ): DataSource {
+        val productName = if (dbType == DBType.DM8) "DM DBMS" else "H2"
+        val jdbcUrl = if (dbType == DBType.DM8) "jdbc:dm://localhost:5237" else "jdbc:h2:mem:generated-keys"
         val metadata = proxy(DatabaseMetaData::class.java) { method, _ ->
             when (method.name) {
-                "getDatabaseProductName" -> "H2"
-                "getURL" -> "jdbc:h2:mem:generated-keys"
+                "getDatabaseProductName" -> productName
+                "getURL" -> jdbcUrl
                 "getUserName" -> "sa"
-                "getDriverName" -> "H2"
+                "getDriverName" -> productName
                 else -> defaultValue(method.returnType)
             }
         }
-        val connection = proxy(Connection::class.java) { method, _ ->
+        val connection = proxy(Connection::class.java) { method, args ->
             when (method.name) {
                 "getMetaData" -> metadata
-                "prepareStatement" -> statement
+                "prepareStatement" -> statement.also { onPrepare(args) }
                 else -> defaultValue(method.returnType)
             }
         }

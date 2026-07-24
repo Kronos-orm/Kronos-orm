@@ -84,12 +84,12 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testRightInSelect() {
         val (sql, _) = user.select { f.right(it.username, 5).alias("right") }.build()
-        assertEquals("""SELECT SUBSTRING("username" FROM -5) AS "right" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT RIGHT("username", 5) AS "right" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test
     fun testRightInWhere() {
         val (sql, _) = user.select { it.id }.where { f.right(it.username, 3) == "min" }.build()
-        assertEquals("""SELECT "id" FROM "tb_user" WHERE SUBSTRING("username" FROM -3) = :right AND "deleted" = FALSE""", sql)
+        assertEquals("""SELECT "id" FROM "tb_user" WHERE RIGHT("username", 3) = :right AND "deleted" = FALSE""", sql)
     }
 }

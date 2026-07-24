@@ -152,7 +152,8 @@ sealed interface SqlExpr : SqlNode {
         val args: List<SqlExpr> = emptyList(),
         val orderBy: List<SqlOrderingItem> = emptyList(),
         val withinGroup: List<SqlOrderingItem> = emptyList(),
-        val filter: SqlExpr? = null
+        val filter: SqlExpr? = null,
+        val builtinFunction: SqlBuiltinFunction? = null
     ) : SqlExpr
 
     data class ExcludedColumn(

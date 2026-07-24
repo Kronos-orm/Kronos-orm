@@ -42,14 +42,14 @@ object IntegrationDatabaseEnvironments {
             "&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true" +
             "&useServerPrepStmts=false&rewriteBatchedStatements=true",
         username = env("MYSQL_USERNAME") ?: "kronos",
-        password = env("MYSQL_PASSWORD") ?: "",
+        password = env("MYSQL_PASSWORD") ?: "kronos",
     )
 
     val postgres = IntegrationDatabaseEnvironment(
         displayName = "PostgreSQL",
         driverClassName = "org.postgresql.Driver",
         url = env("POSTGRES_URL") ?: "jdbc:postgresql://localhost:5432/kronos_testing",
-        username = env("POSTGRES_USERNAME") ?: "postgres",
+        username = env("POSTGRES_USERNAME") ?: "kronos",
         password = env("POSTGRES_PASSWORD") ?: "",
     )
 
@@ -76,7 +76,7 @@ object IntegrationDatabaseEnvironments {
         driverClassName = "dm.jdbc.driver.DmDriver",
         url = env("DM_JDBC_URL") ?: "jdbc:dm://localhost:5237",
         username = env("DM_USERNAME") ?: "SYSDBA",
-        password = env("DM_PASSWORD") ?: "SYSDBA",
+        password = env("DM_PASSWORD") ?: "DMdba_123",
         wrapperFactory = { dataSource -> KronosJdbcWrapper(dataSource, databaseType = DBType.DM8) },
     )
 

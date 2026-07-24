@@ -28,6 +28,8 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.InvalidKPojoFactoryResult
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
 import com.kotlinorm.interfaces.ValueCodec
 import com.kotlinorm.utils.decodeDatabaseValue
 import com.kotlinorm.utils.isKPojoType
@@ -250,6 +252,52 @@ internal object KronosResultMappers {
         return toList(resultSet, task.targetType, task.resultColumns, context)
     }
 
+    /** Maps at most the first decoded task row. */
+    fun first(
+        resultSet: ResultSet,
+        task: KAtomicQueryTask,
+        context: KronosStatementContext
+    ): Any? = toList(resultSet, task.targetType, task.resultColumns, context, maxRows = 1).firstOrNull()
+
+    /** Maps every active JDBC row through a [KronosRow] backed by the current result-set row. */
+    fun <T> toList(
+        resultSet: ResultSet,
+        task: KAtomicQueryTask,
+        context: KronosStatementContext,
+        mapper: (KronosRow) -> T
+    ): List<T> = mapRows(resultSet, context) { rowState, rowNumber ->
+        mapKronosRow(resultSet, rowNumber, task.resultColumns, context, rowState, mapper)
+    }
+
+    /** Maps at most the first active JDBC row and preserves whether that row existed. */
+    fun <T> first(
+        resultSet: ResultSet,
+        task: KAtomicQueryTask,
+        context: KronosStatementContext,
+        mapper: (KronosRow) -> T
+    ): KronosRowFirstResult<T> {
+        val rows = mapRows(resultSet, context, maxRows = 1) { rowState, rowNumber ->
+            mapKronosRow(resultSet, rowNumber, task.resultColumns, context, rowState, mapper)
+        }
+        return if (rows.isEmpty()) KronosRowFirstResult.Empty else KronosRowFirstResult.Present(rows.single())
+    }
+
+    private inline fun <T> mapKronosRow(
+        resultSet: ResultSet,
+        rowNumber: Int,
+        resultColumns: Map<String, ResultColumnMetadata>,
+        context: KronosStatementContext,
+        rowState: RowReadState,
+        mapper: (KronosRow) -> T
+    ): T {
+        val row = JdbcKronosRow(resultSet, rowNumber, resultColumns, context, rowState)
+        return try {
+            mapper(row)
+        } finally {
+            row.invalidate()
+        }
+    }
+
     /**
      * Maps all rows without planner-provided column metadata.
      *
@@ -268,12 +316,13 @@ internal object KronosResultMappers {
         resultSet: ResultSet,
         targetType: KType,
         resultColumns: Map<String, ResultColumnMetadata>,
-        context: KronosStatementContext
+        context: KronosStatementContext,
+        maxRows: Int = Int.MAX_VALUE
     ): List<Any?> =
         when (val mapping = targetType.mapping()) {
-            is ResultMapping.Map -> toMapList(resultSet, mapping.valueType, context, resultColumns)
-            is ResultMapping.KPojoResult -> toKPojoList(resultSet, mapping.targetType, context, resultColumns)
-            is ResultMapping.Scalar -> toObjectList(resultSet, mapping.targetType, context, resultColumns)
+            is ResultMapping.Map -> toMapList(resultSet, mapping.valueType, context, resultColumns, maxRows)
+            is ResultMapping.KPojoResult -> toKPojoList(resultSet, mapping.targetType, context, resultColumns, maxRows)
+            is ResultMapping.Scalar -> toObjectList(resultSet, mapping.targetType, context, resultColumns, maxRows)
         }
 
     /**
@@ -287,9 +336,10 @@ internal object KronosResultMappers {
         resultSet: ResultSet,
         valueType: KType?,
         context: KronosStatementContext,
-        resultColumns: Map<String, ResultColumnMetadata> = emptyMap()
+        resultColumns: Map<String, ResultColumnMetadata> = emptyMap(),
+        maxRows: Int = Int.MAX_VALUE
     ): List<Map<String, Any?>> =
-        mapRows(resultSet, context) { row ->
+        mapRows(resultSet, context, maxRows) { row, _ ->
             val metaData = resultSet.metaData
             val values = linkedMapOf<String, Any?>()
             for (position in 1..metaData.columnCount) {
@@ -319,9 +369,10 @@ internal object KronosResultMappers {
         resultSet: ResultSet,
         targetType: KType,
         context: KronosStatementContext,
-        resultColumns: Map<String, ResultColumnMetadata> = emptyMap()
+        resultColumns: Map<String, ResultColumnMetadata> = emptyMap(),
+        maxRows: Int = Int.MAX_VALUE
     ): List<Any?> =
-        mapRows(resultSet, context) { row ->
+        mapRows(resultSet, context, maxRows) { row, _ ->
             val label = resultSet.metaData.getColumnLabel(1)
             val declaredColumn = resultColumns.columnMetadata(label) ?: resultColumns.values.singleOrNull()
             val rawValue = row.readValue(resultSet, 1, context)
@@ -353,12 +404,13 @@ internal object KronosResultMappers {
         resultSet: ResultSet,
         targetType: KType,
         context: KronosStatementContext,
-        resultColumns: Map<String, ResultColumnMetadata> = emptyMap()
+        resultColumns: Map<String, ResultColumnMetadata> = emptyMap(),
+        maxRows: Int = Int.MAX_VALUE
     ): List<KPojo> {
         val columns = fieldsMapCache[targetType]
             ?: throw UnsupportedTypeException("Cannot find fields in $targetType")
         val mappedInstances = Collections.newSetFromMap(IdentityHashMap<KPojo, Boolean>())
-        return mapRows(resultSet, context) { row ->
+        return mapRows(resultSet, context, maxRows) { row, _ ->
             createKPojo(resultSet, targetType, columns, resultColumns, context, row, mappedInstances)
         }
     }
@@ -407,12 +459,15 @@ internal object KronosResultMappers {
     private inline fun <T> mapRows(
         resultSet: ResultSet,
         context: KronosStatementContext,
-        crossinline mapper: (RowReadState) -> T
+        maxRows: Int = Int.MAX_VALUE,
+        crossinline mapper: (RowReadState, Int) -> T
     ): List<T> {
+        require(maxRows >= 0) { "maxRows must not be negative" }
         val longColumns = oracleLongColumns(resultSet, context)
         val rows = mutableListOf<T>()
-        while (resultSet.next()) {
-            rows.add(mapper(rowState(resultSet, context, longColumns)))
+        var rowNumber = 0
+        while (rows.size < maxRows && resultSet.next()) {
+            rows.add(mapper(rowState(resultSet, context, longColumns), rowNumber++))
         }
         context.returnedRows = rows.size
         return rows
@@ -444,6 +499,87 @@ internal object KronosResultMappers {
                     typeName.equals("LONG RAW", ignoreCase = true)
             }
             .toSet()
+    }
+
+    /** Lightweight logical view over the current JDBC row. */
+    private class JdbcKronosRow(
+        private val resultSet: ResultSet,
+        private val mappedRowNumber: Int,
+        private val resultColumns: Map<String, ResultColumnMetadata>,
+        private val context: KronosStatementContext,
+        private val rowState: RowReadState
+    ) : KronosRow() {
+        private val metaData = resultSet.metaData
+        private val rawValues = mutableMapOf<Int, Any?>()
+        private val decodedValues = mutableMapOf<DecodedColumnKey, Any?>()
+        private var active = true
+
+        override val rowNumber: Int
+            get() {
+                requireActive()
+                return mappedRowNumber
+            }
+
+        fun invalidate() {
+            active = false
+        }
+
+        override fun get(position: Int, targetType: KType): Any? {
+            requireActive()
+            require(position in 1..metaData.columnCount) {
+                "JDBC result column position $position is outside 1..${metaData.columnCount}"
+            }
+            val key = DecodedColumnKey(position, targetType)
+            if (decodedValues.containsKey(key)) return decodedValues[key]
+
+            val label = metaData.getColumnLabel(position)
+            val rawValue = rawValue(position)
+            val declaredColumn = resultColumns.columnMetadata(label)
+            val value = if (declaredColumn == null && targetType.isAnyType()) {
+                rawValue
+            } else {
+                val logicalType = if (targetType.isAnyType()) declaredColumn?.type ?: targetType else targetType
+                val column = declaredColumn
+                    ?.copy(type = logicalType, columnLabel = label)
+                    ?: ResultColumnMetadata(logicalType, columnLabel = label)
+                rawValue.convert(column, context)
+            }
+            decodedValues[key] = value
+            return value
+        }
+
+        override fun get(label: String, targetType: KType): Any? {
+            requireActive()
+            return get(positionOf(label), targetType)
+        }
+
+        private fun requireActive() {
+            check(active) { "KronosRow is only valid while its mapper is running" }
+        }
+
+        private fun rawValue(position: Int): Any? {
+            if (rawValues.containsKey(position)) return rawValues[position]
+            return rowState.readValue(resultSet, position, context).also { rawValues[position] = it }
+        }
+
+        private fun positionOf(label: String): Int {
+            require(label.isNotBlank()) { "JDBC result column label must not be blank" }
+            val exact = (1..metaData.columnCount).filter { metaData.getColumnLabel(it) == label }
+            if (exact.size == 1) return exact.single()
+            if (exact.size > 1) {
+                throw IllegalArgumentException("Ambiguous JDBC result column label '$label'; use an SQL alias")
+            }
+
+            val insensitive = (1..metaData.columnCount)
+                .filter { metaData.getColumnLabel(it).equals(label, ignoreCase = true) }
+            return when (insensitive.size) {
+                1 -> insensitive.single()
+                0 -> throw IllegalArgumentException("No JDBC result column with label '$label'")
+                else -> throw IllegalArgumentException("Ambiguous JDBC result column label '$label'; use an SQL alias")
+            }
+        }
+
+        private data class DecodedColumnKey(val position: Int, val targetType: KType)
     }
 
     private data class RowReadState(

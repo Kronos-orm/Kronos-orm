@@ -6,7 +6,7 @@
   "REDEFINE": "Redefine",
   "DESCRIPTION1": "Kronos, the next-generation Kotlin ORM, tailor-made for Kotlin, developed based on compiler plugins and coroutine, suitable for backend and mobile applications, and supports multiple databases. Modern, powerful, compile-time friendly, and easy to use.",
   "DESCRIPTION2": "Kronos uses expression tree analysis, combined with Kotlin's own generics, higher-order functions, extended functions and other syntactic features, so that the ORM has a powerful expressive and concise, semantic writing style, so that manipulation of databases has become much simpler.",
-  "DESCRIPTION3": "Kronos includes built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server, and Oracle.",
+  "DESCRIPTION3": "Kronos includes built-in dialects for MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng).",
   "GET_START": "Get Started",
   "GIVE_A_STAR": "Give a Star",
   "RUN": "Run",

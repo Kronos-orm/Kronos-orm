@@ -1,35 +1,62 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos executes database operations through {{ $.keyword("database/datasource-wrapper", ["Data source wrapper"]) }}. `KronosJdbcWrapper` accepts any JDBC `DataSource`, reads database metadata, and provides the wrapper used by `Kronos.dataSource`.
+Kronos executes database operations through {{ $.keyword("database/datasource-wrapper", ["Data source wrapper"]) }}. Use `Kronos.connect(...)` for the default connection.
 
-## Add `kronos-jdbc-wrapper`
+## Connect with a JDBC URL
 
-Use `kronos-jdbc-wrapper` when the project already has a JDBC `DataSource` or can create one from a connection pool.
+Call `Kronos.connect(...)` during application startup to configure the default data source.
 
-```kotlin group="kronos-jdbc-wrapper" name="gradle(kts)" icon="gradlekts"
+```kotlin group="Direct JDBC connection" name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+The call returns the registered `KronosJdbcWrapper`.
+
+## Add JDBC dependencies
+
+Add `kronos-jdbc-wrapper` and the JDBC driver for the database.
+
+```kotlin group="JDBC dependencies" name="gradle(kts)" icon="gradlekts"
 dependencies {
     implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
 
-```groovy group="kronos-jdbc-wrapper" name="gradle(groovy)" icon="gradle"
+```groovy group="JDBC dependencies" name="gradle(groovy)" icon="gradle"
 dependencies {
     implementation 'com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}'
+    implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
 
-```xml group="kronos-jdbc-wrapper" name="maven" icon="maven"
-<dependency>
-    <groupId>com.kotlinorm</groupId>
-    <artifactId>kronos-jdbc-wrapper</artifactId>
-    <version>{{ $.kronosVersion() }}</version>
-</dependency>
+```xml group="JDBC dependencies" name="maven" icon="maven"
+<dependencies>
+    <dependency>
+        <groupId>com.kotlinorm</groupId>
+        <artifactId>kronos-jdbc-wrapper</artifactId>
+        <version>{{ $.kronosVersion() }}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>${mysql-connector-j.version}</version>
+    </dependency>
+</dependencies>
 ```
 
-## Add a connection pool and JDBC driver
+## Use a connection pool
 
-Choose the latest stable connection pool and JDBC driver version that matches your database server and JDK.
+For application services, add a connection pool and the JDBC driver that match the database server and JDK.
 
 ```kotlin group="Driver" name="gradle(kts)" icon="gradlekts"
 dependencies {

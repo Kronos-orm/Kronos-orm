@@ -25,6 +25,9 @@ import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
+import com.kotlinorm.interfaces.KronosRowMappingDataSourceWrapper
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -44,11 +47,18 @@ import javax.sql.DataSource
  * @param databaseType optional explicit dialect; when `null`, the database product and URL are detected
  * @param configure configuration block applied after automatic database-plugin customization
  */
-class KronosJdbcWrapper @JvmOverloads constructor(
+class KronosJdbcWrapper private constructor(
     val dataSource: DataSource,
-    databaseType: DBType? = null,
-    configure: KronosJdbcConfig.() -> Unit = {}
-) : KronosDataSourceWrapper {
+    initialIdentity: KronosDatabaseIdentity,
+    configure: KronosJdbcConfig.() -> Unit
+) : KronosRowMappingDataSourceWrapper {
+    @JvmOverloads
+    constructor(
+        dataSource: DataSource,
+        databaseType: DBType? = null,
+        configure: KronosJdbcConfig.() -> Unit = {}
+    ) : this(dataSource, readDatabaseIdentity(dataSource, databaseType), configure)
+
     override val url: String
     override val userName: String
     override val dbType: DBType
@@ -58,24 +68,18 @@ class KronosJdbcWrapper @JvmOverloads constructor(
     private val transactionContext = ThreadLocal<KronosJdbcTransaction?>()
 
     init {
-        dataSource.connection.use { connection ->
-            val metaData = connection.metaData
-            val productName = metaData.databaseProductName.orEmpty()
-            val detectedType = databaseType ?: KronosJdbcPlugins.detectDbType(productName, metaData.url.orEmpty())
-            url = metaData.url.orEmpty()
-            userName = metaData.userName.orEmpty()
-            dbType = detectedType
-            identity = KronosDatabaseIdentity(
-                dbType = detectedType,
-                databaseProductName = productName,
-                url = url,
-                userName = userName,
-                driverName = metaData.driverName.orEmpty()
-            )
-            config = KronosJdbcConfig(detectedType, productName, url, identity.driverName).also { cfg ->
-                KronosJdbcPlugins.autoPlugin(detectedType)?.install(cfg)
-                cfg.configure()
-            }
+        url = initialIdentity.url
+        userName = initialIdentity.userName
+        dbType = initialIdentity.dbType
+        identity = initialIdentity
+        config = KronosJdbcConfig(
+            dbType = dbType,
+            databaseProductName = identity.databaseProductName,
+            url = url,
+            driverName = identity.driverName
+        ).also { cfg ->
+            KronosJdbcPlugins.autoPlugin(dbType)?.install(cfg)
+            cfg.configure()
         }
     }
 
@@ -89,13 +93,30 @@ class KronosJdbcWrapper @JvmOverloads constructor(
             KronosResultMappers.toList(resultSet, task, context)
         }
 
+    /** Maps each active JDBC row through [mapper] without materializing the task target type first. */
+    override fun <T> toList(task: KAtomicQueryTask, mapper: (KronosRow) -> T): List<T> =
+        query(task) { resultSet, context ->
+            KronosResultMappers.toList(resultSet, task, context, mapper)
+        }
+
     /**
      * Executes a query and returns its first decoded row.
      *
      * @return first row, or `null` when the result set is empty
      */
     override fun first(task: KAtomicQueryTask): Any? =
-        toList(task).firstOrNull()
+        query(task) { resultSet, context ->
+            KronosResultMappers.first(resultSet, task, context)
+        }
+
+    /** Maps at most the first active JDBC row through [mapper]. */
+    override fun <T> first(
+        task: KAtomicQueryTask,
+        mapper: (KronosRow) -> T
+    ): KronosRowFirstResult<T> =
+        query(task) { resultSet, context ->
+            KronosResultMappers.first(resultSet, task, context, mapper)
+        }
 
     /**
      * Executes one mutation task and optionally reads generated keys requested by the task.
@@ -115,7 +136,10 @@ class KronosJdbcWrapper @JvmOverloads constructor(
             )
             executeWithTranslation(context) {
                 val returnGeneratedKeys = shouldReturnGeneratedKeys(task)
-                handle.prepareStatement(context, returnGeneratedKeys).use { statement ->
+                val generatedKeyColumn = task.generatedKeyField?.columnName
+                    ?.takeIf { returnGeneratedKeys && handle.config.dbType == DBType.DM8 }
+                    ?.uppercase()
+                handle.prepareStatement(context, returnGeneratedKeys, generatedKeyColumn).use { statement ->
                     context.config.arguments.bind(statement, parsed.jdbcParamList, context)
                     val start = System.nanoTime()
                     val affected = statement.executeUpdate()
@@ -302,4 +326,23 @@ class KronosJdbcWrapper @JvmOverloads constructor(
         val connection: Connection,
         val deadlineMillis: Long?
     )
+
+    companion object {
+        private fun readDatabaseIdentity(
+            dataSource: DataSource,
+            databaseType: DBType?
+        ): KronosDatabaseIdentity = dataSource.connection.use { connection ->
+            val metaData = connection.metaData
+            val productName = metaData.databaseProductName.orEmpty()
+            val url = metaData.url.orEmpty()
+            val dbType = databaseType ?: KronosJdbcPlugins.detectDbType(productName, url)
+            KronosDatabaseIdentity(
+                dbType = dbType,
+                databaseProductName = productName,
+                url = url,
+                userName = metaData.userName.orEmpty(),
+                driverName = metaData.driverName.orEmpty()
+            )
+        }
+    }
 }

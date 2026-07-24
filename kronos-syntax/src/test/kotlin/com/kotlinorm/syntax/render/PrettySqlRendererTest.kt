@@ -18,10 +18,13 @@ import com.kotlinorm.syntax.order.SqlNullsOrdering
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.order.SqlOrderingItem
 import com.kotlinorm.syntax.quantifier.SqlQuantifier
+import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlInsertMode
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.statement.SqlUpsertAction
+import com.kotlinorm.syntax.statement.SqlUpdateSetPair
 import com.kotlinorm.syntax.statement.SqlWithItem
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
@@ -182,6 +185,38 @@ class PrettySqlRendererTest {
               `name` = VALUES (`name`)
             """.trimIndent(),
             upsert.toPrettySql(SqlDialect.MySql)
+        )
+    }
+
+    @Test
+    fun rendersPrettyConditionalH2MergeWithUnqualifiedUpdateTarget() {
+        val upsert = SqlDmlStatement.Upsert(
+            table = table("user"),
+            columns = cols("id", "name", "status"),
+            values = listOf(num("1"), str("Ada"), num("2")),
+            primaryKeys = cols("id"),
+            action = SqlUpsertAction.Update(
+                setPairs = listOf(
+                    SqlUpdateSetPair(
+                        SqlAssignmentTarget.Column(id("name")),
+                        SqlExpr.ExcludedColumn(id("name"))
+                    )
+                ),
+                where = col("user", "status").eq(num("1"))
+            )
+        )
+
+        assertEquals(
+            """
+            MERGE INTO "user" AS "t1"
+            USING (VALUES (1, 'Ada', 2)) AS "t2" ("id", "name", "status")
+            ON ("t1"."id" = "t2"."id")
+            WHEN MATCHED AND "t1"."status" = 1 THEN UPDATE SET
+              "name" = "t2"."name"
+            WHEN NOT MATCHED THEN INSERT ("id", "name", "status")
+            VALUES ("t2"."id", "t2"."name", "t2"."status")
+            """.trimIndent(),
+            upsert.toPrettySql(SqlDialect.H2)
         )
     }
 }

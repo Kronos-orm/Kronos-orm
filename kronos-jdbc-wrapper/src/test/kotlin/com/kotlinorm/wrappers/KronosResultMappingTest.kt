@@ -31,6 +31,8 @@ import com.kotlinorm.enums.ValueCodecOrigin
 import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.exceptions.InvalidKPojoFactoryResult
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
 import com.kotlinorm.interfaces.serializedValueCodec
 import com.kotlinorm.interfaces.valueCodec
 import com.kotlinorm.utils.KPojoFactory
@@ -787,6 +789,151 @@ class KronosResultMappingTest {
         } finally {
             factory.close()
         }
+    }
+
+    @Test
+    fun `row mapper reads positions labels and Fields once per physical result value`() {
+        val metaData = mockk<ResultSetMetaData>()
+        every { metaData.columnCount } returns 2
+        every { metaData.getColumnLabel(1) } returns "id"
+        every { metaData.getColumnLabel(2) } returns "displayName"
+        every { metaData.getColumnTypeName(1) } returns "NUMBER"
+        every { metaData.getColumnTypeName(2) } returns "VARCHAR"
+        every { metaData.getPrecision(1) } returns 10
+        every { metaData.getScale(1) } returns 0
+
+        val resultSet = mockk<ResultSet>()
+        every { resultSet.metaData } returns metaData
+        every { resultSet.next() } returnsMany listOf(true, true, false)
+        every { resultSet.getBigDecimal(1) } returnsMany listOf(BigDecimal("7"), BigDecimal("8"))
+        every { resultSet.getObject(2) } returnsMany listOf("Ada", "Grace")
+        val task = KronosAtomicQueryTask(
+            sql = "SELECT id, user_name AS displayName FROM user",
+            targetType = typeOf<Any?>(),
+            resultColumns = mapOf(
+                "id" to ResultColumnMetadata(typeOf<Int>(), columnLabel = "id"),
+                "displayName" to ResultColumnMetadata(typeOf<String>(), columnLabel = "displayName")
+            )
+        )
+
+        val rows = KronosResultMappers.toList(resultSet, task, oracleContext()) { row ->
+            listOf(
+                row.rowNumber,
+                row.get<Int>(1),
+                row.get<Int>(1),
+                row.get<String>("displayName"),
+                row.get<String>(Field("user_name", "displayName")),
+                row.get<String>(Field("displayName", ""))
+            )
+        }
+
+        assertEquals(
+            listOf(
+                listOf(0, 7, 7, "Ada", "Ada", "Ada"),
+                listOf(1, 8, 8, "Grace", "Grace", "Grace")
+            ),
+            rows
+        )
+        verify(exactly = 2) { resultSet.getBigDecimal(1) }
+        verify(exactly = 2) { resultSet.getObject(2) }
+    }
+
+    @Test
+    fun `row mapper first uses codecs once and preserves empty versus nullable results`() {
+        var conversions = 0
+        val registration = markerCodec { conversions++ }
+        try {
+            val task = KronosAtomicQueryTask(
+                sql = "SELECT marker FROM user",
+                targetType = typeOf<Any?>(),
+                resultColumns = mapOf(
+                    "marker" to ResultColumnMetadata(typeOf<DatabaseMarker>(), columnLabel = "marker")
+                )
+            )
+            val resultSet = singleColumnResultSet(listOf("first", "second"), "marker")
+
+            val first = KronosResultMappers.first(resultSet, task, genericContext()) { row ->
+                listOf(row.get<DatabaseMarker>("marker"), row.get<DatabaseMarker>(1))
+            }
+
+            assertEquals(
+                KronosRowFirstResult.Present(
+                    listOf(DatabaseMarker("first"), DatabaseMarker("first"))
+                ),
+                first
+            )
+            assertEquals(1, conversions)
+            verify(exactly = 1) { resultSet.next() }
+            verify(exactly = 1) { resultSet.getObject(1) }
+
+            val nullableResultSet = singleColumnResultSet(listOf("first"), "marker")
+            val nullableFirst: KronosRowFirstResult<String?> =
+                KronosResultMappers.first(nullableResultSet, task, genericContext()) { null }
+            assertEquals(KronosRowFirstResult.Present<String?>(null), nullableFirst)
+
+            val emptyResultSet = mockk<ResultSet>()
+            every { emptyResultSet.next() } returns false
+            assertEquals(
+                KronosRowFirstResult.Empty,
+                KronosResultMappers.first(emptyResultSet, task, genericContext()) { null as String? }
+            )
+        } finally {
+            registration.close()
+        }
+    }
+
+    @Test
+    fun `row mapper invalidates retained rows after normal and exceptional callbacks`() {
+        val task = KronosAtomicQueryTask(
+            sql = "SELECT marker FROM user",
+            targetType = typeOf<Any?>(),
+            resultColumns = mapOf(
+                "marker" to ResultColumnMetadata(typeOf<String>(), columnLabel = "marker")
+            )
+        )
+        var retainedRow: KronosRow? = null
+
+        KronosResultMappers.toList(
+            singleColumnResultSet(listOf("first"), "marker"),
+            task,
+            genericContext()
+        ) { row ->
+            retainedRow = row
+            assertEquals("first", row.get<String>("marker"))
+            assertEquals(0, row.rowNumber)
+        }
+
+        val completedRow = requireNotNull(retainedRow)
+        assertEquals(
+            "KronosRow is only valid while its mapper is running",
+            assertFailsWith<IllegalStateException> { completedRow.get<String>("marker") }.message
+        )
+        assertEquals(
+            "KronosRow is only valid while its mapper is running",
+            assertFailsWith<IllegalStateException> { completedRow.rowNumber }.message
+        )
+
+        var failedRow: KronosRow? = null
+        val mapperFailure = assertFailsWith<IllegalStateException> {
+            KronosResultMappers.toList(
+                singleColumnResultSet(listOf("second"), "marker"),
+                task,
+                genericContext()
+            ) { row ->
+                failedRow = row
+                row.get<String>("marker")
+                throw IllegalStateException("mapper failure")
+            }
+        }
+        assertEquals("mapper failure", mapperFailure.message)
+        assertEquals(
+            "KronosRow is only valid while its mapper is running",
+            assertFailsWith<IllegalStateException> { requireNotNull(failedRow).get<String>("marker") }.message
+        )
+        assertEquals(
+            "KronosRow is only valid while its mapper is running",
+            assertFailsWith<IllegalStateException> { requireNotNull(failedRow).rowNumber }.message
+        )
     }
 
     @Test

@@ -36,9 +36,10 @@ Use this page as the dialect behavior matrix. Each row links to the section or p
 
 | Behavior | Where to check |
 |----------|----------------|
-| Pagination | See [Pagination](#pagination) for `page(pageIndex, pageSize)` SQL in MySQL, PostgreSQL, SQLite, SQL Server, and Oracle. |
+| Pagination | See [Pagination](#pagination) for `page(pageIndex, pageSize)` SQL. |
 | Upsert and `onConflict()` | See [Upsert](#upsert) and {{ $.keyword("mutation/upsert", ["Upsert"]) }} for match-field upsert, uniqueness-conflict upsert, and dynamic conflict assignments. |
 | Last insert id | See [Last Insert Id](#last-insert-id) and {{ $.keyword("mutation/last-insert-id", ["Last Insert Id"]) }} for identity key retrieval. |
+| H2 and DM8 | See the dedicated sections below for H2 `MERGE` upserts, DM8 identity columns, and JDBC-generated identity keys. |
 | DDL and schema sync | See [Table Operations](#table-operations), {{ $.keyword("database/table-operations", ["Table Operations"]) }}, and {{ $.keyword("database/schema-sync", ["Schema Sync"]) }}. |
 | Column type rendering | See {{ $.keyword("mapping/column-types", ["Column Types"]) }} for `KColumnType` examples and dialect output. |
 | Identifier quoting | See [Identifier Quoting](#identifier-quoting) for table and column quoting rules. |
@@ -249,7 +250,7 @@ changed == true   // Kronos synchronizes the existing table by diff
 
 ## Built-in Functions
 
-The function DSL keeps the same call shape, and database-specific functions are rendered by the active dialect.
+The function DSL keeps the same Kotlin call shape while the active dialect selects its SQL form. Function availability and argument semantics are covered in {{ $.keyword("query/functions", ["Functions"]) }}.
 
 ```kotlin group="Functions" name="kotlin" icon="kotlin"
 val rows = User()
@@ -268,7 +269,12 @@ FROM "tb_user"
 ```
 
 ```sql group="Functions" name="SQLite" icon="sqlite"
-SELECT RANDOM() AS rand
+SELECT (RANDOM() / 9223372036854775808.0 + 0.5) AS rand
+FROM "tb_user"
+```
+
+```sql group="Functions" name="H2" icon="h2"
+SELECT RAND() AS rand
 FROM "tb_user"
 ```
 
@@ -281,6 +287,43 @@ FROM [tb_user]
 SELECT DBMS_RANDOM.VALUE AS RAND
 FROM "TB_USER"
 ```
+
+```sql group="Functions" name="DM8"
+SELECT DBMS_RANDOM.VALUE AS RAND
+FROM "TB_USER"
+```
+
+## H2
+
+H2 uses quoted identifiers and H2 `MERGE` syntax for conflict-based upserts. Use the H2 JDBC configuration in {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }} for an in-memory or server connection.
+
+```kotlin group="H2 Upsert" name="kotlin" icon="kotlin"
+User(id = 1, name = "Ada")
+    .upsert { it.name }
+    .onConflict()
+    .execute()
+```
+
+```sql group="H2 Upsert" name="H2" icon="h2"
+MERGE INTO "user" AS "t1"
+USING (VALUES (:id, :name)) AS "t2" ("id", "name")
+ON ("t1"."id" = "t2"."id")
+WHEN MATCHED THEN UPDATE SET "name" = "t2"."name"
+WHEN NOT MATCHED THEN INSERT ("id", "name") VALUES ("t2"."id", "t2"."name")
+```
+
+H2 identity fields use H2 identity columns. Insert tasks with `.withId()` return the JDBC-generated key.
+
+## DM8
+
+DM8 uses Oracle-compatible query syntax and DM8-native identity columns. Configure its JDBC driver as shown in {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }}.
+
+```kotlin group="DM8 Identity" name="kotlin" icon="kotlin"
+@PrimaryKey(identity = true)
+var id: Int? = null
+```
+
+Kronos renders this field as `INT IDENTITY(1,1)` in DM8 table DDL. Insert tasks with `.withId()` return the JDBC-generated key.
 
 ## Database Enum Values and Extension
 

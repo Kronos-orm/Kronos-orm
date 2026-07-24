@@ -183,6 +183,34 @@ val user: User? = User()
 null
 ```
 
+```kotlin group="DSL row mapper" name="kotlin" icon="kotlin"
+data class UserRow(
+    val id: Int?,
+    val displayName: String?
+)
+
+val query = User()
+    .select { [it.id, it.name.alias("displayName")] }
+    .where { it.age >= 18 }
+
+val users: List<UserRow> = query.toList<UserRow> { row ->
+    UserRow(
+        id = row.get<Int?>(1),
+        displayName = row.get<String?>("displayName")
+    )
+}
+
+val first: UserRow = query.first<UserRow> { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("displayName"))
+}
+
+val missing: UserRow? = query.firstOrNull<UserRow> { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("displayName"))
+}
+```
+
+`row.get<T>("label")` 按列名或 alias 读取，`row.get<T>(field)` 使用 `Field` 的投影输出名，名称为空时回退到数据库列名，`row.get<T>(position)` 按 JDBC 列位置读取，位置从 `1` 开始；值按目标 `KType` 经过当前结果映射和 `ValueCodec` 转换。`rowNumber` 从 `0` 开始，`row` 在映射回调执行期间有效。`KronosJdbcWrapper` 支持该行映射能力。
+
 ## 在 join 后使用结果方法
 
 Join 查询使用和 `select` 相同的结果方法。

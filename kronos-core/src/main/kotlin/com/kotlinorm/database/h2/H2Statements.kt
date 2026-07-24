@@ -43,8 +43,8 @@ object H2Statements : DatabaseStatements() {
     override val defaultIndexMethod: String = "BTREE"
 
     override fun sameColumnDefinition(expected: Field, current: Field): Boolean =
-        getColumnType(expected.type, expected.length, expected.scale) ==
-            getColumnType(current.type, current.length, current.scale) &&
+        getColumnType(expected.type, expected.length, expected.scale.normalizedH2Scale(expected.type)) ==
+            getColumnType(current.type, current.length, current.scale.normalizedH2Scale(current.type)) &&
             expected.sameColumnAttributesAs(current)
 
     override fun databaseName(wrapper: KronosDataSourceWrapper): String =
@@ -70,7 +70,7 @@ object H2Statements : DatabaseStatements() {
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.DATA_TYPE AS DATA_TYPE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.CHARACTER_MAXIMUM_LENGTH AS LENGTH")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.NUMERIC_PRECISION AS PRECISION")),
-            SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.NUMERIC_SCALE AS SCALE")),
+            SqlSelectItem.Expr(SqlExpr.UnsafeRaw("COALESCE(C.NUMERIC_SCALE, C.DATETIME_PRECISION) AS SCALE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.IS_NULLABLE = 'YES' AS IS_NULLABLE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.COLUMN_DEFAULT AS COLUMN_DEFAULT")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("C.IS_IDENTITY = 'YES' AS IDENTITY")),
@@ -254,9 +254,9 @@ object H2Statements : DatabaseStatements() {
         INT, MEDIUMINT, SERIAL, YEAR -> "INTEGER"
         BIGINT -> "BIGINT"
         REAL -> "REAL"
-        FLOAT -> "FLOAT"
+        FLOAT -> "DOUBLE PRECISION"
         DOUBLE -> "DOUBLE PRECISION"
-        DECIMAL, NUMERIC -> decimalType(type.type, length, scale)
+        DECIMAL, NUMERIC -> decimalType("NUMERIC", length, scale)
         CHAR, NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
         VARCHAR, NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
         TEXT, MEDIUMTEXT, LONGTEXT, CLOB, NCLOB -> "CLOB"
@@ -284,6 +284,9 @@ object H2Statements : DatabaseStatements() {
 
     private fun precisionType(name: String, scale: Int): String =
         if (scale > 0) "$name($scale)" else name
+
+    private fun Int.normalizedH2Scale(type: KColumnType): Int =
+        if (this == 6 && type in setOf(DATETIME, TIMESTAMP)) 0 else this
 
     private fun getKColumnType(type: String): KColumnType = when (type.uppercase()) {
         "BOOLEAN" -> BIT

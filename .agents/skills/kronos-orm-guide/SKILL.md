@@ -73,10 +73,9 @@ plugins {
 
 dependencies {
     implementation("com.kotlinorm:kronos-core:0.3.0")
-    // JDBC 包装器（可选，提供开箱即用的数据源支持）
+    // JDBC 包装器
     implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
-    // JDBC Driver 与连接池使用和数据库/JDK 匹配的最新稳定版
-    implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
+    // JDBC Driver 使用和数据库/JDK 匹配的最新稳定版
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -101,6 +100,24 @@ dependencies {
 要求：JDK 8+，Kotlin 2.4.0+
 
 技能中的 Kronos 推荐稳定版本直接写 `0.3.0`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+
+### 最小 JDBC 连接
+
+应用加入 `kronos-jdbc-wrapper` 和数据库 JDBC Driver 后，可以通过 URL、账号、密码和 Driver 类名配置默认数据源：
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+`Kronos.connect(...)`返回`KronosJdbcWrapper`并注册为`Kronos.dataSource`。多个或动态数据源可以用`DriverManagerDataSource`创建独立wrapper；应用服务通过`KronosJdbcWrapper(dataSource)`接入连接池`DataSource`。
 
 ---
 
@@ -713,6 +730,38 @@ H2 的标准双引号标识符由 `SqlDialect.H2` 渲染；upsert 使用 `MERGE 
 
 `KronosJdbcWrapper` 位于 `com.kotlinorm.wrappers`，接收 `DataSource`。未传 `databaseType` 时，数据库类型由 JDBC metadata 推导：
 
+`Kronos.connect(...)`使用URL、账号、密码和Driver类名创建默认`KronosJdbcWrapper`，并注册到`Kronos.dataSource`：
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+val wrapper = Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+`DriverManagerDataSource`可用于自行创建直接JDBC wrapper，例如动态选择数据源：
+
+```kotlin
+import com.kotlinorm.wrappers.DriverManagerDataSource
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+
+val reportingWrapper = KronosJdbcWrapper(
+    DriverManagerDataSource(
+        url = reportingUrl,
+        userName = reportingUser,
+        password = reportingPassword,
+        driverClassName = "org.postgresql.Driver"
+    )
+)
+```
+
+连接池`DataSource`适合应用服务；添加所选连接池和JDBC Driver依赖后传入即可。
+
 ```kotlin
 val wrapper = KronosJdbcWrapper(dataSource)
 
@@ -1047,6 +1096,8 @@ User().select { it.name }.distinct().toList()
 
 函数 SQL 由当前数据库方言渲染。回答跨数据库输出时，优先链接或参考 docs 的 `database/dialect-support` 口径。
 
+跨数据库函数调用使用统一语义：`f.log(value, base)` 保持 value 在前、base 在后，`f.join(separator, ...)` 会拼接存在的值并跳过 `null` 参数。`f.bin(x)` 用于 MySQL；H2 需要文本反转时可以通过自定义函数提供实现。正则谓词的方言语法和扩展方式见 docs 的 `query/conditions`。
+
 窗口函数当前入口是 `f.rowNumber()`。使用前导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`，再通过 `.over { partitionBy(...); orderBy(...) }` 定义窗口，并给结果设置 alias：
 
 ```kotlin
@@ -1108,6 +1159,31 @@ val ids: List<Int> = User()
 `toMapList()` 返回 `List<Map<String, Any?>>`，等价于 `toList<Map<String, Any?>>()`。`toList()` 返回类型列表。`toMap()` 等价于 `first<Map<String, Any?>>()`，空结果会抛错；`toMapOrNull()` 等价于 `firstOrNull<Map<String, Any?>>()` 或 `first<Map<String, Any?>?>()`，空结果返回 `null`。一般情况下，`firstOrNull<T>()` 等价于 `first<T?>()`。所有结果方法都可以传入 `KronosDataSourceWrapper`。
 
 JDBC typed Map 结果只支持直接声明的 `Map`/`MutableMap`（顶层可空也支持），因为每行实际返回 `LinkedHashMap`；固定、重排泛型或自定义 Map 子类型会被拒绝。key 只能是 `String`、`String?` 或 `*`；`Any`、`Any?`、`*` value 保持 raw，具体 value 类型使用完整 `KType` 转换。
+
+```kotlin
+data class UserRow(
+    val id: Int?,
+    val displayName: String?
+)
+
+val query = User()
+    .select { [it.id, it.name.alias("displayName")] }
+    .where { it.age >= 18 }
+
+val users: List<UserRow> = query.toList<UserRow> { row ->
+    UserRow(row.get<Int?>(1), row.get<String?>("displayName"))
+}
+
+val first: UserRow = query.first<UserRow> { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("displayName"))
+}
+
+val missing: UserRow? = query.firstOrNull<UserRow> { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("displayName"))
+}
+```
+
+`row.get<T>("label")` 按 JDBC 列名或 alias 读取，`row.get<T>(field)` 使用 `Field` 的投影输出名，名称为空时回退到数据库列名，`row.get<T>(position)` 按 JDBC 列位置读取，位置从 `1` 开始；值按目标 `KType` 经过当前结果映射和 `ValueCodec` 转换。`rowNumber` 从 `0` 开始，`row` 在映射回调执行期间有效。`KronosJdbcWrapper` 支持该行映射能力。
 
 ---
 

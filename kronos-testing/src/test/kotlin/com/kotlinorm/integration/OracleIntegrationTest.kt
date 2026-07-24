@@ -10,6 +10,7 @@ import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
+import com.kotlinorm.integration.suites.OracleCompatibleFunctionSemanticsIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SafetyCornerCaseIntegrationSuite
@@ -39,6 +40,7 @@ class OracleCascadeIntegrationTest : CascadeIntegrationSuite(oracle, StandardInt
 class OracleValueTypeIntegrationTest : ValueTypeIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleTypeDialectDdlCornerIntegrationTest : TypeDialectDdlCornerIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
+class OracleFunctionSemanticsIntegrationTest : OracleCompatibleFunctionSemanticsIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleTransactionIntegrationTest : TransactionIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleSafetyCornerCaseIntegrationTest : SafetyCornerCaseIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(oracle, StandardIntegrationScenarioProfile)

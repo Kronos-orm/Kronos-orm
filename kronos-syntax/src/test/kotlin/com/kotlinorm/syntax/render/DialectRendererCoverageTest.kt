@@ -186,6 +186,7 @@ class DialectRendererCoverageTest {
         assertEquals("SUBSTR(\"NAME\", -2)", builtin(SqlBuiltinFunction.Right, col("name"), num("2")).toSql(SqlDialect.Oracle))
         assertEquals("LEFT()", SqlExpr.Function(id("LEFT")).toSql(SqlDialect.Oracle))
         assertEquals("RPAD('x', 3 * LENGTH('x'), 'x')", builtin(SqlBuiltinFunction.Repeat, str("x"), num("3")).toSql(SqlDialect.Oracle))
+        assertEquals("RPAD('x', 0 * LENGTH('x'), 'x')", builtin(SqlBuiltinFunction.Repeat, str("x"), num("0")).toSql(SqlDialect.Oracle))
         assertEquals("REPEAT()", SqlExpr.Function(id("REPEAT")).toSql(SqlDialect.Oracle))
         assertEquals("TIME '12:30:00'", SqlExpr.TimeLiteral(SqlTimeType.Time(), "12:30:00").toSql(SqlDialect.Oracle))
         assertEquals(
@@ -431,8 +432,19 @@ class DialectRendererCoverageTest {
     @Test
     fun keepsRawFunctionNamesUntouchedAndRejectsUnsupportedBuiltinFunctions() {
         assertEquals("LOG(100, 10)", SqlExpr.Function(id("LOG"), args = listOf(num("100"), num("10"))).toSql(SqlDialect.H2))
-        assertFailsWith<UnsupportedOperationException> {
-            builtin(SqlBuiltinFunction.Binary, num("10")).toSql(SqlDialect.H2)
+        val binary = builtin(SqlBuiltinFunction.Binary, num("10"))
+        assertEquals("BIN(10)", binary.toSql(SqlDialect.MySql))
+        listOf(
+            SqlDialect.H2,
+            SqlDialect.PostgreSql,
+            SqlDialect.SQLite,
+            SqlDialect.SqlServer,
+            SqlDialect.Oracle,
+        ).forEach { dialect ->
+            val error = assertFailsWith<UnsupportedOperationException> {
+                binary.toSql(dialect)
+            }
+            assertEquals("Kronos built-in function 'bin' is not supported by ${dialect.family}.", error.message)
         }
         assertFailsWith<UnsupportedOperationException> {
             SqlExpr.Binary(col("name"), SqlBinaryOperator.Regexp, str("^A")).toSql(SqlDialect.SQLite)

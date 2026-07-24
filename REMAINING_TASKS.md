@@ -19,34 +19,34 @@ Acceptance:
 
 ## 2. Decide The Remaining Cross-Dialect Semantics
 
-Status: Pending
+Status: Implementation Complete, Execution Verification Deferred (2026-07-24)
 
-- Define the public availability of `f.bin`; MySQL has a native implementation, while H2 and the Oracle family do not provide the same function.
-- Decide whether Oracle/DM8 `repeat(value, 0)` should retain the database's `NULL` result caused by Oracle empty-string semantics or receive a compatibility expression.
-- Keep unsupported-function validation and documentation aligned with the decision.
+- `f.bin(x)` is MySQL-only and returns binary text (`String?`). Every other built-in dialect rejects it during SQL build rather than emitting a database-specific approximation.
+- Oracle and DM8 retain their native `f.repeat(value, 0) == NULL` behavior. Kronos does not add a compatibility expression that would claim Kotlin empty-string semantics.
+- Renderer tests, core dialect-build tests, and an Oracle/DM8 real-database integration suite now express those contracts. The user deferred test execution.
 
 Acceptance:
 
-- The behavior is documented, validated before SQL execution where appropriate, and covered by dialect tests.
+- The behavior is documented, rejected before SQL execution where appropriate, and has focused test coverage ready to run.
 
 ## 3. Finish The Kotlin Function-Sugar Inventory
 
-Status: Pending
+Status: Done (2026-07-24)
 
-- Produce the requested root-level inventory comparing existing Kotlin syntax sugar, public SQL functions, and common Kotlin APIs.
-- Prioritize additions that have stable cross-dialect semantics and specify the compiler-plugin and renderer tests needed for each candidate.
+- Completed the requested root-level audit in [KOTLIN_FUNCTION_SUGAR_INVENTORY.md](KOTLIN_FUNCTION_SUGAR_INVENTORY.md), using Kotlin 2.4 standard-library source and the current compiler rule model as evidence.
+- The inventory records actual scalar source forms, separates direct scalar `minOf` / `maxOf` calls from aggregates, and excludes collection, range, regex, locale, lambda, and other non-scalar inputs.
 
 Acceptance:
 
-- The inventory names supported, candidate, and intentionally unsupported APIs with their target SQL semantics.
+- The inventory names currently supported and transformable scalar APIs, their target SQL semantics, and the compiler-plugin / renderer / integration proof required for implementation.
 
-## 4. Complete The Documentation Audit
+## 4. Complete The H2/DM8 Documentation Audit
 
-Status: Pending
+Status: Done, Documentation Build Deferred (2026-07-24)
 
-- Review all field-type, annotation-mapping, and custom-dialect pages for H2/DM8 coverage.
-- Keep regex, `bin`, `reverse`, aggregate ordering, and database-specific function availability clear in both languages.
-- Refresh the Android example reference once the example repository's final commit is known.
+- Reviewed the English and Chinese dialect support, connection, field-type, annotation, index, custom-dialect, README, and function-availability pages against `H2Statements`, `Dm8Statements`, `OracleStatements`, and renderer rules.
+- H2/DM8 support, H2 `MERGE`, DM8 identity columns, JDBC generated keys, type fragments, `bin`, `reverse`, `groupConcat`, and zero repetition now have matched user-facing wording in both languages.
+- Documentation build is intentionally not run for this audit.
 
 Acceptance:
 
@@ -63,3 +63,20 @@ Status: Pending
 Acceptance:
 
 - Required CI gates pass with the committed code and the verification results are recorded in the release or pull-request discussion.
+
+## 6. Refresh The Android Example Reference
+
+Status: Pending External Commit
+
+- Refresh the Android example reference after the example repository's final commit is known.
+
+Acceptance:
+
+- The Android documentation links to the final example revision and the referenced setup still compiles.
+
+## Verification Record
+
+2026-07-24:
+
+- Static evidence reviewed: Kotlin 2.4 standard-library source, `KotlinSqlFunctionRules`, `TypeUtils`, H2/DM8/Oracle statement renderers, focused test sources, and English/Chinese user documentation.
+- Not run: unit, compiler-plugin, integration, and documentation builds. Test execution was deferred by request; Task 5 remains the release gate.

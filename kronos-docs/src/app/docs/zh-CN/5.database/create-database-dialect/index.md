@@ -19,6 +19,8 @@ enum class DBType {
     Postgres,
     Mssql,
     SQLite,
+    H2,
+    DM8,
     YourDatabase,
     Unknown;
 
@@ -74,6 +76,7 @@ enum class SqlDialectFamily {
     MySql,
     PostgreSql,
     SQLite,
+    H2,
     Oracle,
     SqlServer,
     YourDatabase
@@ -101,6 +104,7 @@ fun sqlRenderer(dialect: SqlDialect = SqlDialect.Standard): SqlRenderer = when (
     SqlDialectFamily.MySql -> MysqlSqlRenderer(standardEscapeStrings = dialect.standardEscapeStrings)
     SqlDialectFamily.PostgreSql -> PostgresqlSqlRenderer()
     SqlDialectFamily.SQLite -> SqliteSqlRenderer()
+    SqlDialectFamily.H2 -> H2SqlRenderer()
     SqlDialectFamily.Oracle -> OracleSqlRenderer()
     SqlDialectFamily.SqlServer -> SqlServerSqlRenderer()
 }

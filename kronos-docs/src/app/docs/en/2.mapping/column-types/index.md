@@ -123,8 +123,10 @@ DDL type fragments:
 | MySQL | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | PostgreSQL | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | SQLite | `TEXT` | `NUMERIC` |
+| H2 | `VARCHAR(80)` | `NUMERIC(12,2)` |
 | SQLServer | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | Oracle | `VARCHAR2(80)` | `NUMBER(12,2)` |
+| DM8 | `VARCHAR2(80)` | `NUMBER(12,2)` |
 
 ## Use a native JSON column
 
@@ -160,8 +162,10 @@ DDL type fragments:
 | MySQL | `JSON` |
 | PostgreSQL | `JSONB` |
 | SQLite | `TEXT` |
+| H2 | `JSON` |
 | SQLServer | `JSON` |
 | Oracle | `JSON` |
+| DM8 | `JSON` |
 
 > **Note**
 > The registered JSON configuration sends `payload` as a JSON string through JDBC. {{ $.annotation("ColumnType") }} selects the type used in generated table DDL. Use the default `VARCHAR` column for JSON text tables.

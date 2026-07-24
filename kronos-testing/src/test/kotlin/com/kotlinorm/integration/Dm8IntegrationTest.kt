@@ -12,6 +12,7 @@ import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
+import com.kotlinorm.integration.suites.OracleCompatibleFunctionSemanticsIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SafetyCornerCaseIntegrationSuite
@@ -102,6 +103,8 @@ class Dm8ValueTypeIntegrationTest : ValueTypeIntegrationSuite(dm8, StandardInteg
 class Dm8TypeDialectDdlCornerIntegrationTest : TypeDialectDdlCornerIntegrationSuite(dm8, StandardIntegrationScenarioProfile)
 
 class Dm8FunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(dm8, StandardIntegrationScenarioProfile)
+
+class Dm8FunctionSemanticsIntegrationTest : OracleCompatibleFunctionSemanticsIntegrationSuite(dm8, StandardIntegrationScenarioProfile)
 
 class Dm8TransactionIntegrationTest : TransactionIntegrationSuite(dm8, StandardIntegrationScenarioProfile)
 

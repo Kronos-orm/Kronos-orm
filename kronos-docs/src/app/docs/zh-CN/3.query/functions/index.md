@@ -82,7 +82,7 @@ val totalAmount: java.math.BigDecimal? = first.totalAmount
 | `min` | `f.min(x)` | 最小值。 |
 | `groupConcat` | `f.groupConcat(x)` | 分组后拼接值，具体 SQL 按方言渲染。 |
 
-`groupConcat` 适合生成分组展示值，结果顺序由各数据库的聚合输入顺序决定。
+`groupConcat` 适合生成分组展示值，结果顺序不应作为跨数据库契约；Oracle 和 DM8 的受支持简单形式会按聚合表达式升序排列。
 
 ## 数学函数和运算符
 
@@ -186,9 +186,10 @@ WHERE LENGTH(`name`) > :nameLength
 |-----|----------|
 | `f.log(value, base)`、`f.trunc(x, scale)`、`f.right(x, length)` | MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle 和 DM8 使用相同的 Kotlin 调用方式。 |
 | `f.join(separator, x, y, ...)` | 七种内置方言都会拼接存在的值。 |
-| `f.groupConcat(x)` | 七种内置方言均可使用，结果顺序由数据库聚合输入顺序决定。 |
-| `f.bin(x)` | MySQL。 |
-| `f.reverse(x)` | 当前 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 和 DM8 Driver 可用；H2 应用可以注册自定义函数。 |
+| `f.groupConcat(x)` | 七种内置方言均可使用，但不要依赖统一结果顺序；Oracle 和 DM8 的受支持简单形式会按聚合表达式升序排列。 |
+| `f.bin(x)` | 仅 MySQL。 |
+| `f.repeat(x, 0)` | Oracle 和 DM8 返回 `NULL`；其他方言使用各自数据库的原生语义。 |
+| `f.reverse(x)` | 内置 H2 方言不支持。其他数据库仅在目标数据库支持 `REVERSE` 时使用。 |
 | `f.any(...)`、`f.all(...)` | PostgreSQL 数组比较。 |
 
 ### 条件中的 Kotlin 原生大小写调用

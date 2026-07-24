@@ -57,8 +57,10 @@ DDL type fragments:
 | MySQL | `VARCHAR(64)` | `TEXT` | `CHAR(36)` |
 | PostgreSQL | `VARCHAR(64)` | `TEXT` | `UUID` |
 | SQLite | `TEXT` | `TEXT` | `TEXT` |
+| H2 | `VARCHAR(64)` | `CLOB` | `UUID` |
 | SQLServer | `VARCHAR(64)` | `TEXT` | `CHAR(36)` |
 | Oracle | `VARCHAR2(64)` | `CLOB` | `CHAR(36)` |
+| DM8 | `VARCHAR2(64)` | `CLOB` | `CHAR(36)` |
 
 ## Numeric Types
 
@@ -91,8 +93,10 @@ DDL type fragments:
 | MySQL | `TINYINT(1)` | `BIGINT(20)` | `DECIMAL(12,4)` |
 | PostgreSQL | `BOOLEAN` | `BIGINT` | `DECIMAL(12,4)` |
 | SQLite | `INTEGER` | `INTEGER` | `NUMERIC` |
+| H2 | `BOOLEAN` | `BIGINT` | `NUMERIC(12,4)` |
 | SQLServer | `BIT` | `BIGINT` | `DECIMAL(12,4)` |
 | Oracle | `NUMBER(1)` | `NUMBER(19)` | `NUMBER(12,4)` |
+| DM8 | `NUMBER(1)` | `NUMBER(19)` | `NUMBER(12,4)` |
 
 ## Date And Time Types
 
@@ -131,8 +135,10 @@ DDL type fragments:
 | MySQL | `DATE` | `TIME` | `DATETIME` | `TIMESTAMP` |
 | PostgreSQL | `DATE` | `TIME(0)` | `TIMESTAMP(0)` | `TIMESTAMP(4)` |
 | SQLite | `TEXT` | `TEXT` | `TEXT` | `TEXT` |
+| H2 | `DATE` | `TIME` | `TIMESTAMP` | `TIMESTAMP(4)` |
 | SQLServer | `DATE` | `TIME` | `DATETIME` | `TIMESTAMP` |
 | Oracle | `DATE` | `TIMESTAMP(0)` | `TIMESTAMP(6)` | `TIMESTAMP(4)` |
+| DM8 | `DATE` | `TIMESTAMP(0)` | `TIMESTAMP(6)` | `TIMESTAMP(4)` |
 
 ## JSON, Binary, Spatial, And XML Types
 
@@ -171,55 +177,57 @@ DDL type fragments:
 | MySQL | `JSON` | `BLOB` | `POINT` | `TEXT` |
 | PostgreSQL | `JSONB` | `BYTEA` | `POINT` | `XML` |
 | SQLite | `TEXT` | `BLOB` | `TEXT` | `TEXT` |
+| H2 | `JSON` | `BLOB` | `POINT` | `XML` |
 | SQLServer | `JSON` | `VARBINARY(MAX)` | `GEOMETRY` | `XML` |
 | Oracle | `JSON` | `BLOB` | `SDO_GEOMETRY` | `XMLType` |
+| DM8 | `JSON` | `BLOB` | `SDO_GEOMETRY` | `XMLType` |
 
 ## Compact Reference
 
 This table shows the type strings rendered by table DDL for common `KColumnType` values. Cells with `n`, `p`, or `s` use `length` and `scale` from `@ColumnType`; decimal and numeric cells with `p` render `p,0` when only `length` is set.
 
-| `KColumnType` | MySQL | PostgreSQL | SQLite | SQLServer | Oracle |
-|---------------|-------|------------|--------|-----------|--------|
-| `BIT` | `TINYINT(1)` | `BOOLEAN` | `INTEGER` | `BIT` | `NUMBER(1)` |
-| `TINYINT` | `TINYINT(4)` | `SMALLINT` | `INTEGER` | `TINYINT` | `NUMBER(3)` |
-| `SMALLINT` | `SMALLINT(6)` | `SMALLINT` | `INTEGER` | `SMALLINT` | `NUMBER(5)` |
-| `MEDIUMINT` | `MEDIUMINT(9)` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(7)` |
-| `INT` | `INT(11)` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(10)` |
-| `BIGINT` | `BIGINT(20)` | `BIGINT` | `INTEGER` | `BIGINT` | `NUMBER(19)` |
-| `SERIAL` | `INT(11)` | `SERIAL` | `INTEGER` | `INT` | `NUMBER` |
-| `YEAR` | `YEAR` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(4)` |
-| `REAL` | `REAL` | `REAL` | `REAL` | `REAL` | `BINARY_FLOAT` |
-| `FLOAT` | `FLOAT` or `FLOAT(p,s)` | `DOUBLE PRECISION` or `FLOAT(p)` | `REAL` | `FLOAT` or `FLOAT(p)` | `BINARY_DOUBLE` or `FLOAT(p)` |
-| `DOUBLE` | `DOUBLE` or `DOUBLE(p,s)` | `DOUBLE PRECISION` | `REAL` | `FLOAT(53)` | `BINARY_DOUBLE` |
-| `DECIMAL` | `DECIMAL(10,0)` or `DECIMAL(p,s)` | `DECIMAL` or `DECIMAL(p,s)` | `NUMERIC` | `DECIMAL(18,0)` or `DECIMAL(p,s)` | `NUMBER(10,0)` or `NUMBER(p,s)` |
-| `NUMERIC` | `NUMERIC(10,0)` or `NUMERIC(p,s)` | `NUMERIC` or `NUMERIC(p,s)` | `NUMERIC` | `NUMERIC(18,0)` or `NUMERIC(p,s)` | `NUMERIC(10,0)` or `NUMERIC(p,s)` |
-| `CHAR` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` | `TEXT` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` |
-| `VARCHAR` | `VARCHAR(255)` or `VARCHAR(n)` | `TEXT` or `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` or `VARCHAR(n/MAX)` | `VARCHAR2(255)` or `VARCHAR2(n)` |
-| `NCHAR` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` | `TEXT` | `NVARCHAR(255)` or `NVARCHAR(n)` | `NCHAR(255)` or `NCHAR(n)` |
-| `NVARCHAR` | `VARCHAR(255)` or `VARCHAR(n)` | `TEXT` or `VARCHAR(n)` | `TEXT` | `NVARCHAR(255)` or `NVARCHAR(n/MAX)` | `NVARCHAR2(255)` or `NVARCHAR2(n)` |
-| `TEXT` | `TEXT` | `TEXT` | `TEXT` | `TEXT` | `CLOB` |
-| `MEDIUMTEXT` | `MEDIUMTEXT` | `TEXT` | `TEXT` | `TEXT` | `CLOB` |
-| `LONGTEXT` | `LONGTEXT` | `TEXT` | `TEXT` | `TEXT` | `CLOB` |
-| `CLOB` | `CLOB` | `TEXT` | `TEXT` | `TEXT` | `CLOB` |
-| `NCLOB` | `NCLOB` | `TEXT` | `TEXT` | `NTEXT` | `NCLOB` |
-| `DATE` | `DATE` | `DATE` | `TEXT` | `DATE` | `DATE` |
-| `TIME` | `TIME` | `TIME(0-6)` | `TEXT` | `TIME` or `TIME(s)` | `TIMESTAMP(0)` |
-| `DATETIME` | `DATETIME` | `TIMESTAMP(0-6)` | `TEXT` | `DATETIME` or `DATETIME2(s)` | `TIMESTAMP(6)` |
-| `TIMESTAMP` | `TIMESTAMP` | `TIMESTAMP(0-6)` | `TEXT` | `TIMESTAMP` | `TIMESTAMP(0-9)` |
-| `BINARY` | `BINARY(255)` or `BINARY(n)` | `BYTEA` | `BLOB` | `BINARY(255)` or `BINARY(n)` | `RAW(2000)` or `RAW(n)` |
-| `VARBINARY` | `VARBINARY(255)` or `VARBINARY(n)` | `BYTEA` | `BLOB` | `VARBINARY(255)` or `VARBINARY(n)` | `RAW(2000)` or `RAW(n)` |
-| `LONGVARBINARY` | `LONGBLOB` | `BYTEA` | `BLOB` | `VARBINARY(MAX)` | `BLOB` |
-| `BLOB` | `BLOB` | `BYTEA` | `BLOB` | `VARBINARY(MAX)` | `BLOB` |
-| `MEDIUMBLOB` | `MEDIUMBLOB` | `BYTEA` | `BLOB` | `VARBINARY(MAX)` | `BLOB` |
-| `LONGBLOB` | `LONGBLOB` | `BYTEA` | `BLOB` | `VARBINARY(MAX)` | `BLOB` |
-| `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` |
-| `ENUM` | `ENUM` | `VARCHAR(255)` or `VARCHAR(n)` | `TEXT` | `NVARCHAR(255)` | `VARCHAR2(255)` |
-| `SET` | `SET` | `TEXT` | `INTEGER` | `NVARCHAR(255)` | `VARCHAR2(1000)` |
-| `UUID` | `CHAR(36)` | `UUID` | `TEXT` | `CHAR(36)` | `CHAR(36)` |
-| `GEOMETRY` | `GEOMETRY` | `GEOMETRY` | `TEXT` | `GEOMETRY` | `SDO_GEOMETRY` |
-| `POINT` | `POINT` | `POINT` | `TEXT` | `GEOMETRY` | `SDO_GEOMETRY` |
-| `LINESTRING` | `LINESTRING` | `LINESTRING` | `TEXT` | `GEOMETRY` | `SDO_GEOMETRY` |
-| `XML` | `TEXT` | `XML` | `TEXT` | `XML` | `XMLType` |
+| `KColumnType` | MySQL | PostgreSQL | SQLite | H2 | SQLServer | Oracle | DM8 |
+|---------------|-------|------------|--------|----|-----------|--------|-----|
+| `BIT` | `TINYINT(1)` | `BOOLEAN` | `INTEGER` | `BOOLEAN` | `BIT` | `NUMBER(1)` | `NUMBER(1)` |
+| `TINYINT` | `TINYINT(4)` | `SMALLINT` | `INTEGER` | `TINYINT` | `TINYINT` | `NUMBER(3)` | `NUMBER(3)` |
+| `SMALLINT` | `SMALLINT(6)` | `SMALLINT` | `INTEGER` | `SMALLINT` | `SMALLINT` | `NUMBER(5)` | `NUMBER(5)` |
+| `MEDIUMINT` | `MEDIUMINT(9)` | `INTEGER` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(7)` | `NUMBER(7)` |
+| `INT` | `INT(11)` | `INTEGER` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(10)` | `NUMBER(10)` |
+| `BIGINT` | `BIGINT(20)` | `BIGINT` | `INTEGER` | `BIGINT` | `BIGINT` | `NUMBER(19)` | `NUMBER(19)` |
+| `SERIAL` | `INT(11)` | `SERIAL` | `INTEGER` | `INTEGER` | `INT` | `NUMBER` | `NUMBER` |
+| `YEAR` | `YEAR` | `INTEGER` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(4)` | `NUMBER(4)` |
+| `REAL` | `REAL` | `REAL` | `REAL` | `REAL` | `REAL` | `BINARY_FLOAT` | `BINARY_FLOAT` |
+| `FLOAT` | `FLOAT` or `FLOAT(p,s)` | `DOUBLE PRECISION` or `FLOAT(p)` | `REAL` | `DOUBLE PRECISION` | `FLOAT` or `FLOAT(p)` | `BINARY_DOUBLE` or `FLOAT(p)` | `BINARY_DOUBLE` or `FLOAT(p)` |
+| `DOUBLE` | `DOUBLE` or `DOUBLE(p,s)` | `DOUBLE PRECISION` | `REAL` | `DOUBLE PRECISION` | `FLOAT(53)` | `BINARY_DOUBLE` | `BINARY_DOUBLE` |
+| `DECIMAL` | `DECIMAL(10,0)` or `DECIMAL(p,s)` | `DECIMAL` or `DECIMAL(p,s)` | `NUMERIC` | `NUMERIC` or `NUMERIC(p,0)` or `NUMERIC(p,s)` | `DECIMAL(18,0)` or `DECIMAL(p,s)` | `NUMBER(10,0)` or `NUMBER(p,s)` | `NUMBER(10,0)` or `NUMBER(p,s)` |
+| `NUMERIC` | `NUMERIC(10,0)` or `NUMERIC(p,s)` | `NUMERIC` or `NUMERIC(p,s)` | `NUMERIC` | `NUMERIC` or `NUMERIC(p,0)` or `NUMERIC(p,s)` | `NUMERIC(18,0)` or `NUMERIC(p,s)` | `NUMERIC(10,0)` or `NUMERIC(p,s)` | `NUMERIC(10,0)` or `NUMERIC(p,s)` |
+| `CHAR` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` | `TEXT` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` |
+| `VARCHAR` | `VARCHAR(255)` or `VARCHAR(n)` | `TEXT` or `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` or `VARCHAR(n)` | `VARCHAR(255)` or `VARCHAR(n/MAX)` | `VARCHAR2(255)` or `VARCHAR2(n)` | `VARCHAR2(255)` or `VARCHAR2(n)` |
+| `NCHAR` | `CHAR(255)` or `CHAR(n)` | `CHAR(255)` or `CHAR(n)` | `TEXT` | `CHAR(255)` or `CHAR(n)` | `NVARCHAR(255)` or `NVARCHAR(n)` | `NCHAR(255)` or `NCHAR(n)` | `NCHAR(255)` or `NCHAR(n)` |
+| `NVARCHAR` | `VARCHAR(255)` or `VARCHAR(n)` | `TEXT` or `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` or `VARCHAR(n)` | `NVARCHAR(255)` or `NVARCHAR(n/MAX)` | `NVARCHAR2(255)` or `NVARCHAR2(n)` | `NVARCHAR2(255)` or `NVARCHAR2(n)` |
+| `TEXT` | `TEXT` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `MEDIUMTEXT` | `MEDIUMTEXT` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `LONGTEXT` | `LONGTEXT` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `CLOB` | `CLOB` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `NCLOB` | `NCLOB` | `TEXT` | `TEXT` | `CLOB` | `NTEXT` | `NCLOB` | `NCLOB` |
+| `DATE` | `DATE` | `DATE` | `TEXT` | `DATE` | `DATE` | `DATE` | `DATE` |
+| `TIME` | `TIME` | `TIME(0-6)` | `TEXT` | `TIME` or `TIME(s)` | `TIME` or `TIME(s)` | `TIMESTAMP(0)` | `TIMESTAMP(0)` |
+| `DATETIME` | `DATETIME` | `TIMESTAMP(0-6)` | `TEXT` | `TIMESTAMP` or `TIMESTAMP(s)` | `DATETIME` or `DATETIME2(s)` | `TIMESTAMP(6)` | `TIMESTAMP(6)` |
+| `TIMESTAMP` | `TIMESTAMP` | `TIMESTAMP(0-6)` | `TEXT` | `TIMESTAMP` or `TIMESTAMP(s)` | `TIMESTAMP` | `TIMESTAMP(0-9)` | `TIMESTAMP(0-9)` |
+| `BINARY` | `BINARY(255)` or `BINARY(n)` | `BYTEA` | `BLOB` | `BINARY(255)` or `BINARY(n)` | `BINARY(255)` or `BINARY(n)` | `RAW(2000)` or `RAW(n)` | `RAW(2000)` or `RAW(n)` |
+| `VARBINARY` | `VARBINARY(255)` or `VARBINARY(n)` | `BYTEA` | `BLOB` | `VARBINARY(255)` or `VARBINARY(n)` | `VARBINARY(255)` or `VARBINARY(n)` | `RAW(2000)` or `RAW(n)` | `RAW(2000)` or `RAW(n)` |
+| `LONGVARBINARY` | `LONGBLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `BLOB` | `BLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `MEDIUMBLOB` | `MEDIUMBLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `LONGBLOB` | `LONGBLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` | `JSON` | `JSON` |
+| `ENUM` | `ENUM` | `VARCHAR(255)` or `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` or `VARCHAR(n)` | `NVARCHAR(255)` | `VARCHAR2(255)` | `VARCHAR2(255)` |
+| `SET` | `SET` | `TEXT` | `INTEGER` | `VARCHAR(255)` or `VARCHAR(n)` | `NVARCHAR(255)` | `VARCHAR2(1000)` | `VARCHAR2(1000)` |
+| `UUID` | `CHAR(36)` | `UUID` | `TEXT` | `UUID` | `CHAR(36)` | `CHAR(36)` | `CHAR(36)` |
+| `GEOMETRY` | `GEOMETRY` | `GEOMETRY` | `TEXT` | `GEOMETRY` | `GEOMETRY` | `SDO_GEOMETRY` | `SDO_GEOMETRY` |
+| `POINT` | `POINT` | `POINT` | `TEXT` | `POINT` | `GEOMETRY` | `SDO_GEOMETRY` | `SDO_GEOMETRY` |
+| `LINESTRING` | `LINESTRING` | `LINESTRING` | `TEXT` | `LINESTRING` | `GEOMETRY` | `SDO_GEOMETRY` | `SDO_GEOMETRY` |
+| `XML` | `TEXT` | `XML` | `TEXT` | `XML` | `XML` | `XMLType` | `XMLType` |
 
 > **Note**
 > Automatic Kotlin type inference is covered in {{ $.keyword("mapping/column-types", ["Kotlin Type To KColumnType"]) }}. `@ColumnType` is the user-facing API for choosing a different enum value.

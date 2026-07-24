@@ -82,7 +82,7 @@ val totalAmount: java.math.BigDecimal? = first.totalAmount
 | `min` | `f.min(x)` | Minimum value. |
 | `groupConcat` | `f.groupConcat(x)` | Concatenate grouped values; SQL rendering is dialect-specific. |
 
-Use `groupConcat` for grouped display values when their sequence is not part of the result contract. Each database aggregates rows in its own input order.
+Use `groupConcat` for grouped display values when their sequence is not part of the result contract. Do not rely on a cross-database result order; Oracle and DM8 order the supported simple form by the aggregated expression in ascending order.
 
 ## Math Functions And Operators
 
@@ -186,9 +186,10 @@ WHERE LENGTH(`name`) > :nameLength
 |-----|---------------|
 | `f.log(value, base)`, `f.trunc(x, scale)`, `f.right(x, length)` | The same Kotlin call works across MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8. |
 | `f.join(separator, x, y, ...)` | Joins present values across the seven built-in dialects. |
-| `f.groupConcat(x)` | Available across the seven built-in dialects; its result order follows the database aggregate input order. |
-| `f.bin(x)` | MySQL. |
-| `f.reverse(x)` | Current MySQL, PostgreSQL, SQLite, SQL Server, Oracle, and DM8 drivers. H2 applications can provide a custom function. |
+| `f.groupConcat(x)` | Available across the seven built-in dialects. Do not depend on one result order across dialects; Oracle and DM8 order the supported simple form by the aggregated expression in ascending order. |
+| `f.bin(x)` | MySQL only. |
+| `f.repeat(x, 0)` | Oracle and DM8 return `NULL`; other dialects use their native database semantics. |
+| `f.reverse(x)` | The built-in H2 dialect does not support it. For other databases, use it only when the target database supports `REVERSE`. |
 | `f.any(...)`, `f.all(...)` | PostgreSQL array comparisons. |
 
 ### Native Kotlin case calls in conditions

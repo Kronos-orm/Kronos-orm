@@ -131,5 +131,7 @@ CREATE INDEX `idx_user_name` ON `tb_user` (`name`) USING BTREE
 | MySQL | 使用`type = "UNIQUE"`创建唯一索引。`method = "BTREE"`或`"HASH"`会渲染在列列表之后。`FULLTEXT`和`SPATIAL`可通过`type`传入。 |
 | PostgreSQL | 数据库支持时可使用`method = "BTREE"`、`"HASH"`、`"GIST"`、`"SPGIST"`、`"GIN"`、`"BRIN"`。`concurrently = true`会生成`CREATE INDEX CONCURRENTLY`。 |
 | SQLite | 使用空`type`/`method`或`type = "UNIQUE"`。SQLite 建表时的索引语句会带`CREATE INDEX IF NOT EXISTS`。 |
+| H2 | 使用空`type`/`method`或`type = "UNIQUE"`。普通索引默认使用`BTREE`。 |
 | SQL Server | 根据目标表使用`type = "CLUSTERED"`、`"NONCLUSTERED"`、`"XML"`或`"SPATIAL"`。`method = "UNIQUE"`也会标记唯一索引。 |
 | Oracle | 需要时使用`type = "UNIQUE"`或`"BITMAP"`。Oracle 标识符按 Oracle 方言规则渲染。 |
+| DM8 | 唯一索引使用`type = "UNIQUE"`。其他 DM8 索引选项请使用数据库专用迁移。 |

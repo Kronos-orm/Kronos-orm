@@ -100,7 +100,7 @@ cd "$DOCS_ROOT"
 
 if [ ! -d "node_modules" ]; then
   echo "  Installing dependencies..."
-  pnpm install --no-frozen-lockfile
+  pnpm install
 fi
 
 pnpm build

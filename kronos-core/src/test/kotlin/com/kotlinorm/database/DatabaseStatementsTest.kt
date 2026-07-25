@@ -121,6 +121,278 @@ class DatabaseStatementsTest {
     }
 
     @Test
+    fun `H2 metadata queries use information schema tables`() {
+        assertEquals(
+            "kronos",
+            H2Statements.databaseName(wrapper(DBType.H2, "jdbc:h2:file:/tmp/kronos;MODE=PostgreSQL")),
+        )
+
+        assertEquals(
+            mapOf(
+                "exists" to QueryShape(
+                    select = listOf("COUNT(*)"),
+                    from = listOf("INFORMATION_SCHEMA.TABLES"),
+                    where = "TABLE_SCHEMA = CURRENT_SCHEMA() AND TABLE_NAME = :tableName",
+                ),
+                "comment" to QueryShape(
+                    select = listOf("REMARKS"),
+                    from = listOf("INFORMATION_SCHEMA.TABLES"),
+                    where = "TABLE_SCHEMA = CURRENT_SCHEMA() AND TABLE_NAME = :tableName",
+                ),
+                "columns" to QueryShape(
+                    select = listOf(
+                        "C.COLUMN_NAME AS COLUMN_NAME",
+                        "C.DATA_TYPE AS DATA_TYPE",
+                        "C.CHARACTER_MAXIMUM_LENGTH AS LENGTH",
+                        "C.NUMERIC_PRECISION AS PRECISION",
+                        "COALESCE(C.NUMERIC_SCALE, C.DATETIME_PRECISION) AS SCALE",
+                        "C.IS_NULLABLE = 'YES' AS IS_NULLABLE",
+                        "C.COLUMN_DEFAULT AS COLUMN_DEFAULT",
+                        "C.IS_IDENTITY = 'YES' AS IDENTITY",
+                        "EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE K " +
+                            "JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS TC " +
+                            "ON TC.CONSTRAINT_CATALOG = K.CONSTRAINT_CATALOG " +
+                            "AND TC.CONSTRAINT_SCHEMA = K.CONSTRAINT_SCHEMA " +
+                            "AND TC.CONSTRAINT_NAME = K.CONSTRAINT_NAME " +
+                            "WHERE TC.TABLE_SCHEMA = C.TABLE_SCHEMA " +
+                            "AND TC.TABLE_NAME = C.TABLE_NAME " +
+                            "AND TC.CONSTRAINT_TYPE = 'PRIMARY KEY' " +
+                            "AND K.COLUMN_NAME = C.COLUMN_NAME) AS PRIMARY_KEY",
+                        "C.REMARKS AS COLUMN_COMMENT",
+                    ),
+                    from = listOf("INFORMATION_SCHEMA.COLUMNS AS C"),
+                    where = "C.TABLE_SCHEMA = CURRENT_SCHEMA() AND C.TABLE_NAME = :tableName",
+                ),
+                "indexes" to QueryShape(
+                    select = listOf(
+                        "I.INDEX_NAME AS NAME",
+                        "IC.COLUMN_NAME AS COLUMN_NAME",
+                        "IC.ORDINAL_POSITION AS SEQ_IN_INDEX",
+                        "IC.IS_UNIQUE AS IS_UNIQUE",
+                        "I.INDEX_TYPE_NAME AS INDEX_TYPE",
+                    ),
+                    from = listOf(
+                        "INFORMATION_SCHEMA.INDEXES AS I",
+                        "INFORMATION_SCHEMA.INDEX_COLUMNS AS IC",
+                    ),
+                    where = "I.INDEX_CATALOG = IC.INDEX_CATALOG " +
+                        "AND I.INDEX_SCHEMA = IC.INDEX_SCHEMA " +
+                        "AND I.INDEX_NAME = IC.INDEX_NAME " +
+                        "AND I.IS_GENERATED = FALSE " +
+                        "AND I.TABLE_SCHEMA = CURRENT_SCHEMA() " +
+                        "AND I.TABLE_NAME = :tableName",
+                ),
+            ),
+            mapOf(
+                "exists" to H2Statements.tableExists().toQueryShape(),
+                "comment" to H2Statements.tableComment().toQueryShape(),
+                "columns" to H2Statements.tableColumns("account").toQueryShape(),
+                "indexes" to H2Statements.tableIndexes("account").toQueryShape(),
+            ),
+        )
+    }
+
+    @Test
+    fun `H2 maps information schema aliases and index metadata`() {
+        val fields = H2Statements.mapColumns(
+            "account",
+            listOf(
+                h2Column(
+                    "identity_flag",
+                    "BOOLEAN",
+                    length = 1,
+                    nullable = false,
+                    identity = true,
+                    primaryKey = true,
+                    defaultValue = "FALSE",
+                    comment = "flag",
+                ),
+                h2Column("primary_character", "CHARACTER", length = 2, primaryKey = true),
+                h2Column("character_varying", "CHARACTER VARYING", length = 16),
+                h2Column("ignore_case", "VARCHAR_IGNORECASE", length = 24),
+                h2Column("integer_value", "INTEGER", precision = 32),
+                h2Column("double_value", "DOUBLE PRECISION", precision = 53),
+                h2Column("binary_value", "BINARY VARYING", length = 32),
+                h2Column("blob_value", "BINARY LARGE OBJECT", length = 64),
+                h2Column("clob_value", "CHARACTER LARGE OBJECT", length = 64),
+                h2Column("time_value", "TIME WITH TIME ZONE", scale = 3),
+                h2Column("timestamp_value", "TIMESTAMP WITH TIME ZONE", scale = 6),
+                h2Column("uuid_value", "UUID", length = 36),
+            ),
+        ).map { it.toFieldShape() }
+        val indexes = H2Statements.mapIndexes(
+            "account",
+            listOf(
+                mapOf("NAME" to "idx_account", "COLUMN_NAME" to "name", "SEQ_IN_INDEX" to 2, "IS_UNIQUE" to true),
+                mapOf("NAME" to "idx_account", "COLUMN_NAME" to "tenant_id", "SEQ_IN_INDEX" to 1, "IS_UNIQUE" to true),
+                mapOf("NAME" to "idx_state", "COLUMN_NAME" to "state", "SEQ_IN_INDEX" to 1, "IS_UNIQUE" to false),
+            ),
+        ).map { it.toIndexShape() }
+
+        assertEquals(
+            listOf(
+                FieldShape("identity_flag", KColumnType.BIT, 1, 0, "account", false, PrimaryKeyType.IDENTITY, "FALSE", "flag"),
+                FieldShape("primary_character", KColumnType.CHAR, 2, 0, "account", true, PrimaryKeyType.DEFAULT, null, null),
+                FieldShape("character_varying", KColumnType.VARCHAR, 16, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("ignore_case", KColumnType.VARCHAR, 24, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("integer_value", KColumnType.INT, 32, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("double_value", KColumnType.DOUBLE, 53, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("binary_value", KColumnType.VARBINARY, 32, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("blob_value", KColumnType.BLOB, 64, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("clob_value", KColumnType.CLOB, 64, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("time_value", KColumnType.TIME, 0, 3, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("timestamp_value", KColumnType.TIMESTAMP, 0, 6, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("uuid_value", KColumnType.UUID, 36, 0, "account", true, PrimaryKeyType.NOT, null, null),
+            ),
+            fields,
+        )
+        assertEquals(
+            listOf(
+                IndexShape("idx_account", listOf("tenant_id", "name"), "UNIQUE", "BTREE"),
+                IndexShape("idx_state", listOf("state"), "NORMAL", "BTREE"),
+            ),
+            indexes,
+        )
+    }
+
+    @Test
+    fun `H2 column definitions cover every supported type branch`() {
+        val cases = listOf(
+            type("undefined", KColumnType.UNDEFINED),
+            type("bit", KColumnType.BIT),
+            type("tinyint", KColumnType.TINYINT),
+            type("smallint", KColumnType.SMALLINT),
+            type("int", KColumnType.INT),
+            type("mediumint", KColumnType.MEDIUMINT),
+            type("serial", KColumnType.SERIAL),
+            type("year", KColumnType.YEAR),
+            type("bigint", KColumnType.BIGINT),
+            type("real", KColumnType.REAL),
+            type("float", KColumnType.FLOAT),
+            type("double", KColumnType.DOUBLE),
+            type("decimal-default", KColumnType.DECIMAL),
+            type("decimal-length", KColumnType.DECIMAL, 12),
+            type("decimal-scale", KColumnType.DECIMAL, 12, 4),
+            type("numeric", KColumnType.NUMERIC, 10, 2),
+            type("char", KColumnType.CHAR),
+            type("nchar", KColumnType.NCHAR, 8),
+            type("varchar", KColumnType.VARCHAR),
+            type("nvarchar", KColumnType.NVARCHAR, 64),
+            type("text", KColumnType.TEXT),
+            type("mediumtext", KColumnType.MEDIUMTEXT),
+            type("longtext", KColumnType.LONGTEXT),
+            type("clob", KColumnType.CLOB),
+            type("nclob", KColumnType.NCLOB),
+            type("binary", KColumnType.BINARY),
+            type("varbinary", KColumnType.VARBINARY, 32),
+            type("longvarbinary", KColumnType.LONGVARBINARY),
+            type("blob", KColumnType.BLOB),
+            type("mediumblob", KColumnType.MEDIUMBLOB),
+            type("longblob", KColumnType.LONGBLOB),
+            type("date", KColumnType.DATE),
+            type("time", KColumnType.TIME),
+            type("time-precision", KColumnType.TIME, scale = 3),
+            type("datetime", KColumnType.DATETIME),
+            type("timestamp-precision", KColumnType.TIMESTAMP, scale = 6),
+            type("json", KColumnType.JSON),
+            type("enum", KColumnType.ENUM),
+            type("set", KColumnType.SET, 32),
+            type("uuid", KColumnType.UUID),
+            type("xml", KColumnType.XML),
+            type("geometry", KColumnType.GEOMETRY),
+            type("point", KColumnType.POINT),
+            type("linestring", KColumnType.LINESTRING),
+        )
+
+        assertEquals(
+            mapOf(
+                "undefined" to "VARCHAR(255)",
+                "bit" to "BOOLEAN",
+                "tinyint" to "TINYINT",
+                "smallint" to "SMALLINT",
+                "int" to "INTEGER",
+                "mediumint" to "INTEGER",
+                "serial" to "INTEGER",
+                "year" to "INTEGER",
+                "bigint" to "BIGINT",
+                "real" to "REAL",
+                "float" to "DOUBLE PRECISION",
+                "double" to "DOUBLE PRECISION",
+                "decimal-default" to "NUMERIC",
+                "decimal-length" to "NUMERIC(12,0)",
+                "decimal-scale" to "NUMERIC(12,4)",
+                "numeric" to "NUMERIC(10,2)",
+                "char" to "CHAR(255)",
+                "nchar" to "CHAR(8)",
+                "varchar" to "VARCHAR(255)",
+                "nvarchar" to "VARCHAR(64)",
+                "text" to "CLOB",
+                "mediumtext" to "CLOB",
+                "longtext" to "CLOB",
+                "clob" to "CLOB",
+                "nclob" to "CLOB",
+                "binary" to "BINARY(255)",
+                "varbinary" to "VARBINARY(32)",
+                "longvarbinary" to "BLOB",
+                "blob" to "BLOB",
+                "mediumblob" to "BLOB",
+                "longblob" to "BLOB",
+                "date" to "DATE",
+                "time" to "TIME",
+                "time-precision" to "TIME(3)",
+                "datetime" to "TIMESTAMP",
+                "timestamp-precision" to "TIMESTAMP(6)",
+                "json" to "JSON",
+                "enum" to "VARCHAR(255)",
+                "set" to "VARCHAR(32)",
+                "uuid" to "UUID",
+                "xml" to "XML",
+                "geometry" to "GEOMETRY",
+                "point" to "POINT",
+                "linestring" to "LINESTRING",
+            ),
+            cases.associate { it.label to columnType(H2Statements, it) },
+        )
+    }
+
+    @Test
+    fun `H2 builds complete DDL statement definitions`() {
+        assertEquals(
+            listOf(
+                StatementShape("CreateTable", "account", columns = listOf(
+                    ColumnShape("id", "INTEGER GENERATED BY DEFAULT AS IDENTITY", false, "Primary", null),
+                    ColumnShape("name", "VARCHAR(32)", false, "NotPrimary", "'guest'"),
+                ), ifNotExists = true),
+                StatementShape("CreateIndex", "account", indexName = "idx_account_name", columns = listOf("tenant_id", "name"), unique = true, method = "BTREE"),
+                StatementShape("CommentOnColumn", "account", columnName = "id", comment = "identifier"),
+                StatementShape("CommentOnColumn", "account", columnName = "name", comment = "display name"),
+                StatementShape("CommentOnTable", "account", comment = "accounts"),
+            ),
+            H2Statements.createTable(createInput()).map { it.toStatementShape() },
+        )
+        assertEquals(
+            listOf(StatementShape("DropTable", "account", ifExists = true)),
+            H2Statements.dropTable("account", true).map { it.toStatementShape() },
+        )
+        assertEquals(
+            listOf(StatementShape("Truncate", "account", restartIdentity = true)),
+            H2Statements.truncateTable("account", true).map { it.toStatementShape() },
+        )
+        assertEquals(
+            listOf(
+                StatementShape("CommentOnTable", "account", comment = "accounts"),
+                StatementShape("DropIndex", null, indexName = "idx_old", ifExists = true),
+                StatementShape("AddColumn", "account", columns = listOf(ColumnShape("nickname", "VARCHAR(16)", true, "NotPrimary", "'nick'"))),
+                StatementShape("ModifyColumn", "account", columns = listOf(ColumnShape("name", "VARCHAR(64)", false, "NotPrimary", "'new'"))),
+                StatementShape("DropColumn", "account", columnName = "legacy"),
+                StatementShape("CommentOnColumn", "account", columnName = "name", comment = "new display"),
+                StatementShape("CreateIndex", "account", indexName = "idx_new", columns = listOf("nickname"), method = "BTREE"),
+            ),
+            H2Statements.syncTable(syncInput()).map { it.toStatementShape() },
+        )
+    }
+
+    @Test
     fun `generated key fallbacks are defined as dialect queries`() {
         val insert = SqlDmlStatement.Insert(
             table = SqlTable.Ident(
@@ -188,6 +460,51 @@ class DatabaseStatementsTest {
                     "AND c.CONSTRAINT_TYPE = 'U'))",
             ),
             Dm8Statements.tableIndexes("account").toQueryShape(),
+        )
+    }
+
+    @Test
+    fun `DM8 delegates Oracle metadata and preserves native identity metadata`() {
+        val identityInt = statementField(
+            "id",
+            KColumnType.INT,
+            primaryKey = PrimaryKeyType.IDENTITY,
+            nullable = false,
+            defaultValue = "0",
+            kDoc = "identifier",
+        )
+        val identityBigInt = identityInt.copy(columnName = "big_id", type = KColumnType.BIGINT)
+        val defaultInt = identityInt.copy(primaryKey = PrimaryKeyType.DEFAULT)
+        val defaultBigInt = identityBigInt.copy(primaryKey = PrimaryKeyType.DEFAULT)
+        val regularName = statementField("name", KColumnType.VARCHAR, length = 32, nullable = false)
+
+        assertEquals(
+            mapOf(
+                "canonicalName" to "ACCOUNT",
+                "databaseName" to "KRONOS",
+                "tableExists" to OracleStatements.tableExists(),
+                "tableComment" to OracleStatements.tableComment(),
+                "tableColumns" to OracleStatements.tableColumns("account"),
+                "mapColumns" to emptyList<Field>(),
+                "mapIndexes" to emptyList<KTableIndex>(),
+                "intIdentity" to true,
+                "bigIntIdentity" to true,
+                "oracleFallback" to true,
+                "identityMismatch" to false,
+            ),
+            mapOf(
+                "canonicalName" to Dm8Statements.canonicalColumnName("account"),
+                "databaseName" to Dm8Statements.databaseName(wrapper(DBType.DM8, "jdbc:dm://localhost:5237", "kronos")),
+                "tableExists" to Dm8Statements.tableExists(),
+                "tableComment" to Dm8Statements.tableComment(),
+                "tableColumns" to Dm8Statements.tableColumns("account"),
+                "mapColumns" to Dm8Statements.mapColumns("account", emptyList()),
+                "mapIndexes" to Dm8Statements.mapIndexes("account", emptyList()),
+                "intIdentity" to Dm8Statements.sameColumnDefinition(identityInt, defaultInt),
+                "bigIntIdentity" to Dm8Statements.sameColumnDefinition(identityBigInt, defaultBigInt),
+                "oracleFallback" to Dm8Statements.sameColumnDefinition(regularName, regularName),
+                "identityMismatch" to Dm8Statements.sameColumnDefinition(identityInt, defaultInt.copy(defaultValue = "1")),
+            ),
         )
     }
 
@@ -1422,6 +1739,68 @@ class DatabaseStatementsTest {
         )
     }
 
+    @Test
+    fun `DM8 applies native identity columns during schema sync`() {
+        val intIdentity = statementField(
+            "int_id",
+            KColumnType.INT,
+            primaryKey = PrimaryKeyType.IDENTITY,
+            nullable = false,
+        )
+        val bigIntIdentity = statementField(
+            "big_id",
+            KColumnType.BIGINT,
+            primaryKey = PrimaryKeyType.IDENTITY,
+            nullable = false,
+        )
+        val regularColumn = statementField("name", KColumnType.VARCHAR, length = 32, nullable = false)
+        val sync = DatabaseSyncTable(
+            tableName = "account",
+            originalTableComment = null,
+            tableComment = null,
+            expectedColumns = listOf(intIdentity, bigIntIdentity, regularColumn),
+            currentColumns = emptyList(),
+            columns = TableColumnDiff(
+                toAdd = listOf(intIdentity to null, regularColumn to null),
+                toModified = listOf(
+                    Triple(
+                        bigIntIdentity,
+                        null,
+                        statementField("big_id", KColumnType.BIGINT, nullable = false),
+                    ),
+                ),
+                toDelete = listOf(statementField("obsolete", KColumnType.TEXT)),
+            ),
+            expectedIndexes = emptyList(),
+            currentIndexes = emptyList(),
+            indexes = TableIndexDiff(emptyList(), emptyList()),
+        )
+
+        assertEquals(
+            listOf(
+                StatementShape("DropColumn", "ACCOUNT", columnName = "OBSOLETE"),
+                StatementShape("ModifyColumn", "ACCOUNT", columns = listOf(
+                    ColumnShape("BIG_ID", "BIGINT IDENTITY(1,1)", false, "Primary", null),
+                )),
+                StatementShape("AddColumn", "ACCOUNT", columns = listOf(
+                    ColumnShape("INT_ID", "INT IDENTITY(1,1)", false, "Primary", null),
+                )),
+                StatementShape("AddColumn", "ACCOUNT", columns = listOf(
+                    ColumnShape("NAME", "VARCHAR2(32)", false, "NotPrimary", null),
+                )),
+            ),
+            Dm8Statements.syncTable(sync).map { it.toStatementShape() },
+        )
+        assertEquals(
+            listOf(StatementShape("DropTable", "ACCOUNT", ifExists = true)),
+            Dm8Statements.dropTable("account", true).map { it.toStatementShape() },
+        )
+        assertEquals(
+            listOf(StatementShape("Truncate", "ACCOUNT", restartIdentity = false)),
+            Dm8Statements.truncateTable("account", true).map { it.toStatementShape() },
+        )
+    }
+
     private fun columnType(statements: DatabaseStatements, case: TypeCase): String {
         val field = Field(
             columnName = case.label.replace('-', '_'),
@@ -1779,18 +2158,26 @@ class DatabaseStatementsTest {
     private fun h2Column(
         columnName: String,
         dataType: String,
+        length: Int = 0,
         precision: Int = 0,
         scale: Int = 0,
-    ): Map<String, Any> = mapOf(
-        "COLUMN_NAME" to columnName,
-        "DATA_TYPE" to dataType,
-        "LENGTH" to 0,
-        "PRECISION" to precision,
-        "SCALE" to scale,
-        "IS_NULLABLE" to true,
-        "IDENTITY" to false,
-        "PRIMARY_KEY" to false,
-    )
+        nullable: Boolean = true,
+        identity: Boolean = false,
+        primaryKey: Boolean = false,
+        defaultValue: String? = null,
+        comment: String? = null,
+    ): Map<String, Any> = buildMap {
+        put("COLUMN_NAME", columnName)
+        put("DATA_TYPE", dataType)
+        put("LENGTH", length)
+        put("PRECISION", precision)
+        put("SCALE", scale)
+        put("IS_NULLABLE", nullable)
+        put("IDENTITY", identity)
+        put("PRIMARY_KEY", primaryKey)
+        defaultValue?.let { put("COLUMN_DEFAULT", it) }
+        comment?.let { put("COLUMN_COMMENT", it) }
+    }
 
     private data class TypeCase(
         val label: String,

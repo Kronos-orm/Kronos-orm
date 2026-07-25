@@ -33,12 +33,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
-          cache-dependency-path: kronos-docs/pnpm-lock.yaml
 
       - name: Install documentation dependencies
         working-directory: kronos-docs
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Build documentation site
         working-directory: kronos-docs

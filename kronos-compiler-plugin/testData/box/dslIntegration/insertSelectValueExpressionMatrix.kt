@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-// Verifies insert-select value lowering for fields, functions, and operators.
+// Verifies insert-select value lowering for fields, native receiver functions, and operators.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
@@ -34,7 +33,7 @@ data class InsertValueMatrixSource(
     @PrimaryKey
     var id: Int? = null,
     var userId: Int? = null,
-    var name: String? = null,
+    var name: String = "",
     var status: Int? = null,
 ) : KPojo
 
@@ -67,7 +66,7 @@ fun box(): String {
         [
             it.id,
             it.archivedUserId,
-            f.length(it.archivedName),
+            it.archivedName.length,
             it.archivedStatus + 1
         ]
     }

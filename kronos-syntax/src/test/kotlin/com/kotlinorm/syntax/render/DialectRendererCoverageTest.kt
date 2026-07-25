@@ -183,7 +183,8 @@ class DialectRendererCoverageTest {
         )
         assertEquals("CASE WHEN ',' IS NULL THEN NULL ELSE '' END", builtin(SqlBuiltinFunction.JoinWithSeparator, str(",")).toSql(SqlDialect.Oracle))
         assertEquals("SUBSTR(\"NAME\", 1, 2)", builtin(SqlBuiltinFunction.Left, col("name"), num("2")).toSql(SqlDialect.Oracle))
-        assertEquals("SUBSTR(\"NAME\", -2)", builtin(SqlBuiltinFunction.Right, col("name"), num("2")).toSql(SqlDialect.Oracle))
+        assertEquals("SUBSTR(\"NAME\", -2, 2)", builtin(SqlBuiltinFunction.Right, col("name"), num("2")).toSql(SqlDialect.Oracle))
+        assertEquals("SUBSTR(\"NAME\", -0, 0)", builtin(SqlBuiltinFunction.Right, col("name"), num("0")).toSql(SqlDialect.Oracle))
         assertEquals("LEFT()", SqlExpr.Function(id("LEFT")).toSql(SqlDialect.Oracle))
         assertEquals("RPAD('x', 3 * LENGTH('x'), 'x')", builtin(SqlBuiltinFunction.Repeat, str("x"), num("3")).toSql(SqlDialect.Oracle))
         assertEquals("RPAD('x', 0 * LENGTH('x'), 'x')", builtin(SqlBuiltinFunction.Repeat, str("x"), num("0")).toSql(SqlDialect.Oracle))
@@ -421,7 +422,8 @@ class DialectRendererCoverageTest {
         assertEquals("MAX(2, 3)", builtin(SqlBuiltinFunction.Greatest, num("2"), num("3")).toSql(SqlDialect.SQLite))
         assertEquals("MIN(2, 3)", builtin(SqlBuiltinFunction.Least, num("2"), num("3")).toSql(SqlDialect.SQLite))
         assertEquals("SUBSTR('abc', 1, 2)", builtin(SqlBuiltinFunction.Left, str("abc"), num("2")).toSql(SqlDialect.SQLite))
-        assertEquals("SUBSTR('abc', -2)", builtin(SqlBuiltinFunction.Right, str("abc"), num("2")).toSql(SqlDialect.SQLite))
+        assertEquals("SUBSTR('abc', -2, 2)", builtin(SqlBuiltinFunction.Right, str("abc"), num("2")).toSql(SqlDialect.SQLite))
+        assertEquals("SUBSTR('abc', -0, 0)", builtin(SqlBuiltinFunction.Right, str("abc"), num("0")).toSql(SqlDialect.SQLite))
         assertEquals("REPLACE(HEX(ZEROBLOB(2)), '00', 'ab')", builtin(SqlBuiltinFunction.Repeat, str("ab"), num("2")).toSql(SqlDialect.SQLite))
         assertEquals(
             "CAST(12.345 * POWER(10, 2) AS INTEGER) / POWER(10, 2)",

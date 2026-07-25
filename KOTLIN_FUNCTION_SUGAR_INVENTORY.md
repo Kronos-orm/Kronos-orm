@@ -1,14 +1,14 @@
 # Kotlin 标量字段语法糖清单
 
-状态：2026-07-24 完成 Kotlin 2.4 静态复核。本文件只记录可被改造成 SQL **单值表达式**的真实 Kotlin/JVM 源码形态；它不是 `f.*` 函数目录，也不承诺这些形态已经可用。
+状态：2026-07-25 完成 Kotlin 2.4 静态复核，并完成第一批接收者语法糖。本文件只记录可被改造成 SQL **单值表达式**的真实 Kotlin/JVM 源码形态；它不是 `f.*` 函数目录，也不承诺未标记为“已降级”的形态已经可用。
 
 ## 边界
 
-本清单以当前编译器的 KPojo 列类型映射为边界：`Boolean`、`Byte`、`Short`、`Int`、`Long`、`Float`、`Double`、`java.math.BigDecimal`、`Char`、`String`、`ByteArray`、`java.util.Date`、`java.sql.Date`、`java.sql.Timestamp`、`java.time.LocalDate`、`java.time.LocalTime`、`java.time.LocalDateTime`、`kotlinx.datetime.LocalDate`、`kotlinx.datetime.LocalTime` 和 `kotlinx.datetime.LocalDateTime`。每个调用的字段、接收者和实参都必须是字段表达式、字面量或运行时标量值。
+本清单以当前编译器的 KPojo 列类型映射为边界：`Boolean`、`Byte`、`Short`、`Int`、`Long`、`Float`、`Double`、`java.math.BigDecimal`、`Char`、`String`、`ByteArray`、`java.util.Date`、`java.sql.Date`、`java.sql.Timestamp`、`java.time.LocalDate`、`java.time.LocalTime`、`java.time.LocalDateTime`、`kotlinx.datetime.LocalDate`、`kotlinx.datetime.LocalTime` 和 `kotlinx.datetime.LocalDateTime`。本清单只收录 KPojo 源字段作为 dispatch 或 extension receiver 的 `field.xxx` / `field.xxx(...)` 形态；其他实参可以是字段表达式、字面量或运行时标量值。
 
 - 不纳入 `Iterable` / `Sequence` / 数组展开、`IntRange`、`Regex`、`Locale`、`MathContext`、`ChronoUnit`、`DateTimeUnit`、比较器和 lambda。它们不是当前定义的标量字段语法糖输入。
 - 不纳入跨行聚合。`f.sum`、`f.avg`、`f.min`、`f.max`、`f.count`、`f.groupConcat` 仍是聚合 DSL，不是本文件的候选。
-- `Int`、`Long` 等普通数值没有 `.sum()`、`.avg()`、`.min()` 或 `.max()` 成员。行内最小/最大值的真实 Kotlin 写法是 `minOf(a, b)` / `maxOf(a, b)`，或 `kotlin.math.min(a, b)` / `max(a, b)`；`BigDecimal.min(other)` / `max(other)` 是 Java 成员。
+- 不纳入顶层或静态调用，也不纳入字段处在普通参数位的调用；例如 `kotlin.math.abs(field)`、`minOf(a, b)` 和 `Float.fromBits(field)` 不在本轮规则范围内。
 - 默认讨论非空字段。可空字段只能在通用安全调用 lowerer 完成后使用真实安全调用（例如 `field?.length`、`field?.replace(oldValue, newValue)`）；不得把仅接受非空类型的 callable 直接套到 `T?` 字段。
 - “可改造”限定为不引入 UDF、过程语言、客户端回退或读取业务表其他行时，能以一列为输入产生一个结果的 SQL 标量表达式或标量子查询；因此本清单不把 JVM 特有的对象身份、哈希或格式化算法当作 SQL 语法糖候选。
 
@@ -27,12 +27,16 @@
 | Kotlin 源码形态 | 已生成的 SQL 语义 | 当前边界 |
 | --- | --- | --- |
 | `field.uppercase()`、`field.lowercase()` | `UPPER(field)`、`LOWER(field)` | 仅 `String` 零参数扩展；条件 DSL 已覆盖安全调用。 |
+| `stringField.length`、`stringField.count()` | `LENGTH(stringField)` | `count()` 是 `CharSequence.count()`，不是聚合 `COUNT`；仅字段接收者形态。 |
+| `stringField.replace(old, new)` | `REPLACE(stringField, old, new)` | 支持 `String` 与 `Char` 两种普通替换重载；仅省略或字面量 `false` 的 `ignoreCase`。 |
+| `stringField.substring(start)`、`stringField.substring(start, end)`、`stringField.subSequence(start, end)` | `SUBSTR(stringField, start + 1, length)` | Kotlin 的 0 基、结束位置排他语义会转换为 SQL 的 1 基、长度参数。 |
+| `stringField.take(n)`、`stringField.takeLast(n)` | `LEFT` / `RIGHT` 或方言 `SUBSTR` | `n > length` 时保留整串；SQLite/Oracle 的 `RIGHT` 降级会保留长度参数，避免 `n = 0` 误返回整串。 |
 | `field + value`、`-`、`*`、`/`、`%`、一元 `+field` / `-field` | 算术或字符串拼接 | 由运算符 lowerer 处理；直接写出的 `plus` / `minus` / `times` / `div` / `rem` 与对应运算符解析为同一 callable。 |
 | `!field`、`field && other`、`field || other` | `NOT`、`AND`、`OR` | Boolean 条件 DSL。 |
 | `field == value`、`!=`、`>`、`>=`、`<`、`<=`、`in` | 比较、`BETWEEN`、`IN` | 条件 DSL。 |
 | `field.contains(value)`、`field.startsWith(value)`、`field.endsWith(value)` | 转义后的 `LIKE` | 当前只覆盖无 `ignoreCase`、无起始下标的条件匹配形态。 |
 
-`KotlinSqlFunctionRules` 目前只登记了 `kotlin.text.uppercase` 和 `kotlin.text.lowercase`。属性 getter、JVM 成员、顶层 `kotlin.math` / `kotlin.comparisons` 函数、`BigDecimal` 成员以及字段不在 receiver 位置的调用尚未有通用规则。
+`KotlinSqlFunctionRules` 已登记上述 `String` 字段接收者 callable，包括属性 getter、dispatch member 和 extension receiver；其中 `count()` 的声明接收者是 `CharSequence`，但当前只接受 `String` 列。普通运行时字符串调用会保持运行时求值和参数绑定，不会降级为 SQL 函数。
 
 ## 可改造的 String 与 Char 形态
 
@@ -40,10 +44,11 @@
 
 | Kotlin 源码形态 | 目标 SQL | 标记与边界 |
 | --- | --- | --- |
-| `field.length`、`field.count()`、`field.any()`、`field.none()` | `LENGTH(field)` | 复用；前者是 JVM `String` 属性，后三者是 `CharSequence` 扩展。JVM UTF-16 code unit 与数据库字符长度需契约。 |
-| `field.replace(oldChar, newChar)`、`field.replace(oldValue, newValue)` | `REPLACE(field, old, new)` | 复用；仅 `ignoreCase = false`。空查找串、排序规则和 `NULL` 需要结果测试。 |
-| `field.substring(startIndex)`、`field.substring(startIndex, endIndex)`、`field.subSequence(startIndex, endIndex)` | `SUBSTR` | 复用；Kotlin 从 0 开始且结束位置排他，SQL 通常从 1 开始。 |
-| `field.take(n)`、`field.takeLast(n)` | `LEFT` / `RIGHT` 或 `SUBSTR` | 复用；目标长度不大于原长时 Kotlin 返回原串。 |
+| `field.length`、`field.count()` | `LENGTH(field)` | 已降级；仅 `String` 字段接收者。JVM UTF-16 code unit 与数据库字符长度仍需结果验证。 |
+| `field.any()`、`field.none()` | `LENGTH(field)` 比较 | 复用；`CharSequence` 扩展，尚未接入规则。 |
+| `field.replace(oldChar, newChar)`、`field.replace(oldValue, newValue)` | `REPLACE(field, old, new)` | 已降级；仅 `ignoreCase = false`。空查找串、排序规则和 `NULL` 需要结果测试。 |
+| `field.substring(startIndex)`、`field.substring(startIndex, endIndex)`、`field.subSequence(startIndex, endIndex)` | `SUBSTR` | 已降级；Kotlin 从 0 开始且结束位置排他，SQL 通常从 1 开始。 |
+| `field.take(n)`、`field.takeLast(n)` | `LEFT` / `RIGHT` 或 `SUBSTR` | 已降级；目标长度不大于原长时 Kotlin 返回原串。 |
 | `field.drop(n)`、`field.dropLast(n)` | `SUBSTR` + `LENGTH` | 组合；负数抛错，不能静默变成 SQL `NULL`。 |
 | `field.reversed()` | `REVERSE(field)` | 复用；内置 H2 不支持，stock SQLite 也没有可靠内置实现。 |
 | `field.trim(trimChar)`、`field.trimStart(trimChar)`、`field.trimEnd(trimChar)` | `TRIM`、`LTRIM`、`RTRIM` | 复用；单字符 `vararg Char` 形态可直接复用方言函数。 |
@@ -103,12 +108,9 @@
 
 | Kotlin 源码形态 | 目标 SQL | 标记与边界 |
 | --- | --- | --- |
-| `kotlin.math.abs(field)`、`field.absoluteValue` | `ABS(field)` | 复用；真实重载是 `Int`、`Long`、`Float`、`Double`。`MIN_VALUE`、NaN、Infinity 需要契约。 |
-| `field.sign`、`kotlin.math.sign(field)` | `SIGN(field)` | 复用；属性覆盖 `Int`、`Long`、`Float`、`Double`，顶层 `sign` 是 `Float` / `Double` 重载；`Long.sign` 返回 `Int`。 |
+| `field.absoluteValue` | `ABS(field)` | 复用；真实重载是 `Int`、`Long`、`Float`、`Double`。`MIN_VALUE`、NaN、Infinity 需要契约。 |
+| `field.sign` | `SIGN(field)` | 复用；属性覆盖 `Int`、`Long`、`Float`、`Double`，`Long.sign` 返回 `Int`。 |
 | `field.abs()`、`field.negate()`、`field.signum()` | `ABS`、一元负号、`SIGN` | 复用；仅 `java.math.BigDecimal` 的无参成员。 |
-| `kotlin.math.ceil(field)`、`kotlin.math.floor(field)`、`kotlin.math.truncate(field)`、`kotlin.math.exp(field)`、`kotlin.math.ln(field)`、`kotlin.math.sqrt(field)`、`kotlin.math.log(field, base)`、`kotlin.math.log(value, field)` | 对应数学函数 | 复用；真实 Kotlin 2.4 重载为 `Float` / `Double`。顶层函数规则必须记录字段位于哪个实参槽。 |
-| `kotlin.math.min(a, b)`、`kotlin.math.max(a, b)` | 行级 `LEAST`、`GREATEST` | 复用；真实重载是 `Int`、`Long`、`Float`、`Double`，不是聚合。 |
-| `minOf(a, b)`、`minOf(a, b, c)`、`minOf(a, b, c, d)`、`maxOf(a, b)`、`maxOf(a, b, c)`、`maxOf(a, b, c, d)` | 行级 `LEAST`、`GREATEST` | 复用；真实数值重载有二元、三元和首参加 `vararg` 形态，所有参数可以是字段；不接受 `*array`。数值重载之外的 `Comparable` 类型须单独确认 collation / 空值。 |
 | `bigDecimal.min(other)`、`bigDecimal.max(other)` | 行级 `LEAST`、`GREATEST` | 复用；仅 `BigDecimal` dispatch member，不能泛化为普通数值成员。 |
 | `bigDecimal.add(other)`、`bigDecimal.subtract(other)`、`bigDecimal.multiply(other)`、`bigDecimal.remainder(other)` | 十进制算术 | 复用；这是 Java `BigDecimal` 成员，和 Kotlin 运算符版本都必须保留 DECIMAL 精度。 |
 | `bigDecimal.setScale(scale, RoundingMode.DOWN)` | `TRUNC(field, scale)` | 复用；只覆盖 `DOWN`。其他 `RoundingMode` 不能按函数名猜测。 |
@@ -123,10 +125,10 @@
 
 | Kotlin 源码形态 | 所需 SQL 语义 | 标记与边界 |
 | --- | --- | --- |
-| `kotlin.math.round(field)`、`field.roundToInt()`、`field.roundToLong()` | Kotlin 舍入 | 方言原语；`round` 为 ties-to-even，`roundToInt` / `roundToLong` 为 ties-to-positive-infinity 且 NaN 会抛错。 |
-| `field.pow(exponent)`、`kotlin.math.cbrt(field)`、`kotlin.math.sin(field)`、`kotlin.math.cos(field)`、`kotlin.math.tan(field)`、`kotlin.math.asin(field)`、`kotlin.math.acos(field)`、`kotlin.math.atan(field)`、`kotlin.math.atan2(y, x)`、`kotlin.math.sinh(field)`、`kotlin.math.cosh(field)`、`kotlin.math.tanh(field)`、`kotlin.math.asinh(field)`、`kotlin.math.acosh(field)`、`kotlin.math.atanh(field)`、`kotlin.math.hypot(x, y)`、`kotlin.math.expm1(field)`、`kotlin.math.ln1p(field)`、`kotlin.math.log2(field)`、`kotlin.math.log10(field)` | 幂、三角、双曲和派生对数函数 | 方言原语；这些真实 Kotlin 2.4 API 有 `Float` / `Double` 重载。`atan2` / `hypot` 的两个实参都可为字段，需逐方言函数名、定义域和精度验证。 |
+| `field.roundToInt()`、`field.roundToLong()` | Kotlin 舍入 | 方言原语；二者为 ties-to-positive-infinity 且 NaN 会抛错。 |
+| `field.pow(exponent)` | 幂函数 | 方言原语；真实 Kotlin 2.4 API 有 `Float` / `Double` 重载，指数可以是字段或运行时标量。 |
 | `field.IEEErem(divisor)`、`field.withSign(sign)`、`field.isNaN()`、`field.isInfinite()`、`field.isFinite()` | IEEE 浮点余数、符号和特殊值判断 | 契约；多数数据库对 NaN / Infinity 的存储和比较不同。 |
-| `floatField.toBits()`、`floatField.toRawBits()`、`doubleField.toBits()`、`doubleField.toRawBits()`、`Float.fromBits(bits)`、`Double.fromBits(bits)` | IEEE 位模式转换 | 方言原语；顶层 `fromBits` 的字段位于实参槽，NaN payload 与数据库浮点存储需要逐方言验证。 |
+| `floatField.toBits()`、`floatField.toRawBits()`、`doubleField.toBits()`、`doubleField.toRawBits()` | IEEE 位模式转换 | 方言原语；NaN payload 与数据库浮点存储需要逐方言验证。 |
 | `field.and(other)`、`field.or(other)`、`field.xor(other)`、`field.inv()`、`field.shl(bitCount)`、`field.shr(bitCount)`、`field.ushr(bitCount)` | 位运算 | 方言原语；`ushr`、位宽和负数二进制表示必须按 Kotlin 固定位宽实现。 |
 | `field.countOneBits()`、`field.countLeadingZeroBits()`、`field.countTrailingZeroBits()`、`field.takeHighestOneBit()`、`field.takeLowestOneBit()`、`field.rotateLeft(bitCount)`、`field.rotateRight(bitCount)` | 位计数、掩码和循环移位 | 方言原语；`Byte` / `Short` / `Int` / `Long` 的位宽不能交给数据库默认整数宽度。 |
 | `bigDecimal.pow(n)`、`bigDecimal.setScale(scale, roundingMode)`、`bigDecimal.movePointLeft(n)`、`bigDecimal.movePointRight(n)`、`bigDecimal.scaleByPowerOfTen(n)` | 精确十进制幂、舍入和缩放 | 方言原语；只列标量参数重载，`MathContext` 版本不在本清单。 |
@@ -170,11 +172,22 @@
 | `binaryField.getOrNull(index)`、`binaryField.firstOrNull()`、`binaryField.lastOrNull()`、`binaryField.indexOf(byte)`、`binaryField.lastIndexOf(byte)` | BLOB 截取、字节定位与 `CASE` | 方言原语；Kotlin 是 0 基且未命中返回 `-1`，不能把二进制当作文本处理。 |
 | `binaryField.decodeToString()`、`binaryField.decodeToString(startIndex, endIndex, throwOnInvalidSequence)` | 二进制到 UTF-8 文本 | 契约；必须固定 UTF-8 和非法序列行为，不能随数据库连接字符集变化。 |
 
-## 实施顺序与验证
+## 实施状态与验证
 
-1. 扩展规则模型：描述 property getter、dispatch receiver、extension receiver、顶层函数、固定参数、可变参数和字段所在参数位置；普通运行时表达式必须继续作为参数，不得 SQL 化。
-2. 先用一条完整垂直路径验证 `String.length` / `count()`、`replace`、`substring`、`take` / `takeLast`、`abs`、`sign`、`minOf` / `maxOf` 和 `BigDecimal` 对应成员。每条路径都要验证非空字段、字段参数、常量参数与安全调用。
-3. 再加入位置查找、`CASE` 组合、空值谓词和 Boolean / 日期时间规则。`String.repeat` 在 Oracle/DM8 不能直接映射为 Kotlin 空串语义；除非引入明确的受限契约，否则不应开放原生 `.repeat()` 语法糖。
-4. 将 Unicode、忽略大小写、文本解析、浮点特殊值、位运算、时区和 BLOB 比较作为逐方言能力，而不是把 Kotlin 函数名直接拼成 SQL。
+### 已完成（2026-07-25）
 
-每个新增形态都需要：精确 callable 的官方 compiler `testData`、每个声明支持方言的完整 SQL 断言，以及在语义依赖结果值时的真实数据库测试。本次为静态盘点；未运行测试。
+- 规则模型已能精确区分 property getter、dispatch receiver、extension receiver、声明参数数和 `replace` 的默认 `ignoreCase = false`；只有源字段或源字段派生的 native 链会降级，普通运行时字符串调用继续作为参数。
+- `length` / `count()`、`replace`、`substring` / `subSequence`、`take` / `takeLast` 已接入条件、select 与 insert-select 的字段表达式 lowering；条件官方用例覆盖可空字段的 `length`、`subSequence` 与 `take` 安全调用。
+- 无终点的 `substring(start)` 生成 `SUBSTR(source, start + 1, Int.MAX_VALUE - (start + 1))`，避免 H2 对 `Int.MAX_VALUE` 长度发生溢出。
+- SQLite 与 Oracle 的 `RIGHT` 降级已改为三参数 `SUBSTR(source, -length, length)`，防止长度为零时返回整串。
+- `:kronos-compiler-plugin:test --tests com.kotlinorm.compiler.ConditionBoxTest.nativeStringReceiverFunctions --tests com.kotlinorm.compiler.SelectBoxTest.nativeStringReceiverFunctions`：通过。
+- `:kronos-compiler-plugin:test --tests com.kotlinorm.compiler.DslIntegrationBoxTest.insertSelectValueExpressionMatrix`：通过，覆盖 insert-select 的 native `field.length`。
+- `:kronos-syntax:test --tests com.kotlinorm.syntax.render.DialectRendererCoverageTest`：通过。
+
+### 后续顺序
+
+1. 继续验证 `field.absoluteValue`、`field.sign` 和 `BigDecimal` 对应成员等下一批接收者形态；普通运行时表达式必须继续作为参数，不得 SQL 化。
+2. 再加入位置查找、`CASE` 组合、空值谓词和 Boolean / 日期时间规则。`String.repeat` 在 Oracle/DM8 不能直接映射为 Kotlin 空串语义；除非引入明确的受限契约，否则不应开放原生 `.repeat()` 语法糖。
+3. 将 Unicode、忽略大小写、文本解析、浮点特殊值、位运算、时区和 BLOB 比较作为逐方言能力，而不是把 Kotlin 函数名直接拼成 SQL。
+
+每个新增形态都需要：精确 callable 的官方 compiler `testData`、每个声明支持方言的完整 SQL 断言，以及在语义依赖结果值时的真实数据库测试。H2 2.4.240 内存 SQL 已验证修正后的无终点 `substring(1)` 返回 `"bc"`；完整 ORM 多方言结果测试尚未运行。`replace("", value)`、负长度和各方言的字符长度语义仍是明确的验证缺口。

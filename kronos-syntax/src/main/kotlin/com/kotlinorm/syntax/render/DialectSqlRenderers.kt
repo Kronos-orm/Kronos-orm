@@ -536,7 +536,7 @@ open class SqliteSqlRenderer : StandardSqlRenderer(SqlDialect.SQLite) {
             super.renderFunction(
                 expr.copy(
                     name = SqlIdentifier.of("SUBSTR"),
-                    args = listOf(source, SqlExpr.Unary(SqlUnaryOperator.Negative, length))
+                    args = listOf(source, SqlExpr.Unary(SqlUnaryOperator.Negative, length), length)
                 )
             )
         } else {
@@ -722,7 +722,7 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
                 super.renderFunction(
                     expr.copy(
                         name = SqlIdentifier.of("SUBSTR"),
-                        args = listOf(source, SqlExpr.Unary(SqlUnaryOperator.Negative, length))
+                        args = listOf(source, SqlExpr.Unary(SqlUnaryOperator.Negative, length), length)
                     )
                 )
             } else {

@@ -27,6 +27,7 @@ import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
 import com.kotlinorm.compiler.utils.ErrorMessages
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+import com.kotlinorm.compiler.utils.KotlinSqlFunctionKind
 import com.kotlinorm.compiler.utils.NonNullAnnotationFqName
 import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationFqName
 import com.kotlinorm.compiler.utils.SelectAliasFunctionName
@@ -42,7 +43,9 @@ import com.kotlinorm.compiler.utils.funcName
 import com.kotlinorm.compiler.utils.getValueArgumentSafe
 import com.kotlinorm.compiler.utils.irListOf
 import com.kotlinorm.compiler.utils.isKronosFunction
+import com.kotlinorm.compiler.utils.kotlinSqlFunctionReceiverArgument
 import com.kotlinorm.compiler.utils.kronosFunctionName
+import com.kotlinorm.compiler.utils.kotlinSqlFunctionRuleOrNull
 import com.kotlinorm.compiler.utils.mapTypeToKColumnType
 import com.kotlinorm.compiler.utils.valueArguments
 import com.kotlinorm.compiler.backend.transformers.getTableNameExpr
@@ -312,6 +315,9 @@ private fun buildInsertSelectValue(
     return when (valueExpression) {
         is IrPropertyReference -> buildFieldFromPropertyRef(valueExpression, errorReporter)
         is IrCall -> when {
+            valueExpression.isKotlinSqlFunctionFieldCall() ->
+                buildKronosFunctionExpr(irFunction, valueExpression, errorReporter)
+
             valueExpression.origin == IrStatementOrigin.GET_PROPERTY ->
                 buildFieldFromPropertyAccess(valueExpression, errorReporter)
 
@@ -843,11 +849,13 @@ fun buildKronosFunctionExpr(
     irFunction: IrFunction,
     call: IrCall,
     errorReporter: ErrorReporter,
-    functionName: String = call.operatorFunctionName() ?: call.kronosFunctionName()
+    functionName: String = call.operatorFunctionName() ?: call.kronosFunctionName(),
+    receiverOverride: IrExpression? = null
 ): IrExpression {
     val windowReceiver = call.windowReceiverCall()
     val sourceCall = windowReceiver ?: call
-    val effectiveFunctionName = windowReceiver?.kronosFunctionName() ?: functionName
+    val kotlinSqlFunctionRule = sourceCall.kotlinSqlFunctionRuleOrNull()
+    val effectiveFunctionName = kotlinSqlFunctionRule?.sqlFunctionName ?: windowReceiver?.kronosFunctionName() ?: functionName
     val window = if (windowReceiver != null) {
         buildSqlWindow(irFunction, call, errorReporter)
     } else {
@@ -855,26 +863,66 @@ fun buildKronosFunctionExpr(
     }
     val args = mutableListOf<IrExpression>()
 
-    fun processArg(arg: IrExpression) {
-        val expression = when {
+    fun processArg(arg: IrExpression): IrExpression =
+        when {
             arg is IrCall && arg.isFunctionProjectionCall() ->
                 buildKronosFunctionExpr(irFunction, arg, errorReporter)
             arg.isKronosFieldExpression() ->
                 analyzeAndBuildFields(irFunction, arg, errorReporter).firstOrNull() ?: arg.deepCopyWithSymbols()
             else -> arg.deepCopyWithSymbols()
         }
-        args += expression
-    }
 
-    (sourceCall.operatorOperands().takeIf { sourceCall.operatorFunctionName() != null }
-        ?: sourceCall.flattenValueArguments())
-        .forEach(::processArg)
+    val functionArgs = kotlinSqlFunctionRule?.let { rule ->
+        buildKotlinSqlFunctionArguments(rule, sourceCall, receiverOverride, ::processArg)
+    } ?: (sourceCall.operatorOperands().takeIf { sourceCall.operatorFunctionName() != null }
+        ?: sourceCall.flattenValueArguments()).map(::processArg)
+    args += functionArgs
 
     return builder.irCall(kronosFunctionCallWindowArgsSymbol).apply {
         dispatchReceiver = builder.irGetObject(kronosFunctionExpressionsSymbol)
         arguments[1] = builder.irString(effectiveFunctionName)
         arguments[2] = irListOf(context.irBuiltIns.anyNType, args)
         arguments[3] = window
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildKotlinSqlFunctionArguments(
+    rule: com.kotlinorm.compiler.utils.KotlinSqlFunctionRule,
+    call: IrCall,
+    receiverOverride: IrExpression?,
+    processArg: (IrExpression) -> IrExpression
+): List<IrExpression> {
+    val receiver = receiverOverride ?: call.kotlinSqlFunctionReceiverArgument(rule) ?: return emptyList()
+    val source = processArg(receiver)
+    val valueArgs = call.valueArguments.take(rule.sqlValueArgumentCount).map { argument ->
+        argument?.let(processArg) ?: return emptyList()
+    }
+
+    fun function(functionName: String, args: List<IrExpression>): IrExpression =
+        builder.irCall(kronosFunctionCallWindowArgsSymbol).apply {
+            dispatchReceiver = builder.irGetObject(kronosFunctionExpressionsSymbol)
+            arguments[1] = builder.irString(functionName)
+            arguments[2] = irListOf(context.irBuiltIns.anyNType, args)
+            arguments[3] = builder.irNull()
+        }
+
+    return when (rule.kind) {
+        KotlinSqlFunctionKind.Direct -> listOf(source) + valueArgs
+        KotlinSqlFunctionKind.SubstringFrom -> {
+            val oneBasedStart = function("add", listOf(valueArgs[0], builder.irInt(1)))
+            listOf(
+                source,
+                oneBasedStart,
+                function("sub", listOf(builder.irInt(Int.MAX_VALUE), oneBasedStart.deepCopyWithSymbols()))
+            )
+        }
+        KotlinSqlFunctionKind.SubstringRange -> listOf(
+            source,
+            function("add", listOf(valueArgs[0], builder.irInt(1))),
+            function("sub", listOf(valueArgs[1], valueArgs[0].deepCopyWithSymbols()))
+        )
     }
 }
 
@@ -891,7 +939,21 @@ context(context: IrPluginContext)
 private fun IrCall.isFunctionProjectionCall(): Boolean =
     (operatorFunctionName() != null && (extensionReceiverArgument ?: dispatchReceiverArgument)?.type?.isKPojoType() != true) ||
         symbol.owner.name.asString() == WindowOverFunctionName ||
-        isKronosFunction()
+        isKronosFunction() ||
+        isKotlinSqlFunctionFieldCall()
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+private fun IrCall.isKotlinSqlFunctionFieldCall(): Boolean {
+    val rule = kotlinSqlFunctionRuleOrNull() ?: return false
+    val receiver = kotlinSqlFunctionReceiverArgument(rule) ?: return false
+    return receiver.isKotlinSqlFunctionSource()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+private fun IrExpression.isKotlinSqlFunctionSource(): Boolean =
+    isKronosSourceProperty() || (this is IrCall && isKotlinSqlFunctionFieldCall())
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrCall.windowReceiverCall(): IrCall? {
@@ -1106,7 +1168,7 @@ fun IrExpression.isKronosFieldExpression(): Boolean {
     return when {
         isKronosSourceProperty() -> true
         this !is IrCall -> false
-        isKronosFunction() -> true
+        isKronosFunction() || isKotlinSqlFunctionFieldCall() -> true
         else -> operatorFunctionName() != null
     }
 }

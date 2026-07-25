@@ -303,6 +303,12 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     fun nativeStringCaseFunctions() = box("nativeStringCaseFunctions")
 
     /**
+     * Verifies native Kotlin String receiver functions lower to complete condition expressions.
+     */
+    @Test
+    fun nativeStringReceiverFunctions() = box("nativeStringReceiverFunctions")
+
+    /**
      * Verifies callable boundaries remain outside Iterable predicate lowering.
      */
     @Test

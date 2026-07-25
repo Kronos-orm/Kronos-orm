@@ -30,6 +30,7 @@ import com.kotlinorm.compiler.utils.getValueArgumentSafe
 import com.kotlinorm.compiler.utils.irListOf
 import com.kotlinorm.compiler.utils.isKronosFunction
 import com.kotlinorm.compiler.utils.isKronosConditionValueAccess
+import com.kotlinorm.compiler.utils.kotlinSqlFunctionReceiverArgument
 import com.kotlinorm.compiler.utils.kotlinSqlFunctionRuleOrNull
 import com.kotlinorm.compiler.utils.valueArguments
 import com.kotlinorm.compiler.utils.valueParameters
@@ -165,7 +166,7 @@ private data class ConditionOperand(
 )
 
 private data class KotlinSqlFunctionSource(
-    val functionName: String,
+    val call: IrCall,
     val source: IrExpression
 )
 
@@ -776,13 +777,13 @@ private fun buildKotlinSqlFunctionExpression(
     source: KotlinSqlFunctionSource,
     errorReporter: ErrorReporter
 ): IrExpression? {
-    val field = extractFieldExpression(irFunction, source.source, errorReporter) ?: return null
-    val function = builder.irCall(kronosFunctionCallWindowArgsSymbol).apply {
-        dispatchReceiver = builder.irGetObject(kronosFunctionExpressionsSymbol)
-        arguments[1] = builder.irString(source.functionName)
-        arguments[2] = irListOf(context.irBuiltIns.anyNType, listOf(field))
-        arguments[3] = builder.irNull()
-    }
+    if (extractFieldExpression(irFunction, source.source, errorReporter) == null) return null
+    val function = buildKronosFunctionExpr(
+        irFunction = irFunction,
+        call = source.call,
+        errorReporter = errorReporter,
+        receiverOverride = source.source
+    )
     return builder.irCall(kronosFunctionExprGetterSymbol).apply {
         dispatchReceiver = function
     }
@@ -856,9 +857,9 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
 private fun IrExpression.kotlinSqlFunctionSourceOrNull(): KotlinSqlFunctionSource? {
     val call = this as? IrCall ?: return null
     val rule = call.kotlinSqlFunctionRuleOrNull() ?: return null
-    val receiver = call.extensionReceiverArgument ?: return null
+    val receiver = call.kotlinSqlFunctionReceiverArgument(rule) ?: return null
     if (receiver is IrCall && receiver.isKronosConditionValueAccess()) return null
-    return KotlinSqlFunctionSource(rule.sqlFunctionName, receiver)
+    return KotlinSqlFunctionSource(call, receiver)
 }
 
 private fun IrExpression.kotlinSqlFunctionSourceForConditionOrNull(): KotlinSqlFunctionSource? =
@@ -873,7 +874,8 @@ private fun IrBlock.safeCallKotlinSqlFunctionSourceOrNull(): KotlinSqlFunctionSo
     val nullBranch = whenExpression.branches.singleOrNull { it.result.isLiteralNullExpression() } ?: return null
     val functionBranch = whenExpression.branches.singleOrNull { it !== nullBranch } ?: return null
     val functionCall = functionBranch.result.kotlinSqlFunctionCallOrNull() ?: return null
-    val receiver = functionCall.extensionReceiverArgument ?: return null
+    val rule = functionCall.kotlinSqlFunctionRuleOrNull() ?: return null
+    val receiver = functionCall.kotlinSqlFunctionReceiverArgument(rule) ?: return null
 
     val nullGuard = nullBranch.condition.nullGuard()
     val functionGuard = functionBranch.condition.nullGuard()
@@ -898,7 +900,7 @@ private fun IrBlock.safeCallKotlinSqlFunctionSourceOrNull(): KotlinSqlFunctionSo
     if (!matchesGuard) return null
 
     val source = receiver.safeCallTemporarySource() ?: receiver
-    return KotlinSqlFunctionSource(functionCall.kotlinSqlFunctionRuleOrNull()?.sqlFunctionName ?: return null, source)
+    return KotlinSqlFunctionSource(functionCall, source)
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)

@@ -131,5 +131,7 @@ CREATE INDEX `idx_user_name` ON `tb_user` (`name`) USING BTREE
 | MySQL | Use `type = "UNIQUE"` for unique indexes. `method = "BTREE"` or `"HASH"` is rendered after the column list. `FULLTEXT` and `SPATIAL` can be passed through `type`. |
 | PostgreSQL | Use `method = "BTREE"`, `"HASH"`, `"GIST"`, `"SPGIST"`, `"GIN"`, or `"BRIN"` when the database supports it. `concurrently = true` renders `CREATE INDEX CONCURRENTLY`. |
 | SQLite | Use blank `type`/`method` or `type = "UNIQUE"`. SQLite create-table DDL uses `CREATE INDEX IF NOT EXISTS`. |
+| H2 | Use blank `type`/`method` or `type = "UNIQUE"`. The default normal-index method is `BTREE`. |
 | SQL Server | Use `type = "CLUSTERED"`, `"NONCLUSTERED"`, `"XML"`, or `"SPATIAL"` according to the target table. `method = "UNIQUE"` also marks the index as unique. |
 | Oracle | Use `type = "UNIQUE"` or `"BITMAP"` when needed. Oracle identifiers are rendered with the Oracle dialect rules. |
+| DM8 | Use `type = "UNIQUE"` for unique indexes. Use database-specific migrations for additional DM8 index options. |

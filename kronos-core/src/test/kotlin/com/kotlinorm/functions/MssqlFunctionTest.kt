@@ -72,13 +72,13 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testTruncInSelect() {
         val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
-        assertEquals("SELECT ROUND([score], 2) AS trunc FROM [tb_user] WHERE [deleted] = 0", sql)
+        assertEquals("SELECT ROUND([score], 2, 1) AS trunc FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
     fun testTruncInWhere() {
         val (sql, _) = user.select { it.id }.where { f.trunc(it.score, 0) > 50 }.build()
-        assertEquals("SELECT [id] FROM [tb_user] WHERE ROUND([score], 0) > :truncMin AND [deleted] = 0", sql)
+        assertEquals("SELECT [id] FROM [tb_user] WHERE ROUND([score], 0, 1) > :truncMin AND [deleted] = 0", sql)
     }
 
     // String functions with MSSQL-specific behavior
@@ -103,6 +103,6 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testRepeatInWhere() {
         val (sql, _) = user.select { it.id }.where { f.repeat("x", 3) == "xxx" }.build()
-        assertEquals("SELECT [id] FROM [tb_user] WHERE REPLICATE('x', 3) = :repeat AND [deleted] = 0", sql)
+        assertEquals("SELECT [id] FROM [tb_user] WHERE REPLICATE(N'x', 3) = :repeat AND [deleted] = 0", sql)
     }
 }

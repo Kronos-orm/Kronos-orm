@@ -31,8 +31,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
-          cache-dependency-path: kronos-docs/pnpm-lock.yaml
 
       - name: Build merged documentation site
         run: bash kronos-docs/deploy-docs.sh

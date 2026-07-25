@@ -93,6 +93,12 @@ class SelectBoxTest : AbstractKronosJvmBoxSuite("select") {
     fun functionAndOperatorProjectionMatrix() = box("functionAndOperatorProjectionMatrix")
 
     /**
+     * Verifies native Kotlin String receiver functions lower to complete select projections.
+     */
+    @Test
+    fun nativeStringReceiverFunctions() = box("nativeStringReceiverFunctions")
+
+    /**
      * Verifies collection literal, listOf, and arrayOf projection items preserve mixed projection forms.
      */
     @Test

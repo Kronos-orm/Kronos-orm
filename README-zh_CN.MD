@@ -54,7 +54,7 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 
 - **零反射** — 编译器插件在构建期生成所有映射代码，无运行时开销，无 GC 压力。
 - **Kotlin 原生 DSL** — 直接使用 `==`、`>`、`<`、`in`、`like` 编写条件，无需 `.eq()`、`.gt()`、`.lt()`。
-- **多数据库** — 内置 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 方言。
+- **多数据库** — 内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言。
 - **功能完备** — 事务、级联（1:1 / 1:N / M:N）、表结构同步、序列化、跨库查询。
 - **内置策略** — 逻辑删除、乐观锁、创建/更新时间戳，均可自定义。
 - **框架与平台接入** — Spring Boot、Ktor、Vert.x、Solon 和 Android/JVM SQLite。
@@ -262,7 +262,7 @@ dependencies {
 
 ## 支持的数据库
 
-MySQL | PostgreSQL | SQLite | SQL Server | Oracle
+MySQL | PostgreSQL | SQLite | H2 | SQL Server | Oracle | DM8（达梦）
 
 > Kronos 会根据当前数据库方言选择 SQL 渲染和表结构语句。
 
@@ -274,12 +274,28 @@ MySQL | PostgreSQL | SQLite | SQL Server | Oracle
 
 ```kotlin
 import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+`Kronos.connect(...)`返回`KronosJdbcWrapper`并注册为默认数据源。
+
+应用服务使用连接池时，添加所选连接池和JDBC Driver依赖后，可以直接提供其`DataSource`：
+
+```kotlin
+import com.kotlinorm.Kronos
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 
 Kronos.dataSource = { KronosJdbcWrapper(SomeDataSource()) }
 ```
 
-`KronosJdbcWrapper`也可以传入`databaseType = DBType.Mysql`，并通过配置block设置JDBC statement、warning处理、参数绑定和结果映射。动态数据源和多数据源配置请参阅[连接数据库](https://kotlinorm.com/#/documentation/zh-CN/database/connect-to-db)。
+`KronosJdbcWrapper`也可以传入`databaseType = DBType.Mysql`和配置block。多数据源或动态数据源场景可以用`DriverManagerDataSource`创建独立wrapper，示例见[数据源包装器](https://kotlinorm.com/#/documentation/zh-CN/database/datasource-wrapper)。
 
 ### Android/JVM SQLite
 

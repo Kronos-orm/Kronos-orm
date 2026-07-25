@@ -22,7 +22,6 @@ import com.kotlinorm.beans.dsl.KTableForInsertSelect.Companion.afterInsertSelect
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KronosFunctionExpr
 import com.kotlinorm.beans.generator.resolveGeneratedPrimaryKeyValue
-import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.JdbcParameterTypeHints
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -68,7 +67,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     internal var allColumns = metadata.allColumns
     private var cascadeEnabled = true
     private var withGeneratedId = false
-    private var identityGeneratedKeyRequest: GeneratedKeyRequest? = null
+    private var identityGeneratedKeyField: Field? = null
     private var sourceQuery: KSelectable<*>? = null
     private var sourceUnion: UnionClause<*>? = null
     private var sourceValueProvider: ((List<Field>) -> List<Any?>)? = null
@@ -129,7 +128,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 operationType = KOperationType.INSERT,
                 statement = finalStatement,
                 stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
-                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId },
+                generatedKeyField = identityGeneratedKeyField.takeIf { withGeneratedId },
                 listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
@@ -159,7 +158,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 operationType = KOperationType.INSERT,
                 statement = statement,
                 stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
-                generatedKeyRequest = identityGeneratedKeyRequest.takeIf { withGeneratedId },
+                generatedKeyField = identityGeneratedKeyField.takeIf { withGeneratedId },
                 listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
@@ -271,7 +270,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     private fun prepareInsertFields(includeUnsetDefaultValueFields: Boolean): MutableList<Field> {
         var databaseGeneratesIdentity = false
-        identityGeneratedKeyRequest = null
+        identityGeneratedKeyField = null
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = primaryKey
 
@@ -290,7 +289,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             databaseGeneratesIdentity = false
         }
         if (databaseGeneratesIdentity) {
-            identityGeneratedKeyRequest = GeneratedKeyRequest(tableName, primaryKeyField.columnName)
+            identityGeneratedKeyField = primaryKeyField
         }
 
         arrayOf(

@@ -6,9 +6,11 @@ serialization = "1.11.0"
 dbcp2 = "2.14.0"
 mysql-jdbc-driver = "9.7.0"
 sqlite-jdbc-driver = "3.53.2.0"
+h2-jdbc-driver = "2.4.240"
 mssql-jdbc-driver = "13.4.0.jre8"
 postgresql-jdbc-driver = "42.7.11"
 oracle-jdbc-driver = "23.26.2.0.0"
+dameng-jdbc-driver = "8.1.4.125"
 gsonVer = "2.14.0"
 dokkaVer = "2.2.0"
 mavenCore = "3.9.16"
@@ -36,9 +38,11 @@ ktx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization
 dbcp2 = { module = "org.apache.commons:commons-dbcp2", version.ref = "dbcp2" }
 driver-jdbc-mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-jdbc-driver" }
 driver-jdbc-sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc-driver" }
+driver-jdbc-h2 = { module = "com.h2database:h2", version.ref = "h2-jdbc-driver" }
 driver-jdbc-mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql-jdbc-driver" }
 driver-jdbc-postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql-jdbc-driver" }
 driver-jdbc-oracle = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc-driver" }
+driver-jdbc-dameng = { module = "com.dameng:DmJdbcDriver8", version.ref = "dameng-jdbc-driver" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gsonVer" }
 maven-core = { module = "org.apache.maven:maven-core", version.ref="mavenCore" }
 maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version = "0.34.0" }

@@ -22,6 +22,7 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosRow
 import com.kotlinorm.orm.insert.InsertClause
 import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.statement.SqlQuery
@@ -54,6 +55,12 @@ abstract class KSelectable<Selected : KPojo>(
     @PublishedApi
     internal open fun prepareFirstResult() = Unit
 
+    /** Maps each result row directly through a wrapper-provided [KronosRow] cursor. */
+    fun <R> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> R
+    ): List<R> = build(wrapper).toList(wrapper, mapper)
+
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
     inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
@@ -68,6 +75,15 @@ abstract class KSelectable<Selected : KPojo>(
         return build(wrapper).first(wrapper, selectedType) as Selected
     }
 
+    /** Maps the first result row directly through a wrapper-provided [KronosRow] cursor. */
+    fun <R> first(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> R
+    ): R {
+        prepareFirstResult()
+        return build(wrapper).first(wrapper, mapper)
+    }
+
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
     inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
@@ -80,6 +96,15 @@ abstract class KSelectable<Selected : KPojo>(
     fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
         prepareFirstResult()
         return build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
+    }
+
+    /** Maps the first result row directly through a wrapper-provided [KronosRow] cursor. */
+    fun <R> firstOrNull(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> R
+    ): R? {
+        prepareFirstResult()
+        return build(wrapper).firstOrNull(wrapper, mapper)
     }
 
     @OptIn(InternalKronosApi::class)

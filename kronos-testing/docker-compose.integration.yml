@@ -65,3 +65,22 @@ services:
       interval: 10s
       timeout: 10s
       retries: 60
+
+  dm8:
+    image: liuys36/dameng@sha256:502f87b59baba598a9b5964bce4387fe3bfd1f9a06fe02b7e8e96a4ad6b53e4e
+    container_name: kronos-testing-dm8
+    environment:
+      SYSDBA_PWD: "${DM_PASSWORD:-DMdba_123}"
+      SYSAUDITOR_PWD: "${DM_SYSAUDITOR_PASSWORD:-DMAuditor_123}"
+    ports:
+      - "${DM_DOCKER_PORT:-5237}:5236"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          printf '%s\n' 'SELECT 1 AS HEALTHCHECK FROM DUAL;' 'exit;' |
+          timeout 10s /opt/dmdbms/bin/disql "SYSDBA/$${SYSDBA_PWD}@127.0.0.1:5236" |
+          grep -Eq '^[[:space:]]*1[[:space:]]+1[[:space:]]*$'
+      interval: 10s
+      timeout: 15s
+      retries: 60

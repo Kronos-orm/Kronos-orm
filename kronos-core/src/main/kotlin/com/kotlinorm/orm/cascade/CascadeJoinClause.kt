@@ -116,6 +116,7 @@ object CascadeJoinClause {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
             if (validReferences.isEmpty()) return@apply // 如果没有级联，直接返回
+            supportsKronosRowMapping = false
             doAfterQuery { queryType, wrapper ->
                 validReferences.forEach { validRef ->
                     when (queryType) {

@@ -1,35 +1,62 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos通过{{ $.keyword("database/datasource-wrapper", ["数据源包装器"]) }}执行数据库操作。`KronosJdbcWrapper`接收任意JDBC `DataSource`，读取数据库元信息，并提供给`Kronos.dataSource`使用。
+Kronos通过{{ $.keyword("database/datasource-wrapper", ["数据源包装器"]) }}执行数据库操作。默认连接直接使用`Kronos.connect(...)`配置。
 
-## 添加`kronos-jdbc-wrapper`
+## 使用JDBC URL连接
 
-项目中已经有JDBC `DataSource`，或可以通过连接池创建`DataSource`时，可以使用`kronos-jdbc-wrapper`。
+在应用启动时调用`Kronos.connect(...)`配置默认数据源。
 
-```kotlin group="kronos-jdbc-wrapper" name="gradle(kts)" icon="gradlekts"
+```kotlin group="Direct JDBC connection" name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+该调用返回已注册的`KronosJdbcWrapper`。
+
+## 添加JDBC依赖
+
+添加`kronos-jdbc-wrapper`和数据库对应的JDBC Driver。
+
+```kotlin group="JDBC dependencies" name="gradle(kts)" icon="gradlekts"
 dependencies {
     implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
 
-```groovy group="kronos-jdbc-wrapper" name="gradle(groovy)" icon="gradle"
+```groovy group="JDBC dependencies" name="gradle(groovy)" icon="gradle"
 dependencies {
     implementation 'com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}'
+    implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
 
-```xml group="kronos-jdbc-wrapper" name="maven" icon="maven"
-<dependency>
-    <groupId>com.kotlinorm</groupId>
-    <artifactId>kronos-jdbc-wrapper</artifactId>
-    <version>{{ $.kronosVersion() }}</version>
-</dependency>
+```xml group="JDBC dependencies" name="maven" icon="maven"
+<dependencies>
+    <dependency>
+        <groupId>com.kotlinorm</groupId>
+        <artifactId>kronos-jdbc-wrapper</artifactId>
+        <version>{{ $.kronosVersion() }}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>${mysql-connector-j.version}</version>
+    </dependency>
+</dependencies>
 ```
 
-## 添加连接池和JDBC Driver
+## 使用连接池
 
-连接池和JDBC Driver选择与数据库服务端、JDK匹配的最新稳定版。
+应用服务使用连接池时，添加与数据库服务端、JDK匹配的连接池和JDBC Driver。
 
 ```kotlin group="Driver" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -153,6 +180,35 @@ dependencies {
 }
 ```
 
+## 配置H2
+
+H2 可以使用内存 JDBC URL 进行本地开发和测试。
+
+```kotlin group="H2" name="H2KronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "org.h2.Driver"
+            url = "jdbc:h2:mem:kronos;DB_CLOSE_DELAY=-1"
+            username = "sa"
+            password = ""
+        }
+    )
+}
+
+Kronos.dataSource = { wrapper }
+```
+
+```kotlin group="H2" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.h2database:h2:<latest-stable>")
+}
+```
+
 ## 配置SQL Server
 
 使用SQL Server JDBC Driver，并按数据库服务端要求设置加密参数。
@@ -208,6 +264,37 @@ Kronos.dataSource = { wrapper }
 ```kotlin group="Oracle" name="Driver coordinate" icon="gradlekts"
 dependencies {
     implementation("com.oracle.database.jdbc:ojdbc8:<latest-stable>")
+}
+```
+
+## 配置DM8（达梦）
+
+使用 DM8 JDBC Driver 和 `DBType.DM8`。
+
+```kotlin group="DM8" name="Dm8KronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        dataSource = BasicDataSource().apply {
+            driverClassName = "dm.jdbc.driver.DmDriver"
+            url = "jdbc:dm://localhost:5236"
+            username = "SYSDBA"
+            password = "******"
+        },
+        databaseType = DBType.DM8
+    )
+}
+
+Kronos.dataSource = { wrapper }
+```
+
+```kotlin group="DM8" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.dameng:DmJdbcDriver8:<latest-stable>")
 }
 ```
 

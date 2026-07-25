@@ -99,7 +99,7 @@ class MysqlFunctionTest : MysqlTestBase() {
     @Test
     fun testMathFunctionLog() {
         val (sql, _) = user.select { f.log(it.score, 10).alias("log") }.build()
-        assertEquals("SELECT LOG(`score`, 10) AS log FROM `tb_user` WHERE `deleted` = 0", sql)
+        assertEquals("SELECT LOG(10, `score`) AS log FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
     @Test

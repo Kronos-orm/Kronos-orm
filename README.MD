@@ -54,7 +54,7 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 
 - **Zero reflection** — Compiler plugin generates all mapping code at build time. No runtime overhead, no GC pressure.
 - **Kotlin-native DSL** — Write conditions with `==`, `>`, `<`, `in`, `like` directly. No `.eq()`, `.gt()`, `.lt()` boilerplate.
-- **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server and Oracle.
+- **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng).
 - **Full-featured** — Transactions, cascading (1:1 / 1:N / M:N), schema sync, serialization, cross-database joins.
 - **Built-in strategies** — Logical deletion, optimistic lock, create/update timestamps. All configurable.
 - **Framework and platform integration** — Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLite.
@@ -262,7 +262,7 @@ Android/JVM support is available in `0.3.0`. It uses `kronos-core`, the Gradle p
 
 ## Supported Databases
 
-MySQL | PostgreSQL | SQLite | SQL Server | Oracle
+MySQL | PostgreSQL | SQLite | H2 | SQL Server | Oracle | DM8 (Dameng)
 
 > Kronos selects SQL rendering and table-structure statements from the active database dialect.
 
@@ -274,12 +274,28 @@ MySQL | PostgreSQL | SQLite | SQL Server | Oracle
 
 ```kotlin
 import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
+```
+
+`Kronos.connect(...)` returns a `KronosJdbcWrapper` and registers it as the default data source.
+
+For an application service, add the selected connection-pool and JDBC driver dependencies, then provide its `DataSource` directly:
+
+```kotlin
+import com.kotlinorm.Kronos
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 
 Kronos.dataSource = { KronosJdbcWrapper(SomeDataSource()) }
 ```
 
-`KronosJdbcWrapper` can also receive `databaseType = DBType.Mysql` and a configuration block for JDBC statement settings, warning handling, parameter binding, and result mapping. See [Connect to Database](https://kotlinorm.com/#/documentation/en/database/connect-to-db) for dynamic / multiple data sources.
+`KronosJdbcWrapper` also accepts `databaseType = DBType.Mysql` and a configuration block. For multiple or dynamic data sources, create independent wrappers with `DriverManagerDataSource`. See [Data Source Wrapper](https://kotlinorm.com/#/documentation/en/database/datasource-wrapper) for examples.
 
 ### Android/JVM SQLite
 
@@ -519,7 +535,7 @@ Kronos provides an AI skill guide that helps coding assistants understand and ge
 
 If the target directory already exists, add `--force` after `degit`.
 
-Claude Code loads project skills from `.claude/skills/`; Codex loads project skills from `.agents/skills/`. Use the default command for Windsurf and other tools that read agent skills from `.agents/skills/`.
+Claude Code loads project skills from `.claude/skills/`; Codex loads project skills from `.codex/skills/`. Use the default command for Windsurf and other tools that read agent skills from `.agents/skills/`.
 
 --------
 

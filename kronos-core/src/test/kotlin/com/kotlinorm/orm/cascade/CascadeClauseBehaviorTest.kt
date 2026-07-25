@@ -6,7 +6,6 @@ import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.generator.customIdGenerator
-import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
@@ -339,11 +338,11 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             wrapper.actionParams
         )
         assertEquals(
-            listOf<GeneratedKeyRequest?>(
-                GeneratedKeyRequest("cascade_insert_parent", "id"),
-                GeneratedKeyRequest("cascade_insert_child", "id")
+            listOf<Field?>(
+                Field("id", tableName = "cascade_insert_parent"),
+                Field("id", tableName = "cascade_insert_child")
             ),
-            wrapper.actionGeneratedKeyRequests
+            wrapper.actionGeneratedKeyFields
         )
     }
 
@@ -376,11 +375,11 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             wrapper.actionParams
         )
         assertEquals(
-            listOf<GeneratedKeyRequest?>(
-                GeneratedKeyRequest("cascade_insert_reverse_parent", "id"),
-                GeneratedKeyRequest("cascade_insert_reverse_child", "id")
+            listOf<Field?>(
+                Field("id", tableName = "cascade_insert_reverse_parent"),
+                Field("id", tableName = "cascade_insert_reverse_child")
             ),
-            wrapper.actionGeneratedKeyRequests
+            wrapper.actionGeneratedKeyFields
         )
     }
 
@@ -408,8 +407,8 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             wrapper.actionParams
         )
         assertEquals(
-            listOf<GeneratedKeyRequest?>(null, null),
-            wrapper.actionGeneratedKeyRequests
+            listOf<Field?>(null, null),
+            wrapper.actionGeneratedKeyFields
         )
     }
 
@@ -451,8 +450,8 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             wrapper.actionParams
         )
         assertEquals(
-            listOf<GeneratedKeyRequest?>(null, null),
-            wrapper.actionGeneratedKeyRequests
+            listOf<Field?>(null, null),
+            wrapper.actionGeneratedKeyFields
         )
     }
 
@@ -484,8 +483,8 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             wrapper.actionParams
         )
         assertEquals(
-            listOf<GeneratedKeyRequest?>(null, null),
-            wrapper.actionGeneratedKeyRequests
+            listOf<Field?>(null, null),
+            wrapper.actionGeneratedKeyFields
         )
     }
 
@@ -517,8 +516,8 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             wrapper.actionParams
         )
         assertEquals(
-            listOf<GeneratedKeyRequest?>(null, null),
-            wrapper.actionGeneratedKeyRequests
+            listOf<Field?>(null, null),
+            wrapper.actionGeneratedKeyFields
         )
     }
 
@@ -560,8 +559,8 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
                 wrapper.actionParams
             )
             assertEquals(
-                listOf<GeneratedKeyRequest?>(null, null),
-                wrapper.actionGeneratedKeyRequests
+                listOf<Field?>(null, null),
+                wrapper.actionGeneratedKeyFields
             )
         } finally {
             customIdGenerator = previousGenerator
@@ -1322,7 +1321,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val queryParams = mutableListOf<Map<String, Any?>>()
         val actionSql = mutableListOf<String>()
         val actionParams = mutableListOf<Map<String, Any?>>()
-        val actionGeneratedKeyRequests = mutableListOf<GeneratedKeyRequest?>()
+        val actionGeneratedKeyFields = mutableListOf<Field?>()
         override val url: String = "jdbc:mysql://localhost:3306/kronos"
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
@@ -1342,7 +1341,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         override fun update(task: KAtomicActionTask): Int {
             actionSql += task.sql
             actionParams += task.paramMap
-            actionGeneratedKeyRequests += task.generatedKeyRequest
+            actionGeneratedKeyFields += task.generatedKeyField
             generatedKeys.removeFirstOrNull()?.let { generatedKey ->
                 task.generatedKeys += generatedKey
                 task.lastInsertId = generatedKey

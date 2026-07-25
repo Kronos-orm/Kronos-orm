@@ -14,6 +14,7 @@ import com.kotlinorm.syntax.group.SqlGroupingItem
 import com.kotlinorm.syntax.order.SqlNullsOrdering
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.syntax.order.SqlOrderingItem
+import com.kotlinorm.syntax.statement.SqlAssignmentTarget
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.syntax.statement.SqlInsertMode
@@ -181,6 +182,7 @@ class PrettySqlRenderer(
                 SqlDialectFamily.MySql -> renderPrettyMysqlUpsert(statement)
                 SqlDialectFamily.PostgreSql -> renderPrettyPostgresqlUpsert(statement)
                 SqlDialectFamily.SQLite -> renderPrettySqliteUpsert(statement)
+                SqlDialectFamily.H2 -> renderPrettyH2Upsert(statement)
                 SqlDialectFamily.Standard,
                 SqlDialectFamily.Oracle,
                 SqlDialectFamily.SqlServer -> renderPrettyMergeUpsert(statement)
@@ -292,6 +294,40 @@ class PrettySqlRenderer(
         }
     }
 
+    private fun renderPrettyH2Upsert(statement: SqlDmlStatement.Upsert): String = buildString {
+        append("MERGE INTO ")
+        append(renderCompactTable(statement.table.copy(alias = SqlTableAlias("t1"))))
+        append("\nUSING (VALUES (")
+        append(statement.values.joinToString(", ") { renderExprPretty(it) })
+        append(")) ")
+        append(renderTableAlias(SqlTableAlias("t2", statement.columns.map { it.canonical })))
+        append("\nON (")
+        append(statement.primaryKeys.joinToString(" AND ") {
+            "${quoteIdent("t1")}.${renderIdentifier(it)} = ${quoteIdent("t2")}.${renderIdentifier(it)}"
+        })
+        append(")")
+        when (val action = statement.action) {
+            SqlUpsertAction.DoNothing -> {}
+            is SqlUpsertAction.Update -> {
+                append("\nWHEN MATCHED")
+                action.where?.let { append(" AND ${renderMergeSourceExpr(it, statement.table.identifier)}") }
+                append(" THEN UPDATE SET\n")
+                append(action.setPairs.joinToString(",\n") {
+                    "${renderIndent(1)}${renderH2AssignmentTarget(it.target)} = ${renderPrettyMergeSourceExpr(it.value)}"
+                })
+            }
+        }
+        append("\nWHEN NOT MATCHED THEN INSERT ")
+        append(renderColumnList(statement.columns))
+        append("\nVALUES (")
+        append(statement.columns.joinToString(", ") { "${quoteIdent("t2")}.${renderIdentifier(it)}" })
+        append(")")
+        statement.returning?.let {
+            append("\n")
+            append(renderReturning(it))
+        }
+    }
+
     private fun renderPrettyMysqlUpsert(statement: SqlDmlStatement.Upsert): String = buildString {
         append("INSERT INTO ")
         append(renderCompactTable(statement.table))
@@ -379,6 +415,10 @@ class PrettySqlRenderer(
     ): String = when (target) {
         is com.kotlinorm.syntax.statement.SqlAssignmentTarget.Column ->
             renderQualifiedIdentifier(target.qualifier ?: qualifier, target.identifier)
+    }
+
+    private fun renderH2AssignmentTarget(target: SqlAssignmentTarget): String = when (target) {
+        is SqlAssignmentTarget.Column -> renderIdentifier(target.identifier)
     }
 
     private fun SqlRenderer.renderWindowItemForPretty(item: com.kotlinorm.syntax.expr.SqlWindowItem): String =

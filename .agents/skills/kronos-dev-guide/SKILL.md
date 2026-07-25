@@ -60,7 +60,7 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
 | `kronos-logging` | Pluggable logging (SLF4J/JUL/Commons/Android) | `KronosLoggerApp.kt` |
 | `kronos-jdbc-wrapper` | Default JDBC DataSource wrapper | `KronosJdbcWrapper.kt` |
 | `kronos-codegen` | DB schema → KPojo Kotlin files | `ConfigReader.kt`, `TemplateConfig.kt` |
-| `kronos-testing` | Integration tests (real DBs) | MySQL/Postgres/SQLite/Oracle/MSSQL tests |
+| `kronos-testing` | Integration tests (real and in-process DBs) | MySQL/Postgres/SQLite/H2/Oracle/MSSQL/DM8 tests |
 | `kronos-idea-plugin` | IntelliJ plugin UI, Code Generator, Templates, and projection completion | `plugin.xml`, `KronosProjectionCompletionContributor`, `MainPanel` |
 | `kronos-docs` | Documentation website (Angular/ng-doc) | `pnpm install && ng build` |
 | `build-logic` | Convention plugins (publishing, dokka) | `publishing.gradle.kts`, `dokka-convention.gradle.kts` |

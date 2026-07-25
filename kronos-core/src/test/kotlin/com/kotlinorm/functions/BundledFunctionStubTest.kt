@@ -9,6 +9,13 @@ import kotlin.test.assertEquals
 class BundledFunctionStubTest {
 
     @Test
+    fun `bin stub has a binary text result type`() {
+        val value: String? = with(MathFunctions) { FunctionHandler.bin(1) }
+
+        assertEquals(null, value)
+    }
+
+    @Test
     fun `math function runtime stubs return null`() {
         val values = with(MathFunctions) {
             listOf(

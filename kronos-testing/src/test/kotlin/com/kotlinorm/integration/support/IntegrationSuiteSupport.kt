@@ -62,9 +62,11 @@ abstract class IntegrationSuiteSupport(
         when (wrapper.dbType) {
             DBType.Mysql -> "`$identifier`"
             DBType.Mssql -> "[$identifier]"
-            DBType.Oracle -> "\"${identifier.uppercase()}\""
+            DBType.Oracle,
+            DBType.DM8 -> "\"${identifier.uppercase()}\""
             DBType.Postgres,
-            DBType.SQLite -> "\"$identifier\""
+            DBType.SQLite,
+            DBType.H2 -> "\"$identifier\""
             else -> identifier
         }
 

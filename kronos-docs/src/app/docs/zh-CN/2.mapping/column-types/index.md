@@ -123,8 +123,10 @@ DDL 类型片段：
 | MySQL | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | PostgreSQL | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | SQLite | `TEXT` | `NUMERIC` |
+| H2 | `VARCHAR(80)` | `NUMERIC(12,2)` |
 | SQLServer | `VARCHAR(80)` | `DECIMAL(12,2)` |
 | Oracle | `VARCHAR2(80)` | `NUMBER(12,2)` |
+| DM8 | `VARCHAR2(80)` | `NUMBER(12,2)` |
 
 ## 使用原生 JSON 列
 
@@ -160,8 +162,10 @@ DDL 类型片段：
 | MySQL | `JSON` |
 | PostgreSQL | `JSONB` |
 | SQLite | `TEXT` |
+| H2 | `JSON` |
 | SQLServer | `JSON` |
 | Oracle | `JSON` |
+| DM8 | `JSON` |
 
 > **Note**
 > 注册的 JSON 配置会将 `payload` 作为 JSON 字符串通过 JDBC 写入。{{ $.annotation("ColumnType") }} 用于生成表结构中的列类型。保存 JSON 文本的表使用默认 `VARCHAR` 列即可。

@@ -384,26 +384,26 @@ data class User(
 
 `@Default` 会把内容原样写入表结构 DDL，参数不是 Kotlin 值，Kronos 也不会自动把一种数据库方言的表达式转换成另一种方言。下面按自动推断出的 Kotlin 类型列出推荐的默认值字面量：
 
-| Kotlin 类型 / 推断出的 `KColumnType` | MySQL | PostgreSQL | SQLite | SQLServer | Oracle |
-|--------------------------------------|-------|------------|--------|-----------|--------|
-| `Boolean` / `BIT` | `0` / `1` | `false` / `true` | `0` / `1` | `0` / `1` | `0` / `1` |
-| `Byte`、`Short`、`Int`、`Long` / 整数类型 | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` |
-| `Float`、`Double`、`BigDecimal` / 数值类型 | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` |
-| `Char`、`String`、其他映射为 `VARCHAR` 的类型 | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` |
-| `Date`、`LocalDate` / `DATE` | `'2026-01-02'` | `DATE '2026-01-02'` | `'2026-01-02'` | `CONVERT(date, '2026-01-02')` | `DATE '2026-01-02'` |
-| `LocalTime` / `TIME` | `'12:34:56'` | `TIME '12:34:56'` | `'12:34:56'` | `CONVERT(time, '12:34:56')` | `TIMESTAMP '1970-01-01 12:34:56'` |
-| `LocalDateTime` / `DATETIME` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | `CONVERT(datetime2, '2026-01-02T03:04:05')` | `TIMESTAMP '2026-01-02 03:04:05'` |
-| `java.sql.Timestamp` / `TIMESTAMP` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | SQLServer 的 `rowversion` 不支持用户默认值 | `TIMESTAMP '2026-01-02 03:04:05'` |
-| `ByteArray` / `BLOB` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` |
+| Kotlin 类型 / 推断出的 `KColumnType` | MySQL | PostgreSQL | SQLite | H2 | SQLServer | Oracle | DM8 |
+|--------------------------------------|-------|------------|--------|----|-----------|--------|-----|
+| `Boolean` / `BIT` | `0` / `1` | `false` / `true` | `0` / `1` | `false` / `true` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Byte`、`Short`、`Int`、`Long` / 整数类型 | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` | `0` / `1` |
+| `Float`、`Double`、`BigDecimal` / 数值类型 | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` | `0.0` / `1.5` |
+| `Char`、`String`、其他映射为 `VARCHAR` 的类型 | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` | `'text'` |
+| `Date`、`LocalDate` / `DATE` | `'2026-01-02'` | `DATE '2026-01-02'` | `'2026-01-02'` | `DATE '2026-01-02'` | `CONVERT(date, '2026-01-02')` | `DATE '2026-01-02'` | `DATE '2026-01-02'` |
+| `LocalTime` / `TIME` | `'12:34:56'` | `TIME '12:34:56'` | `'12:34:56'` | `TIME '12:34:56'` | `CONVERT(time, '12:34:56')` | `TIMESTAMP '1970-01-01 12:34:56'` | `TIMESTAMP '1970-01-01 12:34:56'` |
+| `LocalDateTime` / `DATETIME` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `CONVERT(datetime2, '2026-01-02T03:04:05')` | `TIMESTAMP '2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `java.sql.Timestamp` / `TIMESTAMP` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | `'2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` | SQLServer 的 `rowversion` 不支持用户默认值 | `TIMESTAMP '2026-01-02 03:04:05'` | `TIMESTAMP '2026-01-02 03:04:05'` |
+| `ByteArray` / `BLOB` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` |
 
 例如，Boolean 默认值必须使用目标数据库接受的表达式：
 
 ```kotlin
-// PostgreSQL
+// PostgreSQL 或 H2
 @Default("false")
 var enabled: Boolean? = null
 
-// MySQL、SQLite、SQLServer 或 Oracle
+// MySQL、SQLite、SQLServer、Oracle 或 DM8
 @Default("0")
 var enabled: Boolean? = null
 ```

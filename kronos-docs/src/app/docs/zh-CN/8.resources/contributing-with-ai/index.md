@@ -37,7 +37,7 @@
 ```text group="Context" name="files"
 .agents/skills/kronos-dev-guide/SKILL.md
 .agents/skills/kronos-dev-guide/references/<needed-topic>.md
-DOCS_REFACTOR_TASK_LIST/<task>.md 或其他当前任务清单
+<任务说明>.md
 <module>/README.md
 <module>/src/test/...
 ```

@@ -23,7 +23,7 @@ graph LR
     C --> E[Kronos-gradle-plugin]
     A --> F[Kronos-data-source-wrapper]
     F --> G[DataSource]
-    G --> H[MySQL, SQLite, PostgreSQL, Oracle, SQL Server, etc.]
+    G --> H[MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, DM8]
     A --> K[Kronos-logging, Kronos-codegen and Other Plugins]
 ```
 

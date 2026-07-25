@@ -1,13 +1,19 @@
 package com.kotlinorm.integration.suites
 
 import com.kotlinorm.functions.bundled.exts.MathFunctions.mod
+import com.kotlinorm.functions.bundled.exts.MathFunctions.log
+import com.kotlinorm.functions.bundled.exts.MathFunctions.trunc
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.groupConcat
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.max
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.min
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
+import com.kotlinorm.functions.bundled.exts.StringFunctions.join
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.functions.bundled.exts.StringFunctions.lower
+import com.kotlinorm.functions.bundled.exts.StringFunctions.right
 import com.kotlinorm.functions.bundled.exts.StringFunctions.upper
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
 import com.kotlinorm.integration.fixtures.IntegrationAggregateProjection
 import com.kotlinorm.integration.fixtures.IntegrationAggregateRecord
 import com.kotlinorm.integration.fixtures.IntegrationFunctionProjection
@@ -143,6 +149,61 @@ abstract class FunctionAndParameterIntegrationSuite(
             IntegrationUser()
                 .select { f.max(it.score).alias("maxScore") }
                 .first<Int>(),
+        )
+    }
+
+    @Test
+    fun dialectLoweredFunctionsPreserveTheirPublicSemantics() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        assertEquals(
+            "def",
+            IntegrationUser()
+                .select { f.right("abcdef", 3).alias("rightValue") }
+                .first<String>(),
+        )
+        assertEquals(
+            "a-b",
+            IntegrationUser()
+                .select { f.join("-", "a", null, "b").alias("joinedValue") }
+                .first<String>(),
+        )
+        assertEquals(
+            2.0,
+            IntegrationUser()
+                .select { f.log(100, 10).alias("logValue") }
+                .first<Double>(),
+            absoluteTolerance = 0.000001,
+        )
+        assertEquals(
+            12.34,
+            IntegrationUser()
+                .select { f.trunc(12.349, 2).alias("truncatedValue") }
+                .first<Double>(),
+            absoluteTolerance = 0.000001,
+        )
+        assertEquals(
+            "Ada",
+            IntegrationUser()
+                .select { f.groupConcat(it.name).alias("groupedName") }
+                .where { it.id == 1 }
+                .first<String>(),
+        )
+        assertEquals(
+            listOf(1, 2, 3, 4),
+            IntegrationUser()
+                .select {
+                    [
+                        it.id,
+                        f.rowNumber()
+                            .over { orderBy(it.id.asc()) }
+                            .alias("rn")
+                    ]
+                }
+                .orderBy { it.rn.asc() }
+                .toList()
+                .map { it.rn },
         )
     }
 }

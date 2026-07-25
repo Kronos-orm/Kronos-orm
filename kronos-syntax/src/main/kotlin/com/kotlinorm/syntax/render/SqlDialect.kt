@@ -27,6 +27,11 @@ data class SqlDialect(
             datetimeParametersAsSqlTimestamp = true
         )
         val SQLite = SqlDialect(limitStyle = SqlLimitStyle.LimitOffset, family = SqlDialectFamily.SQLite)
+        val H2 = SqlDialect(
+            family = SqlDialectFamily.H2,
+            nativeBooleanValues = true,
+            datetimeParametersAsSqlTimestamp = true
+        )
         val Oracle = SqlDialect(family = SqlDialectFamily.Oracle)
         val SqlServer = SqlDialect("[", "]", family = SqlDialectFamily.SqlServer)
     }
@@ -37,6 +42,7 @@ enum class SqlDialectFamily {
     MySql,
     PostgreSql,
     SQLite,
+    H2,
     Oracle,
     SqlServer
 }

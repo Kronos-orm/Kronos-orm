@@ -41,10 +41,14 @@ jobs:
             echo "ORACLE_PASSWORD=${ORACLE_PASSWORD}"
             echo "ORACLE_SYS_PASSWORD=${ORACLE_SYS_PASSWORD}"
             echo "ORACLE_DOCKER_IMAGE=${ORACLE_DOCKER_IMAGE:-ghcr.io/gvenzl/oracle-free:23.9-slim}"
+            echo "DM_JDBC_URL=${DM_JDBC_URL}"
+            echo "DM_USERNAME=${DM_USERNAME}"
+            echo "DM_PASSWORD=${DM_PASSWORD}"
+            echo "DM_SYSAUDITOR_PASSWORD=${DM_SYSAUDITOR_PASSWORD}"
           } >> "$GITHUB_ENV"
 
       - name: Start integration databases
-        run: docker compose -f kronos-testing/docker-compose.integration.yml up -d --wait
+        run: docker compose -f kronos-testing/docker-compose.integration.yml up -d --wait --wait-timeout 600
 
       - name: Prepare SQL Server database
         run: |

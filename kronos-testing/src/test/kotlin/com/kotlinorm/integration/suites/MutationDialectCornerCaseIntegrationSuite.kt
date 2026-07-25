@@ -10,6 +10,7 @@ import com.kotlinorm.integration.fixtures.MutationDialectCornerCaseManualArchive
 import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
+import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.dm8
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.mysql
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.oracle
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.postgres
@@ -530,3 +531,6 @@ class SqlServerMutationDialectCornerCaseIntegrationTest :
 
 class OracleMutationDialectCornerCaseIntegrationTest :
     MutationDialectCornerCaseIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
+
+class Dm8MutationDialectCornerCaseIntegrationTest :
+    MutationDialectCornerCaseIntegrationSuite(dm8, StandardIntegrationScenarioProfile)

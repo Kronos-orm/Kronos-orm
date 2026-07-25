@@ -10,7 +10,7 @@
 package com.kotlinorm.wrappers
 
 import com.kotlinorm.beans.task.JdbcParameterTypeHints
-import com.kotlinorm.beans.task.GeneratedKeyRequest
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
@@ -136,13 +136,39 @@ class KronosArgumentsTest {
         val task = KronosAtomicActionTask(
             sql = "INSERT INTO events DEFAULT VALUES",
             operationType = KOperationType.INSERT,
-            generatedKeyRequest = GeneratedKeyRequest("events", "id")
+            generatedKeyField = Field("id", tableName = "events")
         )
 
         KronosJdbcWrapper(generatedKeyDataSource(statement), DBType.H2).update(task)
 
         assertSame(rawKey, task.generatedKeys.single())
         assertEquals(null, task.lastInsertId)
+    }
+
+    @Test
+    fun `Oracle-family generated keys request the identity column explicitly`() {
+        val generatedColumns = mutableListOf<List<String>>()
+        listOf(DBType.Oracle, DBType.DM8).forEach { dbType ->
+            val statement = generatedKeyStatement(42L)
+            val task = KronosAtomicActionTask(
+                sql = "INSERT INTO events DEFAULT VALUES",
+                operationType = KOperationType.INSERT,
+                generatedKeyField = Field("id", tableName = "events")
+            )
+
+            KronosJdbcWrapper(
+                generatedKeyDataSource(statement, dbType) { args ->
+                    generatedColumns += (args?.getOrNull(1) as? Array<*>)
+                        ?.map { it as String }
+                        .orEmpty()
+                },
+                dbType
+            ).update(task)
+
+            assertEquals(42L, task.generatedKeys.single())
+            assertEquals(42L, task.lastInsertId)
+        }
+        assertEquals(listOf(listOf("ID"), listOf("ID")), generatedColumns)
     }
 
     @Test
@@ -296,20 +322,29 @@ class KronosArgumentsTest {
         }
     }
 
-    private fun generatedKeyDataSource(statement: PreparedStatement): DataSource {
+    private fun generatedKeyDataSource(
+        statement: PreparedStatement,
+        dbType: DBType = DBType.H2,
+        onPrepare: (Array<Any?>?) -> Unit = {}
+    ): DataSource {
+        val (productName, jdbcUrl) = when (dbType) {
+            DBType.Oracle -> "Oracle" to "jdbc:oracle:thin:@localhost:1521/FREEPDB1"
+            DBType.DM8 -> "DM DBMS" to "jdbc:dm://localhost:5237"
+            else -> "H2" to "jdbc:h2:mem:generated-keys"
+        }
         val metadata = proxy(DatabaseMetaData::class.java) { method, _ ->
             when (method.name) {
-                "getDatabaseProductName" -> "H2"
-                "getURL" -> "jdbc:h2:mem:generated-keys"
+                "getDatabaseProductName" -> productName
+                "getURL" -> jdbcUrl
                 "getUserName" -> "sa"
-                "getDriverName" -> "H2"
+                "getDriverName" -> productName
                 else -> defaultValue(method.returnType)
             }
         }
-        val connection = proxy(Connection::class.java) { method, _ ->
+        val connection = proxy(Connection::class.java) { method, args ->
             when (method.name) {
                 "getMetaData" -> metadata
-                "prepareStatement" -> statement
+                "prepareStatement" -> statement.also { onPrepare(args) }
                 else -> defaultValue(method.returnType)
             }
         }

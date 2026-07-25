@@ -82,6 +82,8 @@ val totalAmount: java.math.BigDecimal? = first.totalAmount
 | `min` | `f.min(x)` | Minimum value. |
 | `groupConcat` | `f.groupConcat(x)` | Concatenate grouped values; SQL rendering is dialect-specific. |
 
+Use `groupConcat` for grouped display values when their sequence is not part of the result contract. Do not rely on a cross-database result order; Oracle and DM8 order the supported simple form by the aggregated expression in ascending order.
+
 ## Math Functions And Operators
 
 Use Kotlin operators for addition, subtraction, multiplication, division, and modulo. Use `f` for the other math functions.
@@ -117,20 +119,22 @@ FROM `user`
 | Division | `it.score / 2` or `f.div(...)` |
 | Modulo | `it.score % 2` or `f.mod(x, y)` |
 | Absolute value | `f.abs(x)` |
-| Binary representation | `f.bin(x)` |
+| Binary representation | `f.bin(x)` (MySQL) |
 | Ceiling | `f.ceil(x)` |
 | Exponent | `f.exp(x)` |
 | Floor | `f.floor(x)` |
 | Greatest value | `f.greatest(x, y, ...)` |
 | Least value | `f.least(x, y, ...)` |
 | Natural logarithm | `f.ln(x)` |
-| Logarithm | `f.log(x, y)` |
+| Logarithm | `f.log(value, base)` |
 | Pi | `f.pi()` |
 | Random value | `f.rand()` |
 | Round | `f.round(x, scale)` |
 | Sign | `f.sign(x)` |
 | Square root | `f.sqrt(x)` |
 | Truncate | `f.trunc(x, scale)` |
+
+`f.log(value, base)` keeps the value-first Kotlin call shape across the supported dialects. `f.bin(x)` is available for MySQL expressions.
 
 ## String Functions
 
@@ -174,9 +178,23 @@ WHERE LENGTH(`name`) > :nameLength
 | Concatenate | `f.concat(x, y, ...)` |
 | Join with separator | `f.join(separator, x, y, ...)` |
 
+`f.join(separator, x, y, ...)` joins the provided values and skips null arguments. H2 applications that need reverse text can expose a custom database function; the built-in H2 dialect reports `f.reverse` as unavailable.
+
+## Function Availability
+
+| API | Supported use |
+|-----|---------------|
+| `f.log(value, base)`, `f.trunc(x, scale)`, `f.right(x, length)` | The same Kotlin call works across MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8. |
+| `f.join(separator, x, y, ...)` | Joins present values across the seven built-in dialects. |
+| `f.groupConcat(x)` | Available across the seven built-in dialects. Do not depend on one result order across dialects; Oracle and DM8 order the supported simple form by the aggregated expression in ascending order. |
+| `f.bin(x)` | MySQL only. |
+| `f.repeat(x, 0)` | Oracle and DM8 return `NULL`; other dialects use their native database semantics. |
+| `f.reverse(x)` | The built-in H2 dialect does not support it. For other databases, use it only when the target database supports `REVERSE`. |
+| `f.any(...)`, `f.all(...)` | PostgreSQL array comparisons. |
+
 ### Native Kotlin case calls in conditions
 
-For a source `String` field in a condition, the no-argument Kotlin calls `lowercase()` and `uppercase()` generate SQL `LOWER` and `UPPER`.
+For a source `String` field in a condition, the no-argument Kotlin calls `lowercase()` and `uppercase()` use the same SQL `LOWER` and `UPPER` expressions as `f.lower(...)` and `f.upper(...)`.
 
 ```kotlin group="Native string case equality" name="kotlin" icon="kotlin"
 val name = "Ada"
@@ -216,13 +234,42 @@ WHERE LOWER(`user_name`) LIKE :userName ESCAPE '\\'
 
 The captured `name.lowercase()` value is evaluated by Kotlin and bound as a parameter.
 
+### Native Kotlin String receiver calls
+
+Non-null source `String` fields can also use these Kotlin calls directly in `select` projections, conditions, and `KSelectable.insert` mappings:
+
+| Kotlin call | SQL expression |
+|-------------|----------------|
+| `field.length`, `field.count()` | text length |
+| `field.replace(old, new)` | replace every exact occurrence |
+| `field.substring(start)`, `field.substring(start, end)`, `field.subSequence(start, end)` | substring |
+| `field.take(count)`, `field.takeLast(count)` | left or right substring |
+
+`count()` is the length of the current string, not aggregate `f.count(...)`. `substring` keeps Kotlin indexing: `start` is zero-based and `end` is exclusive.
+
+```kotlin group="Native string receiver functions" name="kotlin" icon="kotlin"
+val rows = User()
+    .select {
+        [
+            it.name.length.alias("nameLength"),
+            it.name.replace("-", " ").alias("displayName"),
+            it.name.substring(0, 8).alias("prefix"),
+            it.name.takeLast(4).alias("suffix")
+        ]
+    }
+    .where { it.name.take(3) == "VIP" }
+    .toList()
+```
+
+Use the normal two-argument `replace` form, or `ignoreCase = false`. The case-insensitive `ignoreCase = true` form is not a native SQL receiver call. Captured arguments such as `old` and `new` are evaluated by Kotlin and bound as parameters.
+
 Source fields and normal variables use their direct form. When a KPojo property's actual value is required, end that property chain with `.value`, for example `probe.userName.value`.
 
 See {{ $.keyword("query/conditions", ["Conditions"]) }} for condition matching rules.
 
 ## Use Window Functions
 
-Kronos currently exposes `f.rowNumber()` for window queries. Import `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber` before using it.
+Kronos currently exposes `f.rowNumber()` for window queries. Import `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber` before using it and include an `orderBy(...)` clause in `over { ... }`.
 
 ```kotlin group="Window function 1" name="kotlin" icon="kotlin"
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber

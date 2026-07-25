@@ -135,6 +135,7 @@ object CascadeSelectClause {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
             if (validCascades.isEmpty()) return@apply
+            supportsKronosRowMapping = false
             doAfterQuery { queryType, wrapper ->
                 validCascades.forEach { validRef ->
                     when (queryType) {

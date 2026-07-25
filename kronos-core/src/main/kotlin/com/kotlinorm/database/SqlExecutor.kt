@@ -22,6 +22,9 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
+import com.kotlinorm.interfaces.requireKronosRowMapping
 import com.kotlinorm.utils.prepareRawSqlParameters
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -113,6 +116,15 @@ object SqlExecutor {
         ) as List<T>
     }
 
+    /** Maps each raw SQL result row directly through the wrapper's [KronosRow] capability. */
+    fun <T> KronosDataSourceWrapper.toList(
+        sql: String,
+        paramMap: Map<String, Any?> = emptyMap(),
+        mapper: (KronosRow) -> T
+    ): List<T> {
+        return requireKronosRowMapping().toList(rawRowMappingTask(sql, paramMap), mapper)
+    }
+
     @Suppress("UNCHECKED_CAST")
     @Throws(NoSuchElementException::class)
     inline fun <reified T> KronosDataSourceWrapper.first(
@@ -128,12 +140,36 @@ object SqlExecutor {
         return result as T
     }
 
+    /** Maps the first raw SQL result row directly through the wrapper's [KronosRow] capability. */
+    fun <T> KronosDataSourceWrapper.first(
+        sql: String,
+        paramMap: Map<String, Any?> = emptyMap(),
+        mapper: (KronosRow) -> T
+    ): T {
+        return when (val result = requireKronosRowMapping().first(rawRowMappingTask(sql, paramMap), mapper)) {
+            KronosRowFirstResult.Empty -> throw NoSuchElementException("No result found")
+            is KronosRowFirstResult.Present -> result.value
+        }
+    }
+
     inline fun <reified T> KronosDataSourceWrapper.firstOrNull(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
         targetType: KType = typeOf<T?>()
     ): T? {
         return first(sql, paramMap, targetType)
+    }
+
+    /** Maps the first raw SQL result row directly through the wrapper's [KronosRow] capability. */
+    fun <T> KronosDataSourceWrapper.firstOrNull(
+        sql: String,
+        paramMap: Map<String, Any?> = emptyMap(),
+        mapper: (KronosRow) -> T
+    ): T? {
+        return when (val result = requireKronosRowMapping().first(rawRowMappingTask(sql, paramMap), mapper)) {
+            KronosRowFirstResult.Empty -> null
+            is KronosRowFirstResult.Present -> result.value
+        }
     }
 
     fun KronosDataSourceWrapper.execute(sql: String, paramMap: Map<String, Any?> = emptyMap()): Int {
@@ -150,4 +186,11 @@ object SqlExecutor {
             )
         )
     }
+
+    private fun rawRowMappingTask(sql: String, paramMap: Map<String, Any?>): KronosAtomicQueryTask =
+        KronosAtomicQueryTask(
+            sql,
+            prepareRawSqlParameters(paramMap),
+            targetType = typeOf<Any?>()
+        )
 }

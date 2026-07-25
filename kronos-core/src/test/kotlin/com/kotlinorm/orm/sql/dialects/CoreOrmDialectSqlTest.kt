@@ -1,10 +1,13 @@
 package com.kotlinorm.orm.sql.dialects
 
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
+import com.kotlinorm.functions.bundled.exts.MathFunctions.bin
+import com.kotlinorm.functions.bundled.exts.StringFunctions.repeat
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -26,9 +29,61 @@ import com.kotlinorm.testutils.assertTaskEquals
 import com.kotlinorm.testutils.coreSqlDialects
 import com.kotlinorm.testutils.initializeCoreSqlTestDefaults
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class CoreOrmDialectSqlTest {
+
+    @Test
+    fun `bin renders for MySQL and fails during build for every other built-in database`() {
+        initializeCoreSqlTestDefaults()
+
+        val mysqlTask = DialectUser()
+            .select { f.bin(10).alias("bin") }
+            .build(CapturingDialectWrapper(DBType.Mysql))
+            .atomicTask
+
+        assertTaskEquals(
+            ExpectedTask("SELECT BIN(10) AS bin FROM `tb_user` WHERE `deleted` = 0"),
+            mysqlTask,
+            "mysql bin"
+        )
+
+        listOf(DBType.H2, DBType.Postgres, DBType.SQLite, DBType.Mssql, DBType.Oracle, DBType.DM8)
+            .forEach { dbType ->
+                val error = assertFailsWith<UnsupportedOperationException> {
+                    DialectUser()
+                        .select { f.bin(10).alias("bin") }
+                        .build(CapturingDialectWrapper(dbType))
+                }
+                assertEquals(
+                    "Kronos built-in function 'bin' is not supported by ${SqlManager.dialectOf(dbType).family}.",
+                    error.message,
+                    "$dbType bin rejection"
+                )
+            }
+    }
+
+    @Test
+    fun `Oracle compatible databases preserve native repeat zero rendering`() {
+        initializeCoreSqlTestDefaults()
+
+        val expected = mapOf(
+            0 to ExpectedTask("SELECT RPAD('x', 0 * LENGTH('x'), 'x') AS REPEAT FROM \"TB_USER\" WHERE \"DELETED\" = 0"),
+            3 to ExpectedTask("SELECT RPAD('x', 3 * LENGTH('x'), 'x') AS REPEAT FROM \"TB_USER\" WHERE \"DELETED\" = 0"),
+        )
+
+        listOf(DBType.Oracle, DBType.DM8).forEach { dbType ->
+            expected.forEach { (times, expectedTask) ->
+                val task = DialectUser()
+                    .select { f.repeat("x", times).alias("repeat") }
+                    .build(CapturingDialectWrapper(dbType))
+                    .atomicTask
+
+                assertTaskEquals(expectedTask, task, "$dbType repeat($times)")
+            }
+        }
+    }
 
     @Test
     fun `select renders complete sql for every supported dialect`() {

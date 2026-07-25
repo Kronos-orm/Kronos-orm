@@ -69,7 +69,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     activeStage = 0;
     private rotation: number | undefined;
 
-    readonly dbLogos = ['MySQL', 'PostgreSQL', 'SQLite', 'SQL Server', 'Oracle'];
+    readonly dbLogos = ['MySQL', 'PostgreSQL', 'SQLite', 'H2', 'SQL Server', 'Oracle', 'DM8'];
 
     readonly installCode = [
         'plugins {',
@@ -225,8 +225,8 @@ export class HomeComponent implements OnInit, OnDestroy {
                 en: 'Connect JVM frameworks and Android SQLite applications.'
             },
             copy: {
-                zh: 'Kronos 内置 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 方言，服务端可接入 Spring Boot、Ktor、Vert.x、Solon，Android/JVM 可接入 SQLiteDatabase。',
-                en: 'Kronos ships MySQL, PostgreSQL, SQLite, SQL Server, and Oracle dialects for Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLiteDatabase applications.'
+                zh: 'Kronos 内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言，服务端可接入 Spring Boot、Ktor、Vert.x、Solon，Android/JVM 可接入 SQLiteDatabase。',
+                en: 'Kronos ships MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng) dialects for Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLiteDatabase applications.'
             },
             bullets: [
                 {zh: 'Android/JVM SQLite 接入指南', en: 'Android/JVM SQLite integration guide'},
@@ -268,8 +268,8 @@ export class HomeComponent implements OnInit, OnDestroy {
             label: '03',
             title: {zh: '多数据库支持', en: 'Multi-database support'},
             copy: {
-                zh: '内置 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 方言。',
-                en: 'Built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server and Oracle.'
+                zh: '内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言。',
+                en: 'Built-in dialects for MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng).'
             },
             docPath: 'database/dialect-support'
         },

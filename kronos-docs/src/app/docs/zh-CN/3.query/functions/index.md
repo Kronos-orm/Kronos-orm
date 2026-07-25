@@ -82,6 +82,8 @@ val totalAmount: java.math.BigDecimal? = first.totalAmount
 | `min` | `f.min(x)` | 最小值。 |
 | `groupConcat` | `f.groupConcat(x)` | 分组后拼接值，具体 SQL 按方言渲染。 |
 
+`groupConcat` 适合生成分组展示值，结果顺序不应作为跨数据库契约；Oracle 和 DM8 的受支持简单形式会按聚合表达式升序排列。
+
 ## 数学函数和运算符
 
 加、减、乘、除和取模优先使用 Kotlin 运算符；其他数学函数通过 `f` 调用。
@@ -117,20 +119,22 @@ FROM `user`
 | 除法 | `it.score / 2` 或 `f.div(...)` |
 | 取模 | `it.score % 2` 或 `f.mod(x, y)` |
 | 绝对值 | `f.abs(x)` |
-| 二进制表示 | `f.bin(x)` |
+| 二进制表示 | `f.bin(x)`（MySQL） |
 | 向上取整 | `f.ceil(x)` |
 | 指数 | `f.exp(x)` |
 | 向下取整 | `f.floor(x)` |
 | 多值最大 | `f.greatest(x, y, ...)` |
 | 多值最小 | `f.least(x, y, ...)` |
 | 自然对数 | `f.ln(x)` |
-| 指定底数对数 | `f.log(x, y)` |
+| 指定底数对数 | `f.log(value, base)` |
 | 圆周率 | `f.pi()` |
 | 随机数 | `f.rand()` |
 | 四舍五入 | `f.round(x, scale)` |
 | 符号 | `f.sign(x)` |
 | 平方根 | `f.sqrt(x)` |
 | 截断 | `f.trunc(x, scale)` |
+
+`f.log(value, base)` 在已支持方言中保持 value 在前、base 在后的 Kotlin 调用顺序。`f.bin(x)` 用于 MySQL 表达式。
 
 ## 字符串函数
 
@@ -174,9 +178,23 @@ WHERE LENGTH(`name`) > :nameLength
 | 拼接 | `f.concat(x, y, ...)` |
 | 使用分隔符拼接 | `f.join(separator, x, y, ...)` |
 
+`f.join(separator, x, y, ...)` 会拼接传入值并跳过 `null` 参数。H2 应用需要文本反转时，可以注册自定义数据库函数；内置 H2 方言会明确提示 `f.reverse` 不可用。
+
+## 函数可用范围
+
+| API | 可用范围 |
+|-----|----------|
+| `f.log(value, base)`、`f.trunc(x, scale)`、`f.right(x, length)` | MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle 和 DM8 使用相同的 Kotlin 调用方式。 |
+| `f.join(separator, x, y, ...)` | 七种内置方言都会拼接存在的值。 |
+| `f.groupConcat(x)` | 七种内置方言均可使用，但不要依赖统一结果顺序；Oracle 和 DM8 的受支持简单形式会按聚合表达式升序排列。 |
+| `f.bin(x)` | 仅 MySQL。 |
+| `f.repeat(x, 0)` | Oracle 和 DM8 返回 `NULL`；其他方言使用各自数据库的原生语义。 |
+| `f.reverse(x)` | 内置 H2 方言不支持。其他数据库仅在目标数据库支持 `REVERSE` 时使用。 |
+| `f.any(...)`、`f.all(...)` | PostgreSQL 数组比较。 |
+
 ### 条件中的 Kotlin 原生大小写调用
 
-在条件中，source `String` 字段的无参 Kotlin `lowercase()` 和 `uppercase()` 会生成 SQL `LOWER` 和 `UPPER`。
+在条件中，source `String` 字段的无参 Kotlin `lowercase()` 和 `uppercase()` 与 `f.lower(...)`、`f.upper(...)` 一样生成 SQL `LOWER` 和 `UPPER`。
 
 ```kotlin group="Native string case equality" name="kotlin" icon="kotlin"
 val name = "Ada"
@@ -216,13 +234,42 @@ WHERE LOWER(`user_name`) LIKE :userName ESCAPE '\\'
 
 捕获变量 `name.lowercase()` 由 Kotlin 先求值，再作为参数绑定。
 
+### Kotlin 原生 String 接收者调用
+
+非空 source `String` 字段还可以直接在 `select` 投影、条件和 `KSelectable.insert` 映射中使用这些 Kotlin 调用：
+
+| Kotlin 调用 | SQL 表达式 |
+|-------------|------------|
+| `field.length`、`field.count()` | 文本长度 |
+| `field.replace(old, new)` | 替换全部精确匹配内容 |
+| `field.substring(start)`、`field.substring(start, end)`、`field.subSequence(start, end)` | 截取文本 |
+| `field.take(count)`、`field.takeLast(count)` | 左侧或右侧截取 |
+
+`count()` 是当前字符串的长度，不是聚合 `f.count(...)`。`substring` 保留 Kotlin 下标规则：`start` 从零开始，`end` 为排他位置。
+
+```kotlin group="Native string receiver functions" name="kotlin" icon="kotlin"
+val rows = User()
+    .select {
+        [
+            it.name.length.alias("nameLength"),
+            it.name.replace("-", " ").alias("displayName"),
+            it.name.substring(0, 8).alias("prefix"),
+            it.name.takeLast(4).alias("suffix")
+        ]
+    }
+    .where { it.name.take(3) == "VIP" }
+    .toList()
+```
+
+使用普通的双参数 `replace`，或者显式传入 `ignoreCase = false`。`ignoreCase = true` 的忽略大小写形式不属于原生 SQL 接收者调用。`old`、`new` 等捕获参数先由 Kotlin 求值，再作为参数绑定。
+
 source 字段和普通变量直接使用即可。需要读取 KPojo 属性实际值时，将 `.value` 放在该属性链的末端，例如 `probe.userName.value`。
 
 条件匹配规则见 {{ $.keyword("query/conditions", ["条件"]) }}。
 
 ## 使用窗口函数
 
-Kronos 当前提供 `f.rowNumber()` 作为窗口函数入口。需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`。
+Kronos 当前提供 `f.rowNumber()` 作为窗口函数入口。需要导入 `com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber`，并在 `over { ... }` 中提供 `orderBy(...)`。
 
 ```kotlin group="Window function 1" name="kotlin" icon="kotlin"
 import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber

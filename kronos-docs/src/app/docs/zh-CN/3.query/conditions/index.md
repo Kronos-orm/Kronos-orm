@@ -443,6 +443,16 @@ FROM `user`
 WHERE `user`.`name` REGEXP :namePattern
 ```
 
+Kronos 会按数据库的正则语法渲染同一个谓词。
+
+| 数据库 | `regexp` | `notRegexp` |
+|--------|----------|-------------|
+| MySQL、H2 | `name REGEXP pattern` | `name NOT REGEXP pattern` |
+| PostgreSQL | `name ~ pattern` | `name !~ pattern` |
+| Oracle、DM8 | `REGEXP_LIKE(name, pattern)` | `NOT REGEXP_LIKE(name, pattern)` |
+
+SQLite 应用可以通过{{ $.keyword("advanced/custom-functions", ["自定义函数"]) }}注册正则函数。SQL Server 应用可以通过同一扩展点接入选定的正则实现。
+
 ## 归一化文本匹配
 
 `f.lower(x)` 和 `f.upper(x)` 返回可空 `String?` 表达式，可以用于相等比较、`contains`、`like`、`startsWith`、`endsWith` 和集合成员条件。
@@ -486,6 +496,21 @@ val users = User()
     }
     .toList()
 ```
+
+其他 Kotlin 原生 `String` 接收者调用在条件中也遵循同一 source 字段规则：
+
+```kotlin group="Native string receiver conditions" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        it.userName?.length == 3 ||
+            it.userName?.take(3) == "VIP" ||
+            it.userName?.replace("-", "") == "Ada"
+    }
+    .toList()
+```
+
+`substring(start, end)` 使用 Kotlin 的零基、结束位置排他下标。`length`、`count()`、`replace`、`substring`、`subSequence`、`take` 和 `takeLast` 的完整列表见 {{ $.keyword("query/functions", ["内置函数"]) }}。
 
 `normalizedName` 等捕获值由 Kotlin 求值后作为条件参数绑定。函数和方言示例见 {{ $.keyword("query/functions", ["内置函数"]) }}。
 

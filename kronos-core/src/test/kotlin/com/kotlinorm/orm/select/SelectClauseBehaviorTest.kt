@@ -26,6 +26,9 @@ import com.kotlinorm.testfixtures.cascade.onetoone.CarDetails
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
+import com.kotlinorm.interfaces.KronosRowMappingDataSourceWrapper
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.limit.SqlLimit
 import com.kotlinorm.syntax.statement.SqlQuery
@@ -342,6 +345,21 @@ class SelectClauseBehaviorTest : MysqlTestBase() {
     }
 
     @Test
+    fun `selectable row mapper delegates to the row capable wrapper and prepares first results`() {
+        val wrapper = RowMappingMysqlWrapper()
+        val query = TestUser().select { it.username }
+
+        assertEquals(listOf(0), query.toList<Int>(wrapper) { it.rowNumber })
+        assertEquals(0, query.first<Int>(wrapper) { it.rowNumber })
+        assertEquals(0, query.firstOrNull<Int>(wrapper) { it.rowNumber })
+
+        assertEquals(
+            listOf(null, SqlLimit.limit(1), SqlLimit.limit(1)),
+            wrapper.mapperTasks.map { (it.statement as SqlQuery.Select).limit }
+        )
+    }
+
+    @Test
     fun `default first reports no record when wrapper returns null`() {
         val wrapper = CapturingMysqlWrapper(objectResult = null)
 
@@ -390,6 +408,33 @@ private class CapturingMysqlWrapper(
             objectResult
         }
     }
+}
+
+private class RowMappingMysqlWrapper : SampleMysqlJdbcWrapper(), KronosRowMappingDataSourceWrapper {
+    val mapperTasks = mutableListOf<KAtomicQueryTask>()
+
+    override fun <T> toList(task: KAtomicQueryTask, mapper: (KronosRow) -> T): List<T> {
+        mapperTasks += task
+        return listOf(mapper(StaticKronosRow))
+    }
+
+    override fun <T> first(
+        task: KAtomicQueryTask,
+        mapper: (KronosRow) -> T
+    ): KronosRowFirstResult<T> {
+        mapperTasks += task
+        return KronosRowFirstResult.Present(mapper(StaticKronosRow))
+    }
+}
+
+private object StaticKronosRow : KronosRow() {
+    override val rowNumber: Int = 0
+
+    override fun get(position: Int, targetType: KType): Any? =
+        throw UnsupportedOperationException("This test row only exposes rowNumber")
+
+    override fun get(label: String, targetType: KType): Any? =
+        throw UnsupportedOperationException("This test row only exposes rowNumber")
 }
 
 private sealed interface QueryCall {

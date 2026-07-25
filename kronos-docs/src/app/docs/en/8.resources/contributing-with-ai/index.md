@@ -37,7 +37,7 @@ For other AI tools, include {{ $.code("SKILL.md") }} and the relevant reference 
 ```text group="Context" name="files"
 .agents/skills/kronos-dev-guide/SKILL.md
 .agents/skills/kronos-dev-guide/references/<needed-topic>.md
-DOCS_REFACTOR_TASK_LIST/<task>.md or another active task list
+<task-document>.md
 <module>/README.md
 <module>/src/test/...
 ```

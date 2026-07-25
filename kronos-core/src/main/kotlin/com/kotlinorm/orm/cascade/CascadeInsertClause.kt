@@ -17,7 +17,6 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.task.GeneratedKeyRequest
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -83,7 +82,7 @@ object CascadeInsertClause {
         pojo: KPojo,
         prevTask: KronosAtomicActionTask
     ) = prevTask.apply {
-        generatedKeyRequest = generatedKeyRequest ?: pojo.identityGeneratedKeyRequest()
+        generatedKeyField = generatedKeyField ?: pojo.identityGeneratedKeyField()
     }.toKronosActionTask().doAfterExecute { wrapper ->
         //因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键），因此级联操作放在doAfterExecute中执行：
         val operationResult = this //当前任务的执行结果, 用于获取自增主键值
@@ -116,13 +115,13 @@ object CascadeInsertClause {
         }
     }
 
-    private fun KPojo.identityGeneratedKeyRequest(): GeneratedKeyRequest? {
+    private fun KPojo.identityGeneratedKeyField(): Field? {
         val metadata = resolveRuntimeMetadata()
         val identity = metadata.primaryKey ?: resolvePrimaryKey(metadata.kType, metadata.allColumns)
         if (identity.primaryKey != PrimaryKeyType.IDENTITY) return null
         if (identity.defaultValue != null) return null
         if (toDataMap()[identity.name] != null) return null
-        return GeneratedKeyRequest(__tableName, identity.columnName)
+        return identity
     }
 
     private fun KPojo.hasInsertCascadeValue(cascadeAllowed: Set<Field>?): Boolean {

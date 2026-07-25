@@ -21,14 +21,8 @@ For recurring docs-maintenance pitfalls, read `Evolution.index.md` first. Do not
 
 Read these before significant docs work:
 
-1. `DOCS_REFACTOR_TASK_LIST/README.md`
-2. `DOCS_REFACTOR_TASK_LIST/00-design-locks.md`
-3. `DOCS_REFACTOR_TASK_LIST/style-baseline.md`
-4. The numbered task file matching the requested work
-5. Neighboring `kronos-docs` pages in the same language and module
-6. Current source/tests/README files for any API, dependency, version, or behavior claim
-
-Treat `DOCS_REFACTOR_TASK_LIST` as the active refactor plan and acceptance checklist. Update its task files, `verification-log.md`, and `verification-gaps.md` when docs work changes status or evidence.
+1. Neighboring `kronos-docs` pages in the same language and module
+2. Current source/tests/README files for any API, dependency, version, or behavior claim
 
 ## Repository Map
 
@@ -64,7 +58,7 @@ Use the current repository implementation as the source of truth.
 - README files, homepage TypeScript snippets, module READMEs, and blog assets do not share the `kronos-docs` Markdown macro pipeline; keep their version text explicit or use local constants when the file already has that pattern.
 - Verify the current repository development version from `build-logic/src/main/kotlin/publishing.gradle.kts` before changing source-development or snapshot-specific text.
 - Current Kotlin catalog is in `gradle/libs.versions.toml`; verify before updating Kotlin requirements.
-- Complete database dialects are MySQL, PostgreSQL, SQLite, SQL Server, and Oracle.
+- Complete database dialects are MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8. H2 uses standard quoted identifiers, a dedicated MERGE renderer, INFORMATION_SCHEMA metadata, and JDBC generated keys for identity inserts. DM8 uses Oracle-compatible query and metadata SQL with DM8-native identity-column DDL.
 - `Kronos` global configuration is direct property assignment on the `Kronos` object; do not document `Kronos.init { ... }` unless it exists again.
 - `KronosJdbcWrapper` lives in `com.kotlinorm.wrappers`, takes a `DataSource`, optional `DBType`, and `KronosJdbcConfig` block; database type is inferred from JDBC metadata when `databaseType` is not supplied.
 - Public user docs should explain available APIs, configuration, observable behavior, and troubleshooting. Keep compiler FIR/IR internals, maintainer test infrastructure, service-discovery details, and implementation pipeline details out of ordinary docs navigation.
@@ -155,9 +149,9 @@ Use code fence metadata consistently, for example ` ```kotlin group="Case 1" nam
 
 Use `group="..."` only for code fences that should render as tabs for one example unit. A group is appropriate when the fenced blocks are alternative views of the same example, such as Kotlin plus MySQL/PostgreSQL/SQLite/SQLServer/Oracle SQL, or Kotlin plus the direct result/params for the same call. Do not reuse a page-level topic name as the group across unrelated sections. When a page has multiple independent examples under different headings, give each example its own group, for example `Table column model`, `Default value`, and `Timestamp fields` instead of one shared `TableColumn`.
 
-Before finalizing pages with multiple fenced blocks, scan repeated `group` values. A repeated group that spans multiple `##` / `###` headings is usually a tab-merging bug unless the headings are deliberately part of one continuous example. Good groups typically have names like `kotlin`, `Mysql`, `PostgreSQL`, `SQLite`, `SQLServer`, `Oracle`, `result`, or `params` for the same scenario; risky groups have many unrelated names such as `model`, `default`, `timestamps`, `insert params`, and `update params` under one broad topic.
+Before finalizing pages with multiple fenced blocks, scan repeated `group` values. A repeated group that spans multiple `##` / `###` headings is usually a tab-merging bug unless the headings are deliberately part of one continuous example. Good groups typically have names like `kotlin`, `Mysql`, `PostgreSQL`, `SQLite`, `H2`, `SQLServer`, `Oracle`, `DM8`, `result`, or `params` for the same scenario; risky groups have many unrelated names such as `model`, `default`, `timestamps`, `insert params`, and `update params` under one broad topic.
 
-For SQL examples, preserve the existing dialect order when showing multiple outputs: MySQL, PostgreSQL, SQLite, SQLServer, Oracle.
+For SQL examples, preserve the existing dialect order when showing multiple outputs: MySQL, PostgreSQL, SQLite, H2, SQLServer, Oracle, DM8.
 
 ## Writing Rules
 
@@ -229,15 +223,7 @@ cd kronos-docs
 ./deploy-docs.sh
 ```
 
-When touching snippets that claim to compile, verify against source/tests where possible. If runnable snippet verification is not available, record the gap in `DOCS_REFACTOR_TASK_LIST/verification-gaps.md`.
-
-After each substantial docs task, update `DOCS_REFACTOR_TASK_LIST/verification-log.md` with:
-
-- modified scope,
-- source or test evidence checked,
-- commands run,
-- pass/fail result,
-- remaining unverified pages or code blocks.
+When touching snippets that claim to compile, verify against source/tests where possible. Report any remaining verification gaps in the final handoff.
 
 ## Mandatory ORM Guide Sync
 
@@ -268,15 +254,14 @@ If the docs change invalidates guide examples, update the guide in the same task
 
 ## Workflow
 
-1. Read the relevant task list files and neighboring docs pages.
+1. Read neighboring docs pages and the relevant source material.
 2. Inspect current source/tests for every API or version claim.
 3. Check the worktree before editing; do not overwrite unrelated user changes.
 4. Edit English and Chinese counterparts together when the technical fact changes.
 5. Update routes/categories/links/i18n/blog metadata when moving or adding pages.
 6. Refresh `.agents/skills/kronos-orm-guide/` after user-facing docs edits.
 7. Run targeted scans and, when feasible, `pnpm build`.
-8. Update task-list verification records and gaps.
-9. Report which docs, guide files, and verification commands changed.
+8. Report which docs, guide files, verification commands, and remaining gaps changed.
 
 ## When In Doubt
 

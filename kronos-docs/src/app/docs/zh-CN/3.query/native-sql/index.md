@@ -9,6 +9,9 @@ import com.kotlinorm.database.SqlExecutor.queryList
 import com.kotlinorm.database.SqlExecutor.queryMap
 import com.kotlinorm.database.SqlExecutor.queryOne
 import com.kotlinorm.database.SqlExecutor.queryOneOrNull
+import com.kotlinorm.database.SqlExecutor.toList
+import com.kotlinorm.database.SqlExecutor.first
+import com.kotlinorm.database.SqlExecutor.firstOrNull
 ```
 
 ## 1. {{ $.title("query") }} 查询Map列表
@@ -81,6 +84,25 @@ import com.kotlinorm.database.SqlExecutor.queryOneOrNull
 - **返回值**：
 
     `List<T>` 查询结果列表
+
+```kotlin group="Native SQL row mapper list" name="kotlin" icon="kotlin"
+data class UserRow(
+    val id: Int?,
+    val displayName: String?
+)
+
+val result: List<UserRow> = wrapper.toList(
+    "SELECT id, name AS display_name FROM user WHERE age >= :age",
+    mapOf("age" to 18)
+) { row ->
+    UserRow(
+        id = row.get<Int?>(1),
+        displayName = row.get<String?>("display_name")
+    )
+}
+```
+
+`row.get<T>("label")` 按 JDBC 列名或 alias 读取，`row.get<T>(field)` 使用 `Field` 的投影输出名，名称为空时回退到数据库列名，`row.get<T>(position)` 按 JDBC 列位置读取，位置从 `1` 开始。值按目标 `KType` 经过当前结果映射和 `ValueCodec` 转换，`rowNumber` 从 `0` 开始。`row` 在映射回调执行期间有效；回调结束后使用已构造的结果对象。`KronosJdbcWrapper` 支持该行映射能力。
 
 {{ $.hr() }}
 
@@ -155,6 +177,15 @@ import com.kotlinorm.database.SqlExecutor.queryOneOrNull
 
     `T` 查询结果
 
+```kotlin group="Native SQL row mapper first" name="kotlin" icon="kotlin"
+val result: UserRow = wrapper.first(
+    "SELECT id, name AS display_name FROM user WHERE id = :id",
+    mapOf("id" to 1)
+) { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("display_name"))
+}
+```
+
 {{ $.hr() }}
 
 ## 5. {{ $.title("queryOneOrNull") }} 查询指定类型单行记录（可空）
@@ -194,6 +225,15 @@ import com.kotlinorm.database.SqlExecutor.queryOneOrNull
 - **返回值**：
 
     `T?` 查询结果
+
+```kotlin group="Native SQL row mapper first or null" name="kotlin" icon="kotlin"
+val result: UserRow? = wrapper.firstOrNull(
+    "SELECT id, name AS display_name FROM user WHERE id = :id",
+    mapOf("id" to 404)
+) { row ->
+    UserRow(row.get<Int?>("id"), row.get<String?>("display_name"))
+}
+```
 
 {{ $.hr() }}
 

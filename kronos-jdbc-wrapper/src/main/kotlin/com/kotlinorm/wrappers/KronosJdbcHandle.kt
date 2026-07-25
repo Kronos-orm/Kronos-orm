@@ -68,9 +68,15 @@ internal class KronosJdbcHandle(
      * Generated-key statements use JDBC's generated-key overload; other statements honor the
      * configured result-set type, concurrency, and optional holdability.
      */
-    fun prepareStatement(context: KronosStatementContext, returnGeneratedKeys: Boolean): PreparedStatement {
+    fun prepareStatement(
+        context: KronosStatementContext,
+        returnGeneratedKeys: Boolean,
+        generatedKeyColumn: String? = null
+    ): PreparedStatement {
         val statement = if (returnGeneratedKeys) {
-            connection.prepareStatement(context.jdbcSql, Statement.RETURN_GENERATED_KEYS)
+            generatedKeyColumn?.let { column ->
+                connection.prepareStatement(context.jdbcSql, arrayOf(column))
+            } ?: connection.prepareStatement(context.jdbcSql, Statement.RETURN_GENERATED_KEYS)
         } else {
             val holdability = config.resultSet.holdability
             if (holdability != null) {

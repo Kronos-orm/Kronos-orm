@@ -23,7 +23,7 @@ Example: adding DB2 support.
 File: `kronos-core/src/main/kotlin/com/kotlinorm/enums/DBType.kt`
 ```kotlin
 enum class DBType {
-    Mysql, Postgres, SQLite, Mssql, Oracle,
+    Mysql, Postgres, SQLite, H2, Mssql, Oracle, DM8,
     Db2  // add new value
 }
 ```
@@ -100,6 +100,8 @@ implementation("com.ibm.db2:jcc:11.5.9.0")
 
 ### Step 8: Write integration tests
 Create test class in `kronos-testing/src/test/kotlin/` following the existing pattern (see "Write an Integration Test" below).
+
+H2 is a useful in-process reference implementation: `database/h2/H2Statements` owns metadata and DDL, `SqlDialect.H2` selects `H2SqlRenderer`, and `H2IntegrationTest` reuses the shared integration suites with an in-memory JDBC URL.
 
 ---
 

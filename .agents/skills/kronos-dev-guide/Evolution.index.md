@@ -18,3 +18,5 @@
 | IDEA plugin；`Control-flow exceptions`；`CeProcessCanceledException`；`KronosIdeaSafe`；completion contributor | [IDEA 插件控制流异常必须重新抛出](evolution/2026-07-13-idea-plugin-control-flow-exceptions.md) |
 | `Kronos example projects`；外部 example；`kronosColumns()`；`__columns`；元数据 API 迁移 | [外部示例元数据 API 漂移](evolution/2026-07-13-external-example-metadata-api-drift.md) |
 | SQL Server `total_count` 无列名；Oracle Map `NUMBER` 返回 `BigDecimal` | [分页计数列命名与 Map 输出类型](evolution/2026-07-10-total-count-alias-and-map-column-types.md) |
+| H2；`MERGE`；`WHEN MATCHED AND`；`RETURNING`；`FOR SHARE`；precision metadata；`DOUBLE PRECISION`；schema sync | [H2 方言兼容性与精度元数据](evolution/2026-07-23-h2-dialect.md) |
+| DM8；native identity；generated keys；`prepareStatement(String, String[])`；generated system index；unique constraint；healthcheck；license | [DM8 Native-Mode Dialect Support](evolution/2026-07-23-dm8-native-mode.md) |

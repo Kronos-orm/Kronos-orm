@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.KOperationType
@@ -36,7 +37,7 @@ import com.kotlinorm.syntax.statement.SqlStatement
  * @property operationType action operation classification
  * @property statement optional structured statement that produced [sql]
  * @property stash mutable operation-local metadata shared with the data-source wrapper
- * @property generatedKeyRequest generated-key request metadata retained from the source task
+ * @property generatedKeyField identity field whose generated value should be captured
  * @property generatedKeys raw generated values when a wrapper supports them for this batch
  * @property lastInsertId numeric representation of the first generated key, when available
  * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
@@ -47,7 +48,7 @@ data class KronosAtomicBatchTask(
     override val operationType: KOperationType = KOperationType.UPDATE,
     override val statement: SqlStatement? = null,
     override val stash: MutableMap<String, Any?> = mutableMapOf(),
-    override var generatedKeyRequest: GeneratedKeyRequest? = null,
+    override var generatedKeyField: Field? = null,
     override val generatedKeys: MutableList<Any?> = mutableListOf(),
     override var lastInsertId: Long? = null,
     val listParameterOccurrences: Set<Int> = emptySet()

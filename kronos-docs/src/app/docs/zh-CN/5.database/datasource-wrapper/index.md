@@ -2,6 +2,46 @@
 
 `KronosDataSourceWrapper`连接Kronos SQL task和数据库执行层。内置JDBC实现是`KronosJdbcWrapper`，自定义wrapper可以把执行委托给Spring JDBC、JDBI、MyBatis或项目中的数据访问层。
 
+## 配置默认数据源
+
+`Kronos.connect(...)`配置`Kronos.dataSource`，并返回`KronosJdbcWrapper`。
+
+```kotlin group="Connect" name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:postgresql://localhost:5432/kronos",
+    userName = "postgres",
+    password = "******",
+    driverClassName = "org.postgresql.Driver"
+)
+```
+
+方言需要显式指定时传入`databaseType`，JDBC wrapper设置放在配置block中。
+
+## 创建多个数据源的wrapper
+
+读写分离或按租户选择数据源时，可以用`DriverManagerDataSource`创建独立wrapper。
+
+```kotlin group="DriverManager data source" name="kotlin" icon="kotlin"
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.wrappers.DriverManagerDataSource
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+
+val reportingWrapper = KronosJdbcWrapper(
+    dataSource = DriverManagerDataSource(
+        url = "jdbc:postgresql://localhost:5432/kronos",
+        userName = "postgres",
+        password = "******",
+        driverClassName = "org.postgresql.Driver"
+    ),
+    databaseType = DBType.Postgres
+)
+```
+
+事务需要固定使用该数据源时，调用`Kronos.transact(reportingWrapper)`。应用服务使用连接池时，添加连接池和JDBC Driver后，将连接池的`DataSource`传给`KronosJdbcWrapper`。
+
 ## Android SQLite
 
 Android/JVM `SQLiteDatabase` 配置和完整 wrapper 参考实现见{{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}。
@@ -10,12 +50,12 @@ Android/JVM `SQLiteDatabase` 配置和完整 wrapper 参考实现见{{ $.keyword
 
 {{ $.members([
     ['url', '数据库连接URL', 'String'],
-    ['userName', 'JDBC元信息中的数据库用户名', 'String'],
+    ['userName', '数据库用户名', 'String'],
     ['dbType', 'SQL渲染和DDL statement使用的数据库类型', 'DBType'],
     ['sqlDialect', '由dbType解析出的SQL方言', 'SqlDialect']
 ]) }}
 
-创建wrapper后可以读取这些元信息。
+创建wrapper后可以读取这些属性。
 
 ```kotlin group="Properties" name="kotlin" icon="kotlin"
 val wrapper = KronosJdbcWrapper(dataSource)
@@ -35,7 +75,7 @@ PostgreSql
 
 ## 配置内置JDBC wrapper
 
-`KronosJdbcWrapper`接收`DataSource`、可选的`DBType`和配置block。当JDBC metadata名称需要指定到某个方言时，可以传入`databaseType`。
+`KronosJdbcWrapper`接收`DataSource`，包括`DriverManagerDataSource`或连接池数据源、可选的`DBType`和配置block。需要显式指定方言时，可以传入`databaseType`。
 
 ```kotlin group="Jdbc config 1" name="database type" icon="kotlin"
 import com.kotlinorm.enums.DBType

@@ -12,6 +12,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.orm.sql.toSqlExpr
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlBuiltinFunction
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlWindow
 
@@ -32,15 +33,13 @@ object KronosFunctionExpressions {
         operatorExpr(functionName, args)?.let {
             return KronosFunctionExpr(expr = it, functionName = functionName)
         }
-        val sqlName = when (functionName.lowercase()) {
-            "rownumber" -> "ROW_NUMBER"
-            "groupconcat" -> "GROUP_CONCAT"
-            "join" -> "CONCAT_WS"
-            in builtInUppercaseFunctions -> functionName.uppercase()
-            else -> functionName
-        }
+        val builtinFunction = SqlBuiltinFunction.fromDslName(functionName)
         return KronosFunctionExpr(
-            expr = SqlExpr.Function(name = SqlIdentifier.of(sqlName), args = args),
+            expr = SqlExpr.Function(
+                name = SqlIdentifier.of(builtinFunction?.standardSqlName ?: functionName),
+                args = args,
+                builtinFunction = builtinFunction
+            ),
             functionName = functionName
         )
     }
@@ -82,10 +81,4 @@ object KronosFunctionExpressions {
         return args.drop(1).fold(args.first()) { left, right -> SqlExpr.Binary(left, operator, right) }
     }
 
-    private val builtInUppercaseFunctions = setOf(
-        "count", "sum", "avg", "max", "min",
-        "abs", "ceil", "floor", "exp", "greatest", "least", "ln", "log", "pi", "rand", "round", "sign", "sqrt",
-        "trunc", "upper", "lower", "replace", "reverse", "trim", "ltrim", "rtrim", "concat", "repeat", "right",
-        "left", "substr", "length", "any", "all"
-    )
 }

@@ -16,13 +16,13 @@
 
 package com.kotlinorm.interfaces
 
-import com.kotlinorm.beans.task.GeneratedKeyRequest
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
  * Atomic mutation contract with operation-local metadata and generated-key output.
  *
- * Generated keys are populated by the executing wrapper only when [generatedKeyRequest]
+ * Generated keys are populated by the executing wrapper only when [generatedKeyField]
  * applies. They remain raw database values; action execution does not run them through the
  * logical result decoder.
  */
@@ -36,10 +36,10 @@ interface KAtomicActionTask : KAtomicTask {
     val stash: MutableMap<String, Any?>
 
     /**
-     * Requested generated-key assignment, or `null` when key retrieval is disabled.
+     * Identity field whose database-generated value should be captured, or `null` when key retrieval is disabled.
      * A wrapper may additionally restrict retrieval to insert operations.
      */
-    var generatedKeyRequest: GeneratedKeyRequest?
+    var generatedKeyField: Field?
 
     /**
      * Raw generated values returned by the data-source wrapper in driver order.

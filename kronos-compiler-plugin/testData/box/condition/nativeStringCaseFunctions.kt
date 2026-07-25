@@ -24,6 +24,7 @@ import com.kotlinorm.compiler.support.CompilerTestDataSourceWrapper
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlBuiltinFunction
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlInRightOperand
 import com.kotlinorm.syntax.expr.SqlParameter
@@ -91,9 +92,15 @@ fun expectNativeStringCaseFunction(
 ): String? {
     val function = expr as? SqlExpr.Function
     val column = function?.args?.singleOrNull() as? SqlExpr.Column
+    val expectedBuiltin = when (expectedName) {
+        "LOWER" -> SqlBuiltinFunction.Lowercase
+        "UPPER" -> SqlBuiltinFunction.Uppercase
+        else -> null
+    }
     return when {
         function == null -> "Fail: $label expression was $expr"
         function.name.last != expectedName -> "Fail: $label function was ${function.name.last}"
+        function.builtinFunction != expectedBuiltin -> "Fail: $label builtin function was ${function.builtinFunction}"
         column?.columnName != expectedColumnName -> "Fail: $label field was ${column?.columnName}"
         else -> null
     }

@@ -24,7 +24,7 @@ object MathFunctions {
     fun FunctionHandler.abs(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.bin(x: Number?): Number? = null
+    fun FunctionHandler.bin(x: Number?): String? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.ceil(x: Number?): Number? = null

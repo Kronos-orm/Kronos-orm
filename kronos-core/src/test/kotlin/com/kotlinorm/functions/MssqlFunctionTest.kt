@@ -103,6 +103,6 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testRepeatInWhere() {
         val (sql, _) = user.select { it.id }.where { f.repeat("x", 3) == "xxx" }.build()
-        assertEquals("SELECT [id] FROM [tb_user] WHERE REPLICATE('x', 3) = :repeat AND [deleted] = 0", sql)
+        assertEquals("SELECT [id] FROM [tb_user] WHERE REPLICATE(N'x', 3) = :repeat AND [deleted] = 0", sql)
     }
 }

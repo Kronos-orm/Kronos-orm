@@ -137,7 +137,7 @@ class KronosJdbcWrapper private constructor(
             executeWithTranslation(context) {
                 val returnGeneratedKeys = shouldReturnGeneratedKeys(task)
                 val generatedKeyColumn = task.generatedKeyField?.columnName
-                    ?.takeIf { returnGeneratedKeys && handle.config.dbType == DBType.DM8 }
+                    ?.takeIf { returnGeneratedKeys && handle.config.dbType in setOf(DBType.Oracle, DBType.DM8) }
                     ?.uppercase()
                 handle.prepareStatement(context, returnGeneratedKeys, generatedKeyColumn).use { statement ->
                     context.config.arguments.bind(statement, parsed.jdbcParamList, context)

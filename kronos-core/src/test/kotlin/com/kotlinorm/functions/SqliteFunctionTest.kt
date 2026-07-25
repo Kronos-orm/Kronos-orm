@@ -50,6 +50,6 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testTruncInWhere() {
         val (sql, _) = user.select { it.id }.where { f.trunc(it.score, 0) > 50 }.build()
-        assertEquals("""SELECT "id" FROM "tb_user" WHERE (CAST("score" * POWER(10, 0) AS INTEGER) / POWER(10, 0)) > :truncMin AND "deleted" = 0""", sql)
+        assertEquals("""SELECT "id" FROM "tb_user" WHERE CAST("score" * POWER(10, 0) AS INTEGER) / POWER(10, 0) > :truncMin AND "deleted" = 0""", sql)
     }
 }

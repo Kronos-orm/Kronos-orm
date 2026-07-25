@@ -55,13 +55,13 @@ class OracleFunctionTest : OracleTestBase() {
     @Test
     fun testJoinInSelect() {
         val (sql, _) = user.select { f.join(", ", it.username, it.username).alias("join") }.build()
-        assertEquals("""SELECT "USERNAME" || ', ' || "USERNAME" AS JOIN FROM "TB_USER" WHERE "DELETED" = 0""", sql)
+        assertEquals("""SELECT CASE WHEN ', ' IS NULL THEN NULL ELSE CASE WHEN "USERNAME" IS NULL THEN "USERNAME" WHEN "USERNAME" IS NULL THEN "USERNAME" ELSE ("USERNAME" || ', ') || "USERNAME" END END AS JOIN FROM "TB_USER" WHERE "DELETED" = 0""", sql)
     }
 
     @Test
     fun testJoinInWhere() {
         val (sql, _) = user.select { it.id }.where { f.join("-", it.username, it.username) == "admin-admin" }.build()
-        assertEquals("""SELECT "ID" FROM "TB_USER" WHERE "USERNAME" || '-' || "USERNAME" = :join AND "DELETED" = 0""", sql)
+        assertEquals("""SELECT "ID" FROM "TB_USER" WHERE CASE WHEN '-' IS NULL THEN NULL ELSE CASE WHEN "USERNAME" IS NULL THEN "USERNAME" WHEN "USERNAME" IS NULL THEN "USERNAME" ELSE ("USERNAME" || '-') || "USERNAME" END END = :join AND "DELETED" = 0""", sql)
     }
 
     @Test
@@ -79,13 +79,13 @@ class OracleFunctionTest : OracleTestBase() {
     @Test
     fun testRightInSelect() {
         val (sql, _) = user.select { f.right(it.username, 5).alias("right") }.build()
-        assertEquals("""SELECT SUBSTR("USERNAME", -5) AS RIGHT FROM "TB_USER" WHERE "DELETED" = 0""", sql)
+        assertEquals("""SELECT SUBSTR("USERNAME", -5, 5) AS RIGHT FROM "TB_USER" WHERE "DELETED" = 0""", sql)
     }
 
     @Test
     fun testRightInWhere() {
         val (sql, _) = user.select { it.id }.where { f.right(it.username, 3) == "min" }.build()
-        assertEquals("""SELECT "ID" FROM "TB_USER" WHERE SUBSTR("USERNAME", -3) = :right AND "DELETED" = 0""", sql)
+        assertEquals("""SELECT "ID" FROM "TB_USER" WHERE SUBSTR("USERNAME", -3, 3) = :right AND "DELETED" = 0""", sql)
     }
 
     @Test

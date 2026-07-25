@@ -28,6 +28,7 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlBuiltinFunction
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
@@ -129,6 +130,7 @@ fun expectedCapturedNonKPojoFunction(value: String): CapturedNonKPojoCondition =
             SqlExpr.Function(
                 name = SqlIdentifier.of("LENGTH"),
                 args = listOf(SqlExpr.StringLiteral(value)),
+                builtinFunction = SqlBuiltinFunction.Length,
             ),
             SqlBinaryOperator.Equal,
             SqlExpr.Column("tb_captured_non_kpojo_user", "score"),

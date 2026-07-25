@@ -146,27 +146,29 @@ class KronosArgumentsTest {
     }
 
     @Test
-    fun `DM8 generated keys request the identity column explicitly`() {
+    fun `Oracle-family generated keys request the identity column explicitly`() {
         val generatedColumns = mutableListOf<List<String>>()
-        val statement = generatedKeyStatement(42L)
-        val task = KronosAtomicActionTask(
-            sql = "INSERT INTO events DEFAULT VALUES",
-            operationType = KOperationType.INSERT,
-            generatedKeyField = Field("id", tableName = "events")
-        )
+        listOf(DBType.Oracle, DBType.DM8).forEach { dbType ->
+            val statement = generatedKeyStatement(42L)
+            val task = KronosAtomicActionTask(
+                sql = "INSERT INTO events DEFAULT VALUES",
+                operationType = KOperationType.INSERT,
+                generatedKeyField = Field("id", tableName = "events")
+            )
 
-        KronosJdbcWrapper(
-            generatedKeyDataSource(statement, DBType.DM8) { args ->
-                generatedColumns += (args?.getOrNull(1) as? Array<*>)
-                    ?.map { it as String }
-                    .orEmpty()
-            },
-            DBType.DM8
-        ).update(task)
+            KronosJdbcWrapper(
+                generatedKeyDataSource(statement, dbType) { args ->
+                    generatedColumns += (args?.getOrNull(1) as? Array<*>)
+                        ?.map { it as String }
+                        .orEmpty()
+                },
+                dbType
+            ).update(task)
 
-        assertEquals(listOf(listOf("ID")), generatedColumns)
-        assertEquals(42L, task.generatedKeys.single())
-        assertEquals(42L, task.lastInsertId)
+            assertEquals(42L, task.generatedKeys.single())
+            assertEquals(42L, task.lastInsertId)
+        }
+        assertEquals(listOf(listOf("ID"), listOf("ID")), generatedColumns)
     }
 
     @Test
@@ -325,8 +327,11 @@ class KronosArgumentsTest {
         dbType: DBType = DBType.H2,
         onPrepare: (Array<Any?>?) -> Unit = {}
     ): DataSource {
-        val productName = if (dbType == DBType.DM8) "DM DBMS" else "H2"
-        val jdbcUrl = if (dbType == DBType.DM8) "jdbc:dm://localhost:5237" else "jdbc:h2:mem:generated-keys"
+        val (productName, jdbcUrl) = when (dbType) {
+            DBType.Oracle -> "Oracle" to "jdbc:oracle:thin:@localhost:1521/FREEPDB1"
+            DBType.DM8 -> "DM DBMS" to "jdbc:dm://localhost:5237"
+            else -> "H2" to "jdbc:h2:mem:generated-keys"
+        }
         val metadata = proxy(DatabaseMetaData::class.java) { method, _ ->
             when (method.name) {
                 "getDatabaseProductName" -> productName

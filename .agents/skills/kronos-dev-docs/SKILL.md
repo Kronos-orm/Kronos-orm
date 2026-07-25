@@ -21,14 +21,8 @@ For recurring docs-maintenance pitfalls, read `Evolution.index.md` first. Do not
 
 Read these before significant docs work:
 
-1. `DOCS_REFACTOR_TASK_LIST/README.md`
-2. `DOCS_REFACTOR_TASK_LIST/00-design-locks.md`
-3. `DOCS_REFACTOR_TASK_LIST/style-baseline.md`
-4. The numbered task file matching the requested work
-5. Neighboring `kronos-docs` pages in the same language and module
-6. Current source/tests/README files for any API, dependency, version, or behavior claim
-
-Treat `DOCS_REFACTOR_TASK_LIST` as the active refactor plan and acceptance checklist. Update its task files, `verification-log.md`, and `verification-gaps.md` when docs work changes status or evidence.
+1. Neighboring `kronos-docs` pages in the same language and module
+2. Current source/tests/README files for any API, dependency, version, or behavior claim
 
 ## Repository Map
 
@@ -229,15 +223,7 @@ cd kronos-docs
 ./deploy-docs.sh
 ```
 
-When touching snippets that claim to compile, verify against source/tests where possible. If runnable snippet verification is not available, record the gap in `DOCS_REFACTOR_TASK_LIST/verification-gaps.md`.
-
-After each substantial docs task, update `DOCS_REFACTOR_TASK_LIST/verification-log.md` with:
-
-- modified scope,
-- source or test evidence checked,
-- commands run,
-- pass/fail result,
-- remaining unverified pages or code blocks.
+When touching snippets that claim to compile, verify against source/tests where possible. Report any remaining verification gaps in the final handoff.
 
 ## Mandatory ORM Guide Sync
 
@@ -268,15 +254,14 @@ If the docs change invalidates guide examples, update the guide in the same task
 
 ## Workflow
 
-1. Read the relevant task list files and neighboring docs pages.
+1. Read neighboring docs pages and the relevant source material.
 2. Inspect current source/tests for every API or version claim.
 3. Check the worktree before editing; do not overwrite unrelated user changes.
 4. Edit English and Chinese counterparts together when the technical fact changes.
 5. Update routes/categories/links/i18n/blog metadata when moving or adding pages.
 6. Refresh `.agents/skills/kronos-orm-guide/` after user-facing docs edits.
 7. Run targeted scans and, when feasible, `pnpm build`.
-8. Update task-list verification records and gaps.
-9. Report which docs, guide files, and verification commands changed.
+8. Report which docs, guide files, verification commands, and remaining gaps changed.
 
 ## When In Doubt
 

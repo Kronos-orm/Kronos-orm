@@ -497,6 +497,21 @@ val users = User()
     .toList()
 ```
 
+其他 Kotlin 原生 `String` 接收者调用在条件中也遵循同一 source 字段规则：
+
+```kotlin group="Native string receiver conditions" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        it.userName?.length == 3 ||
+            it.userName?.take(3) == "VIP" ||
+            it.userName?.replace("-", "") == "Ada"
+    }
+    .toList()
+```
+
+`substring(start, end)` 使用 Kotlin 的零基、结束位置排他下标。`length`、`count()`、`replace`、`substring`、`subSequence`、`take` 和 `takeLast` 的完整列表见 {{ $.keyword("query/functions", ["内置函数"]) }}。
+
 `normalizedName` 等捕获值由 Kotlin 求值后作为条件参数绑定。函数和方言示例见 {{ $.keyword("query/functions", ["内置函数"]) }}。
 
 ## 读取当前对象的值

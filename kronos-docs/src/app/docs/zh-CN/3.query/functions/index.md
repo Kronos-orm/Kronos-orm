@@ -234,6 +234,35 @@ WHERE LOWER(`user_name`) LIKE :userName ESCAPE '\\'
 
 捕获变量 `name.lowercase()` 由 Kotlin 先求值，再作为参数绑定。
 
+### Kotlin 原生 String 接收者调用
+
+非空 source `String` 字段还可以直接在 `select` 投影、条件和 `KSelectable.insert` 映射中使用这些 Kotlin 调用：
+
+| Kotlin 调用 | SQL 表达式 |
+|-------------|------------|
+| `field.length`、`field.count()` | 文本长度 |
+| `field.replace(old, new)` | 替换全部精确匹配内容 |
+| `field.substring(start)`、`field.substring(start, end)`、`field.subSequence(start, end)` | 截取文本 |
+| `field.take(count)`、`field.takeLast(count)` | 左侧或右侧截取 |
+
+`count()` 是当前字符串的长度，不是聚合 `f.count(...)`。`substring` 保留 Kotlin 下标规则：`start` 从零开始，`end` 为排他位置。
+
+```kotlin group="Native string receiver functions" name="kotlin" icon="kotlin"
+val rows = User()
+    .select {
+        [
+            it.name.length.alias("nameLength"),
+            it.name.replace("-", " ").alias("displayName"),
+            it.name.substring(0, 8).alias("prefix"),
+            it.name.takeLast(4).alias("suffix")
+        ]
+    }
+    .where { it.name.take(3) == "VIP" }
+    .toList()
+```
+
+使用普通的双参数 `replace`，或者显式传入 `ignoreCase = false`。`ignoreCase = true` 的忽略大小写形式不属于原生 SQL 接收者调用。`old`、`new` 等捕获参数先由 Kotlin 求值，再作为参数绑定。
+
 source 字段和普通变量直接使用即可。需要读取 KPojo 属性实际值时，将 `.value` 放在该属性链的末端，例如 `probe.userName.value`。
 
 条件匹配规则见 {{ $.keyword("query/conditions", ["条件"]) }}。

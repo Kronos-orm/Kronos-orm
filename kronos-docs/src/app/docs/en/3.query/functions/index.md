@@ -234,6 +234,35 @@ WHERE LOWER(`user_name`) LIKE :userName ESCAPE '\\'
 
 The captured `name.lowercase()` value is evaluated by Kotlin and bound as a parameter.
 
+### Native Kotlin String receiver calls
+
+Non-null source `String` fields can also use these Kotlin calls directly in `select` projections, conditions, and `KSelectable.insert` mappings:
+
+| Kotlin call | SQL expression |
+|-------------|----------------|
+| `field.length`, `field.count()` | text length |
+| `field.replace(old, new)` | replace every exact occurrence |
+| `field.substring(start)`, `field.substring(start, end)`, `field.subSequence(start, end)` | substring |
+| `field.take(count)`, `field.takeLast(count)` | left or right substring |
+
+`count()` is the length of the current string, not aggregate `f.count(...)`. `substring` keeps Kotlin indexing: `start` is zero-based and `end` is exclusive.
+
+```kotlin group="Native string receiver functions" name="kotlin" icon="kotlin"
+val rows = User()
+    .select {
+        [
+            it.name.length.alias("nameLength"),
+            it.name.replace("-", " ").alias("displayName"),
+            it.name.substring(0, 8).alias("prefix"),
+            it.name.takeLast(4).alias("suffix")
+        ]
+    }
+    .where { it.name.take(3) == "VIP" }
+    .toList()
+```
+
+Use the normal two-argument `replace` form, or `ignoreCase = false`. The case-insensitive `ignoreCase = true` form is not a native SQL receiver call. Captured arguments such as `old` and `new` are evaluated by Kotlin and bound as parameters.
+
 Source fields and normal variables use their direct form. When a KPojo property's actual value is required, end that property chain with `.value`, for example `probe.userName.value`.
 
 See {{ $.keyword("query/conditions", ["Conditions"]) }} for condition matching rules.

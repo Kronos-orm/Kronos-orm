@@ -497,6 +497,21 @@ val users = User()
     .toList()
 ```
 
+Other native `String` receiver calls use the same source-field rule in a condition:
+
+```kotlin group="Native string receiver conditions" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        it.userName?.length == 3 ||
+            it.userName?.take(3) == "VIP" ||
+            it.userName?.replace("-", "") == "Ada"
+    }
+    .toList()
+```
+
+Use `substring(start, end)` with Kotlin's zero-based, end-exclusive indices. The full list of `length`, `count()`, `replace`, `substring`, `subSequence`, `take`, and `takeLast` calls is in {{ $.keyword("query/functions", ["Built-in Functions"]) }}.
+
 Captured values such as `normalizedName` are evaluated by Kotlin and bound as condition parameters. {{ $.keyword("query/functions", ["Built-in Functions"]) }} includes function and dialect examples.
 
 ## Read values from the current object

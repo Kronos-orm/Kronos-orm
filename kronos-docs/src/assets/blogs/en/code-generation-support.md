@@ -122,9 +122,9 @@ Use the latest stable MySQL Connector/J and connection pool versions that match 
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.0")
-@file:DependsOn("com.kotlinorm:kronos-core:0.3.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.0")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-core:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 @file:DependsOn("com.alibaba:druid:<latest-stable>")
 

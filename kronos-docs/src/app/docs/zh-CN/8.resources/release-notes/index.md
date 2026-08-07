@@ -7,6 +7,17 @@
 
 ## 📝 更新日志
 
+### 0.3.1
+
+- ✨ 新增 H2 和达梦（DM8）内置方言，可用于查询、表操作、表结构元数据、分页和 upsert。将 `databaseType` 设为 `DBType.H2` 或 `DBType.DM8`；H2 使用 `MERGE` 完成 upsert，DM8 支持原生 identity 列（[#288](https://github.com/Kronos-orm/Kronos-orm/pull/288)、[#289](https://github.com/Kronos-orm/Kronos-orm/pull/289)）。
+- ✨ 新增 JDBC 连接和结果映射工具：`Kronos.connect(...)`、`DriverManagerDataSource` 和 `KronosRow`。查询结果和原生 SQL 都可以通过 `KronosRow` lambda 逐行映射。
+- ✨ projection、条件和 insert-select 表达式中可使用 `.length`、`.count()`、`.replace(...)`、`.substring(...)`、`.subSequence(...)`、`.take(...)`、`.takeLast(...)` 等 Kotlin `String` 调用。
+- ✨ 完善七种内置方言的 SQL 函数支持，`log`、`trunc`、`right`、`groupConcat`、`repeat` 等常用调用会生成当前数据库支持的 SQL 形式。
+
+#### 升级说明
+
+- 本版本为增量发布。请将 Kronos 模块和编译器插件一并升级到 `0.3.1`。
+
 ### 0.3.0
 
 - ✨ 新增面向 `KType` 的 `ValueCodec` 转换与序列化链路、生成 KPojo factory 和 enum metadata。`ValueTransformer` 与 `KronosSerializeProcessor` 统一替换为 `Kronos.registerValueCodec(...)`（[#283](https://github.com/Kronos-orm/Kronos-orm/pull/283)）。

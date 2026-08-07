@@ -26,7 +26,7 @@ err() { echo "[bump-version] ERROR: $*" >&2; exit 1; }
 grepCurrent() {
   # Extract the first occurrence of project.version = "X"
   local v
-  v=$(grep -E 'project\.version\s*=\s*"[^"]+"' "$PUBLISHING_KTS" | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+  v=$(grep -E 'project\.version[[:space:]]*=[[:space:]]*"[^"]+"' "$PUBLISHING_KTS" | head -n1 | sed -E 's/.*project\.version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/')
   if [[ -z "$v" ]]; then err "Cannot read current version from $PUBLISHING_KTS"; fi
   echo "$v"
 }
@@ -46,16 +46,16 @@ setVersionInFiles() {
   local newv="$1"
   # publishing.gradle.kts
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' -E "s/(project\.version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PUBLISHING_KTS"
+    sed -i '' -E "s/(project\.version[[:space:]]*=[[:space:]]*\")[^\"]+(\".*)$/\1${newv}\2/" "$PUBLISHING_KTS"
   else
-    sed -i -E "s/(project\.version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PUBLISHING_KTS"
+    sed -i -E "s/(project\.version[[:space:]]*=[[:space:]]*\")[^\"]+(\".*)$/\1${newv}\2/" "$PUBLISHING_KTS"
   fi
 
   # KronosGradlePlugin.kt
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' -E "s/(version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PLUGIN_KT"
+    sed -i '' -E "s/(version[[:space:]]*=[[:space:]]*\")[^\"]+(\".*)$/\1${newv}\2/" "$PLUGIN_KT"
   else
-    sed -i -E "s/(version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PLUGIN_KT"
+    sed -i -E "s/(version[[:space:]]*=[[:space:]]*\")[^\"]+(\".*)$/\1${newv}\2/" "$PLUGIN_KT"
   fi
 }
 

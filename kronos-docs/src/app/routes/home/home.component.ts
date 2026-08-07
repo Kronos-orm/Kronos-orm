@@ -73,11 +73,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     readonly installCode = [
         'plugins {',
-        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.0"',
+        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1"',
         '}',
         '',
         'dependencies {',
-        '    implementation("com.kotlinorm:kronos-core:0.3.0")',
+        '    implementation("com.kotlinorm:kronos-core:0.3.1")',
         '}'
     ];
 

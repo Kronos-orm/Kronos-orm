@@ -7,6 +7,17 @@
 
 ## Update Logs
 
+### 0.3.1
+
+- ✨ Add built-in H2 and DM8 dialects for queries, table operations, schema metadata, pagination, and upserts. Set `databaseType` to `DBType.H2` or `DBType.DM8`; H2 uses `MERGE` for upserts and DM8 supports native identity columns ([#288](https://github.com/Kronos-orm/Kronos-orm/pull/288), [#289](https://github.com/Kronos-orm/Kronos-orm/pull/289)).
+- ✨ Add JDBC connection and result-mapping helpers: `Kronos.connect(...)`, `DriverManagerDataSource`, and `KronosRow`. Query results and raw SQL can be mapped one row at a time with a `KronosRow` lambda.
+- ✨ Use Kotlin `String` expressions such as `.length`, `.count()`, `.replace(...)`, `.substring(...)`, `.subSequence(...)`, `.take(...)`, and `.takeLast(...)` in projections, conditions, and insert-select expressions.
+- ✨ Improve built-in SQL function support across the seven built-in dialects, so common calls such as `log`, `trunc`, `right`, `groupConcat`, and `repeat` use the SQL form supported by the selected database.
+
+#### Upgrade notes
+
+- This release is additive. Update Kronos modules and the compiler-plugin to `0.3.1` together.
+
 ### 0.3.0
 
 - ✨ Add a `KType`-aware `ValueCodec` pipeline for custom conversion and serialization, generated KPojo factories, and enum metadata. `ValueTransformer` and `KronosSerializeProcessor` are replaced by `Kronos.registerValueCodec(...)` ([#283](https://github.com/Kronos-orm/Kronos-orm/pull/283)).

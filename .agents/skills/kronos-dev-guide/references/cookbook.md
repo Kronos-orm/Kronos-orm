@@ -436,14 +436,14 @@ kronos {
 Push a `-SNAPSHOT` version to `main` → CI runs `publishAllToCentralSnapshots`.
 
 ### Release
-1. Update version: `bash .github/scripts/bump-version.sh set 0.3.0` (remove -SNAPSHOT)
+1. Update version: `bash .github/scripts/bump-version.sh set 0.3.1` (remove -SNAPSHOT)
 2. Complete the "Release Version Upgrade Checklist" in `references/testing-and-ci.md`.
-3. Commit: `git commit -am "chore(version): prepare release 0.3.0"`
+3. Commit: `git commit -am "chore(version): prepare release 0.3.1"`
 4. Create PR to `main`
 5. Merge PR → CI automatically:
-   - Tags `v0.3.0`
+   - Tags `v0.3.1`
    - Publishes to Maven Central (signed)
-   - Opens the next `0.3.1-SNAPSHOT` PR
+   - Opens the next `0.3.2-SNAPSHOT` PR
    - Commits and pushes
 
 ### Manual Release

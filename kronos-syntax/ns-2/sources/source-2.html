@@ -1,0 +1,242 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlBuiltinFunction</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.expr</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlBuiltinFunction (com.kotlinorm.syntax.expr)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlBuiltinFunction</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (42/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (339/339)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SqlBuiltinFunction$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/9)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    97.7%
+  </span>
+  <span class="absValue">
+    (42/43)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.4%
+  </span>
+  <span class="absValue">
+    (339/348)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.expr
+&nbsp;
+&nbsp;/**
+&nbsp; * Semantic identifiers for the functions supplied by Kronos.
+&nbsp; *
+&nbsp; * The SQL spelling is the standard rendering. Dialect renderers may lower a
+&nbsp; * function to a different spelling or expression while custom functions keep
+&nbsp; * using [SqlExpr.Function.name] without this marker.
+&nbsp; */
+<b class="fc">&nbsp;enum class SqlBuiltinFunction(</b>
+<b class="fc">&nbsp;    val dslName: String,</b>
+<b class="fc">&nbsp;    val standardSqlName: String</b>
+&nbsp;) {
+<b class="fc">&nbsp;    Count(&quot;count&quot;, &quot;COUNT&quot;),</b>
+<b class="fc">&nbsp;    Sum(&quot;sum&quot;, &quot;SUM&quot;),</b>
+<b class="fc">&nbsp;    Average(&quot;avg&quot;, &quot;AVG&quot;),</b>
+<b class="fc">&nbsp;    Maximum(&quot;max&quot;, &quot;MAX&quot;),</b>
+<b class="fc">&nbsp;    Minimum(&quot;min&quot;, &quot;MIN&quot;),</b>
+<b class="fc">&nbsp;    GroupConcat(&quot;groupconcat&quot;, &quot;GROUP_CONCAT&quot;),</b>
+&nbsp;
+<b class="fc">&nbsp;    Absolute(&quot;abs&quot;, &quot;ABS&quot;),</b>
+<b class="fc">&nbsp;    Binary(&quot;bin&quot;, &quot;BIN&quot;),</b>
+<b class="fc">&nbsp;    Ceiling(&quot;ceil&quot;, &quot;CEIL&quot;),</b>
+<b class="fc">&nbsp;    Exponential(&quot;exp&quot;, &quot;EXP&quot;),</b>
+<b class="fc">&nbsp;    Floor(&quot;floor&quot;, &quot;FLOOR&quot;),</b>
+<b class="fc">&nbsp;    Greatest(&quot;greatest&quot;, &quot;GREATEST&quot;),</b>
+<b class="fc">&nbsp;    Least(&quot;least&quot;, &quot;LEAST&quot;),</b>
+<b class="fc">&nbsp;    NaturalLog(&quot;ln&quot;, &quot;LN&quot;),</b>
+<b class="fc">&nbsp;    Log(&quot;log&quot;, &quot;LOG&quot;),</b>
+<b class="fc">&nbsp;    Pi(&quot;pi&quot;, &quot;PI&quot;),</b>
+<b class="fc">&nbsp;    Random(&quot;rand&quot;, &quot;RAND&quot;),</b>
+<b class="fc">&nbsp;    Round(&quot;round&quot;, &quot;ROUND&quot;),</b>
+<b class="fc">&nbsp;    Sign(&quot;sign&quot;, &quot;SIGN&quot;),</b>
+<b class="fc">&nbsp;    SquareRoot(&quot;sqrt&quot;, &quot;SQRT&quot;),</b>
+<b class="fc">&nbsp;    Truncate(&quot;trunc&quot;, &quot;TRUNC&quot;),</b>
+&nbsp;
+<b class="fc">&nbsp;    Length(&quot;length&quot;, &quot;LENGTH&quot;),</b>
+<b class="fc">&nbsp;    Uppercase(&quot;upper&quot;, &quot;UPPER&quot;),</b>
+<b class="fc">&nbsp;    Lowercase(&quot;lower&quot;, &quot;LOWER&quot;),</b>
+<b class="fc">&nbsp;    Substring(&quot;substr&quot;, &quot;SUBSTR&quot;),</b>
+<b class="fc">&nbsp;    Replace(&quot;replace&quot;, &quot;REPLACE&quot;),</b>
+<b class="fc">&nbsp;    Left(&quot;left&quot;, &quot;LEFT&quot;),</b>
+<b class="fc">&nbsp;    Right(&quot;right&quot;, &quot;RIGHT&quot;),</b>
+<b class="fc">&nbsp;    Repeat(&quot;repeat&quot;, &quot;REPEAT&quot;),</b>
+<b class="fc">&nbsp;    Reverse(&quot;reverse&quot;, &quot;REVERSE&quot;),</b>
+<b class="fc">&nbsp;    Trim(&quot;trim&quot;, &quot;TRIM&quot;),</b>
+<b class="fc">&nbsp;    LeftTrim(&quot;ltrim&quot;, &quot;LTRIM&quot;),</b>
+<b class="fc">&nbsp;    RightTrim(&quot;rtrim&quot;, &quot;RTRIM&quot;),</b>
+<b class="fc">&nbsp;    Concatenate(&quot;concat&quot;, &quot;CONCAT&quot;),</b>
+<b class="fc">&nbsp;    JoinWithSeparator(&quot;join&quot;, &quot;CONCAT_WS&quot;),</b>
+&nbsp;
+<b class="fc">&nbsp;    Any(&quot;any&quot;, &quot;ANY&quot;),</b>
+<b class="fc">&nbsp;    All(&quot;all&quot;, &quot;ALL&quot;),</b>
+<b class="fc">&nbsp;    RowNumber(&quot;rownumber&quot;, &quot;ROW_NUMBER&quot;);</b>
+&nbsp;
+&nbsp;    companion object {
+<b class="fc">&nbsp;        private val byDslName = entries.associateBy(SqlBuiltinFunction::dslName)</b>
+&nbsp;
+<b class="nc">&nbsp;        fun fromDslName(name: String): SqlBuiltinFunction? = byDslName[name.lowercase()]</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-08-07 18:12</div>
+</div>
+</body>
+</html>

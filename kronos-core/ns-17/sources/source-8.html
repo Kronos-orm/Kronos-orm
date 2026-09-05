@@ -1,0 +1,213 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosRowKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosRowKt (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosRowKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import kotlin.reflect.KType
+&nbsp;import kotlin.reflect.typeOf
+&nbsp;
+&nbsp;/**
+&nbsp; * One active query row exposed to a synchronous row mapper.
+&nbsp; *
+&nbsp; * A row is valid only while its mapper is running. Implementations may reuse a live database
+&nbsp; * cursor, so callers must materialize values they need before returning from the mapper.
+&nbsp; */
+&nbsp;abstract class KronosRow {
+&nbsp;    /** Zero-based index of this row in the current result set. */
+&nbsp;    abstract val rowNumber: Int
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads the one-based JDBC [position] and decodes it as [targetType].
+&nbsp;     */
+&nbsp;    abstract fun get(position: Int, targetType: KType): Any?
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads the column selected with [label] and decodes it as [targetType].
+&nbsp;     */
+&nbsp;    abstract fun get(label: String, targetType: KType): Any?
+&nbsp;
+&nbsp;    /** Reads one-based JDBC [position] using the complete reified Kotlin type. */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    inline fun &lt;reified T&gt; get(position: Int): T = get(position, typeOf&lt;T&gt;()) as T
+&nbsp;
+&nbsp;    /** Reads a JDBC column label or SQL alias using the complete reified Kotlin type. */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    inline fun &lt;reified T&gt; get(label: String): T = get(label, typeOf&lt;T&gt;()) as T
+&nbsp;
+&nbsp;    /** Reads a selected [field] through its output name, falling back to its database column name. */
+&nbsp;    fun get(field: Field, targetType: KType): Any? = get(field.name.ifBlank { field.columnName }, targetType)
+&nbsp;
+&nbsp;    /** Reads a selected [field] using the complete reified Kotlin type. */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    inline fun &lt;reified T&gt; get(field: Field): T = get(field, typeOf&lt;T&gt;()) as T
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Optional row-mapping capability implemented by wrappers that can keep a live row cursor.
+&nbsp; *
+&nbsp; * [KronosDataSourceWrapper] remains a materialized-result contract. Code that needs this
+&nbsp; * capability should use [requireKronosRowMapping] rather than requiring every wrapper to expose
+&nbsp; * JDBC-like state.
+&nbsp; */
+&nbsp;interface KronosRowMappingDataSourceWrapper : KronosDataSourceWrapper {
+&nbsp;    fun &lt;T&gt; toList(task: KAtomicQueryTask, mapper: (KronosRow) -&gt; T): List&lt;T&gt;
+&nbsp;
+&nbsp;    fun &lt;T&gt; first(task: KAtomicQueryTask, mapper: (KronosRow) -&gt; T): KronosRowFirstResult&lt;T&gt;
+&nbsp;}
+&nbsp;
+&nbsp;/** Presence-aware first-row result that preserves a mapper&#39;s legitimate null result. */
+&nbsp;sealed interface KronosRowFirstResult&lt;out T&gt; {
+&nbsp;    data object Empty : KronosRowFirstResult&lt;Nothing&gt;
+&nbsp;
+&nbsp;    data class Present&lt;T&gt;(val value: T) : KronosRowFirstResult&lt;T&gt;
+&nbsp;}
+&nbsp;
+&nbsp;/** Returns this wrapper&#39;s row-mapping capability or reports that the wrapper does not provide it. */
+&nbsp;internal fun KronosDataSourceWrapper.requireKronosRowMapping(): KronosRowMappingDataSourceWrapper =
+<b class="fc">&nbsp;    this as? KronosRowMappingDataSourceWrapper</b>
+<b class="fc">&nbsp;        ?: throw UnsupportedOperationException(</b>
+<b class="fc">&nbsp;            &quot;KronosRow mapping requires a KronosRowMappingDataSourceWrapper, such as KronosJdbcWrapper&quot;</b>
+&nbsp;        )
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-05 16:46</div>
+</div>
+</body>
+</html>

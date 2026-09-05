@@ -2,20 +2,21 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
     alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kronos.dokka)
 }
 
 dependencies {
     implementation(libs.kotlin.gradle.plugin.api)
+    implementation(libs.kotlin.gradle.plugin)
+    testImplementation(kotlin("test"))
 }
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
-    }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 kotlin {
-    jvmToolchain(8)
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     }

@@ -1,0 +1,105 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Verifies that typed select projection keeps the source receiver and maps query results to the projection DTO.
+
+import com.kotlinorm.Kronos
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.task.TransactionScope
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.select.select
+import com.kotlinorm.syntax.statement.SqlQuery
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
+
+@Table(name = "tb_projection_source")
+data class ProjectionSource(
+    var id: Int? = null,
+    var name: String? = null,
+    var ignored: String? = null,
+) : KPojo
+
+data class ProjectionRow(
+    var id: Int? = null,
+    var name: String? = null,
+) : KPojo
+
+data class ProjectionMappingCall(
+    val mappedType: KType,
+)
+
+class ProjectionRecordingWrapper : KronosDataSourceWrapper {
+    override val url: String = "jdbc:projection"
+    override val userName: String = ""
+    override val dbType: DBType = DBType.Mysql
+    var objectCall: ProjectionMappingCall? = null
+
+    override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
+
+    override fun first(task: KAtomicQueryTask): Any? {
+        objectCall = ProjectionMappingCall(task.targetType)
+        return ProjectionRow(7, "Projected")
+    }
+
+    override fun update(task: KAtomicActionTask): Int = 0
+
+    override fun batchUpdate(task: com.kotlinorm.beans.task.KronosAtomicBatchTask): IntArray = intArrayOf()
+
+    override fun transact(
+        isolation: TransactionIsolation?,
+        timeout: Int?,
+        block: TransactionScope.() -> Any?
+    ): Any? = null
+}
+
+fun buildProjection(user: ProjectionSource): com.kotlinorm.orm.select.SelectClause<ProjectionSource, ProjectionRow, ProjectionSource> {
+    return user.select<ProjectionSource, ProjectionRow>(typeOf<ProjectionRow>()) {
+        it.ignored
+        [it.id, it.name]
+    }
+}
+
+fun box(): String {
+    val wrapper = ProjectionRecordingWrapper()
+
+    with(Kronos) {
+        dataSource = { wrapper }
+        fieldNamingStrategy = lineHumpNamingStrategy
+        tableNamingStrategy = lineHumpNamingStrategy
+    }
+
+    val clause = buildProjection(ProjectionSource())
+    val statement = clause.toSqlQuery(wrapper) as SqlQuery.Select
+    val row: ProjectionRow? = clause.firstOrNull(wrapper)
+    val call = wrapper.objectCall
+
+    val failures = listOfNotNull(
+        expect(statement.select.size == 2) { "select size was ${statement.select.size}" },
+        expect(row?.name == "Projected") { "projection row was $row" },
+        expect(call?.mappedType == typeOf<ProjectionRow?>()) { "mapping type was ${call?.mappedType}" },
+    )
+
+    return failures.firstOrNull() ?: "OK"
+}
+
+inline fun expect(condition: Boolean, message: () -> String): String? {
+    return if (condition) null else "Fail: ${message()}"
+}

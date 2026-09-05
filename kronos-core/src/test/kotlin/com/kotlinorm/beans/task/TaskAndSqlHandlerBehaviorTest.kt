@@ -1,0 +1,585 @@
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
+package com.kotlinorm.beans.task
+
+import com.kotlinorm.Kronos
+import com.kotlinorm.database.SqlExecutor
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.QueryType
+import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.enums.ValueCodecDirection
+import com.kotlinorm.enums.ValueCodecOrigin
+import com.kotlinorm.exceptions.ValueMappingException
+import com.kotlinorm.exceptions.ConflictingResultColumnLabels
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
+import com.kotlinorm.interfaces.KronosRowMappingDataSourceWrapper
+import com.kotlinorm.interfaces.valueCodec
+import com.kotlinorm.utils.handleLogResult
+import java.time.LocalDateTime
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+
+class TaskAndSqlExecutorBehaviorTest {
+    private enum class RawStatus {
+        ACTIVE,
+        BLOCKED
+    }
+
+    @Test
+    fun `atomic query rejects result labels that differ only by case`() {
+        val failure = assertFailsWith<ConflictingResultColumnLabels> {
+            KronosAtomicQueryTask(
+                sql = "SELECT first_name AS Name, last_name AS name",
+                targetType = typeOf<Map<String, Any?>>(),
+                resultColumns = mapOf(
+                    "Name" to ResultColumnMetadata(typeOf<String>(), columnLabel = "Name"),
+                    "name" to ResultColumnMetadata(typeOf<String>(), columnLabel = "name")
+                )
+            )
+        }
+
+        assertEquals(listOf("Name", "name"), failure.labels)
+    }
+
+    @Test
+    fun `query task executes all query variants with hooks and events`() {
+        val wrapper = RecordingWrapper(
+            listResult = listOf(mapOf("id" to 1)),
+            typedListResult = listOf("row"),
+            mapResult = mapOf("id" to 1),
+            objectResult = "one"
+        )
+        val atomic = KronosAtomicQueryTask(
+            "SELECT * FROM user WHERE id = :id",
+            mapOf("id" to 1),
+            targetType = typeOf<Map<String, Any?>>()
+        )
+        val task = KronosQueryTask(atomic)
+        val events = mutableListOf<String>()
+        val oldBeforeEvents = QueryEvent.beforeQueryEvents.toList()
+        val oldAfterEvents = QueryEvent.afterQueryEvents.toList()
+        QueryEvent.beforeQueryEvents.clear()
+        QueryEvent.afterQueryEvents.clear()
+        QueryEvent.beforeQueryEvents += { queryTask, _ -> events += "globalBefore:${queryTask.sql}" }
+        QueryEvent.afterQueryEvents += { queryTask, _ -> events += "globalAfter:${queryTask.sql}" }
+
+        try {
+            task.doBeforeQuery { events += "before:${component1()}" }
+                .doAfterQuery { queryType, _ -> events += "after:$queryType" }
+
+            assertEquals(listOf(mapOf("id" to 1)), task.toMapList(wrapper))
+            assertEquals(listOf("row"), task.toList<String>(wrapper))
+            assertEquals(mapOf("id" to 1), task.toMap(wrapper))
+            assertEquals(mapOf("id" to 1), task.toMapOrNull(wrapper))
+            assertEquals("one", task.first<String>(wrapper))
+            assertEquals("one", task.firstOrNull<String>(wrapper))
+            assertEquals(
+                listOf(
+                    "before:SELECT * FROM user WHERE id = :id",
+                    "globalBefore:SELECT * FROM user WHERE id = :id",
+                    "globalAfter:SELECT * FROM user WHERE id = :id",
+                    "after:ToMapList",
+                    "before:SELECT * FROM user WHERE id = :id",
+                    "globalBefore:SELECT * FROM user WHERE id = :id",
+                    "globalAfter:SELECT * FROM user WHERE id = :id",
+                    "after:ToList",
+                    "before:SELECT * FROM user WHERE id = :id",
+                    "globalBefore:SELECT * FROM user WHERE id = :id",
+                    "globalAfter:SELECT * FROM user WHERE id = :id",
+                    "after:ToMap",
+                    "before:SELECT * FROM user WHERE id = :id",
+                    "globalBefore:SELECT * FROM user WHERE id = :id",
+                    "globalAfter:SELECT * FROM user WHERE id = :id",
+                    "after:ToMap",
+                    "before:SELECT * FROM user WHERE id = :id",
+                    "globalBefore:SELECT * FROM user WHERE id = :id",
+                    "globalAfter:SELECT * FROM user WHERE id = :id",
+                    "after:First",
+                    "before:SELECT * FROM user WHERE id = :id",
+                    "globalBefore:SELECT * FROM user WHERE id = :id",
+                    "globalAfter:SELECT * FROM user WHERE id = :id",
+                    "after:First"
+                ),
+                events
+            )
+            assertEquals("SELECT * FROM user WHERE id = :id", task.component1())
+            assertEquals(mapOf("id" to 1), task.component2())
+            assertEquals(task, task.component3())
+        } finally {
+            QueryEvent.beforeQueryEvents.clear()
+            QueryEvent.beforeQueryEvents.addAll(oldBeforeEvents)
+            QueryEvent.afterQueryEvents.clear()
+            QueryEvent.afterQueryEvents.addAll(oldAfterEvents)
+        }
+    }
+
+    @Test
+    fun `query task throws exact no result errors`() {
+        val wrapper = RecordingWrapper()
+        val task = KronosQueryTask(KronosAtomicQueryTask("SELECT * FROM missing", targetType = typeOf<String>()))
+
+        assertEquals(
+            "No result found for query: SELECT * FROM missing",
+            assertFailsWith<NoSuchElementException> { task.toMap(wrapper) }.message
+        )
+        assertEquals(
+            "No result found for query: SELECT * FROM missing",
+            assertFailsWith<NoSuchElementException> { task.first<String>(wrapper) }.message
+        )
+    }
+
+    @Test
+    fun `batch task parses arrays and rejects single parsed access`() {
+        val task = KronosAtomicBatchTask(
+            sql = "UPDATE user SET name = :name WHERE id = :id",
+            paramMapArr = arrayOf(
+                linkedMapOf("name" to "alpha", "id" to 1),
+                linkedMapOf("name" to "beta", "id" to 2)
+            ),
+            operationType = KOperationType.UPDATE
+        )
+        val same = KronosAtomicBatchTask(
+            sql = "UPDATE user SET name = :name WHERE id = :id",
+            paramMapArr = arrayOf(
+                linkedMapOf("name" to "alpha", "id" to 1),
+                linkedMapOf("name" to "beta", "id" to 2)
+            ),
+            operationType = KOperationType.UPDATE
+        )
+
+        val (jdbcSql, jdbcParams) = task.parsedArr()
+
+        assertEquals("UPDATE user SET name = ? WHERE id = ?", jdbcSql)
+        assertEquals(
+            listOf(listOf("alpha", 1), listOf("beta", 2)),
+            jdbcParams.map { it.toList() }
+        )
+        assertEquals(emptyMap(), task.paramMap)
+        assertEquals(task, same)
+        assertEquals(task.hashCode(), same.hashCode())
+        assertEquals(false, task == same.copy(sql = "DELETE FROM user WHERE id = :id"))
+        assertEquals(
+            "Please use `parsedArr()` instead of `parsed()`",
+            assertFailsWith<UnsupportedOperationException> { task.parsed() }.message
+        )
+    }
+
+    @Test
+    fun `sql executor extension methods create exact atomic tasks`() {
+        val wrapper = RecordingWrapper(
+            listResult = listOf(mapOf("id" to 1, "score" to null)),
+            typedListResult = listOf("row"),
+            mapResult = mapOf("id" to 1, "score" to null),
+            objectResult = "one",
+            updateResult = 3,
+            batchResult = intArrayOf(1, 2)
+        )
+
+        with(SqlExecutor) {
+            val expectedRows = listOf(mapOf("id" to 1, "score" to null))
+            val expectedRow = mapOf("id" to 1, "score" to null)
+            assertEquals(expectedRows, wrapper.toMapList("SELECT * FROM user", mapOf("id" to 1)))
+            assertEquals(expectedRow, wrapper.toMap("SELECT * FROM user WHERE id = :id", mapOf("id" to 1)))
+            assertEquals(expectedRow, wrapper.toMapOrNull("SELECT * FROM user WHERE id = :id", mapOf("id" to 1)))
+            assertEquals(listOf("row"), wrapper.toList<String>("SELECT name FROM user"))
+            assertEquals("one", wrapper.first<String>("SELECT name FROM user LIMIT 1"))
+            assertEquals("one", wrapper.firstOrNull<String>("SELECT name FROM user LIMIT 1"))
+            assertEquals(expectedRows, wrapper.query("SELECT * FROM user", mapOf("id" to 1)))
+            assertEquals(expectedRow, wrapper.queryMap("SELECT * FROM user WHERE id = :id", mapOf("id" to 1)))
+            assertEquals(expectedRow, wrapper.queryMapOrNull("SELECT * FROM user WHERE id = :id", mapOf("id" to 1)))
+            assertEquals(listOf("row"), wrapper.queryList<String>("SELECT name FROM user"))
+            assertEquals("one", wrapper.queryOne<String>("SELECT name FROM user LIMIT 1"))
+            assertEquals("one", wrapper.queryOneOrNull<String>("SELECT name FROM user LIMIT 1"))
+            assertEquals(3, wrapper.execute("UPDATE user SET name = :name", mapOf("name" to "alpha")))
+            assertContentEquals(
+                intArrayOf(1, 2),
+                wrapper.batchExecute(
+                    "UPDATE user SET name = :name WHERE id = :id",
+                    arrayOf(mapOf("name" to "alpha", "id" to 1), mapOf("name" to "beta", "id" to 2))
+                )
+            )
+        }
+
+        assertEquals(
+            listOf(
+                QueryTaskShape("SELECT * FROM user", mapOf("id" to 1), typeOf<Map<String, Any?>>()),
+                QueryTaskShape("SELECT * FROM user WHERE id = :id", mapOf("id" to 1), typeOf<Map<String, Any?>>()),
+                QueryTaskShape("SELECT * FROM user WHERE id = :id", mapOf("id" to 1), typeOf<Map<String, Any?>?>()),
+                QueryTaskShape("SELECT name FROM user", emptyMap(), typeOf<String>()),
+                QueryTaskShape("SELECT name FROM user LIMIT 1", emptyMap(), typeOf<String>()),
+                QueryTaskShape("SELECT name FROM user LIMIT 1", emptyMap(), typeOf<String?>()),
+                QueryTaskShape("SELECT * FROM user", mapOf("id" to 1), typeOf<Map<String, Any?>>()),
+                QueryTaskShape("SELECT * FROM user WHERE id = :id", mapOf("id" to 1), typeOf<Map<String, Any?>>()),
+                QueryTaskShape("SELECT * FROM user WHERE id = :id", mapOf("id" to 1), typeOf<Map<String, Any?>?>()),
+                QueryTaskShape("SELECT name FROM user", emptyMap(), typeOf<String>()),
+                QueryTaskShape("SELECT name FROM user LIMIT 1", emptyMap(), typeOf<String>()),
+                QueryTaskShape("SELECT name FROM user LIMIT 1", emptyMap(), typeOf<String?>())
+            ),
+            wrapper.queries.map { QueryTaskShape(it.sql, it.paramMap, it.targetType) }
+        )
+        assertEquals(
+            listOf(ActionTaskShape("UPDATE user SET name = :name", mapOf("name" to "alpha"), KOperationType.UPDATE)),
+            wrapper.actions.map { ActionTaskShape(it.sql, it.paramMap, it.operationType) }
+        )
+        assertEquals(
+            listOf(
+                BatchTaskShape(
+                    "UPDATE user SET name = :name WHERE id = :id",
+                    listOf(mapOf("name" to "alpha", "id" to 1), mapOf("name" to "beta", "id" to 2)),
+                    KOperationType.UPDATE
+                )
+            ),
+            wrapper.batchActions.map {
+                BatchTaskShape(it.sql, it.paramMapArr?.toList().orEmpty(), it.operationType)
+            }
+        )
+    }
+
+    @Test
+    fun `row mapper task preserves a nullable mapper value and distinguishes empty rows`() {
+        val row = TestKronosRow(0, listOf("name" to "Ada"))
+        val wrapper = RowMappingWrapper(listOf(row))
+        val task = KronosQueryTask(
+            KronosAtomicQueryTask("SELECT name FROM user", targetType = typeOf<String>())
+        )
+
+        assertEquals(listOf("Ada"), task.toList(wrapper) { it.get<String>("name") })
+        assertEquals(null, task.first<String?>(wrapper) { null })
+        assertEquals(null, task.firstOrNull<String?>(wrapper) { null })
+
+        val emptyWrapper = RowMappingWrapper()
+        assertEquals(
+            "No result found for query: SELECT name FROM user",
+            assertFailsWith<NoSuchElementException> {
+                task.first<String>(emptyWrapper) { it.get<String>("name") }
+            }.message
+        )
+        assertEquals(null, task.firstOrNull<String>(emptyWrapper) { it.get<String>("name") })
+        assertEquals(
+            "KronosRow mapping requires a KronosRowMappingDataSourceWrapper, such as KronosJdbcWrapper",
+            assertFailsWith<UnsupportedOperationException> {
+                task.toList(RecordingWrapper()) { it.get<String>("name") }
+            }.message
+        )
+    }
+
+    @Test
+    fun `row mapper first hooks and logging observe mapper values instead of presence markers`() {
+        val observed = mutableListOf<Pair<Any?, QueryType>>()
+        val logged = mutableListOf<Pair<Any?, QueryType?>>()
+        val previousLogResult = handleLogResult
+        fun task() = KronosQueryTask(
+            KronosAtomicQueryTask("SELECT name FROM user", targetType = typeOf<String>())
+        ).doAfterQuery(afterHook@{ queryType, _ ->
+            observed += this@afterHook to queryType
+        })
+
+        handleLogResult = { _, result, queryType ->
+            logged += result to queryType
+        }
+        try {
+            assertEquals(
+                "Ada",
+                task().first(RowMappingWrapper(listOf(TestKronosRow(0, listOf("name" to "Ada"))))) {
+                    it.get<String>("name")
+                }
+            )
+            assertEquals(
+                null,
+                task().firstOrNull<String?>(
+                    wrapper = RowMappingWrapper(listOf(TestKronosRow(0, listOf("name" to "Ada")))),
+                    mapper = { null }
+                )
+            )
+            assertEquals(null, task().firstOrNull<String>(RowMappingWrapper()) { it.get<String>("name") })
+            assertFailsWith<NoSuchElementException> {
+                task().first<String>(RowMappingWrapper()) { it.get<String>("name") }
+            }
+
+            val expectedResults: List<Pair<Any?, QueryType>> = listOf(
+                "Ada" to QueryType.First,
+                null to QueryType.First,
+                null to QueryType.First,
+                null to QueryType.First
+            )
+            val expectedLogged: List<Pair<Any?, QueryType?>> = expectedResults.map { (result, queryType) ->
+                result to queryType
+            }
+            assertEquals(expectedResults, observed)
+            assertEquals(expectedLogged, logged)
+            assertEquals(false, observed.any { (result, _) -> result is KronosRowFirstResult<*> })
+            assertEquals(false, logged.any { (result, _) -> result is KronosRowFirstResult<*> })
+        } finally {
+            handleLogResult = previousLogResult
+        }
+    }
+
+    @Test
+    fun `raw SQL row mapper uses the generic row task contract`() {
+        val wrapper = RowMappingWrapper(listOf(TestKronosRow(0, listOf("name" to "Ada"))))
+
+        with(SqlExecutor) {
+            assertEquals(
+                listOf("Ada"),
+                wrapper.toList("SELECT name FROM user WHERE id = :id", mapOf("id" to 7)) {
+                    it.get<String>("name")
+                }
+            )
+            assertEquals("Ada", wrapper.first("SELECT name FROM user") { it.get<String>("name") })
+            assertEquals("Ada", wrapper.firstOrNull("SELECT name FROM user") { it.get<String>("name") })
+        }
+
+        assertEquals(
+            listOf(
+                QueryTaskShape("SELECT name FROM user WHERE id = :id", mapOf("id" to 7), typeOf<Any?>()),
+                QueryTaskShape("SELECT name FROM user", emptyMap(), typeOf<Any?>()),
+                QueryTaskShape("SELECT name FROM user", emptyMap(), typeOf<Any?>())
+            ),
+            wrapper.rowMappingTasks.map { QueryTaskShape(it.sql, it.paramMap, it.targetType) }
+        )
+    }
+
+    @Test
+    fun `raw sql encodes runtime enums without guessing temporal values`() {
+        val wrapper = RecordingWrapper(updateResult = 1, batchResult = intArrayOf(1, 1))
+        val unchangedTemporal = LocalDateTime.of(2026, 7, 21, 10, 11, 12)
+
+        with(SqlExecutor) {
+            assertEquals(
+                1,
+                wrapper.execute(
+                    "UPDATE user SET status = :status, changed_at = :changedAt WHERE id = :id",
+                    mapOf("status" to RawStatus.ACTIVE, "changedAt" to unchangedTemporal, "id" to 1)
+                )
+            )
+            assertContentEquals(
+                intArrayOf(1, 1),
+                wrapper.batchExecute(
+                    "UPDATE user SET status = :status WHERE id = :id",
+                    arrayOf(
+                        mapOf("status" to RawStatus.ACTIVE, "id" to 1),
+                        mapOf("status" to RawStatus.BLOCKED, "id" to 2)
+                    )
+                )
+            )
+        }
+
+        assertEquals(
+            mapOf("status" to "ACTIVE", "changedAt" to unchangedTemporal, "id" to 1),
+            wrapper.actions.single().paramMap
+        )
+        assertEquals(
+            listOf(
+                mapOf("status" to "ACTIVE", "id" to 1),
+                mapOf("status" to "BLOCKED", "id" to 2)
+            ),
+            wrapper.batchActions.single().paramMapArr?.toList()
+        )
+    }
+
+    @Test
+    fun `raw sql batch codec failures retain row index and parameter name`() {
+        val wrapper = RecordingWrapper()
+        val registration = Kronos.registerValueCodec(
+            valueCodec(
+                supports = { value, context ->
+                    context.direction == ValueCodecDirection.ENCODE &&
+                        context.origin == ValueCodecOrigin.PARAMETER &&
+                        value is RawStatus
+                },
+                convert = { value, _ ->
+                    val status = value as RawStatus
+                    check(status != RawStatus.BLOCKED) { "blocked status" }
+                    status.name
+                }
+            )
+        )
+
+        try {
+            val failure = assertFailsWith<ValueMappingException> {
+                with(SqlExecutor) {
+                    wrapper.batchExecute(
+                        "UPDATE user SET status = :status WHERE id = :id",
+                        arrayOf(
+                            mapOf("status" to RawStatus.ACTIVE, "id" to 1),
+                            mapOf("status" to RawStatus.BLOCKED, "id" to 2)
+                        )
+                    )
+                }
+            }
+
+            assertEquals(1, failure.batchIndex)
+            assertEquals("status", failure.valueName)
+            assertEquals(typeOf<RawStatus>(), failure.targetType)
+        } finally {
+            registration.close()
+        }
+    }
+
+    @Test
+    fun `action task executes before main and after hooks in one transaction boundary`() {
+        val wrapper = RecordingWrapper(batchResult = intArrayOf(1, 1))
+        val insertUserSql = "INSERT INTO user (id, name) VALUES (:id, :name)"
+        val task = KronosActionTask().also {
+            it.atomicTasks += KronosAtomicActionTask(
+                sql = insertUserSql,
+                paramMap = mapOf("id" to 1, "name" to "alpha"),
+                operationType = KOperationType.INSERT
+            )
+        }
+
+        task.doBeforeExecute { dataSource ->
+            dataSource.first(
+                KronosAtomicQueryTask(
+                    sql = "SELECT id FROM user WHERE email = :email",
+                    paramMap = mapOf("email" to "alpha@example.com"),
+                    targetType = typeOf<Map<String, Any?>?>()
+                )
+            )
+            atomicTasks += KronosAtomicActionTask(
+                sql = insertUserSql,
+                paramMap = mapOf("id" to 2, "name" to "beta"),
+                operationType = KOperationType.INSERT
+            )
+        }.doAfterExecute { dataSource ->
+            (dataSource as RecordingWrapper).recordTransactionProbe("after hook")
+            dataSource.update(
+                KronosAtomicActionTask(
+                    sql = "INSERT INTO user_audit (user_id) VALUES (:user_id)",
+                    paramMap = mapOf("user_id" to 2),
+                    operationType = KOperationType.INSERT
+                )
+            )
+        }
+
+        val result = task.execute(wrapper)
+
+        assertEquals(2, result.affectedRows)
+        assertEquals(
+            listOf(
+                TransactionProbe("query:SELECT id FROM user WHERE email = :email", true),
+                TransactionProbe("batch:INSERT INTO user (id, name) VALUES (:id, :name):2", true),
+                TransactionProbe("after hook", true),
+                TransactionProbe("action:INSERT INTO user_audit (user_id) VALUES (:user_id)", true)
+            ),
+            wrapper.transactionProbes
+        )
+    }
+
+    private data class QueryTaskShape(val sql: String, val params: Map<String, Any?>, val targetType: KType)
+    private data class ActionTaskShape(val sql: String, val params: Map<String, Any?>, val operationType: KOperationType)
+    private data class BatchTaskShape(
+        val sql: String,
+        val params: List<Map<String, Any?>>,
+        val operationType: KOperationType
+    )
+    private data class TransactionProbe(val event: String, val inTransaction: Boolean)
+
+    private open class RecordingWrapper(
+        private val listResult: List<Map<String, Any?>> = emptyList(),
+        private val typedListResult: List<Any?> = emptyList(),
+        private val mapResult: Map<String, Any?>? = null,
+        private val objectResult: Any? = null,
+        private val updateResult: Int = 1,
+        private val batchResult: IntArray = intArrayOf(1)
+    ) : KronosDataSourceWrapper {
+        val queries = mutableListOf<KAtomicQueryTask>()
+        val actions = mutableListOf<KAtomicActionTask>()
+        val batchActions = mutableListOf<KronosAtomicBatchTask>()
+        val transactionProbes = mutableListOf<TransactionProbe>()
+        private var inTransaction: Boolean = false
+        override val url: String = "jdbc:mysql://localhost:3306/kronos"
+        override val userName: String = "kronos"
+        override val dbType: DBType = DBType.Mysql
+
+        fun recordTransactionProbe(event: String) {
+            transactionProbes += TransactionProbe(event, inTransaction)
+        }
+
+        override fun toList(task: KAtomicQueryTask): List<Any?> {
+            queries += task
+            recordTransactionProbe("query:${task.sql}")
+            return if (task.targetType == typeOf<Map<String, Any?>>()) listResult else typedListResult
+        }
+
+        override fun first(task: KAtomicQueryTask): Any? {
+            queries += task
+            recordTransactionProbe("query:${task.sql}")
+            return if (task.targetType == typeOf<Map<String, Any?>>() ||
+                task.targetType == typeOf<Map<String, Any?>?>()
+            ) {
+                mapResult
+            } else {
+                objectResult
+            }
+        }
+
+        override fun update(task: KAtomicActionTask): Int {
+            actions += task
+            recordTransactionProbe("action:${task.sql}")
+            return updateResult
+        }
+
+        override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
+            batchActions += task
+            recordTransactionProbe("batch:${task.sql}:${task.paramMapArr?.size ?: 0}")
+            return batchResult
+        }
+
+        override fun transact(
+            isolation: TransactionIsolation?,
+            timeout: Int?,
+            block: TransactionScope.() -> Any?
+        ): Any? {
+            val wasInTransaction = inTransaction
+            inTransaction = true
+            return try {
+                TransactionScope().block()
+            } finally {
+                inTransaction = wasInTransaction
+            }
+        }
+    }
+
+    private class RowMappingWrapper(
+        private val rows: List<KronosRow> = emptyList()
+    ) : RecordingWrapper(), KronosRowMappingDataSourceWrapper {
+        val rowMappingTasks = mutableListOf<KAtomicQueryTask>()
+
+        override fun <T> toList(task: KAtomicQueryTask, mapper: (KronosRow) -> T): List<T> {
+            rowMappingTasks += task
+            return rows.map(mapper)
+        }
+
+        override fun <T> first(
+            task: KAtomicQueryTask,
+            mapper: (KronosRow) -> T
+        ): KronosRowFirstResult<T> {
+            rowMappingTasks += task
+            val row = rows.firstOrNull() ?: return KronosRowFirstResult.Empty
+            return KronosRowFirstResult.Present(mapper(row))
+        }
+    }
+
+    private class TestKronosRow(
+        override val rowNumber: Int,
+        private val values: List<Pair<String, Any?>>
+    ) : KronosRow() {
+        override fun get(position: Int, targetType: KType): Any? =
+            values.getOrNull(position - 1)?.second
+                ?: throw IllegalArgumentException("No test value at JDBC position $position")
+
+        override fun get(label: String, targetType: KType): Any? =
+            values.singleOrNull { it.first == label }?.second
+                ?: throw IllegalArgumentException("No test value with label '$label'")
+    }
+}

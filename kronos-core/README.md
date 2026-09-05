@@ -1,4 +1,21 @@
-# kronos-core
+# Module kronos-core
 
-Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of
-Kronos, which provides basic ORM functions.
+Core module of the Kronos ORM framework. Zero runtime dependencies.
+
+## What's Inside
+
+- **Syntax-based SQL generation** — Kronos DSL lowers SQL expressions toward `kronos-syntax` trees while legacy AST adapters are being retired
+- **ORM operations** — `select/`, `insert/`, `update/`, `delete/`, `upsert/`, `join/`, `union/`, `cascade/`, `ddl/`, `pagination/`
+- **DSL beans** — `Field`, `Criteria`, `KronosFunctionExpr`, `KTableForCondition/Select/Set/Sort/Reference`
+- **Database dialects** — MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, DM8 (extensible via `RegisteredDBTypeManager`)
+- **Interfaces** — `KPojo`, `KronosDataSourceWrapper`, `KLogger`, `KronosNamingStrategy`
+- **Annotations** — `@Table`, `@PrimaryKey`, `@Column`, `@ColumnType`, `@CreateTime`, `@UpdateTime`, `@LogicDelete`, `@Version`, `@Cascade`, `@TableIndex`, `@Serialize`, `@KronosFunction`, etc.
+- **Built-in strategies** — primary key generation, logical deletion, optimistic lock, timestamps, naming
+- **Functions system** — `FunctionHandler` DSL extensions lowered to syntax expressions, with optional `FunctionManager` renderers during migration
+- **Task system** — `KronosQueryTask`, `KronosActionTask`, `KronosAtomicBatchTask`, `TransactionScope`
+- **Plugins** — `DataGuardPlugin` prevents full-table UPDATE/DELETE
+- **Global config** — `Kronos.kt` singleton
+
+## Dependencies
+
+Zero runtime dependencies. Compiler plugin is only used for tests via `kotlinCompilerPluginClasspathTest`.

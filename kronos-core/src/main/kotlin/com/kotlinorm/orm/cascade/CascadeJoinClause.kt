@@ -20,14 +20,13 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.First
+import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.resolveRuntimeMetadata
+import kotlin.reflect.KType
 
 /**
  * Defines the logic for building and executing cascade join clauses in the context of ORM operations.
@@ -59,7 +58,7 @@ object CascadeJoinClause {
     fun build(
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
-        listOfPojo: List<Pair<KClass<KPojo>, KPojo>>,
+        listOfPojo: List<Pair<KType, KPojo>>,
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
         selectFields: MutableMap<String, Field>,
@@ -69,10 +68,11 @@ object CascadeJoinClause {
             cascadeAllowed,
             cascadeSelectedProps,
             listOfPojo.map {
+                val metadata = it.second.resolveRuntimeMetadata()
                 Triple(
-                    it.first,
+                    metadata.kType,
                     it.second,
-                    kPojoAllFieldsCache[it.first]!!.filter { col -> selectFields.values.contains(col) }
+                    metadata.allFields.filter { col -> selectFields.values.contains(col) }
                 )
             },
             operationType,
@@ -98,7 +98,7 @@ object CascadeJoinClause {
     private fun generateTask(
         cascadeAllowed: Set<Field>? = null,
         cascadeSelectedProps: Set<Field>,
-        listOfColumns: List<Triple<KClass<KPojo>, KPojo, List<Field>>>,
+        listOfColumns: List<Triple<KType, KPojo, List<Field>>>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {
@@ -116,32 +116,31 @@ object CascadeJoinClause {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
             if (validReferences.isEmpty()) return@apply // 如果没有级联，直接返回
+            supportsKronosRowMapping = false
             doAfterQuery { queryType, wrapper ->
                 validReferences.forEach { validRef ->
                     when (queryType) {
-                        QueryList -> { // 若是查询KPojo列表
+                        ToList -> { // 若是查询KPojo列表
                             val lastStepResult = this as List<KPojo> // this为主表查询的结果
                             if (lastStepResult.isEmpty()) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
-                            lastStepResult.forEach rowMapper@{
-                                setValues(
-                                    it,
-                                    propName,
-                                    validRef,
-                                    cascadeAllowed,
-                                    cascadeSelectedProps,
-                                    operationType,
-                                    wrapper
-                                )
-                            }
+                            setValues(
+                                lastStepResult,
+                                propName,
+                                validRef,
+                                cascadeAllowed,
+                                cascadeSelectedProps,
+                                operationType,
+                                wrapper
+                            )
                         }
 
-                        QueryOne, QueryOneOrNull -> {
+                        First -> {
                             val lastStepResult = this as KPojo? // this为主表查询的结果
                             if (lastStepResult == null) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
                             setValues(
-                                lastStepResult,
+                                [lastStepResult],
                                 propName,
                                 validRef,
                                 cascadeAllowed,

@@ -1,0 +1,240 @@
+/* You can add global styles to this file, and also import other style files */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("primeicons/primeicons.css");
+@import url('@ng-doc/app/styles/themes/dark.css');
+
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@plugin "tailwindcss-primeui";
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 1.5rem 0 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-surface-900);
+}
+
+.p-megamenu-panel {
+    z-index: 3;
+}
+
+:root {
+    --ng-doc-primary: #7F52FF !important;
+    --ng-doc-link-color: #7F52FF !important;
+    --ng-doc-code-max-height: 1080px !important;
+    --ng-doc-icon-width: 24px !important;
+    --ng-doc-mermaid-viewer-background: aliceblue;
+    --ng-doc-app-horizontal-padding: 3rem !important;
+    --scrollbar-width: 10px !important;
+    --p-megamenu-item-focus-background: rgba(0, 0, 0, 0.3) !important;
+    --p-menu-border-color: var(--ng-doc-base-3) !important;
+    --p-menu-background: var(--ng-doc-sidebar-background) !important;
+    --p-menu-item-color: var(--ng-doc-text) !important;
+    --p-megamenu-item-active-background: rgba(127, 82, 255, 0.15) !important;
+    --kronos-language-bg: rgba(255, 255, 255, 0.72);
+    --kronos-language-border: rgba(15, 23, 42, 0.14);
+    --kronos-language-text: #0f172a;
+    --kronos-language-hover-border: rgba(37, 99, 235, 0.45);
+    --kronos-language-hover-bg: rgba(37, 99, 235, 0.08);
+    --kronos-language-hover-text: #0f172a;
+    --kronos-language-active-bg: rgba(37, 99, 235, 0.12);
+    --kronos-language-active-text: #0f172a;
+    --kronos-language-accent: #2563eb;
+    --kronos-language-surface: rgba(255, 255, 255, 0.94);
+    --kronos-language-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+}
+
+:root.dark,
+.dark,
+:root[data-theme="dark"],
+[data-theme="dark"] {
+    --ng-doc-mermaid-viewer-background: #080909;
+    --kronos-language-bg: #080909;
+    --kronos-language-border: rgba(223, 255, 103, 0.42);
+    --kronos-language-text: #f6f7ef;
+    --kronos-language-hover-border: rgba(223, 255, 103, 0.72);
+    --kronos-language-hover-bg: rgba(223, 255, 103, 0.1);
+    --kronos-language-hover-text: #ffffff;
+    --kronos-language-active-bg: rgba(223, 255, 103, 0.14);
+    --kronos-language-active-text: #faffd7;
+    --kronos-language-accent: #dfff67;
+    --kronos-language-surface: rgba(8, 9, 9, 0.96);
+    --kronos-language-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
+}
+
+.dark .ng-doc-mermaid-viewer,
+.dark ng-doc-mermaid,
+.dark .mermaid {
+    background: var(--ng-doc-mermaid-viewer-background) !important;
+}
+
+img {
+    user-drag: none;
+    -webkit-user-drag: none;
+}
+
+.kronos-language-popover.p-popover,
+.kronos-language-popover {
+    --p-popover-background: var(--kronos-language-surface);
+    --p-popover-border-color: var(--kronos-language-border);
+    --p-popover-color: var(--kronos-language-text);
+    --p-popover-shadow: var(--kronos-language-shadow);
+    border: 1px solid var(--kronos-language-border) !important;
+    border-radius: 8px !important;
+    background: var(--kronos-language-surface) !important;
+    color: var(--kronos-language-text) !important;
+    box-shadow: var(--kronos-language-shadow) !important;
+}
+
+.kronos-language-popover .p-popover-content {
+    border-radius: 8px;
+    background: transparent !important;
+    color: inherit;
+    padding: 0 !important;
+}
+
+.kronos-language-popover .kronos-language-list {
+    width: 12rem;
+    margin: 0;
+    padding: 0.35rem;
+    list-style: none;
+}
+
+.kronos-language-popover .kronos-language-list li {
+    margin: 0;
+    padding: 0;
+}
+
+.kronos-language-popover .kronos-language-option {
+    position: relative;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    display: flex;
+    width: 100%;
+    min-height: 2.5rem;
+    align-items: center;
+    padding: 0 0.75rem 0 0.9rem;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--kronos-language-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.kronos-language-popover .kronos-language-option::before {
+    content: "";
+    position: absolute;
+    left: 0.35rem;
+    top: 0.55rem;
+    bottom: 0.55rem;
+    width: 0.14rem;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.kronos-language-popover .kronos-language-option:hover {
+    background: var(--kronos-language-hover-bg);
+    color: var(--kronos-language-hover-text);
+}
+
+.kronos-language-popover .kronos-language-option.active {
+    background: var(--kronos-language-active-bg);
+    color: var(--kronos-language-active-text);
+}
+
+.kronos-language-popover .kronos-language-option.active::before,
+.kronos-language-popover .kronos-language-option:hover::before {
+    background: var(--kronos-language-accent);
+}
+
+.kronos-language-popover .kronos-language-label {
+    color: currentColor;
+    font-weight: 600;
+}
+
+::-webkit-scrollbar {
+    background: var(--ng-doc-base-2);
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--ng-doc-base-10);
+    width: 10px;
+    border-radius: 5px;
+}
+
+.code-blue {
+    color: rgba(0, 55, 185, 0.8);
+}
+
+.code-green {
+    color: rgba(28, 99, 109, 0.8)
+}
+
+.code-black {
+    color: #000;
+}
+
+.code-white {
+    color: #FFF;
+}
+
+.code-red {
+    color: #FF0000;
+}
+
+.p-hidden {
+    display: none;
+}
+
+*:not(pre) > code.ngde {
+    white-space: normal;
+}
+
+article *:not(pre) > code.ngde:not(.title) {
+    display: inline-flex;
+    align-items: center;
+    line-height: inherit;
+    vertical-align: 0.08em;
+}
+
+.ng-doc-code-body pre code {
+    counter-reset: kronos-code-line;
+}
+
+.ng-doc-code-body pre code .line::before {
+    content: counter(kronos-code-line);
+    counter-increment: kronos-code-line;
+    display: inline-block;
+    width: 1rem;
+    margin-right: 1.5rem;
+    text-align: right;
+    color: var(--kronos-doc-code-muted, rgba(115, 138, 148, .4));
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+    font-synthesis: none;
+    text-shadow: none !important;
+}
+
+.ng-doc-code-body pre code .line.highlighted {
+    background-color: var(--kronos-doc-code-highlight-bg) !important;
+    background-image: linear-gradient(var(--kronos-doc-code-highlight-bg), var(--kronos-doc-code-highlight-bg)) !important;
+}
+
+.ng-doc-code-body pre code .line.highlighted span {
+    background: transparent !important;
+}

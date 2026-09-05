@@ -16,25 +16,42 @@
 
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KBatchTask
+import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
- * Kronos Atomic Batch Task
+ * Batch execution metadata for one SQL shape and zero or more parameter maps.
  *
- * Batch execution task for [com.kotlinorm.interfaces.KronosDataSourceWrapper.batchUpdate]
- * Created by ousc on 2024/4/18 23:10
+ * Every entry in [paramMapArr] is parsed independently with the same SQL and list-expansion
+ * occurrence metadata. Callers must ensure all parsed entries produce a compatible JDBC SQL
+ * shape before passing the task to a wrapper. [parsed] is intentionally unsupported because
+ * a batch has multiple parameter sequences; use [parsedSqlArr] for lossless metadata.
+ *
+ * @property sql named-parameter SQL shared by every batch entry
+ * @property paramMapArr parameter maps in execution order; `null` represents an empty batch
+ * @property operationType action operation classification
+ * @property statement optional structured statement that produced [sql]
+ * @property stash mutable operation-local metadata shared with the data-source wrapper
+ * @property generatedKeyField identity field whose generated value should be captured
+ * @property generatedKeys raw generated values when a wrapper supports them for this batch
+ * @property lastInsertId numeric representation of the first generated key, when available
+ * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
  */
 data class KronosAtomicBatchTask(
     override val sql: String,
     override val paramMapArr: Array<Map<String, Any?>>? = null,
     override val operationType: KOperationType = KOperationType.UPDATE,
-    override val actionInfo: KActionInfo? = null,
-    override val stash: MutableMap<String, Any?> = mutableMapOf()
+    override val statement: SqlStatement? = null,
+    override val stash: MutableMap<String, Any?> = mutableMapOf(),
+    override var generatedKeyField: Field? = null,
+    override val generatedKeys: MutableList<Any?> = mutableListOf(),
+    override var lastInsertId: Long? = null,
+    val listParameterOccurrences: Set<Int> = emptySet()
 ) : KAtomicActionTask, KBatchTask {
 
     @Deprecated("Please use 'paramMapArr' instead.")
@@ -45,13 +62,21 @@ data class KronosAtomicBatchTask(
     }
 
     /**
-     * Parses the SQL statement and returns a pair of JDBC SQL and a list of JDBC parameter lists.
+     * Returns the legacy batch representation of shared JDBC SQL and ordered value arrays.
      *
-     * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
+     * @return shared JDBC SQL, or `null` for an empty batch, paired with each value array
      */
-    fun parsedArr() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }.let {
+    fun parsedArr() = parsedSqlArr().let {
         Pair(it.firstOrNull()?.jdbcSql, it.map { parsedSql -> parsedSql.jdbcParamList })
     }
+
+    /**
+     * Parses every parameter map while preserving JDBC parameter names alongside values.
+     *
+     * @return parsed statements in the same order as [paramMapArr], or an empty list
+     */
+    fun parsedSqlArr(): List<ParsedSql> =
+        (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it, listParameterOccurrences) }
 
     /**
      * Checks if this object is equal to another object.

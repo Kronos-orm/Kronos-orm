@@ -21,15 +21,19 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
-import com.kotlinorm.orm.select.select
-import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.select.selectWithType
+import com.kotlinorm.orm.sql.toSqlParameterEq
+import com.kotlinorm.orm.statement.ParameterSource
+import com.kotlinorm.orm.update.updateWithType
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.resolveRuntimeMetadata
+import kotlin.reflect.KType
 
 object CascadeUpdateClause {
 
@@ -37,46 +41,51 @@ object CascadeUpdateClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
-        kClass: KClass<KPojo>,
+        targetType: KType,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
-        whereClauseSql: String?,
+        where: SqlExpr?,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
-            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, whereClauseSql, rootTask
+            cascadeAllowed, pojo, targetType, paramMap, toUpdateFields, where, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
-        kClass: KClass<KPojo>,
+        targetType: KType,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
-        whereClauseSql: String?,
+        where: SqlExpr?,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
+        val metadata = pojo.resolveRuntimeMetadata()
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
         val validCascades = findValidRefs( // 获取有效的引用
-            kClass,
-            kPojoAllFieldsCache[kClass]!!,
+            metadata.kType,
+            metadata.allFields,
             KOperationType.UPDATE,
-            cascadeAllowed?.filter { it.tableName == pojo.__tableName}?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
+            cascadeAllowed?.filter { it.tableName == metadata.tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
             cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
         ).filter { !it.mapperByThis }
 
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
+                val inheritedWhere = where
+                val inheritedParamMap = paramMap
+                val inheritedCascadeAllowed = cascadeAllowed
+                val selectClause = pojo.selectWithType(targetType).apply {
+                    with(context) {
+                        andWhere(inheritedWhere, inheritedParamMap)
+                        this.cascadeAllowed = inheritedCascadeAllowed
+                        operationType = KOperationType.UPDATE
+                        logicDeleteStrategy = null
+                    }
+                }
                 toUpdateRecords.addAll(
-                    pojo.select()
-                        .where { whereClauseSql.asSql() }
-                        .patch(*paramMap.toList().toTypedArray())
-                        .apply {
-                            this.cascadeAllowed = cascadeAllowed
-                            this.operationType = KOperationType.UPDATE
-                        }
-                        .queryList(wrapper)
+                    selectClause.toList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { record ->
@@ -109,7 +118,7 @@ object CascadeUpdateClause {
                     }
                     atomicTasks.addAll(
                         list.mapNotNull {
-                            getTask(it, paramMap)?.atomicTasks
+                            getTask(it, paramMap, targetType)?.atomicTasks
                         }.flatten()
                     )
                 }
@@ -119,14 +128,32 @@ object CascadeUpdateClause {
 
     private fun getTask(
         node: NodeOfKPojo,
-        paramMap: Map<String, Any?>
+        paramMap: Map<String, Any?>,
+        rootTargetType: KType
     ): KronosActionTask? {
         if (null == node.data) return null
-        return node.kPojo.update().apply {
-            node.updateParams.forEach { (_, value) ->
-                val updateField = allFields.first { it.name == value }
-                toUpdateFields += updateField
-                paramMapNew[updateField + "New"] = paramMap[value + "New"]
+        val targetType = node.data.fieldOfParent?.let { field ->
+            field.elementKType ?: field.kType
+        } ?: rootTargetType
+        return node.kPojo.updateWithType(targetType).cascade(false).apply {
+            with(context) {
+                andWhereAll(this.fields.mapNotNull { field ->
+                    sourceValues[field.name]?.let { value ->
+                        bind(field.name, value, field, ParameterSource.Condition)
+                        field.toSqlParameterEq(field.name)
+                    }
+                })
+            }
+            val patchPairs = node.updateParams.mapNotNull { (fieldName, sourceFieldName) ->
+                val parameterName = sourceFieldName + "New"
+                if (paramMap.containsKey(parameterName)) {
+                    fieldName to paramMap[parameterName]
+                } else {
+                    null
+                }
+            }.toTypedArray()
+            if (patchPairs.isNotEmpty()) {
+                patch(*patchPairs)
             }
         }.build()
     }

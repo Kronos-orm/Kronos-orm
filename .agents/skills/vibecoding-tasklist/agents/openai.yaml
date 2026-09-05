@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vibecoding Tasklist"
+  short_description: "Split development work into verifiable task docs"
+  default_prompt: "Use $vibecoding-tasklist to turn a development goal into a structured, verifiable task list."

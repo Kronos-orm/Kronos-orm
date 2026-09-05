@@ -18,9 +18,9 @@ class BundledSimpleLoggerAdapterTest {
     fun createTempDir() {
         logPath = createTempDirectory("bundledSimpleLoggerTest").toFile()
         logFile = File(logPath, logFileNameRule())
-        Kronos.logPath = listOf(
+        Kronos.logPath = [
             logPath.path
-        )
+        ]
     }
 
     @AfterTest

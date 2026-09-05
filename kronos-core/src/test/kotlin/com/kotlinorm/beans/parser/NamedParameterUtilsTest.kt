@@ -6,7 +6,6 @@ import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.exceptions.InvalidParameterException
 import com.kotlinorm.interfaces.KPojo
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -18,14 +17,14 @@ class NamedParameterUtilsTest {
         val sql = "xxx :a yyyy :b :c :a zzzzz"
         val parsedSql = parseSqlStatement(sql)
         assertEquals("xxx ? yyyy ? ? ? zzzzz", parsedSql.jdbcSql)
-        assertEquals(listOf("a", "b", "c", "a"), parsedSql.parameterNames)
+        assertEquals(["a", "b", "c", "a"], parsedSql.parameterNames)
         assertEquals(4, parsedSql.totalParameterCount)
         assertEquals(3, parsedSql.namedParameterCount)
 
         val sql2 = "xxx &a yyyy ? zzzzz"
         val parsedSql2 = parseSqlStatement(sql2)
         assertEquals("xxx ? yyyy ? zzzzz", parsedSql2.jdbcSql)
-        assertContains(parsedSql2.parameterNames, "a")
+        assertEquals(["a"], parsedSql2.parameterNames)
         assertEquals(2, parsedSql2.totalParameterCount)
         assertEquals(1, parsedSql2.namedParameterCount)
 
@@ -170,7 +169,7 @@ class NamedParameterUtilsTest {
         val sql = "select '0\\:0' as a, foo from bar where baz < DATE(:p1 23\\:59\\:59) and baz = :p2"
 
         val parsedSql = parseSqlStatement(sql)
-        assertContentEquals(parsedSql.parameterNames, listOf("p1", "p2"))
+        assertContentEquals(parsedSql.parameterNames, ["p1", "p2"])
         assertEquals(expectedSql, parsedSql.jdbcSql)
     }
 
@@ -181,7 +180,7 @@ class NamedParameterUtilsTest {
 
         val parsedSql = parseSqlStatement(sql)
         assertEquals(expectedSql, parsedSql.jdbcSql)
-        assertContentEquals(parsedSql.parameterNames, listOf("p1", "p2"))
+        assertContentEquals(parsedSql.parameterNames, ["p1", "p2"])
     }
 
     @Test
@@ -207,7 +206,7 @@ class NamedParameterUtilsTest {
 
         val parsedSql = parseSqlStatement(sql)
         assertEquals(expectedSql, parsedSql.jdbcSql)
-        assertContentEquals(parsedSql.parameterNames, listOf("p"))
+        assertContentEquals(parsedSql.parameterNames, ["p"])
     }
 
     @Test
@@ -236,7 +235,7 @@ class NamedParameterUtilsTest {
         val sql = "SELECT ARRAY[:ext]"
         val parsedSql = parseSqlStatement(sql)
         assertEquals(1, parsedSql.namedParameterCount)
-        assertContentEquals(listOf("ext"), parsedSql.parameterNames)
+        assertContentEquals(["ext"], parsedSql.parameterNames)
         assertEquals("SELECT ARRAY[?]", parsedSql.jdbcSql)
     }
 
@@ -244,10 +243,10 @@ class NamedParameterUtilsTest {
     fun paramNameWithNestedSquareBrackets() {
         data class GeneratedAlways(val id: String, val firstName: String, val lastName: String) : KPojo
 
-        val records = listOf(
+        val records = [
             GeneratedAlways("1", "John", "Doe"),
             GeneratedAlways("2", "Jane", "Doe")
-        )
+        ]
 
         val paramMap = mapOf("records" to records)
 
@@ -257,10 +256,10 @@ class NamedParameterUtilsTest {
 
         val parsedSql = parseSqlStatement(sql, paramMap)
         assertContentEquals(
-            listOf(
+            [
                 "records[0].id", "records[0].firstName", "records[0].lastName",
                 "records[1].id", "records[1].firstName", "records[1].lastName"
-            ),
+            ],
             parsedSql.parameterNames
         )
         assertEquals(
@@ -282,7 +281,7 @@ class NamedParameterUtilsTest {
         val sql = "insert into foos (id) values (:headers[id])"
         val parsedSql = parseSqlStatement(sql)
         assertEquals(1, parsedSql.namedParameterCount)
-        assertContentEquals(listOf("headers[id]"), parsedSql.parameterNames)
+        assertContentEquals(["headers[id]"], parsedSql.parameterNames)
 
         val headers = mapOf(
             "id" to 1
@@ -293,7 +292,7 @@ class NamedParameterUtilsTest {
         assertEquals("insert into foos (id) values (?)", parseSqlStatement(sql, paramMap).jdbcSql)
         assertEquals(1, parseSqlStatement(sql, paramMap).jdbcParamList[0])
 
-        val headerList = listOf(1)
+        val headerList = [1]
 
         val sq2 = "insert into foos (id) values (:headers[0])"
 
@@ -313,19 +312,134 @@ class NamedParameterUtilsTest {
     }
 
     @Test
-    fun parseSqlStatementWithBrackets() {
+    fun parseSqlStatementWithExpandableListOccurrence() {
         val sql = "select * from `tb&user` where id in (:id)"
-        val parsedSql = parseSqlStatement(sql, mapOf("id" to listOf(1, 2, 3)))
-        assertContentEquals(listOf("id"), parsedSql.parameterNames)
+        val parsedSql = parseSqlStatement(
+            sql,
+            mapOf("id" to listOf(1, 2, 3)),
+            listParameterOccurrences = setOf(0)
+        )
+        assertContentEquals(["id"], parsedSql.parameterNames)
         assertEquals("select * from `tb&user` where id in (?, ?, ?)", parsedSql.jdbcSql)
-        assertContentEquals(listOf(1, 2, 3), parsedSql.jdbcParamList.toList())
+        assertContentEquals([1, 2, 3], parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun plainCollectionArrayPrimitiveArrayAndByteArrayBindAsSingleParameter() {
+        val payload = byteArrayOf(0, 1, 2, 3, 127, -128)
+        val plainValues = listOf(
+            "ids" to listOf(1, 2, 3),
+            "arrayIds" to arrayOf(1, 2),
+            "intIds" to intArrayOf(1, 2),
+            "longIds" to longArrayOf(1L, 2L),
+            "payload" to payload,
+        )
+
+        plainValues.forEach { (name, value) ->
+            val parsedSql = parseSqlStatement("select * from t where value in (:$name)", mapOf(name to value))
+            assertEquals("select * from t where value in (?)", parsedSql.jdbcSql)
+            assertEquals(1, parsedSql.jdbcParamList.size)
+        }
+
+        assertEquals(listOf(1, 2, 3), parseSqlStatement("select :ids", mapOf("ids" to listOf(1, 2, 3))).jdbcParamList.single())
+        assertEquals(
+            listOf(1, 2),
+            (parseSqlStatement("select :arrayIds", mapOf("arrayIds" to arrayOf(1, 2))).jdbcParamList.single() as Array<*>).toList()
+        )
+        assertContentEquals(
+            intArrayOf(1, 2),
+            parseSqlStatement("select :intIds", mapOf("intIds" to intArrayOf(1, 2))).jdbcParamList.single() as IntArray
+        )
+        assertContentEquals(
+            longArrayOf(1L, 2L),
+            parseSqlStatement("select :longIds", mapOf("longIds" to longArrayOf(1L, 2L))).jdbcParamList.single() as LongArray
+        )
+        assertContentEquals(
+            payload,
+            parseSqlStatement("select :payload", mapOf("payload" to payload)).jdbcParamList.single() as ByteArray
+        )
+    }
+
+    @Test
+    fun repeatedExpandableListOccurrenceExpandsEachReference() {
+        val parsedSql = parseSqlStatement(
+            "select * from t where id in (:ids) or parent_id in (:ids)",
+            mapOf("ids" to listOf(1, 2)),
+            listParameterOccurrences = setOf(0, 1)
+        )
+
+        assertEquals("select * from t where id in (?, ?) or parent_id in (?, ?)", parsedSql.jdbcSql)
+        assertContentEquals([1, 2, 1, 2], parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun emptyExpandableListOccurrenceFailsBeforeExecution() {
+        val error = assertFailsWith<InvalidDataAccessApiUsageException> {
+            parseSqlStatement(
+                "select * from t where id in (:ids)",
+                mapOf("ids" to emptyList<Int>()),
+                listParameterOccurrences = setOf(0)
+            )
+        }
+
+        assertEquals(
+            "SQL list parameter occurrence 'ids' must contain at least one value. Handle empty lists before binding list parameters.",
+            error.message
+        )
+    }
+
+    @Test
+    fun expandableListOccurrenceSupportsObjectAndPrimitiveArrays() {
+        val arrayIds = arrayOf(1, 2)
+        val intIds = intArrayOf(3, 4)
+        val longIds = longArrayOf(5L, 6L)
+        val parsedSql = parseSqlStatement(
+            "select * from t where a in (:arrayIds) or b in (:intIds) or c in (:longIds)",
+            mapOf("arrayIds" to arrayIds, "intIds" to intIds, "longIds" to longIds),
+            listParameterOccurrences = setOf(0, 1, 2)
+        )
+
+        assertEquals("select * from t where a in (?, ?) or b in (?, ?) or c in (?, ?)", parsedSql.jdbcSql)
+        assertContentEquals(listOf<Any?>(1, 2, 3, 4, 5L, 6L), parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun indexedPathAccessStillBindsOneScalarFromListAndArrays() {
+        val sql = "select :headers[0], :arrayHeaders[1], :intHeaders[0], :longHeaders[1]"
+        val parsedSql = parseSqlStatement(
+            sql,
+            mapOf(
+                "headers" to listOf(10, 11),
+                "arrayHeaders" to arrayOf(20, 21),
+                "intHeaders" to intArrayOf(30, 31),
+                "longHeaders" to longArrayOf(40L, 41L),
+            )
+        )
+
+        assertEquals("select ?, ?, ?, ?", parsedSql.jdbcSql)
+        assertContentEquals(listOf<Any?>(10, 21, 30, 41L), parsedSql.jdbcParamList.toList())
+    }
+
+    @Test
+    fun nestedArrayInsideExpandableListOccurrenceBindsAsScalarElement() {
+        val nested = arrayOf(1, 2)
+        val parsedSql = parseSqlStatement(
+            "select * from t where value in (:values)",
+            mapOf("values" to listOf(nested, 3)),
+            listParameterOccurrences = setOf(0)
+        )
+
+        assertEquals("select * from t where value in (?, ?)", parsedSql.jdbcSql)
+        assertEquals(2, parsedSql.jdbcParamList.size)
+        assertEquals(listOf(1, 2), (parsedSql.jdbcParamList[0] as Array<*>).toList())
+        assertEquals(3, parsedSql.jdbcParamList[1])
     }
 
     @Test
     fun parseSqlStatementWithBackticks() {
         val sql = "select * from `tb&user` where id = :id"
         val parsedSql = parseSqlStatement(sql)
-        assertContentEquals(listOf("id"), parsedSql.parameterNames)
+        assertContentEquals(["id"], parsedSql.parameterNames)
         assertEquals("select * from `tb&user` where id = ?", parsedSql.jdbcSql)
     }
 
@@ -358,7 +472,7 @@ class NamedParameterUtilsTest {
         val sql = "SELECT * FROM users WHERE data->'info'->>'name' = :name"
         val parsedSql = parseSqlStatement(sql)
         assertEquals("SELECT * FROM users WHERE data->'info'->>'name' = ?", parsedSql.jdbcSql)
-        assertContentEquals(listOf("name"), parsedSql.parameterNames)
+        assertContentEquals(["name"], parsedSql.parameterNames)
     }
 
     @Test
@@ -366,7 +480,7 @@ class NamedParameterUtilsTest {
         val sql = "SELECT * FROM users WHERE id = \\:id AND name = :name"
         val parsedSql = parseSqlStatement(sql)
         assertEquals("SELECT * FROM users WHERE id = :id AND name = ?", parsedSql.jdbcSql)
-        assertContentEquals(listOf("name"), parsedSql.parameterNames)
+        assertContentEquals(["name"], parsedSql.parameterNames)
     }
 
     @Test

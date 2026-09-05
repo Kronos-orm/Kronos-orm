@@ -1,0 +1,233 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+
+## 使用 `KColumnType`
+
+`KColumnType` 是 `@ColumnType` 接收的枚举。把它标注在 `KPojo` 属性上，可以指定表操作在当前数据库方言下渲染的 DDL 类型。
+
+```kotlin name="kotlin" icon="kotlin" {8}
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
+
+@Table("tb_column_type_catalog")
+data class ColumnTypeCatalog(
+    @ColumnType(KColumnType.VARCHAR, length = 64)
+    var code: String? = null,
+) : KPojo
+
+val code = ColumnTypeCatalog().__columns.single { it.name == "code" }
+```
+
+结果：
+
+| 字段元数据 | 值 |
+|------------|----|
+| `code.type` | `KColumnType.VARCHAR` |
+| `code.length` | `64` |
+| `code.scale` | `0` |
+
+## 文本和 UUID 类型
+
+字符串类 `KColumnType` 可用于短文本、长文本和 UUID 值。
+
+```kotlin name="kotlin" icon="kotlin" {8,11,14}
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
+
+@Table("tb_text_type")
+data class TextType(
+    @ColumnType(KColumnType.VARCHAR, length = 64)
+    var code: String? = null,
+
+    @ColumnType(KColumnType.TEXT)
+    var description: String? = null,
+
+    @ColumnType(KColumnType.UUID)
+    var externalId: String? = null,
+) : KPojo
+```
+
+DDL 类型片段：
+
+| 方言 | `code` | `description` | `externalId` |
+|------|--------|---------------|--------------|
+| MySQL | `VARCHAR(64)` | `TEXT` | `CHAR(36)` |
+| PostgreSQL | `VARCHAR(64)` | `TEXT` | `UUID` |
+| SQLite | `TEXT` | `TEXT` | `TEXT` |
+| H2 | `VARCHAR(64)` | `CLOB` | `UUID` |
+| SQLServer | `VARCHAR(64)` | `TEXT` | `CHAR(36)` |
+| Oracle | `VARCHAR2(64)` | `CLOB` | `CHAR(36)` |
+| DM8 | `VARCHAR2(64)` | `CLOB` | `CHAR(36)` |
+
+## 数值类型
+
+数值类 `KColumnType` 可用于布尔值、整数和精确小数。
+
+```kotlin name="kotlin" icon="kotlin" {9,12,15}
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
+import java.math.BigDecimal
+
+@Table("tb_numeric_type")
+data class NumericType(
+    @ColumnType(KColumnType.BIT)
+    var active: Boolean? = null,
+
+    @ColumnType(KColumnType.BIGINT)
+    var visits: Long? = null,
+
+    @ColumnType(KColumnType.DECIMAL, length = 12, scale = 4)
+    var balance: BigDecimal? = null,
+) : KPojo
+```
+
+DDL 类型片段：
+
+| 方言 | `active` | `visits` | `balance` |
+|------|----------|----------|-----------|
+| MySQL | `TINYINT(1)` | `BIGINT(20)` | `DECIMAL(12,4)` |
+| PostgreSQL | `BOOLEAN` | `BIGINT` | `DECIMAL(12,4)` |
+| SQLite | `INTEGER` | `INTEGER` | `NUMERIC` |
+| H2 | `BOOLEAN` | `BIGINT` | `NUMERIC(12,4)` |
+| SQLServer | `BIT` | `BIGINT` | `DECIMAL(12,4)` |
+| Oracle | `NUMBER(1)` | `NUMBER(19)` | `NUMBER(12,4)` |
+| DM8 | `NUMBER(1)` | `NUMBER(19)` | `NUMBER(12,4)` |
+
+## 日期和时间类型
+
+时间类 `KColumnType` 可用于日期、时间、日期时间和时间戳列。方言支持小秒精度时，`scale` 会参与渲染。
+
+```kotlin name="kotlin" icon="kotlin" {12,15,18,21}
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
+import java.sql.Timestamp
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+
+@Table("tb_temporal_type")
+data class TemporalType(
+    @ColumnType(KColumnType.DATE)
+    var eventDate: LocalDate? = null,
+
+    @ColumnType(KColumnType.TIME)
+    var eventTime: LocalTime? = null,
+
+    @ColumnType(KColumnType.DATETIME)
+    var createdAt: LocalDateTime? = null,
+
+    @ColumnType(KColumnType.TIMESTAMP, scale = 4)
+    var touchedAt: Timestamp? = null,
+) : KPojo
+```
+
+DDL 类型片段：
+
+| 方言 | `eventDate` | `eventTime` | `createdAt` | `touchedAt` |
+|------|-------------|-------------|-------------|-------------|
+| MySQL | `DATE` | `TIME` | `DATETIME` | `TIMESTAMP` |
+| PostgreSQL | `DATE` | `TIME(0)` | `TIMESTAMP(0)` | `TIMESTAMP(4)` |
+| SQLite | `TEXT` | `TEXT` | `TEXT` | `TEXT` |
+| H2 | `DATE` | `TIME` | `TIMESTAMP` | `TIMESTAMP(4)` |
+| SQLServer | `DATE` | `TIME` | `DATETIME` | `TIMESTAMP` |
+| Oracle | `DATE` | `TIMESTAMP(0)` | `TIMESTAMP(6)` | `TIMESTAMP(4)` |
+| DM8 | `DATE` | `TIMESTAMP(0)` | `TIMESTAMP(6)` | `TIMESTAMP(4)` |
+
+## JSON、二进制、空间和 XML 类型
+
+{{ $.annotation("Serialize") }} 会把对象编码为 JSON 文本。数据库列需要 JSON 类型时，可以额外使用 `@ColumnType(KColumnType.JSON)` 生成对应 DDL。二进制、空间和 XML 值也使用同样的 `@ColumnType` 写法。
+
+```kotlin name="kotlin" icon="kotlin" {11,12,15,18,21}
+import com.kotlinorm.annotations.ColumnType
+import com.kotlinorm.annotations.Serialize
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
+
+data class AuditPayload(val ip: String, val tags: List<String>)
+
+@Table("tb_document_type")
+data class DocumentType(
+    @ColumnType(KColumnType.JSON)
+    @Serialize
+    var payload: AuditPayload? = null,
+
+    @ColumnType(KColumnType.BLOB)
+    var attachment: ByteArray? = null,
+
+    @ColumnType(KColumnType.POINT)
+    var position: String? = null,
+
+    @ColumnType(KColumnType.XML)
+    var document: String? = null,
+) : KPojo
+```
+
+DDL 类型片段：
+
+| 方言 | `payload` | `attachment` | `position` | `document` |
+|------|-----------|--------------|------------|------------|
+| MySQL | `JSON` | `BLOB` | `POINT` | `TEXT` |
+| PostgreSQL | `JSONB` | `BYTEA` | `POINT` | `XML` |
+| SQLite | `TEXT` | `BLOB` | `TEXT` | `TEXT` |
+| H2 | `JSON` | `BLOB` | `POINT` | `XML` |
+| SQLServer | `JSON` | `VARBINARY(MAX)` | `GEOMETRY` | `XML` |
+| Oracle | `JSON` | `BLOB` | `SDO_GEOMETRY` | `XMLType` |
+| DM8 | `JSON` | `BLOB` | `SDO_GEOMETRY` | `XMLType` |
+
+## 紧凑参考表
+
+下表展示表结构 DDL 对常见 `KColumnType` 的类型字符串。单元格中的 `n`、`p`、`s` 来自 `@ColumnType` 的 `length` 和 `scale`；decimal/numeric 只设置 `length` 时会渲染为 `p,0`。
+
+| `KColumnType` | MySQL | PostgreSQL | SQLite | H2 | SQLServer | Oracle | DM8 |
+|---------------|-------|------------|--------|----|-----------|--------|-----|
+| `BIT` | `TINYINT(1)` | `BOOLEAN` | `INTEGER` | `BOOLEAN` | `BIT` | `NUMBER(1)` | `NUMBER(1)` |
+| `TINYINT` | `TINYINT(4)` | `SMALLINT` | `INTEGER` | `TINYINT` | `TINYINT` | `NUMBER(3)` | `NUMBER(3)` |
+| `SMALLINT` | `SMALLINT(6)` | `SMALLINT` | `INTEGER` | `SMALLINT` | `SMALLINT` | `NUMBER(5)` | `NUMBER(5)` |
+| `MEDIUMINT` | `MEDIUMINT(9)` | `INTEGER` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(7)` | `NUMBER(7)` |
+| `INT` | `INT(11)` | `INTEGER` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(10)` | `NUMBER(10)` |
+| `BIGINT` | `BIGINT(20)` | `BIGINT` | `INTEGER` | `BIGINT` | `BIGINT` | `NUMBER(19)` | `NUMBER(19)` |
+| `SERIAL` | `INT(11)` | `SERIAL` | `INTEGER` | `INTEGER` | `INT` | `NUMBER` | `NUMBER` |
+| `YEAR` | `YEAR` | `INTEGER` | `INTEGER` | `INTEGER` | `INT` | `NUMBER(4)` | `NUMBER(4)` |
+| `REAL` | `REAL` | `REAL` | `REAL` | `REAL` | `REAL` | `BINARY_FLOAT` | `BINARY_FLOAT` |
+| `FLOAT` | `FLOAT` 或 `FLOAT(p,s)` | `DOUBLE PRECISION` 或 `FLOAT(p)` | `REAL` | `DOUBLE PRECISION` | `FLOAT` 或 `FLOAT(p)` | `BINARY_DOUBLE` 或 `FLOAT(p)` | `BINARY_DOUBLE` 或 `FLOAT(p)` |
+| `DOUBLE` | `DOUBLE` 或 `DOUBLE(p,s)` | `DOUBLE PRECISION` | `REAL` | `DOUBLE PRECISION` | `FLOAT(53)` | `BINARY_DOUBLE` | `BINARY_DOUBLE` |
+| `DECIMAL` | `DECIMAL(10,0)` 或 `DECIMAL(p,s)` | `DECIMAL` 或 `DECIMAL(p,s)` | `NUMERIC` | `NUMERIC`、`NUMERIC(p,0)` 或 `NUMERIC(p,s)` | `DECIMAL(18,0)` 或 `DECIMAL(p,s)` | `NUMBER(10,0)` 或 `NUMBER(p,s)` | `NUMBER(10,0)` 或 `NUMBER(p,s)` |
+| `NUMERIC` | `NUMERIC(10,0)` 或 `NUMERIC(p,s)` | `NUMERIC` 或 `NUMERIC(p,s)` | `NUMERIC` | `NUMERIC`、`NUMERIC(p,0)` 或 `NUMERIC(p,s)` | `NUMERIC(18,0)` 或 `NUMERIC(p,s)` | `NUMERIC(10,0)` 或 `NUMERIC(p,s)` | `NUMERIC(10,0)` 或 `NUMERIC(p,s)` |
+| `CHAR` | `CHAR(255)` 或 `CHAR(n)` | `CHAR(255)` 或 `CHAR(n)` | `TEXT` | `CHAR(255)` 或 `CHAR(n)` | `CHAR(255)` 或 `CHAR(n)` | `CHAR(255)` 或 `CHAR(n)` | `CHAR(255)` 或 `CHAR(n)` |
+| `VARCHAR` | `VARCHAR(255)` 或 `VARCHAR(n)` | `TEXT` 或 `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` 或 `VARCHAR(n)` | `VARCHAR(255)` 或 `VARCHAR(n/MAX)` | `VARCHAR2(255)` 或 `VARCHAR2(n)` | `VARCHAR2(255)` 或 `VARCHAR2(n)` |
+| `NCHAR` | `CHAR(255)` 或 `CHAR(n)` | `CHAR(255)` 或 `CHAR(n)` | `TEXT` | `CHAR(255)` 或 `CHAR(n)` | `NVARCHAR(255)` 或 `NVARCHAR(n)` | `NCHAR(255)` 或 `NCHAR(n)` | `NCHAR(255)` 或 `NCHAR(n)` |
+| `NVARCHAR` | `VARCHAR(255)` 或 `VARCHAR(n)` | `TEXT` 或 `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` 或 `VARCHAR(n)` | `NVARCHAR(255)` 或 `NVARCHAR(n/MAX)` | `NVARCHAR2(255)` 或 `NVARCHAR2(n)` | `NVARCHAR2(255)` 或 `NVARCHAR2(n)` |
+| `TEXT` | `TEXT` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `MEDIUMTEXT` | `MEDIUMTEXT` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `LONGTEXT` | `LONGTEXT` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `CLOB` | `CLOB` | `TEXT` | `TEXT` | `CLOB` | `TEXT` | `CLOB` | `CLOB` |
+| `NCLOB` | `NCLOB` | `TEXT` | `TEXT` | `CLOB` | `NTEXT` | `NCLOB` | `NCLOB` |
+| `DATE` | `DATE` | `DATE` | `TEXT` | `DATE` | `DATE` | `DATE` | `DATE` |
+| `TIME` | `TIME` | `TIME(0-6)` | `TEXT` | `TIME` 或 `TIME(s)` | `TIME` 或 `TIME(s)` | `TIMESTAMP(0)` | `TIMESTAMP(0)` |
+| `DATETIME` | `DATETIME` | `TIMESTAMP(0-6)` | `TEXT` | `TIMESTAMP` 或 `TIMESTAMP(s)` | `DATETIME` 或 `DATETIME2(s)` | `TIMESTAMP(6)` | `TIMESTAMP(6)` |
+| `TIMESTAMP` | `TIMESTAMP` | `TIMESTAMP(0-6)` | `TEXT` | `TIMESTAMP` 或 `TIMESTAMP(s)` | `TIMESTAMP` | `TIMESTAMP(0-9)` | `TIMESTAMP(0-9)` |
+| `BINARY` | `BINARY(255)` 或 `BINARY(n)` | `BYTEA` | `BLOB` | `BINARY(255)` 或 `BINARY(n)` | `BINARY(255)` 或 `BINARY(n)` | `RAW(2000)` 或 `RAW(n)` | `RAW(2000)` 或 `RAW(n)` |
+| `VARBINARY` | `VARBINARY(255)` 或 `VARBINARY(n)` | `BYTEA` | `BLOB` | `VARBINARY(255)` 或 `VARBINARY(n)` | `VARBINARY(255)` 或 `VARBINARY(n)` | `RAW(2000)` 或 `RAW(n)` | `RAW(2000)` 或 `RAW(n)` |
+| `LONGVARBINARY` | `LONGBLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `BLOB` | `BLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `MEDIUMBLOB` | `MEDIUMBLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `LONGBLOB` | `LONGBLOB` | `BYTEA` | `BLOB` | `BLOB` | `VARBINARY(MAX)` | `BLOB` | `BLOB` |
+| `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` | `JSON` | `JSON` |
+| `ENUM` | `ENUM` | `VARCHAR(255)` 或 `VARCHAR(n)` | `TEXT` | `VARCHAR(255)` 或 `VARCHAR(n)` | `NVARCHAR(255)` | `VARCHAR2(255)` | `VARCHAR2(255)` |
+| `SET` | `SET` | `TEXT` | `INTEGER` | `VARCHAR(255)` 或 `VARCHAR(n)` | `NVARCHAR(255)` | `VARCHAR2(1000)` | `VARCHAR2(1000)` |
+| `UUID` | `CHAR(36)` | `UUID` | `TEXT` | `UUID` | `CHAR(36)` | `CHAR(36)` | `CHAR(36)` |
+| `GEOMETRY` | `GEOMETRY` | `GEOMETRY` | `TEXT` | `GEOMETRY` | `GEOMETRY` | `SDO_GEOMETRY` | `SDO_GEOMETRY` |
+| `POINT` | `POINT` | `POINT` | `TEXT` | `POINT` | `GEOMETRY` | `SDO_GEOMETRY` | `SDO_GEOMETRY` |
+| `LINESTRING` | `LINESTRING` | `LINESTRING` | `TEXT` | `LINESTRING` | `GEOMETRY` | `SDO_GEOMETRY` | `SDO_GEOMETRY` |
+| `XML` | `TEXT` | `XML` | `TEXT` | `XML` | `XML` | `XMLType` | `XMLType` |
+
+> **Note**
+> Kotlin 类型自动推断见{{ $.keyword("mapping/column-types", ["Kotlin Type 到 KColumnType"]) }}。`@ColumnType` 是用户主动选择其他枚举值的入口。

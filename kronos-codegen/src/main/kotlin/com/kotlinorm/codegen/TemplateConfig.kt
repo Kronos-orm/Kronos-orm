@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.database.SqlManager.getTableColumns
-import com.kotlinorm.database.SqlManager.getTableIndexes
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.ddl.queryTableComment
+import com.kotlinorm.syntax.statement.SqlQuery
 import java.io.File.separator
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class TemplateConfig(
     val table: List<TableConfig>,
@@ -32,6 +36,7 @@ class TemplateConfig(
 ) {
 
     val wrapper = dataSource
+    private val statements by lazy { SqlManager.statementsOf(wrapper.dbType) }
     val tableCommentLineWords: Int
     val packageName: String
     val targetDir: String
@@ -45,30 +50,30 @@ class TemplateConfig(
     }
     val tableComments: List<String> by lazy {
         table.map {
-            queryTableComment(it.name, wrapper)
+            queryTableComment(it.name)
         }
     }
     val fields: List<List<Field>> by lazy {
         table.map {
-            getTableColumns(wrapper, it.name)
+            val rows = queryMapRows(statements.tableColumns(it.name), it.name)
+            statements.mapColumns(it.name, rows)
         }
     }
     val indexes: List<List<KTableIndex>> by lazy {
         table.map {
-            getTableIndexes(wrapper, it.name)
+            val rows = queryMapRows(statements.tableIndexes(it.name), it.name)
+            statements.mapIndexes(it.name, rows)
         }
     }
 
     init {
-        Kronos.init {
-            Kronos.tableNamingStrategy = strategy.tableNamingStrategy ?: lineHumpNamingStrategy
-            Kronos.fieldNamingStrategy = strategy.fieldNamingStrategy ?: lineHumpNamingStrategy
-            Kronos.createTimeStrategy = strategy.createTimeStrategy ?: Kronos.createTimeStrategy
-            Kronos.updateTimeStrategy = strategy.updateTimeStrategy ?: Kronos.updateTimeStrategy
-            Kronos.logicDeleteStrategy = strategy.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
-            Kronos.optimisticLockStrategy = strategy.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
-            Kronos.dataSource = { wrapper }
-        }
+        Kronos.tableNamingStrategy = strategy.tableNamingStrategy ?: Kronos.lineHumpNamingStrategy
+        Kronos.fieldNamingStrategy = strategy.fieldNamingStrategy ?: Kronos.lineHumpNamingStrategy
+        Kronos.createTimeStrategy = strategy.createTimeStrategy ?: Kronos.createTimeStrategy
+        Kronos.updateTimeStrategy = strategy.updateTimeStrategy ?: Kronos.updateTimeStrategy
+        Kronos.logicDeleteStrategy = strategy.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
+        Kronos.optimisticLockStrategy = strategy.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
+        Kronos.dataSource = { wrapper }
         targetDir = output.targetDir
         tableCommentLineWords = output.tableCommentLineWords ?: MAX_COMMENT_LINE_WORDS
         packageName = output.packageName ?: targetDir.split("main/kotlin/").lastOrNull()?.replace('/', '.')
@@ -84,6 +89,34 @@ class TemplateConfig(
             fields = fields[index],
             indexes = indexes[index],
             tableCommentLineWords = tableCommentLineWords
+        )
+    }
+
+    private fun queryTableComment(tableName: String): String {
+        val statement = statements.tableComment() ?: return ""
+        return wrapper.first(queryTask(statement, tableName, typeOf<String?>())) as String? ?: ""
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun queryMapRows(statement: SqlQuery, tableName: String): List<Map<String, Any>> {
+        return wrapper.toList(queryTask(statement, tableName)) as List<Map<String, Any>>
+    }
+
+    private fun queryTask(
+        statement: SqlQuery,
+        tableName: String,
+        targetType: KType = typeOf<Map<String, Any?>>()
+    ): KronosAtomicQueryTask {
+        val parameters = mapOf(
+            "tableName" to tableName,
+            "dbName" to statements.databaseName(wrapper)
+        )
+        val rendered = SqlManager.renderStatement(wrapper, statement, parameters)
+        return KronosAtomicQueryTask(
+            rendered.sql,
+            rendered.parameters,
+            statement = statement,
+            targetType = targetType
         )
     }
 

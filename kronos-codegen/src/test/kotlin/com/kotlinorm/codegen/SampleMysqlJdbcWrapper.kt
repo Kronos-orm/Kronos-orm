@@ -1,12 +1,13 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import org.apache.commons.dbcp2.BasicDataSource
-import kotlin.reflect.KClass
 
 open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataSourceWrapper {
     override val url: String = dataSource.url
@@ -14,9 +15,9 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
     override val dbType: DBType
         get() = DBType.Mysql
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
         if (task.sql.startsWith("SELECT DISTINCT INDEX_NAME")) {
-            return listOf(
+            return [
                 mapOf(
                     "tableName" to "tb_user",
                     "indexName" to "PRIMARY",
@@ -24,9 +25,9 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
                     "nonUnique" to 0,
                     "indexType" to "BTREE"
                 )
-            )
+            ]
         }
-        return listOf(
+        return [
             mapOf(
                 "COLUMN_NAME" to "id",
                 "DATA_TYPE" to "Int",
@@ -52,29 +53,12 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
                 "COLUMN_NAME" to "deleted",
                 "DATA_TYPE" to "Boolean"
             )
-        )
+        ]
     }
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
-        return listOf()
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return null
-    }
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? {
-        if (task.sql.startsWith("SELECT `TABLE_COMMENT`")) {
+    override fun first(task: KAtomicQueryTask): Any? {
+        val normalizedSql = task.sql.replace("`", "").uppercase()
+        if (normalizedSql.startsWith("SELECT TABLE_COMMENT") && normalizedSql.contains("INFORMATION_SCHEMA.TABLES")) {
             return "Sample Table Comment"
         }
         return null
@@ -88,7 +72,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
         return intArrayOf(1)
     }
 
-    override fun transact(block: () -> Any?): Any? {
+    override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
         return null
     }
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.Kronos.defaultLogger
@@ -21,12 +23,11 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.database.SqlManager.columnCreateDefSql
-import com.kotlinorm.database.SqlManager.getDBNameFrom
-import com.kotlinorm.database.SqlManager.getTableCommentSql
-import com.kotlinorm.database.SqlManager.getTableExistenceSql
+import com.kotlinorm.database.SqlManager.renderStatement
+import com.kotlinorm.database.SqlManager.statementsOf
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import kotlin.reflect.typeOf
 
 
 /**
@@ -36,37 +37,61 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
  * @param tableName String 表名。
  * @return Boolean 表示表是否存在的布尔值。
  */
-fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper): Boolean = (dataSource.forObject(
-    KronosAtomicQueryTask(
-        getTableExistenceSql(dataSource.dbType), mapOf(
-            "tableName" to tableName,
-            "dbName" to getDBNameFrom(dataSource)
-        )
-    ),
-    Int::class,
-    false,
-    listOf()
-) as Int) > 0
+fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper): Boolean =
+    (dataSource.first(metadataTask(dataSource, tableName, statementsOf(dataSource.dbType).tableExists(), typeOf<Int>()))
+        as Int) > 0
 
 fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): String {
-    return dataSource.forObject(
-        KronosAtomicQueryTask(
-            getTableCommentSql(dataSource),
-            mapOf(
-                "tableName" to tableName,
-                "dbName" to getDBNameFrom(dataSource)
-            )
-        ),
-        String::class,
-        false,
-        listOf()
-    ) as String? ?: ""
+    val statement = statementsOf(dataSource.dbType).tableComment() ?: return ""
+    return dataSource.first(metadataTask(dataSource, tableName, statement, typeOf<String?>())) as String? ?: ""
+}
+
+fun queryTableColumns(tableName: String, dataSource: KronosDataSourceWrapper): List<Field> {
+    val statements = statementsOf(dataSource.dbType)
+    @Suppress("UNCHECKED_CAST")
+    val rows = dataSource.toList(
+        metadataTask(dataSource, tableName, statements.tableColumns(tableName), typeOf<Map<String, Any?>>())
+    ) as List<Map<String, Any>>
+    return statements.mapColumns(tableName, rows)
+}
+
+fun queryTableIndexes(tableName: String, dataSource: KronosDataSourceWrapper): List<KTableIndex> {
+    val statements = statementsOf(dataSource.dbType)
+    @Suppress("UNCHECKED_CAST")
+    val rows = dataSource.toList(
+        metadataTask(dataSource, tableName, statements.tableIndexes(tableName), typeOf<Map<String, Any?>>())
+    ) as List<Map<String, Any>>
+    return statements.mapIndexes(tableName, rows)
+}
+
+private fun metadataTask(
+    dataSource: KronosDataSourceWrapper,
+    tableName: String,
+    statement: com.kotlinorm.syntax.statement.SqlQuery,
+    targetType: kotlin.reflect.KType = typeOf<Map<String, Any?>>()
+): KronosAtomicQueryTask {
+    val statements = statementsOf(dataSource.dbType)
+    val rendered = renderStatement(
+        dataSource = dataSource,
+        statement = statement,
+        parameterValues = mapOf(
+            "tableName" to tableName,
+            "dbName" to statements.databaseName(dataSource)
+        )
+    )
+    return KronosAtomicQueryTask(
+        rendered.sql,
+        rendered.parameters,
+        statement = statement,
+        targetType = targetType,
+        listParameterOccurrences = rendered.listParameterOccurrences
+    )
 }
 
 
 data class TableColumnDiff(
     val toAdd: List<Pair<Field, Field?>>, // 新增字段与其前一个字段
-    val toModified: List<Pair<Field, Field?>>,
+    val toModified: List<Triple<Field, Field?, Field>>, // (expected, previous, current)
     val toDelete: List<Field>
 )
 
@@ -91,22 +116,29 @@ fun columnDiffer(
     expect: List<Field>,
     current: List<Field>
 ): TableColumnDiff {
+    val statements = statementsOf(dbType)
+    fun String.columnKey(): String = statements.canonicalColumnName(this)
+
+    val currentByName = current.associateBy { it.columnName.columnKey() }
+    val expectedNames = expect.map { it.columnName.columnKey() }.toSet()
+    val currentNames = currentByName.keys
+
     val toAdd = expect.mapIndexedNotNull { index, col ->
-        if (col.columnName !in current.map { it.columnName }) {
+        if (col.columnName.columnKey() !in currentNames) {
             Pair(col, if (index == 0) null else expect[index - 1])
         } else null
     }
 
-    val need2Move = moveColumn(expect, current)
+    val need2Move = if (statements.supportsColumnReordering) moveColumn(expect, current, dbType) else emptyList()
     val toModified = expect.mapIndexedNotNull { index, col ->
-        val tableColumn = current.find { col.columnName == it.columnName }
-        if (tableColumn != null && (columnCreateDefSql(dbType, col) != columnCreateDefSql(dbType, tableColumn) || col.columnName in need2Move)
+        val tableColumn = currentByName[col.columnName.columnKey()]
+        if (tableColumn != null && (!statements.sameColumnDefinition(col, tableColumn) || col.columnName.columnKey() in need2Move)
         ) {
-            Pair(col, if (index == 0) null else expect[index - 1])
+            Triple(col, if (index == 0) null else expect[index - 1], tableColumn)
         } else null
     }
 
-    val toDelete = current.filter { col -> col.columnName !in expect.map { it.columnName } }
+    val toDelete = current.filter { col -> col.columnName.columnKey() !in expectedNames }
 
     return TableColumnDiff(toAdd, toModified, toDelete)
 }
@@ -119,15 +151,19 @@ fun columnDiffer(
  *
  * @param expect The list of expected indexes.
  * @param current The list of current indexes in the database.
+ * @param dbType The database dialect used to compare index definitions.
  * @return A `TableIndexDiff` object containing the indexes to add and delete.
  */
 fun indexDiffer(
     expect: List<KTableIndex>,
-    current: List<KTableIndex>
+    current: List<KTableIndex>,
+    dbType: DBType? = null
 ): TableIndexDiff {
+    val sameDefinition = dbType?.let { statementsOf(it)::sameIndexDefinition }
+        ?: { expected: KTableIndex, actual: KTableIndex -> expected == actual }
 
-    val toAdd = expect.filter { index -> index !in current }
-    val toDelete = current.filter { index -> index !in expect }
+    val toAdd = expect.filter { expected -> current.none { sameDefinition(expected, it) } }
+    val toDelete = current.filter { actual -> expect.none { sameDefinition(it, actual) } }
 
     return TableIndexDiff(toAdd, toDelete)
 }
@@ -145,12 +181,15 @@ fun indexDiffer(
  */
 fun moveColumn(
     expect: List<Field>,
-    current: List<Field>
+    current: List<Field>,
+    dbType: DBType? = null
 ): List<String> {
+    val canonicalColumnName = dbType?.let { statementsOf(it)::canonicalColumnName } ?: { name: String -> name }
+    fun String.columnKey(): String = canonicalColumnName(this)
 
     // 取交集
-    val expectedNames = expect.map { it.columnName }.toSet()
-    val currentNames = current.map { it.columnName }.toSet()
+    val expectedNames = expect.map { it.columnName.columnKey() }.toSet()
+    val currentNames = current.map { it.columnName.columnKey() }.toSet()
 
     val filteredExpect = expectedNames.intersect(currentNames).toList()
     val filteredCurrent = currentNames.intersect(expectedNames).toList()

@@ -17,23 +17,54 @@
 package com.kotlinorm.functions.bundled.exts
 
 import com.kotlinorm.functions.FunctionHandler
+import java.math.BigDecimal
 
 @Suppress("unused")
 object PolymerizationFunctions {
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.count(x: Any?): Number? = null
+    fun FunctionHandler.count(x: Any?): Long? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.sum(x: Any?): Number? = null
+    fun FunctionHandler.sum(x: Byte?): Long? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.avg(x: Any?): Number? = null
+    fun FunctionHandler.sum(x: Short?): Long? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.max(x: Any?): Number? = null
+    fun FunctionHandler.sum(x: Int?): Long? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.min(x: Any?): Number? = null
+    fun FunctionHandler.sum(x: Long?): Long? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.sum(x: Float?): Double? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.sum(x: Double?): Double? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.sum(x: BigDecimal?): BigDecimal? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.sum(x: Number?): BigDecimal? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.sum(x: Any?): BigDecimal? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.avg(x: Any?): BigDecimal? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun <T : Comparable<T>> FunctionHandler.max(x: T?): T? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.max(x: Any?): Any? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun <T : Comparable<T>> FunctionHandler.min(x: T?): T? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.min(x: Any?): Any? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.groupConcat(x: Any?): Any? = null

@@ -16,79 +16,65 @@
 
 package com.kotlinorm.utils
 
-import com.kotlinorm.beans.dsl.Criteria
-import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.enums.ConditionType.Companion.And
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 object Extensions {
 
-    fun Map<String, Any?>.safeMapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().safeFromMapData(this)
+    fun Map<String, Any?>.safeMapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).safeFromMapData(this)
     }
 
-    fun Map<String, Any?>.mapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().fromMapData(this)
-    }
-
-    @JvmName("safeMapperToOutKClass")
-    fun Map<String, Any?>.safeMapperTo(kClass: KClass<out KPojo>): Any {
-        return kClass.createInstance().safeFromMapData(this)
-    }
-
-    @JvmName("mapperToOutKClass")
-    fun Map<String, Any?>.mapperTo(kClass: KClass<out KPojo>): Any {
-        return kClass.createInstance().fromMapData(this)
+    fun Map<String, Any?>.mapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).fromMapData(this)
     }
 
     inline fun <reified K : KPojo> Map<String, Any?>.safeMapperTo(): K {
-        return K::class.createInstance().safeFromMapData(this)
+        return safeMapperTo(typeOf<K>()) as K
     }
 
     inline fun <reified K : KPojo> Map<String, Any?>.mapperTo(): K {
-        return K::class.createInstance().fromMapData(this)
+        return mapperTo(typeOf<K>()) as K
     }
 
-    fun KPojo.safeMapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().safeFromMapData(toDataMap())
+    fun KPojo.safeMapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).safeFromMapData(toDataMap())
     }
 
-    fun KPojo.mapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().fromMapData(toDataMap())
+    fun KPojo.mapperTo(type: KType): Any {
+        return Kronos.createKPojo(type).fromMapData(toDataMap())
     }
 
     inline fun <reified K : KPojo> KPojo.safeMapperTo(): K {
-        return K::class.createInstance().safeFromMapData(toDataMap())
+        return safeMapperTo(typeOf<K>()) as K
     }
 
     inline fun <reified K : KPojo> KPojo.mapperTo(): K {
-        return K::class.createInstance().fromMapData(toDataMap())
+        return mapperTo(typeOf<K>()) as K
     }
 
-    fun KPojo.patchTo(kClass: KClass<KPojo>, vararg data: Pair<String, Any?>): KPojo {
+    fun KPojo.patchTo(type: KType, vararg data: Pair<String, Any?>): KPojo {
         return this.toDataMap().apply {
-            data.forEach { (k, v) -> this[k] = v }
-        }.mapperTo(kClass) as KPojo
+            data.forEach { (k, v) ->
+                try { this[k] = v } catch (_: NoSuchElementException) {}
+            }
+        }.mapperTo(type) as KPojo
     }
 
-    @JvmName("mapperPatchToOutKClass")
-    fun KPojo.patchTo(kClass: KClass<out KPojo>, vararg data: Pair<String, Any?>): KPojo {
-        return this.toDataMap().apply {
-            data.forEach { (k, v) -> this[k] = v }
-        }.mapperTo(kClass) as KPojo
-    }
-
-    internal fun List<Criteria>.toCriteria(): Criteria {
-        return Criteria(type = And, children = toMutableList())
-    }
-
-    internal infix fun Field.eq(value: Any?): Criteria {
-        return Criteria(this, ConditionType.EQUAL, false, value)
-    }
-
-    internal fun String.asSql(): Criteria {
-        return Criteria(type = ConditionType.SQL, value = this)
+    internal fun Any?.isEmptyArrayOrCollection(): Boolean {
+        return when (this) {
+            is Iterable<*> -> this.spliterator().exactSizeIfKnown == 0L
+            is Array<*> -> this.isEmpty()
+            is IntArray -> this.isEmpty()
+            is LongArray -> this.isEmpty()
+            is ShortArray -> this.isEmpty()
+            is FloatArray -> this.isEmpty()
+            is DoubleArray -> this.isEmpty()
+            is BooleanArray -> this.isEmpty()
+            is ByteArray -> this.isEmpty()
+            else -> false
+        }
     }
 }

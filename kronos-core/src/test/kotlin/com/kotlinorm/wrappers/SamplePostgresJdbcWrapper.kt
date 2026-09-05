@@ -1,11 +1,12 @@
 package com.kotlinorm.wrappers
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import kotlin.reflect.KClass
 
 open class SamplePostgresJdbcWrapper : KronosDataSourceWrapper {
     override val url: String
@@ -15,8 +16,8 @@ open class SamplePostgresJdbcWrapper : KronosDataSourceWrapper {
     override val dbType: DBType
         get() = DBType.Postgres
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-        return listOf(
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        return [
             mapOf(
                 "Field" to "id",
                 "Type" to "Int",
@@ -42,18 +43,9 @@ open class SamplePostgresJdbcWrapper : KronosDataSourceWrapper {
                 "Field" to "deleted",
                 "Type" to "Boolean"
             )
-        )
+        ]
     }
-
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
-        return listOf()
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return null
-    }
-
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+    override fun first(task: KAtomicQueryTask): Any? {
         return null
     }
 
@@ -65,7 +57,7 @@ open class SamplePostgresJdbcWrapper : KronosDataSourceWrapper {
         return intArrayOf(1)
     }
 
-    override fun transact(block: () -> Any?): Any? {
+    override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
         return null
     }
 }

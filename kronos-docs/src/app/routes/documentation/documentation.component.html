@@ -1,0 +1,64 @@
+<ng-doc-root [noWidthLimit]="true" [footerContent]="footer" [class]="(wikiMode ? 'wiki_mode' : '') + (sidebarCollapsed ? ' sidebar-collapsed' : '')">
+    <ng-doc-navbar>
+        <div ngDocNavbarLeft class="flex items-center gap-4">
+            <a class="logo" [routerLink]="['/']">
+                <img class="mr-1" src="/assets/images/logo_circle.png" alt="Kronos ORM"/>
+                <span class="hidden! lg:block!">Kronos ORM</span>
+            </a>
+            <span class="navbar-divider" style="width:1px; height:1.2rem; background: var(--ng-doc-base-4); opacity:0.5;"></span>
+            <a ng-doc-button-icon
+               class="sidebar-toggle-button"
+               [ngDocTooltip]="sidebarToggleTooltip"
+               size="large"
+               (click)="toggleSidebar()">
+                <svg class="sidebar-toggle-icon"
+                     [class.sidebar-toggle-icon-collapsed]="sidebarCollapsed"
+                     width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     aria-hidden="true">
+                    <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/>
+                    <path class="sidebar-toggle-rail" d="M9 5.75V18.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path class="sidebar-toggle-line" d="M13 10H16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path class="sidebar-toggle-line" d="M13 14H16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </a>
+        </div>
+        <div ngDocNavbarRight>
+            <div class="ng-doc-header-controls">
+                <kronos-language-switch [appendTo]="elementRef.nativeElement"/>
+                <ng-doc-theme-toggle></ng-doc-theme-toggle>
+                <a
+                        href="https://github.com/Kronos-orm/Kronos-orm"
+                        ng-doc-button-icon
+                        ngDocTooltip="Repository on GitHub"
+                        size="large"
+                        target="_blank">
+                    <ng-doc-icon [size]="24" customIcon="github"></ng-doc-icon>
+                </a>
+            </div>
+        </div>
+    </ng-doc-navbar>
+    <kronos-ng-doc-sidebar ngDocCustomSidebar/>
+    <router-outlet/>
+    <ng-template #footer>
+       <div class="flex">
+           <div class="hidden md:block" [style.width]="sidebarCollapsed ? '0' : '20rem'" style="transition: width 0.3s ease"></div>
+           <div class="w-full">
+               <div class="doc-footer">
+                   <span>Kronos-ORM &copy; 2026</span>
+                   <span class="doc-footer-sep">·</span>
+                   <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a>
+                   <span class="doc-footer-sep">·</span>
+                   <span>Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a></span>
+                   <span class="doc-footer-sep">·</span>
+                   <a class="doc-footer-stars" href="https://github.com/Kronos-orm/Kronos-orm/stargazers" target="_blank" rel="noreferrer">
+                       <img src="https://img.shields.io/github/stars/kronos-orm/kronos-orm.svg?style=social" alt="GitHub stars"/>
+                   </a>
+               </div>
+           </div>
+       </div>
+    </ng-template>
+</ng-doc-root>
+<document-wiki/>

@@ -17,45 +17,60 @@
 package com.kotlinorm.orm.insert
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.KTableForInsertSelect.Companion.afterInsertSelect
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
-import com.kotlinorm.beans.generator.SnowflakeIdGenerator
-import com.kotlinorm.beans.generator.UUIDGenerator
-import com.kotlinorm.beans.generator.customIdGenerator
+import com.kotlinorm.beans.dsl.KronosFunctionExpr
+import com.kotlinorm.beans.generator.resolveGeneratedPrimaryKeyValue
+import com.kotlinorm.beans.task.JdbcParameterTypeHints
 import com.kotlinorm.beans.task.KronosActionTask
-import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.cache.fieldsMapCache
-import com.kotlinorm.cache.insertSqlCache
-import com.kotlinorm.cache.kPojoAllColumnsCache
-import com.kotlinorm.cache.kPojoCreateTimeCache
-import com.kotlinorm.cache.kPojoLogicDeleteCache
-import com.kotlinorm.cache.kPojoOptimisticLockCache
-import com.kotlinorm.cache.kPojoPrimaryKeyCache
-import com.kotlinorm.cache.kPojoUpdateTimeCache
-import com.kotlinorm.database.SqlManager.getInsertSql
+import com.kotlinorm.beans.task.jdbcNullParameterTypeHints
+import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
+import com.kotlinorm.orm.sql.materializeSqlQuery
+import com.kotlinorm.orm.union.UnionClause
+import com.kotlinorm.syntax.SqlIdentifier
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlParameter
+import com.kotlinorm.syntax.inspect.SqlNodeRewriter
+import com.kotlinorm.syntax.statement.SqlDmlStatement
+import com.kotlinorm.syntax.statement.SqlInsertMode
+import com.kotlinorm.syntax.statement.SqlQuery
+import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
+import com.kotlinorm.syntax.table.SqlTable
+import com.kotlinorm.types.ToInsertSelect
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.createKPojo
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.processParams
+import com.kotlinorm.utils.allocateBindParameterName
+import com.kotlinorm.utils.resolveRuntimeMetadata
+import com.kotlinorm.utils.resolvePrimaryKey
 
 class InsertClause<T : KPojo>(val pojo: T) {
+    private val metadata = pojo.resolveRuntimeMetadata()
     private val paramMap = pojo.toDataMap()
-    private val tableName = pojo.__tableName
-    private var kClass = pojo.kClass()
-    private var createTimeStrategy = kPojoCreateTimeCache[kClass]
-    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
-    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
-    internal var allColumns = kPojoAllColumnsCache[kClass]!!
+    private val tableName = metadata.tableName
+    private var createTimeStrategy = metadata.createTimeStrategy
+    private var updateTimeStrategy = metadata.updateTimeStrategy
+    private var logicDeleteStrategy = metadata.logicDeleteStrategy
+    private var optimisticStrategy = metadata.optimisticLockStrategy
+    private var primaryKey = metadata.primaryKey ?: resolvePrimaryKey(metadata.kType, metadata.allColumns)
+    internal var allColumns = metadata.allColumns
     private var cascadeEnabled = true
-    var stash = mutableMapOf<String, Any?>()
+    private var withGeneratedId = false
+    private var identityGeneratedKeyField: Field? = null
+    private var sourceQuery: KSelectable<*>? = null
+    private var sourceUnion: UnionClause<*>? = null
+    private var sourceValueProvider: ((List<Field>) -> List<Any?>)? = null
 
     /**
      * cascadeAllowed
@@ -82,62 +97,26 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return this
     }
 
-    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        var useIdentity = false
-        val paramMapNew = mutableMapOf<String, Any?>()
-        val fieldsMap = fieldsMapCache[kClass]!!
-        val toInsertFields = mutableListOf<Field>()
-        val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
-        when (primaryKeyField.primaryKey) {
-            PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
-            PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
-            PrimaryKeyType.CUSTOM -> paramMap[primaryKeyField.name] = customIdGenerator?.nextId()
-            PrimaryKeyType.IDENTITY -> useIdentity = true
-            else -> {}
-        }
-        if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
-            useIdentity = false
-        }
-        stash["useIdentity"] = useIdentity
-        allColumns.forEach {
-            if (it.defaultValue != null && paramMap[it.name] == null) {
-                paramMap[it.name] = it.defaultValue
-            }
-            if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
-                toInsertFields.add(it)
-            }
-        }
-        if(useIdentity && !paramMap.containsKey(primaryKeyField.name)){
-            toInsertFields.remove(primaryKeyField)
-        }
-        arrayOf(
-            createTimeStrategy to true,
-            updateTimeStrategy to true,
-            logicDeleteStrategy to false,
-            optimisticStrategy to false
-        ).forEach {
-            it.first?.execute(it.second) { field, value ->
-                paramMap[field.name] = value
-            }
-        }
-        paramMap.forEach { (key, value) ->
-            val field = fieldsMap[key]
-            if (field != null && value != null) {
-                paramMapNew[key] = processParams(wrapper.orDefault(), field, value)
-            } else {
-                paramMapNew[key] = value
-            }
-        }
+    fun withId(): InsertClause<T> {
+        withGeneratedId = true
+        return this
+    }
 
-        val sql = insertSqlCache[kClass to useIdentity, {
-            getInsertSql(
-                wrapper.orDefault(),
-                tableName,
-                toInsertFields
-            ).also {
-                insertSqlCache[kClass to useIdentity] = it
-            }
-        }]
+    internal fun withPreparedPrimaryKey(fieldName: String, value: Any?): InsertClause<T> = apply {
+        paramMap[fieldName] = value
+    }
+
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+        val dataSource = wrapper.orDefault()
+        if (sourceQuery != null || sourceUnion != null) {
+            return buildSourceInsert(wrapper)
+        }
+        val toInsertFields = prepareInsertFields(includeUnsetDefaultValueFields = false)
+        val finalStatement = toSqlInsertStatement(toInsertFields)
+        val renderedSql = renderStatement(dataSource, finalStatement, paramMap, metadata.fieldMap)
+        val sql = renderedSql.sql
+        val paramMapNew = renderedSql.parameters
+        val jdbcTypeHints = toInsertFields.jdbcNullParameterTypeHints(paramMapNew)
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -147,90 +126,275 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
-                actionInfo = InsertClauseInfo(
-                    kClass,
-                    tableName
-                ),
-                stash = stash
+                statement = finalStatement,
+                stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
+                generatedKeyField = identityGeneratedKeyField.takeIf { withGeneratedId },
+                listParameterOccurrences = renderedSql.listParameterOccurrences
             )
         )
 
     }
 
+    private fun buildSourceInsert(wrapper: KronosDataSourceWrapper?): KronosActionTask {
+        val dataSource = wrapper.orDefault()
+        val toInsertFields = prepareInsertFields(includeUnsetDefaultValueFields = sourceValueProvider != null)
+        val parameterValues = linkedMapOf<String, Any?>()
+        val parameterFields = linkedMapOf<String, Field>()
+        val statement = buildSourceInsertStatement(dataSource, toInsertFields, parameterValues, parameterFields)
+        val renderedSql = renderStatement(
+            dataSource,
+            statement,
+            parameterValues,
+            metadata.fieldMap + parameterFields
+        )
+        val jdbcTypeHints = toInsertFields.jdbcNullParameterTypeHints(renderedSql.parameters)
+        return CascadeInsertClause.build(
+            cascadeEnabled,
+            cascadeAllowed,
+            pojo,
+            KronosAtomicActionTask(
+                renderedSql.sql,
+                renderedSql.parameters,
+                operationType = KOperationType.INSERT,
+                statement = statement,
+                stash = JdbcParameterTypeHints.stashFor(jdbcTypeHints),
+                generatedKeyField = identityGeneratedKeyField.takeIf { withGeneratedId },
+                listParameterOccurrences = renderedSql.listParameterOccurrences
+            )
+        )
+    }
+
+    fun toSqlStatement(
+        parameterValues: MutableMap<String, Any?> = linkedMapOf(),
+        wrapper: KronosDataSourceWrapper? = null
+    ): SqlDmlStatement.Insert {
+        val dataSource = wrapper.orDefault()
+        val toInsertFields = prepareInsertFields(includeUnsetDefaultValueFields = sourceValueProvider != null)
+        if (sourceQuery != null || sourceUnion != null) {
+            return buildSourceInsertStatement(dataSource, toInsertFields, parameterValues, linkedMapOf())
+        }
+        toInsertFields.forEach { field ->
+            parameterValues[field.name] = paramMap[field.name]
+        }
+        return toSqlInsertStatement(toInsertFields)
+    }
+
+    private fun buildSourceInsertStatement(
+        dataSource: KronosDataSourceWrapper,
+        toInsertFields: List<Field>,
+        parameterValues: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>
+    ): SqlDmlStatement.Insert {
+        val sourceSelectable = sourceQuery ?: sourceUnion ?: error("INSERT SELECT requires a source query.")
+        val source = sourceSelectable.materializeSqlQuery(
+            parameterValues,
+            mutableMapOf(),
+            dataSource,
+            parameterFields
+        )
+        val sourceProjection = sourceValueProvider?.invoke(toInsertFields)
+            ?.also { provided ->
+                require(provided.size == toInsertFields.size) {
+                    "Insert-select value count (${provided.size}) must match target insertable field count (${toInsertFields.size})."
+                }
+            }
+            ?.mapIndexed { index, value ->
+                value.toInsertSelectSqlExpr(
+                    toInsertFields[index],
+                    parameterValues,
+                    parameterFields,
+                    dataSource
+                )
+            }
+        val finalSource = sourceProjection
+            ?.let { source.rewriteProjection(it) }
+            ?: source.also { it.validateInsertSelectArity(toInsertFields.size) }
+        return SqlDmlStatement.Insert(
+            table = SqlTable.Ident(tableName),
+            columns = toInsertFields.map { SqlIdentifier.of(it.columnName) },
+            mode = SqlInsertMode.Subquery(finalSource)
+        )
+    }
+
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-        return build().execute(wrapper)
+        return build(wrapper).execute(wrapper)
     }
 
-    companion object {
-        fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
-            enabled: Boolean
-        ): Iterable<InsertClause<T>> {
-            return this.onEach { it.cascade(enabled) }
+    @PublishedApi
+    internal fun <S : KPojo> fromSource(
+        query: KSelectable<S>,
+        values: ToInsertSelect<S, Any?> = null
+    ): InsertClause<T> {
+        if (query is UnionClause<*>) {
+            sourceQuery = null
+            sourceUnion = query
+        } else {
+            sourceQuery = query
+            sourceUnion = null
+        }
+        sourceValueProvider = values?.let { insertValues ->
+            {
+                @Suppress("UNCHECKED_CAST")
+                val source = createKPojo(query.selectedType) as S
+                source.afterInsertSelect { insertValues(it) }
+            }
+        }
+        cascadeEnabled = false
+        return this
+    }
+
+    @PublishedApi
+    internal fun fromSource(
+        query: UnionClause<*>,
+        values: ((List<Field>) -> List<Any?>)? = null
+    ): InsertClause<T> {
+        sourceQuery = null
+        sourceUnion = query
+        sourceValueProvider = values
+        cascadeEnabled = false
+        return this
+    }
+
+    private fun toSqlInsertStatement(toInsertFields: List<Field>): SqlDmlStatement.Insert =
+        SqlDmlStatement.Insert(
+            table = SqlTable.Ident(tableName),
+            columns = toInsertFields.map { field -> SqlIdentifier.of(field.columnName) },
+            mode = SqlInsertMode.Values(
+                listOf(
+                    toInsertFields.map { field ->
+                        SqlExpr.Parameter(SqlParameter.Named(field.name))
+                    }
+                )
+            )
+        )
+
+    private fun prepareInsertFields(includeUnsetDefaultValueFields: Boolean): MutableList<Field> {
+        var databaseGeneratesIdentity = false
+        identityGeneratedKeyField = null
+        val toInsertFields = mutableListOf<Field>()
+        val primaryKeyField = primaryKey
+
+        val currentPrimaryKeyValue = paramMap[primaryKeyField.name]
+        val primaryKeyValue = primaryKeyField.resolveGeneratedPrimaryKeyValue(currentPrimaryKeyValue)
+        if (primaryKeyValue != null) {
+            paramMap[primaryKeyField.name] = primaryKeyValue
+            if (currentPrimaryKeyValue == null) {
+                pojo[primaryKeyField.name] = primaryKeyValue
+            }
+        }
+        if (primaryKeyField.primaryKey == PrimaryKeyType.IDENTITY) {
+            databaseGeneratesIdentity = true
+        }
+        if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
+            databaseGeneratesIdentity = false
+        }
+        if (databaseGeneratesIdentity) {
+            identityGeneratedKeyField = primaryKeyField
         }
 
-        fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
-            someFields: ToReference<T, Any?>
-        ): Iterable<InsertClause<T>> {
-            return this.onEach { it.cascade(someFields) }
+        arrayOf(
+            createTimeStrategy to true,
+            updateTimeStrategy to true,
+            optimisticStrategy to false
+        ).forEach {
+            it.first?.execute(it.second) { field, value ->
+                paramMap[field.name] = value
+            }
+        }
+        logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
+            paramMap[field.name] = false
         }
 
-        /**
-         * Builds a KronosActionTask for each InsertClause in the list.
-         *
-         * This function maps each InsertClause in the Iterable to a KronosActionTask by calling the build function of the InsertClause.
-         * It then merges all the KronosActionTasks into a single KronosActionTask using the merge function and returns it.
-         *
-         * @return KronosActionTask returns a single KronosActionTask that represents the merged tasks for all the InsertClauses in the Iterable.
-         */
-        fun <T : KPojo> Iterable<InsertClause<T>>.build(): KronosActionTask {
-            return this.map { it.build() }.merge()
+        allColumns.forEach {
+            if (!it.isColumn) return@forEach
+            if (it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null) return@forEach
+            if (!includeUnsetDefaultValueFields && it.defaultValue != null && paramMap[it.name] == null) return@forEach
+            toInsertFields.add(it)
+        }
+        return toInsertFields
+    }
+
+    private fun SqlQuery.rewriteProjection(values: List<SqlExpr>): SqlQuery =
+        when (this) {
+            is SqlQuery.Select -> copy(select = values.map { SqlSelectItem.Expr(it.remapSelectOutputReferences(select)) })
+            is SqlQuery.Set -> copy(left = left.rewriteProjection(values), right = right.rewriteProjection(values))
+            is SqlQuery.With -> copy(query = query.rewriteProjection(values))
+            is SqlQuery.Values -> error("INSERT SELECT source projection rewrite requires a SELECT query.")
         }
 
-        /**
-         * Executes the KronosActionTask built for each InsertClause in the Iterable.
-         *
-         * This function first builds a KronosActionTask for each InsertClause in the Iterable by calling the build function.
-         * It then executes the built KronosActionTask and returns the result.
-         *
-         * @param wrapper KronosDataSourceWrapper? (optional) the data source wrapper to use for the execution. If not provided, the default data source wrapper is used.
-         * @return KronosOperationResult returns the result of the execution of the KronosActionTask.
-         */
-        fun <T : KPojo> Iterable<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
-        }
-
-        fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean): Array<out InsertClause<T>> {
-            return this.onEach { it.cascade(enabled) }
-        }
-
-        fun <T : KPojo> Array<InsertClause<T>>.cascade(someFields: ToReference<T, Any?>): Array<out InsertClause<T>> {
-            return this.onEach { it.cascade(someFields) }
-        }
-
-        /**
-         * Builds a KronosActionTask for each InsertClause in the Array.
-         *
-         * This function maps each InsertClause in the Iterable to a KronosActionTask by calling the build function of the InsertClause.
-         * It then merges all the KronosActionTasks into a single KronosActionTask using the merge function and returns it.
-         *
-         * @return KronosActionTask returns a single KronosActionTask that represents the merged tasks for all the InsertClauses in the Iterable.
-         */
-        fun <T : KPojo> Array<InsertClause<T>>.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-            return this.map { it.build(wrapper) }.merge()
-        }
-
-
-        /**
-         * Executes the KronosActionTask built for each InsertClause in the array.
-         *
-         * This function first builds a KronosActionTask for each InsertClause in the Iterable by calling the build function.
-         * It then executes the built KronosActionTask and returns the result.
-         *
-         * @param wrapper KronosDataSourceWrapper? (optional) the data source wrapper to use for the execution. If not provided, the default data source wrapper is used.
-         * @return KronosOperationResult returns the result of the execution of the KronosActionTask.
-         */
-        fun <T : KPojo> Array<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+    private fun SqlQuery.validateInsertSelectArity(expected: Int) {
+        when (this) {
+            is SqlQuery.Select -> requireInsertSelectArity(select.size, expected)
+            is SqlQuery.Set -> {
+                left.validateInsertSelectArity(expected)
+                right.validateInsertSelectArity(expected)
+            }
+            is SqlQuery.With -> query.validateInsertSelectArity(expected)
+            is SqlQuery.Values -> values.forEach { row -> requireInsertSelectArity(row.size, expected) }
         }
     }
+
+    private fun requireInsertSelectArity(actual: Int, expected: Int) {
+        require(actual == expected) {
+            "Insert-select source column count ($actual) must match target insertable field count ($expected)."
+        }
+    }
+
+    private fun SqlExpr.remapSelectOutputReferences(selectItems: List<SqlSelectItem>): SqlExpr {
+        val outputExprs = selectItems.mapNotNull { item ->
+            val exprItem = item as? SqlSelectItem.Expr ?: return@mapNotNull null
+            val metadata = exprItem.metadata ?: return@mapNotNull null
+            val source = metadata.source
+            metadata.outputName to when {
+                metadata.scope == SqlSelectItemSourceScope.Source && source != null -> SqlExpr.Column(
+                    tableName = source.tableName,
+                    columnName = source.columnName,
+                    qualifier = source.qualifier,
+                    identifier = source.identifier
+                )
+                else -> metadata.expression
+            }
+        }.toMap()
+
+        if (outputExprs.isEmpty()) return this
+
+        return object : SqlNodeRewriter {
+            override fun rewriteExpr(expr: SqlExpr): SqlExpr =
+                when (expr) {
+                    is SqlExpr.Column -> outputExprs[expr.columnName] ?: outputExprs[expr.identifier.last] ?: expr
+                    else -> super.rewriteExpr(expr)
+                }
+        }.rewriteExpr(this)
+    }
+
+    private fun Any?.toInsertSelectSqlExpr(
+        targetField: Field,
+        parameterValues: MutableMap<String, Any?>,
+        parameterFields: MutableMap<String, Field>,
+        dataSource: KronosDataSourceWrapper
+    ): SqlExpr {
+        return when (this) {
+            null -> SqlExpr.NullLiteral
+            is SqlExpr -> this
+            is KronosFunctionExpr -> expr
+            is Field -> SqlExpr.Column(
+                tableName = tableName?.takeIf { it.isNotBlank() },
+                columnName = columnName
+            )
+            is KSelectable<*> -> SqlExpr.Subquery(
+                materializeSqlQuery(parameterValues, mutableMapOf(), dataSource, parameterFields)
+            )
+            else -> {
+                val paramName = allocateBindParameterName(
+                    targetField.name,
+                    parameterValues,
+                    mutableMapOf()
+                )
+                parameterValues[paramName] = this
+                parameterFields[paramName] = targetField
+                SqlExpr.Parameter(SqlParameter.Named(paramName))
+            }
+        }
+    }
+
 }

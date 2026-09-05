@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.parser
 
 import com.kotlinorm.beans.parser.NamedParameterUtils.buildValueArray
+import com.kotlinorm.beans.parser.NamedParameterUtils.buildParameterNameList
 import com.kotlinorm.beans.parser.NamedParameterUtils.substituteNamedParameters
 
 /**
@@ -33,10 +34,16 @@ class ParsedSql(
     var namedParameterCount: Int = 0,
     var unnamedParameterCount: Int = 0,
     var totalParameterCount: Int = 0,
-    var jdbcSql: String = ""
+    var jdbcSql: String = "",
+    var listParameterOccurrences: Set<Int> = emptySet()
 ) {
     val jdbcParamList by lazy {
         buildValueArray(this, paramMap)
+    }
+
+    /** Parameter names aligned one-to-one with [jdbcParamList], including list expansion. */
+    val jdbcParameterNames by lazy {
+        buildParameterNameList(this, paramMap)
     }
     /**
      * Add a named parameter parsed from this SQL statement.

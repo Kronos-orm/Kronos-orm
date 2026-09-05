@@ -17,9 +17,12 @@
 package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.NoDataSourceException
-import kotlin.reflect.KClass
+import com.kotlinorm.syntax.render.SqlDialect
 
 /**
  * Kronos Data Source Wrapper.
@@ -28,7 +31,7 @@ import kotlin.reflect.KClass
  * against a database. It serves as a bridge between the application and the underlying database, allowing the application
  * to interact with the database in a safe and efficient manner.
  *
- * @sample com.kotlinorm.beans.parser.NoneDataSourceWrapper
+ * @see com.kotlinorm.beans.parser.NoneDataSourceWrapper
  */
 interface KronosDataSourceWrapper {
     /**
@@ -67,69 +70,12 @@ interface KronosDataSourceWrapper {
      */
     val dbType: DBType
 
-    /**
-     * Executes a SQL query and returns the results as a list of maps, with each map representing a row of the result set.
-     * Each key in the map corresponds to a column name, and the associated value is the value of that column for the row.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @return A list of maps, where each map represents a row of the result set. Each key in the map is a column name, and the
-     *         associated value is the value of that column for that row. If the query returns no rows, this method returns an
-     *         empty list.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forList(task: KAtomicQueryTask): List<Map<String, Any>>
+    val sqlDialect: SqlDialect
+        get() = SqlManager.dialectOf(dbType)
 
-    /**
-     * Executes a SQL query and returns the results as a list of objects. The type of objects in the list is determined
-     * by the specified class type parameter (`kClass`). Each object in the list represents a row of the result set,
-     * instantiated or converted according to the `kClass` parameter.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @param kClass The Kotlin class (`KClass`) that specifies the type of objects to be returned in the list. The method
-     *               will attempt to instantiate or convert each row of the result set into an instance of this class.
-     * @return A list of objects of the type specified by `kClass`, where each object represents a row of the result set.
-     *         If the query returns no rows, or if instantiation/conversion to the specified type fails, this method
-     *         returns an empty list.
-     * @throws InstantiationException If there is an error instantiating objects of the specified type from the query
-     *                                results, such as due to a mismatch between the query result structure and the
-     *                                expected class fields or constructor parameters.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any>
+    fun toList(task: KAtomicQueryTask): List<Any?>
 
-    /**
-     * Executes a SQL query and returns the result as a map, with each entry representing a column of the single row
-     * in the result set. The key in the map corresponds to a column name, and the associated value is the value of
-     * that column for the row.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @return A map representing a single row of the result set, where each key is a column name and the associated
-     *         value is the value of that column for that row. If the query returns no rows, this method returns `null`.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forMap(task: KAtomicQueryTask): Map<String, Any>?
-
-    /**
-     * Executes a SQL query and attempts to convert the result set's single row into an instance of the specified Java class.
-     * The conversion aims to map the columns of the result set to the fields of the specified class, based on their names and types.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @return An object of the specified type that represents the converted row of the result set. If the query results in no rows,
-     *         or if the conversion cannot be successfully performed (due to type mismatches, missing fields, etc.), this method
-     *         may return `null` or throw a relevant exception.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any?
+    fun first(task: KAtomicQueryTask): Any?
 
     /**
      * Executes an SQL update operation (such as INSERT, UPDATE, or DELETE) using the provided SQL string and a map of parameters.
@@ -153,5 +99,21 @@ interface KronosDataSourceWrapper {
      */
     fun batchUpdate(task: KronosAtomicBatchTask): IntArray
 
-    fun transact(block: () -> Any?): Any?
+    /**
+     * Executes a block of code within a database transaction.
+     *
+     * The block is executed as a [TransactionScope] receiver, providing access to savepoint operations.
+     * If the block completes successfully, the transaction is committed.
+     * If an exception occurs, the transaction is rolled back and the exception is rethrown.
+     *
+     * @param isolation The transaction isolation level, or `null` to use the connection default.
+     * @param timeout The transaction timeout in seconds, or `null` for no timeout.
+     * @param block The block of code to execute within the transaction.
+     * @return The result of the block execution.
+     */
+    fun transact(
+        isolation: TransactionIsolation? = null,
+        timeout: Int? = null,
+        block: TransactionScope.() -> Any?
+    ): Any?
 }

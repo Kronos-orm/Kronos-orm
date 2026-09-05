@@ -25,13 +25,17 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.CascadeDeleteAction.*
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
-import com.kotlinorm.orm.delete.delete
-import com.kotlinorm.orm.select.select
-import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.delete.deleteWithType
+import com.kotlinorm.orm.select.selectWithType
+import com.kotlinorm.orm.sql.toSqlParameterEq
+import com.kotlinorm.orm.statement.ParameterSource
+import com.kotlinorm.orm.update.updateWithType
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
-import kotlin.reflect.KClass
+import com.kotlinorm.utils.resolveRuntimeMetadata
+import kotlin.reflect.KType
 
 /**
  * Used to build a cascade delete clause.
@@ -57,7 +61,8 @@ object CascadeDeleteClause {
      * @param cascade Whether the cascade is enabled.
      * @param cascadeAllowed The properties that are allowed to cascade.
      * @param pojo The pojo to be deleted.
-     * @param whereClauseSql The condition to be met.
+     * @param where The condition to be met.
+     * @param paramMap The map of parameters.
      * @param logic The logic to be used.
      * @param rootTask The delete task.
      * @return The list of atomic tasks.
@@ -65,20 +70,20 @@ object CascadeDeleteClause {
     fun <T : KPojo> build(
         cascade: Boolean,
         cascadeAllowed: Set<Field>?,
-        kClass: KClass<KPojo>,
+        targetType: KType,
         pojo: T,
-        whereClauseSql: String?,
+        where: SqlExpr?,
         paramMap: Map<String, Any?>,
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
-            kClass,
+            targetType,
             pojo,
-            whereClauseSql,
+            where,
             paramMap,
-            pojo.kronosColumns(),
+            pojo.resolveRuntimeMetadata().allFields.toList(),
             logic,
             rootTask
         ) else rootTask.toKronosActionTask()
@@ -88,7 +93,7 @@ object CascadeDeleteClause {
      *
      * @param cascadeAllowed The properties that are allowed to cascade.
      * @param pojo The pojo to be deleted.
-     * @param whereClauseSql The condition to be met.
+     * @param where The condition to be met.
      * @param paramMap The parameter map.
      * @param columns The columns of the pojo.
      * @param logic The logic to be used.
@@ -97,9 +102,9 @@ object CascadeDeleteClause {
      * **/
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>?,
-        kClass: KClass<KPojo>,
+        targetType: KType,
         pojo: T,
-        whereClauseSql: String?,
+        where: SqlExpr?,
         paramMap: Map<String, Any?>,
         columns: List<Field>,
         logic: Boolean,
@@ -107,7 +112,7 @@ object CascadeDeleteClause {
     ): KronosActionTask {
         val tableName = pojo.__tableName
         val validCascades = findValidRefs( // 获取有效的引用
-            kClass,
+            targetType,
             columns,
             KOperationType.DELETE,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
@@ -117,30 +122,21 @@ object CascadeDeleteClause {
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper -> // 在执行前检查是否有引用
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
-                val toDeleteRecords =
-                    pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
-                        .apply {
-                            this.cascadeAllowed = cascadeAllowed
-                            this.operationType = KOperationType.DELETE
-                        }
-                        .queryList(wrapper) //先查询出要删除的记录
-                if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
-
-                // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
-                val restrictCascades =
-                    validCascades.filter { it.kCascade.onDelete == RESTRICT }
-                toDeleteRecords.forEach { record ->
-                    restrictCascades.forEach { cascade ->
-                        val valueOfPojo = record.toDataMap()[cascade.field.name]
-                        if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
-                            throw UnsupportedOperationException(
-                                "The record cannot be deleted because it is restricted by a cascade." +
-                                        "${record.__tableName}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, " +
-                                        "and the value is ${valueOfPojo}."
-                            )
-                        }
+                val inheritedWhere = where
+                val inheritedParamMap = paramMap
+                val inheritedCascadeAllowed = cascadeAllowed
+                val selectClause = pojo.selectWithType(targetType).apply {
+                    with(context) {
+                        andWhere(inheritedWhere, inheritedParamMap)
+                        this.cascadeAllowed = inheritedCascadeAllowed
+                        operationType = KOperationType.DELETE
+                        logicDeleteStrategy = null
                     }
                 }
+                val toDeleteRecords = selectClause.toList(wrapper) //先查询出要删除的记录
+                if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
+
+                validateRestrictCascades(toDeleteRecords, validCascades)
 
                 // 生成树结构，后序遍历所有的子节点，将所有的子节点压入list，最后由子到父执行删除操作
                 val forestOfKPojo = toDeleteRecords.map {
@@ -168,36 +164,97 @@ object CascadeDeleteClause {
                             list.add(all.pop()) // 将所有节点压入list
                         }
                     }
-                    atomicTasks.addAll(list.mapNotNull {
-                        when (it.data?.kCascade?.onDelete) {
+                    atomicTasks.addAll(list.mapNotNull { node ->
+                        val nodeType = node.data?.fieldOfParent?.let { field ->
+                            field.elementKType ?: field.kType
+                        } ?: targetType
+                        requireNotNull(nodeType) {
+                            "Missing Kotlin type metadata for cascade field ${node.data?.fieldOfParent?.name}."
+                        }
+                        when (node.data?.kCascade?.onDelete) {
                             NO_ACTION, RESTRICT -> null
-                            CASCADE, null -> it.kPojo.delete().logic(logic).cascade(enabled = false).build().atomicTasks
-                            SET_NULL -> it.kPojo.update().apply {
-                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
-                                listOfValidCascade?.forEach { validCascade->
-                                    validCascade.kCascade.properties.forEach{ property ->
-                                        val field =  allFields.first { f -> f.name == property }
-                                        toUpdateFields += field
-                                        paramMapNew[field + "New"] = null
+                            CASCADE, null -> node.kPojo.deleteWithType(nodeType)
+                                .logic(logic)
+                                .cascade(enabled = false)
+                                .apply {
+                                    with(context) {
+                                        andWhereAll(this.fields.mapNotNull { field ->
+                                            sourceValues[field.name]?.let { value ->
+                                                bind(field.name, value, field, ParameterSource.Condition)
+                                                field.toSqlParameterEq(field.name)
+                                            }
+                                        })
                                     }
                                 }
-                            }.build().atomicTasks
+                                .build().atomicTasks
+                            SET_NULL -> {
+                                val updateClause = node.kPojo.updateWithType(nodeType)
+                                val listOfValidCascade = node.data.parent?.validCascades?.filter { cascade-> cascade.field == node.data.fieldOfParent }
+                                listOfValidCascade?.forEach { validCascade->
+                                    validCascade.kCascade.properties.forEach{ property ->
+                                        updateClause.patch(property to null)
+                                    }
+                                }
+                                updateClause.apply {
+                                    with(context) {
+                                        andWhereAll(this.fields.mapNotNull { field ->
+                                            sourceValues[field.name]?.let { value ->
+                                                bind(field.name, value, field, ParameterSource.Condition)
+                                                field.toSqlParameterEq(field.name)
+                                            }
+                                        })
+                                    }
+                                }.build().atomicTasks
+                            }
 
-                            SET_DEFAULT -> it.kPojo.update().apply {
-                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
+                            SET_DEFAULT -> {
+                                val updateClause = node.kPojo.updateWithType(nodeType)
+                                val listOfValidCascade = node.data.parent?.validCascades?.filter { cascade-> cascade.field == node.data.fieldOfParent }
                                 listOfValidCascade?.forEach { validCascade->
                                     validCascade.kCascade.properties.forEachIndexed{ index, property ->
-                                        val field =  allFields.first { f -> f.name == property }
                                         val defaultValue = validCascade.kCascade.defaultValue.getOrNull(index)
                                         if(defaultValue != null && defaultValue != RESERVED) {
-                                            toUpdateFields += field
-                                            paramMapNew[field + "New"] = defaultValue
+                                            updateClause.patch(property to defaultValue)
                                         }
                                     }
                                 }
-                            }.build().atomicTasks
+                                updateClause.apply {
+                                    with(context) {
+                                        andWhereAll(this.fields.mapNotNull { field ->
+                                            sourceValues[field.name]?.let { value ->
+                                                bind(field.name, value, field, ParameterSource.Condition)
+                                                field.toSqlParameterEq(field.name)
+                                            }
+                                        })
+                                    }
+                                }.build().atomicTasks
+                            }
                         }
                     }.flatten()) // 生成删除任务
+                }
+            }
+        }
+    }
+
+    /**
+     * Rejects deletion when a record still contains a value governed by a
+     * `RESTRICT` cascade relationship.
+     *
+     * @param records records selected for deletion
+     * @param validCascades cascade relationships applicable to the deletion
+     * @throws UnsupportedOperationException when a restricted relationship has data
+     */
+    private fun validateRestrictCascades(records: List<KPojo>, validCascades: List<ValidCascade>) {
+        val restrictCascades = validCascades.filter { it.kCascade.onDelete == RESTRICT }
+        records.forEach { record ->
+            restrictCascades.forEach { cascade ->
+                val valueOfPojo = record.toDataMap()[cascade.field.name]
+                if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
+                    throw UnsupportedOperationException(
+                        "The record cannot be deleted because it is restricted by a cascade." +
+                            "${record.__tableName}.${cascade.kCascade.properties} is restricted by " +
+                            "${cascade.kCascade.targetProperties}, and the value is $valueOfPojo."
+                    )
                 }
             }
         }

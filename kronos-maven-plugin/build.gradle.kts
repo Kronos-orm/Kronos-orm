@@ -4,12 +4,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kronos.dokka)
 }
 
 dependencies {
     api(project(":kronos-compiler-plugin"))
     implementation(libs.kotlin.maven.plugin)
     implementation(libs.maven.core)
+    testImplementation(libs.kotlin.test)
 }
 
 // A bit of a hack to copy over the META-INF services information so that Maven knows about the NullDefaultsComponentRegistrar
@@ -30,6 +32,6 @@ val copyServices =
 tasks.withType<KotlinCompile> {
     dependsOn(copyServices)
     compilerOptions {
-        freeCompilerArgs.add("-Xopt-in=kotlin.RequiresOptIn")
+        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
     }
 }

@@ -2,7 +2,10 @@ package kronos
 
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import java.net.URI
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.plugins.signing.Sign
 
 /*
  * This plugin configures publishing for a project.
@@ -24,12 +27,12 @@ plugins {
 value class PublishConfiguration(val project: Project) {
     init {
         project.group = "com.kotlinorm"
-        project.version = "0.0.8-SNAPSHOT"
+        project.version = "0.3.1"
         project.description = when (project.name) {
             "kronos-core" -> "Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of Kronos, which provides basic ORM functions."
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
             "kronos-logging" -> "Kronos 's built-in log plug-in, which supports multiple log frameworks and can be customized."
-            "kronos-compiler-plugin" -> "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
+            "kronos-compiler-plugin" -> "Kronos K2 compiler plugin for compile-time ORM code generation and IR transformation."
             "kronos-maven-plugin" -> "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-gradle-plugin" -> "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-codegen" -> "Kronos code generation library, used to read user database and table configurations, and convert them into Kotlin business code, such as KPojo Class."
@@ -68,7 +71,14 @@ val aliyun = AliyunMvn()
 
 val snapshot = SnapshotMvn()
 
-mavenPublishing {
+fun publishingToMavenLocalTaskGraph(): Boolean =
+    gradle.taskGraph.allTasks.any { task -> task.name.contains("MavenLocal", ignoreCase = true) }
+
+val publishingToMavenLocal = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("MavenLocal", ignoreCase = true)
+}
+
+configure<MavenPublishBaseExtension> {
     configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
     coordinates(publish.group, publish.name, publish.version)
 
@@ -111,14 +121,18 @@ mavenPublishing {
         }
     }
 
-    if (!snapshot.publishRequired) {
+    if (!snapshot.publishRequired && !publishingToMavenLocal) {
         signAllPublications()
     }
 
     publishToMavenCentral(true)
 }
 
-publishing {
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { !publishingToMavenLocalTaskGraph() }
+}
+configure<PublishingExtension> {
     repositories {
         if (aliyun.publishRequired) {
             maven {
@@ -148,10 +162,10 @@ if (project.name == "kronos-orm") {
         group = "kronos publishing"
         project.subprojects.forEach {
             if (it.plugins.hasPlugin("com.vanniktech.maven.publish")) {
-                dependsOn(it.tasks.named("publishMavenPublicationToMavenLocalRepository"))
+                dependsOn(it.tasks.named("publishToMavenLocal"))
             }
         }
-        dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToMavenLocalRepository"))
+        dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishToMavenLocal"))
     }
     if (!snapshot.publishRequired) {
         tasks.register("publishAllToMavenCentral") {
@@ -199,7 +213,7 @@ if (project.name == "kronos-gradle-plugin") {
                 group = "kronos publishing"
             }
         }
-        if (!snapshot.publishRequired) {
+        if (!snapshot.publishRequired && !publishingToMavenLocal) {
             tasks.forEach {
                 if (it.name.startsWith("publish")) {
                     it.dependsOn(tasks.getByName("signMavenPublication"))

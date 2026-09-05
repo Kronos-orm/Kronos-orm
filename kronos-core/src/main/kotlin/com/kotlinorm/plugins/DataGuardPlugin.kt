@@ -18,9 +18,10 @@ package com.kotlinorm.plugins
 
 import com.kotlinorm.beans.task.registerTaskEventPlugin
 import com.kotlinorm.beans.task.unregisterTaskEventPlugin
-import com.kotlinorm.database.SqlManager.getDBNameFrom
+import com.kotlinorm.database.SqlManager.statementsOf
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.TaskEventPlugin
+import com.kotlinorm.syntax.inspect.SqlStatementInspector
 import com.kotlinorm.types.ActionTaskEvent
 import com.kotlinorm.types.QueryTaskEvent
 
@@ -50,8 +51,7 @@ object DataGuardPlugin : TaskEventPlugin {
             return isMatch(databaseName, targetDatabase) && isMatch(tableName, targetTable)
         }
 
-        private fun String.toRegex() = replace("%", ".*")
-            .let { Regex("^$it$") }
+        private fun String.toRegex() = Regex("^${replace("%", ".*")}$")
     }
 
     data class OperationPolicy(
@@ -196,9 +196,10 @@ object DataGuardPlugin : TaskEventPlugin {
     override val doAfterQuery: QueryTaskEvent? = null
 
     override val doBeforeAction: ActionTaskEvent = { task, wrapper ->
-        val dbName = getDBNameFrom(wrapper)
-        val tableName = task.actionInfo?.tableName
-        val whereClause = task.actionInfo?.whereClause
+        val dbName = statementsOf(wrapper.dbType).databaseName(wrapper)
+        val statement = task.statement
+        val tableName = statement?.let { SqlStatementInspector.tableNameOrNull(it)?.canonical }
+        val where = statement?.let { SqlStatementInspector.whereOrNull(it) }
 
         when (task.operationType) {
             KOperationType.TRUNCATE -> {
@@ -220,13 +221,13 @@ object DataGuardPlugin : TaskEventPlugin {
             }
 
             KOperationType.DELETE -> {
-                if (!pluginConfig.deleteAll.isAllowed(dbName, tableName) && whereClause.isNullOrBlank()) {
+                if (!pluginConfig.deleteAll.isAllowed(dbName, tableName) && where == null) {
                     throw UnsupportedOperationException("Delete operation is not allowed.")
                 }
             }
 
             KOperationType.UPDATE -> {
-                if (!pluginConfig.updateAll.isAllowed(dbName, tableName) && whereClause.isNullOrBlank()) {
+                if (!pluginConfig.updateAll.isAllowed(dbName, tableName) && where == null) {
                     throw UnsupportedOperationException("Update operation is not allowed.")
                 }
             }

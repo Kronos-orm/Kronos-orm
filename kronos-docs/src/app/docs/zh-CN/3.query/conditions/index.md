@@ -1,0 +1,778 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+
+## {{ $.title("where") }}、{{ $.title("having") }}、`filter` 和 {{ $.title("on") }} 条件
+
+Kronos 条件 DSL 用在 `where`、`having`、`filter` 和 `on` 块中。你可以在同一个表达式中写 Kotlin 操作符和 Kronos 条件函数。
+
+```kotlin group="Condition entry" name="kotlin" icon="kotlin"
+val users = User()
+    .select { [it.id, it.name, it.age] }
+    .where { (it.age >= 18 && it.name like "Ada%") || it.id == 1 }
+    .toList()
+```
+
+```sql group="Condition entry" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE (`user`.`age` >= :ageMin AND `user`.`name` LIKE :name) OR `user`.`id` = :id
+```
+
+## 选择筛选层级
+
+`where` 筛选当前 SQL 层的 source 字段，`having` 使用 source 表达式和聚合结果筛选分组行。谓词需要读取 `select { ... }` 的结果或生成 alias 时，使用 `filter`。
+
+```kotlin group="Result filter" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
+
+val rows = Order()
+    .select {
+        [
+            it.id,
+            f.rowNumber()
+                .over { orderBy(it.id.asc()) }
+                .alias("rn")
+        ]
+    }
+    .filter { it.rn > 1 }
+    .toList()
+```
+
+```sql group="Result filter" name="Mysql" icon="mysql"
+SELECT `q`.`id`, `q`.`rn`
+FROM (
+    SELECT `id`,
+           ROW_NUMBER() OVER (ORDER BY `id` ASC) AS rn
+    FROM `order`
+) AS `q`
+WHERE `q`.`rn` > :rnMin
+```
+
+`filter` 始终建立这个派生查询边界。它的 receiver 只有 `Selected` 结果，因此上例只暴露 `id` 和 `rn`，不会暴露未选中的 `Order` 字段。`filter` 保留该结果形态，等价于在已选查询上显式调用 `select().where { ... }`。
+
+## 选择 {{ $.title("where") }} 调用方式
+
+`select()` 只创建当前表查询，对象字段值会在调用 `where()` 或 `by { ... }` 时进入条件。
+
+```kotlin group="Where calls 1" name="select" icon="kotlin"
+val users = User(id = 1)
+    .select()
+    .toList()
+```
+
+```sql group="Where calls 1" name="select sql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+```
+
+空 `where()` 按当前 KPojo 的可查询非空字段生成等值条件。
+
+```kotlin group="Where calls 2" name="empty where" icon="kotlin"
+val users = User(id = 1)
+    .select()
+    .where()
+    .toList()
+```
+
+```sql group="Where calls 2" name="empty where sql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` = :id
+```
+
+多个可查询非空字段会同时参与 query-by-example。
+
+```kotlin group="Where calls 3" name="dynamic example" icon="kotlin"
+val users = User(id = 1, name = "A", email = null)
+    .select()
+    .where()
+    .toList()
+```
+
+```sql group="Where calls 3" name="dynamic sql" icon="mysql"
+SELECT `id`, `name`, `age`, `email`
+FROM `user`
+WHERE `user`.`id` = :id
+  AND `user`.`name` = :name
+```
+
+需要查询 SQL `NULL` 时，在 lambda 中写 `== null` 或 `isNull`。
+
+```kotlin group="Where calls 4" name="null value" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.email == null }
+    .toList()
+```
+
+```sql group="Where calls 4" name="null value sql" icon="mysql"
+SELECT `id`, `name`, `age`, `email`
+FROM `user`
+WHERE `user`.`email` IS NULL
+```
+
+动态 nullable 变量仍走无值策略。下面的 `email` 为 `null` 时，`SELECT` 默认会跳过该条件。
+
+```kotlin group="Where calls 4b" name="dynamic null" icon="kotlin"
+val email: String? = null
+
+val users = User()
+    .select()
+    .where { it.email == email }
+    .toList()
+```
+
+带 lambda 的 `where { ... }` 使用 lambda 表达式生成本次条件。
+
+```kotlin group="Where calls 5" name="lambda where" icon="kotlin"
+val users = User(id = 1)
+    .select()
+    .where { it.name == "A" }
+    .toList()
+```
+
+```sql group="Where calls 5" name="lambda where sql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`name` = :name
+```
+
+多次 `where` 调用会按 `AND` 追加条件。
+
+```kotlin group="Where calls 6" name="append where" icon="kotlin"
+val users = User(id = 1)
+    .select()
+    .where()
+    .where { it.name == "A" }
+    .toList()
+```
+
+```sql group="Where calls 6" name="append where sql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` = :id
+  AND `user`.`name` = :name
+```
+
+复杂 `OR`、分组和函数条件写在同一个 lambda 中。
+
+```kotlin group="Where calls 7" name="grouped where" icon="kotlin"
+val users = User(id = 1)
+    .select()
+    .where()
+    .where { it.name == "A" || it.age > 18 }
+    .toList()
+```
+
+```sql group="Where calls 7" name="grouped where sql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` = :id
+  AND (`user`.`name` = :name OR `user`.`age` > :ageMin)
+```
+
+`select().where()` 没有可查询非空字段时保留无条件查询。
+
+```kotlin group="Where calls 8" name="empty object" icon="kotlin"
+val users = User()
+    .select()
+    .where()
+    .toList()
+```
+
+```sql group="Where calls 8" name="empty object sql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+```
+
+`update().where()` 和 `delete().where()` 使用同样的 query-by-example 规则筛选目标行。没有可查询字段的写操作会进入写入安全检查，DataGuard 可以统一拦截全表写入。
+
+```kotlin group="Where calls 9" name="write where" icon="kotlin"
+User(id = 1)
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .where()
+    .execute()
+
+User(id = 1)
+    .delete()
+    .where()
+    .execute()
+```
+
+```sql group="Where calls 9" name="write where sql" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `user`.`id` = :id
+
+DELETE FROM `user`
+WHERE `user`.`id` = :id
+```
+
+逻辑删除字段、级联属性、忽略字段和非数据库列由各自策略处理，空 `where()` 的 query-by-example 条件只读取可查询数据库列。
+
+## 比较字段值
+
+使用 Kotlin 比较操作符写相等和大小范围条件。
+
+```kotlin group="Compare" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        it.name == "Ada" &&
+            it.age >= 18 &&
+            it.score < 100
+    }
+    .toList()
+```
+
+```sql group="Compare" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`, `score`
+FROM `user`
+WHERE `user`.`name` = :name
+  AND `user`.`age` >= :ageMin
+  AND `user`.`score` < :scoreMax
+```
+
+当条件值来自当前 KPojo 对象时，使用无参条件属性。
+
+```kotlin group="Compare from object" name="kotlin" icon="kotlin"
+val probe = User(name = "Ada", age = 18)
+
+val users = probe
+    .select()
+    .where { it.name.eq && it.age.ge }
+    .toList()
+```
+
+```sql group="Compare from object" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`name` = :name
+  AND `user`.`age` >= :ageMin
+```
+
+`eq`、`neq`、`lt`、`gt`、`le`、`ge` 会读取发起操作的对象属性值。
+
+## 组合条件
+
+使用 `&&`、`||`、`!` 和括号控制条件组合。
+
+```kotlin group="Boolean" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        (it.status == 1 || it.status == 2) &&
+            !(it.name like "test%")
+    }
+    .toList()
+```
+
+```sql group="Boolean" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `status`
+FROM `user`
+WHERE (`user`.`status` = :status OR `user`.`status` = :status@1)
+  AND `user`.`name` NOT LIKE :name
+```
+
+Kronos 会保留表达式组合顺序，并为重复字段参数追加 `status@1` 这样的后缀。
+
+## 匹配集合
+
+使用 `in` 和 `!in` 匹配列表、数组或可查询子查询。
+
+```kotlin group="In list" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.id in listOf(1, 2, 3) }
+    .toList()
+```
+
+```sql group="In list" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` IN (:idList)
+```
+
+数组使用同样的 `IN` 谓词形态。
+
+```kotlin group="In array" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.id in arrayOf(1, 2, 3) }
+    .toList()
+```
+
+当集合来自另一张表时，把可查询对象放在右侧。
+
+```kotlin group="In subquery" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { user ->
+        user.id in Order()
+            .select { order -> order.userId }
+            .where { order -> order.status == 1 }
+    }
+    .toList()
+```
+
+```sql group="In subquery" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` IN (
+    SELECT `user_id` AS `userId`
+    FROM `order`
+    WHERE `order`.`status` = :status
+)
+```
+
+更多子查询谓词、行值 tuple 和 quantified comparison 见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
+
+## 用 Iterable 构建条件
+
+在条件块中可以使用 Kotlin `Iterable.any`、`Iterable.all` 和 `Iterable.none` 谓词调用。lambda 会为集合中的每个元素构建一个条件。
+
+```kotlin group="Iterable conditions" name="kotlin" icon="kotlin"
+val keywords = listOf("Ada", "Grace")
+val minimumAges = listOf(18, 21)
+val excludedFragments = listOf("test", "archive")
+
+val users = User()
+    .select()
+    .where {
+        keywords.any { keyword -> it.name.contains(keyword) } &&
+            minimumAges.all { minimumAge -> it.age >= minimumAge } &&
+            excludedFragments.none { fragment -> it.name.contains(fragment) }
+    }
+    .toList()
+```
+
+非空集合会按元素顺序组合生成的条件：
+
+| Kotlin 调用 | 生成的条件 |
+|-------------|------------|
+| `values.any { p(it) }` | `p(v1) OR p(v2) OR ...` |
+| `values.all { p(it) }` | `p(v1) AND p(v2) AND ...` |
+| `values.none { p(it) }` | `NOT p(v1) AND NOT p(v2) AND ...` |
+
+加上 `!` 后，`!values.any { p(it) }` 用 `AND` 组合 `NOT p(...)`；`!values.all { p(it) }` 用 `OR` 组合 `NOT p(...)`；`!values.none { p(it) }` 用 `OR` 组合 `p(...)`。
+
+空集合，或每个子条件都没有值的集合，对 `any`、`all` 和 `none` 都会生成 `FALSE` 条件。
+
+加上 `!` 后仍保留 `FALSE` 条件，因此 `select`、`update` 和 `delete` 都会保留这个谓词。
+
+## 匹配范围
+
+使用 `between` 和 `notBetween` 匹配 Kotlin range。
+
+```kotlin group="Between" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.age between 18..40 }
+    .toList()
+```
+
+```sql group="Between" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`age` BETWEEN 18 AND 40
+```
+
+```kotlin group="Not between" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.age notBetween 1..17 }
+    .toList()
+```
+
+```sql group="Not between" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`age` NOT BETWEEN 1 AND 17
+```
+
+## 匹配字符串
+
+当通配符已经准备好时，使用 `like` 和 `notLike`。
+
+```kotlin group="Like" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.name like "Ada%" }
+    .toList()
+```
+
+```sql group="Like" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`name` LIKE :name
+```
+
+使用 `startsWith`、`endsWith`、`contains` 让 Kronos 生成 `%` 模式。
+
+```kotlin group="String helpers" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        it.name.startsWith("A") ||
+            it.name.endsWith("son") ||
+            it.name.contains("ron")
+    }
+    .toList()
+```
+
+```sql group="String helpers" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`name` LIKE :name
+   OR `user`.`name` LIKE :name@1
+   OR `user`.`name` LIKE :name@2
+```
+
+使用 `regexp` 和 `notRegexp` 写数据库正则谓词。
+
+```kotlin group="Regexp" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.name regexp "^A.*" }
+    .toList()
+```
+
+```sql group="Regexp" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`name` REGEXP :namePattern
+```
+
+Kronos 会按数据库的正则语法渲染同一个谓词。
+
+| 数据库 | `regexp` | `notRegexp` |
+|--------|----------|-------------|
+| MySQL、H2 | `name REGEXP pattern` | `name NOT REGEXP pattern` |
+| PostgreSQL | `name ~ pattern` | `name !~ pattern` |
+| Oracle、DM8 | `REGEXP_LIKE(name, pattern)` | `NOT REGEXP_LIKE(name, pattern)` |
+
+SQLite 应用可以通过{{ $.keyword("advanced/custom-functions", ["自定义函数"]) }}注册正则函数。SQL Server 应用可以通过同一扩展点接入选定的正则实现。
+
+## 归一化文本匹配
+
+`f.lower(x)` 和 `f.upper(x)` 返回可空 `String?` 表达式，可以用于相等比较、`contains`、`like`、`startsWith`、`endsWith` 和集合成员条件。
+
+```kotlin group="Normalized string functions" name="kotlin" icon="kotlin"
+import com.kotlinorm.functions.bundled.exts.StringFunctions.lower
+import com.kotlinorm.functions.bundled.exts.StringFunctions.upper
+
+val normalizedName = "ADA".lowercase()
+val allowedNames = listOf("ada", "grace")
+
+val users = User()
+    .select()
+    .where {
+        f.lower(it.userName) == normalizedName ||
+            f.lower(it.userName).contains(normalizedName) ||
+            normalizedName in f.lower(it.userName) ||
+            f.lower(it.userName) like "ada%" ||
+            f.lower(it.userName).startsWith("a") ||
+            f.lower(it.userName).endsWith("a") ||
+            f.lower(it.userName) in allowedNames
+    }
+    .toList()
+```
+
+`f.upper(...)` 使用大写值时也支持同样的条件辅助函数。`in` 支持文本包含、集合成员和单列子查询。
+
+### 使用 Kotlin 原生大小写调用
+
+在条件中，Kronos 会把 source `String` 字段上的无参 `lowercase()` 和 `uppercase()` 映射为 SQL `LOWER` 和 `UPPER`。生成的表达式可以使用同一组条件运算符。
+
+```kotlin group="Native normalized string conditions" name="kotlin" icon="kotlin"
+val normalizedName = "Ada".lowercase()
+
+val users = User()
+    .select()
+    .where {
+        it.userName?.lowercase() == normalizedName ||
+            it.userName?.uppercase().contains("AD") ||
+            it.userName?.lowercase() like "ada%"
+    }
+    .toList()
+```
+
+其他 Kotlin 原生 `String` 接收者调用在条件中也遵循同一 source 字段规则：
+
+```kotlin group="Native string receiver conditions" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where {
+        it.userName?.length == 3 ||
+            it.userName?.take(3) == "VIP" ||
+            it.userName?.replace("-", "") == "Ada"
+    }
+    .toList()
+```
+
+`substring(start, end)` 使用 Kotlin 的零基、结束位置排他下标。`length`、`count()`、`replace`、`substring`、`subSequence`、`take` 和 `takeLast` 的完整列表见 {{ $.keyword("query/functions", ["内置函数"]) }}。
+
+`normalizedName` 等捕获值由 Kotlin 求值后作为条件参数绑定。函数和方言示例见 {{ $.keyword("query/functions", ["内置函数"]) }}。
+
+## 读取当前对象的值
+
+无参匹配属性会读取发起操作的对象属性值。
+
+```kotlin group="Object string value" name="kotlin" icon="kotlin"
+val probe = User(name = "Ada")
+
+val users = probe
+    .select()
+    .where { it.name.startsWith }
+    .toList()
+```
+
+```sql group="Object string value" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`name` LIKE :name
+```
+
+绑定值为 `Ada%`。
+
+## 判断空值
+
+使用 `== null` / `!= null` 或 `isNull` / `notNull` 生成 SQL 空值判断。
+
+```kotlin group="Null" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.deletedAt == null || it.email != null }
+    .toList()
+```
+
+```sql group="Null" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `email`, `deleted_at` AS `deletedAt`
+FROM `user`
+WHERE `user`.`deleted_at` IS NULL OR `user`.`email` IS NOT NULL
+```
+
+## 比较字段和对象值
+
+右侧写字段时，Kronos 会生成列与列比较。
+
+```kotlin group="Field value" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { it.age == it.otherAge }
+    .toList()
+```
+
+```sql group="Field value" name="Mysql" icon="mysql"
+SELECT `id`, `age`, `other_age` AS `otherAge`
+FROM `user`
+WHERE `user`.`age` = `user`.`other_age`
+```
+
+级联关系字段链推荐使用安全调用。Kronos 读取关联字段元数据并比较列，不会读取运行时的 `director` 对象。
+
+```kotlin group="Related field" name="kotlin" icon="kotlin"
+val movies = Movie()
+    .select()
+    .where { it.directorId == it.director?.id }
+    .toList()
+
+// it.director!!.id 也支持。
+```
+
+```sql group="Related field" name="Mysql" icon="mysql"
+SELECT `id`, `director_id` AS `directorId`, `title`
+FROM `movie`
+WHERE `movie`.`director_id` = `director`.`id`
+```
+
+需要读取另一个 KPojo 对象的实际 Kotlin 属性值时，将 `.value` 放在属性访问链的末端。
+
+普通变量和当前 source 字段直接使用即可。
+
+```kotlin group="Kotlin value" name="kotlin" icon="kotlin"
+val probe = User(otherAge = 40)
+
+val users = User()
+    .select()
+    .where { it.age == probe.otherAge.value }
+    .toList()
+```
+
+```sql group="Kotlin value" name="Mysql" icon="mysql"
+SELECT `id`, `age`
+FROM `user`
+WHERE `user`.`age` = :age
+```
+
+## 使用函数和算术表达式
+
+内置函数和算术表达式可以写在条件中。
+
+```kotlin group="Expression" name="kotlin" icon="kotlin"
+val users = User()
+    .select { [it.id, it.name] }
+    .where {
+        it.score + 10 > it.score - 10 &&
+            f.length(it.name) > 5
+    }
+    .toList()
+```
+
+```sql group="Expression" name="Mysql" icon="mysql"
+SELECT `id`, `name`
+FROM `user`
+WHERE (`score` + 10) > (`score` - 10)
+  AND LENGTH(`name`) > :lengthMin
+```
+
+函数详情见 {{ $.keyword("query/functions", ["内置函数"]) }}。
+
+窗口函数是 selected 表达式。先在 `select { ... }` 中选择窗口结果，再用 `filter` 通过派生查询筛选 alias；见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
+
+## 展开对象相等条件
+
+使用 `it.eq` 把当前对象中的非空字段展开为相等条件。
+
+```kotlin group="KPojo eq" name="kotlin" icon="kotlin"
+val probe = User(id = 1, name = "Ada", age = 36)
+
+val users = probe
+    .select()
+    .where { it.eq }
+    .toList()
+```
+
+```sql group="KPojo eq" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` = :id
+  AND `user`.`name` = :name
+  AND `user`.`age` = :age
+```
+
+在 `.eq` 前使用 `-` 排除不参与展开的字段。
+
+```kotlin group="KPojo eq exclude" name="kotlin" icon="kotlin"
+val probe = User(id = 1, name = "Ada", age = 36)
+
+val users = probe
+    .select()
+    .where { (it - it.age).eq }
+    .toList()
+```
+
+```sql group="KPojo eq exclude" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `user`.`id` = :id
+  AND `user`.`name` = :name
+```
+
+## 添加原生 SQL 条件
+
+当条件需要直接写 SQL 文本时，使用 `.asSql()`。
+
+```kotlin group="Raw SQL" name="kotlin" icon="kotlin"
+val users = User()
+    .select()
+    .where { "`name` = :name AND `age` > :age".asSql() }
+    .patch("name" to "Ada", "age" to 18)
+    .toList()
+```
+
+```sql group="Raw SQL" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `name` = :name AND `age` > :age
+```
+
+`patch` 用于补充当前 KPojo 对象中没有提供的命名参数。
+
+## 构建动态条件
+
+Kotlin 条件为 `true` 时使用 `.takeIf(...)` 保留谓词；条件为 `false` 时使用 `.takeUnless(...)` 保留谓词。
+
+```kotlin group="No value" name="kotlin" icon="kotlin"
+val minAge: Int? = null
+val includeInactive = false
+
+val users = User()
+    .select()
+    .where {
+        (it.age >= minAge).takeIf(minAge != null) &&
+            (it.status == 0).takeUnless(includeInactive)
+    }
+    .toList()
+```
+
+```sql group="No value" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `status` = :status
+```
+
+也可以使用普通 Kotlin `if` 和 `when` 选择完整的 SQL 条件分支：
+
+```kotlin group="Dynamic branches" name="kotlin" icon="kotlin"
+data class UserFilter(val id: Int? = null, val name: String? = null)
+
+val filter = UserFilter(id = 7)
+val users = User()
+    .select()
+    .where {
+        when {
+            filter.id != null -> it.id == filter.id
+            filter.name != null -> it.name == filter.name
+            else -> it.active == true
+        }
+    }
+    .toList()
+```
+
+`takeIf`/`takeUnless` 的 Boolean 参数以及 `if`/`when` 的条件都是普通 Kotlin 控制流。
+
+普通 Kotlin 对象的属性在 SQL 比较中按运行时值处理，因此 `it.id == filter.id` 直接使用即可；这包括普通 class、data class、object、companion 或 `@JvmStatic` 属性以及顶层属性。当前 source 字段也直接参与条件表达式。
+
+对于当前查询 source 之外的捕获 KPojo，在属性链末端使用 `.value` 读取实际 Kotlin 值，例如 `it.id == probe.id.value`。
+
+`null` 和空集合的默认处理规则见 {{ $.keyword("configuration/no-value-strategy", ["无值策略"]) }}。
+
+## 在 {{ $.title("having") }} 中使用条件
+
+`having` 使用和 `where` 相同的条件 DSL。
+
+```kotlin group="Having" name="kotlin" icon="kotlin"
+val rows: List<Map<String, Any?>> = Order()
+    .select { [it.userId, f.count(1).alias("orderCount")] }
+    .groupBy { it.userId }
+    .having { f.count(1) > 3 }
+    .toMapList()
+```
+
+```sql group="Having" name="Mysql" icon="mysql"
+SELECT `user_id` AS `userId`, COUNT(1) AS orderCount
+FROM `order`
+GROUP BY `user_id`
+HAVING COUNT(1) > :countMin
+```
+
+## 在 {{ $.title("on") }} 中使用条件
+
+`leftJoin`、`rightJoin`、`innerJoin` 和 `fullJoin` 使用同一套条件 DSL 生成关联条件。`crossJoin()` 不接收条件。
+
+```kotlin group="On" name="kotlin" icon="kotlin"
+val rows = User().join(Order()) { user, order ->
+    leftJoin { user.id == order.userId && order.status == 1 }
+        .select { [user.id, user.name, order.status] }
+}.toList()
+```
+
+```sql group="On" name="Mysql" icon="mysql"
+SELECT `user`.`id`, `user`.`name`, `order`.`status`
+FROM `user`
+LEFT JOIN `order`
+ON `user`.`id` = `order`.`user_id` AND `order`.`status` = :status
+```
+
+Join 语法见 {{ $.keyword("query/join", ["联表查询"]) }}。

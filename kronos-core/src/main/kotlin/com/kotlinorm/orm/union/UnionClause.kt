@@ -1,5 +1,5 @@
 /**
- * Copyright 2022-2025 kronos-orm
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,95 +14,148 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.orm.union
 
+import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.database.SqlManager.renderStatement
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.select.SelectClause
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.orm.sql.SqlQueryPlan
+import com.kotlinorm.orm.sql.materializeSqlQuery
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.limit.SqlLimit
+import com.kotlinorm.syntax.order.SqlOrdering
+import com.kotlinorm.syntax.order.SqlOrderingItem
+import com.kotlinorm.syntax.quantifier.SqlQuantifier
+import com.kotlinorm.syntax.statement.SqlQuery
+import com.kotlinorm.syntax.statement.SqlSetOperator
+import com.kotlinorm.utils.DataSourceUtil.orDefault
+import kotlin.reflect.KType
 
-open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
-    private val tasks = tasks.toMutableList()
-    private var builtTasks: List<KronosQueryTask> = listOf()
-    private var safeKeyList: List<String> = listOf()
-    private val fieldNameMapping = mutableMapOf<String, MutableMap<String, String>>()
+class UnionClause<Selected : KPojo> internal constructor(
+    selectables: List<KSelectable<out KPojo>>,
+    selectedType: KType,
+    nullableSelectedType: KType,
+    initialUnionAll: Boolean = false
+) : KSelectable<Selected>(selectables.first().pojo) {
+    override val selectedType: KType = selectedType
+    override val nullableSelectedType: KType = nullableSelectedType
+    internal val selectables: MutableList<KSelectable<out KPojo>> = selectables.toMutableList()
+    internal var unionAll: Boolean = initialUnionAll
+    private var orderByItems: List<SqlOrderingItem> = emptyList()
+    private var limitClause: SqlLimit? = null
 
-    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
-        return executeQuery { it.query(wrapper) }
+    fun all(): UnionClause<Selected> {
+        unionAll = true
+        return this
     }
 
-    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
-        return executeQuery { listOf(it.queryMap(wrapper)) }.first()
-    }
-
-    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
-        return executeQuery { listOfNotNull(it.queryMapOrNull(wrapper)) }.firstOrNull()
-    }
-
-    private fun executeQuery(
-        queryFunction: (KronosQueryTask) -> List<Map<String, Any?>>
-    ): List<Map<String, Any?>> {
-        prepareTasks()
-        val safeKeyList = getUniqueTask(ConditionSqlBuilder.KeyCounter())
-
-        val resultMap = safeKeyList.mapIndexed { index, safeKey ->
-            val result = queryFunction(builtTasks[index])
-            safeKey to result
-        }.toMap()
-
-        return if (resultMap.isEmpty()) emptyList() else union(resultMap)
-    }
-
-    private fun prepareTasks() {
-        builtTasks = tasks.map { it.build() }
-    }
-
-    private fun getUniqueTask(keyCounters: ConditionSqlBuilder.KeyCounter): List<String> {
-        val fieldCountMap = mutableMapOf<String, Int>()
-        safeKeyList = tasks.map { task ->
-            val safeKey = ConditionSqlBuilder.getSafeKey(
-                task.pojo::class.simpleName.toString(), keyCounters, mutableMapOf(), task
+    fun orderBy(vararg items: Pair<String, SqlOrdering>): UnionClause<Selected> {
+        orderByItems = items.map { (columnName, ordering) ->
+            SqlOrderingItem(
+                expr = SqlExpr.Column(columnName = columnName),
+                ordering = ordering
             )
-            task.selectFields.forEach { field ->
-                fieldCountMap[field.name] = fieldCountMap.getOrDefault(field.name, 0) + 1
-            }
-            safeKey
         }
-
-        fieldNameMapping.clear()
-        tasks.forEachIndexed { index, task ->
-            val safeKey = safeKeyList[index]
-            fieldNameMapping[safeKey] = task.selectFields.associate { field ->
-                val fieldName = field.name
-                fieldName to if (fieldCountMap[fieldName]!! > 1) "$safeKey${capitalizeFirstLetter(fieldName)}" else fieldName
-            }.toMutableMap()
-        }
-        return safeKeyList
+        return this
     }
 
-    private fun union(resultMap: Map<String, List<Map<String, Any?>>>): List<Map<String, Any?>> {
-        val maxRowNum = resultMap.values.maxOfOrNull { it.size } ?: 0
+    fun limit(limit: Int, offset: Int? = null): UnionClause<Selected> {
+        limitClause = if (limit >= 0) SqlLimit.limit(limit, offset) else null
+        return this
+    }
 
-        val allFields = resultMap.flatMap { (safeKey, list) ->
-            list.flatMap { it.keys.map { key -> fieldNameMapping[safeKey]!![key]!! } }
-        }.toSet()
+    @PublishedApi
+    internal override fun prepareFirstResult() {
+        limit(1)
+    }
 
-        return List(maxRowNum) { index ->
-            mutableMapOf<String, Any?>().apply {
-                allFields.forEach { this[it] = null }
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
+        return build(wrapper).toMapList(wrapper)
+    }
 
-                resultMap.forEach { (safeKey, list) ->
-                    val fieldNameMap = fieldNameMapping[safeKey]!!
-                    list.getOrNull(index)?.forEach { (key, value) ->
-                        this[fieldNameMap[key]!!] = value
-                    }
-                }
-            }
+    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
+        limit(1)
+        return build(wrapper).toMap(wrapper)
+    }
+
+    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
+        limit(1)
+        return build(wrapper).toMapOrNull(wrapper)
+    }
+
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+    @kotlin.internal.LowPriorityInOverloadResolution
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null
+    ): List<T> {
+        return build(wrapper).toList(wrapper)
+    }
+
+    @JvmName("toProjectionList")
+    @Suppress("UNCHECKED_CAST")
+    fun toList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
+        return build(wrapper).toList(wrapper, selectedType) as List<Selected>
+    }
+
+    internal override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan {
+        val dataSource = wrapper.orDefault()
+        validateSqlServerLimit(dataSource)
+        val parameters = linkedMapOf<String, Any?>()
+        val parameterFields = linkedMapOf<String, Field>()
+        val parameterCounter = mutableMapOf<String, Int>()
+        val queries = selectables.map { selectable ->
+            selectable.materializeSqlQuery(parameters, parameterCounter, dataSource, parameterFields)
+        }
+        val query = queries.reduce { left, right ->
+            SqlQuery.Set(
+                left = left,
+                operator = SqlSetOperator.Union(if (unionAll) SqlQuantifier.All else null),
+                right = right
+            )
+        }.withUnionTail()
+        return SqlQueryPlan(query, parameters, parameterFields)
+    }
+
+    private fun validateSqlServerLimit(dataSource: KronosDataSourceWrapper) {
+        if (dataSource === NoneDataSourceWrapper) return
+        if (dataSource.dbType == DBType.Mssql && limitClause != null && orderByItems.isEmpty()) {
+            throw InvalidDataAccessApiUsageException(
+                "SQL Server union limit() requires orderBy() because OFFSET/FETCH cannot be rendered without ORDER BY."
+            )
         }
     }
 
-    private fun capitalizeFirstLetter(s: String): String {
-        return s.replaceFirstChar { it.uppercaseChar() }
+    private fun SqlQuery.withUnionTail(): SqlQuery =
+        if (this is SqlQuery.Set) {
+            copy(orderBy = orderByItems, limit = limitClause)
+        } else {
+            this
+        }
+
+    override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
+        val dataSource = wrapper.orDefault()
+        val plan = toSqlQueryPlan(dataSource)
+        val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, plan.parameterFields)
+        return KronosQueryTask(
+            KronosAtomicQueryTask(
+                sql = renderedSql.sql,
+                paramMap = renderedSql.parameters,
+                operationType = KOperationType.SELECT,
+                statement = plan.query,
+                targetType = selectedType,
+                resultColumns = resultColumns(),
+                listParameterOccurrences = renderedSql.listParameterOccurrences
+            )
+        )
     }
 }

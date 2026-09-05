@@ -16,11 +16,9 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
-import com.kotlinorm.enums.SortType
-import com.kotlinorm.enums.SortType.Companion.Asc
-import com.kotlinorm.enums.SortType.Companion.Desc
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.order.SqlOrdering
 
 /**
  * KTableForSort
@@ -28,37 +26,74 @@ import com.kotlinorm.interfaces.KPojo
  * DSL Class of Kronos, which the compiler plugin use to generate the `order by` code.
  * @param T the type of the table
  */
-class KTableForSort<T : KPojo>: KTableForSelect<T>() {
-    val sortedFields = mutableListOf<Pair<Field, SortType>>()
+class KTableForSort<T : KPojo>(
+    sourceBinding: SourceBinding? = null
+) : KTableForSelect<T>(sourceBinding) {
+    val sortedItems = mutableListOf<SortItem>()
 
     @Suppress("UNCHECKED_CAST", "UNUSED")
     fun addSortField(field: Any) {
         when (field) {
             is Pair<*, *> -> {
-                sortedFields.add(field as Pair<Field, SortType>)
+                val value = field.first
+                val ordering = field.second as SqlOrdering
+                when (value) {
+                    is Field -> addFieldSort(value, ordering)
+                    is SqlExpr -> addExpressionSort(value, ordering)
+                    is KSelectable<*> -> addSelectableSort(value, ordering)
+                    else -> addFieldSort(value as Field, ordering)
+                }
             }
 
             is String -> {
-                sortedFields.add(Field(field, field, type = CUSTOM_CRITERIA_SQL) to Asc)
+                addExpressionSort(field.toRawSqlExpr(), SqlOrdering.Asc)
+            }
+
+            is SqlExpr -> {
+                addExpressionSort(field, SqlOrdering.Asc)
+            }
+
+            is KSelectable<*> -> {
+                addSelectableSort(field, SqlOrdering.Asc)
             }
 
             else -> {
-                sortedFields.add((field to Asc) as Pair<Field, SortType>)
+                addFieldSort(field as Field, SqlOrdering.Asc)
             }
         }
     }
 
-    @Suppress("UNUSED")
-    fun Any?.desc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(
-            this.toString(),
-            this.toString(),
-            type = CUSTOM_CRITERIA_SQL
-        )) to Desc
+    fun addSortExpression(expression: SqlExpr, ordering: SqlOrdering = SqlOrdering.Asc) {
+        addExpressionSort(expression, ordering)
+    }
+
+    fun addSortSubquery(query: KSelectable<*>, ordering: SqlOrdering = SqlOrdering.Asc) {
+        addSelectableSort(query, ordering)
+    }
 
     @Suppress("UNUSED")
-    fun Any?.asc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = CUSTOM_CRITERIA_SQL)) to Asc
+    fun Any?.desc(): Pair<Any?, SqlOrdering> =
+        sortPair(SqlOrdering.Desc)
+
+    @Suppress("UNUSED")
+    fun Any?.asc(): Pair<Any?, SqlOrdering> =
+        sortPair(SqlOrdering.Asc)
+
+    private fun Any?.sortPair(ordering: SqlOrdering): Pair<Any?, SqlOrdering> {
+        return (this.takeUnless { it is String } ?: this.toString().toRawSqlExpr()) to ordering
+    }
+
+    private fun addFieldSort(field: Field, ordering: SqlOrdering) {
+        sortedItems.add(SortItem.FieldItem(field, ordering, column(field)))
+    }
+
+    private fun addExpressionSort(expression: SqlExpr, ordering: SqlOrdering) {
+        sortedItems.add(SortItem.ExpressionItem(expression, ordering))
+    }
+
+    private fun addSelectableSort(query: KSelectable<*>, ordering: SqlOrdering) {
+        sortedItems.add(SortItem.SelectableItem(query, ordering))
+    }
 
     companion object {
         /**
@@ -70,5 +105,22 @@ class KTableForSort<T : KPojo>: KTableForSelect<T>() {
          */
         fun <T : KPojo> T.afterSort(block: KTableForSort<T>.(T) -> Unit) =
             KTableForSort<T>().block(this)
+
+        fun <T : KPojo> T.afterSort(
+            sourceBinding: SourceBinding?,
+            block: KTableForSort<T>.(T) -> Unit
+        ) = KTableForSort<T>(sourceBinding).block(this)
+    }
+
+    sealed class SortItem {
+        abstract val ordering: SqlOrdering
+
+        data class FieldItem(
+            val field: Field,
+            override val ordering: SqlOrdering,
+            val expr: SqlExpr.Column? = null
+        ) : SortItem()
+        data class ExpressionItem(val expression: SqlExpr, override val ordering: SqlOrdering) : SortItem()
+        data class SelectableItem(val query: KSelectable<*>, override val ordering: SqlOrdering) : SortItem()
     }
 }

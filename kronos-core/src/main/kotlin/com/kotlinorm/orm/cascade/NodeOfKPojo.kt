@@ -20,6 +20,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.resolveRuntimeMetadata
 
 /**
  * Holds information about a node in the ORM cascade operation tree.
@@ -74,18 +75,19 @@ data class NodeOfKPojo(
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     var insertIgnore = false // 该字段用于判断是否忽略插入
+    private val metadata = kPojo.resolveRuntimeMetadata()
     internal val dataMap = kPojo.toDataMap()
     internal val validCascades by lazy {
-        val tableName = kPojo.__tableName
+        val tableName = metadata.tableName
         findValidRefs(
-            kPojo.kClass(),
-            kPojo.kronosColumns(),
+            metadata.kType,
+            metadata.allFields,
             operationType,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(),
             cascadeAllowed.isNullOrEmpty(),
         )
     }
-    val tableName by lazy { kPojo.__tableName }
+    val tableName by lazy { metadata.tableName }
 
     init {
         // Patches data from the parent node to this node. This includes updating fields and parameters
@@ -156,23 +158,25 @@ data class NodeOfKPojo(
     private fun patchFromParent() {
         if (data == null || !data.updateReferenceValue || data.parent?.insertIgnore != false) return
         val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
-        val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, name ->
-            if (tableName == validRef.tableName) {
-                validRef.kCascade.properties[index] to (data.parent!!.dataMap[name]
-                    ?: return@mapIndexedNotNull null)
+        val patches = validRef.kCascade.targetProperties.mapIndexedNotNull { index, targetProp ->
+            val sourceProp = if (tableName == validRef.tableName) {
+                targetProp
             } else {
-                name to (data.parent!!.dataMap[name] ?: return@mapIndexedNotNull null)
+                validRef.kCascade.properties[index]
             }
+            val currentProp = if (tableName == validRef.tableName) {
+                validRef.kCascade.properties[index]
+            } else {
+                targetProp
+            }
+            val value = data.parent!!.dataMap[sourceProp] ?: return@mapIndexedNotNull null
+            Triple(currentProp, sourceProp, value)
         }
-        listOfPair.forEach { (prop, value) ->
+        patches.forEach { (prop, parentProp, value) ->
+            data.parent!!.updateParams[parentProp]?.let { updateParams[prop] = it }
             if (kPojo[prop] != value) {
                 kPojo[prop] = value
                 dataMap[prop] = value
-                validRef.kCascade.targetProperties.forEachIndexed { index, field ->
-                    if (data.parent!!.updateParams[field] != null) {
-                        updateParams[validRef.kCascade.properties[index]] = data.parent!!.updateParams[field]!!
-                    }
-                }
             }
         }
         if (validCascades.filter { it.mapperByThis }.groupBy { it.field.tableName }
@@ -260,7 +264,8 @@ data class NodeOfKPojo(
                             NodeInfo(
                                 data?.updateReferenceValue == true,
                                 this,
-                                cascade.field
+                                cascade.field,
+                                cascade.kCascade
                             ),
                             cascadeAllowed,
                             operationType,

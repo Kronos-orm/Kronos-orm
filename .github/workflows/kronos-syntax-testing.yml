@@ -1,0 +1,25 @@
+name: Kronos-syntax unit testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  kronos-syntax-unittests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21 ☕️
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'adopt'
+
+      - name: Run tests and coverage guard 🧪
+        run: ./gradlew :kronos-syntax:check :kronos-syntax:koverVerify --info --stacktrace

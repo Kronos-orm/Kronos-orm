@@ -16,9 +16,14 @@
 
 package com.kotlinorm.utils
 
-class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY, val defaultValue: ((T) -> R?)? = null) {
+class LRUCache<T, R>(
+    private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY,
+    private val keySelector: (T) -> Any? = { it },
+    val defaultValue: ((T) -> R?)? = null
+) {
 
-    private val map = hashMapOf<T, Node<T, R>>()
+    private val lock = Any()
+    private val map = hashMapOf<Any?, Node<T, R>>()
     private val head: Node<T, R> = Node()
     private val tail: Node<T, R> = Node()
 
@@ -27,49 +32,55 @@ class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY, val
         tail.prev = head
     }
 
-    operator fun get(key: T): R? {
-        if (map.containsKey(key)) {
-            val node = map[key]!!
-            remove(node)
-            addAtEnd(node)
-            if (node.value != null)
-                return node.value
+    operator fun get(key: T): R? = synchronized(lock) {
+        val cacheKey = keySelector(key)
+        map[cacheKey]?.let { node ->
+            promote(node)
+            return@synchronized node.value
         }
-        if (defaultValue != null) {
-            if (defaultValue(key) == null) {
-                return null
-            } else {
-                val node = Node(key, defaultValue(key))
-                addAtEnd(node)
-                map[key] = node
-                if (map.size > capacity) {
-                    val first = head.next!!
-                    remove(first)
-                    map.remove(first.key)
-                }
-                return node.value!!
-            }
-        } else {
-            return null
-        }
+
+        val loader = defaultValue ?: return@synchronized null
+        val value = loader(key)
+        put(cacheKey, key, value)
+        value
     }
 
+    @Suppress("UNCHECKED_CAST")
     operator fun get(key: T, defaultValue: ((T) -> R?)): R {
-        return get(key) ?: defaultValue(key) ?: error("default value not found")
+        return synchronized(lock) {
+            val cacheKey = keySelector(key)
+            map[cacheKey]?.let { node ->
+                promote(node)
+                return@synchronized node.value as R
+            }
+
+            val value = defaultValue(key) ?: error("default value not found")
+            put(cacheKey, key, value)
+            value
+        }
     }
 
     operator fun set(key: T, value: R) {
-        if (map.containsKey(key)) {
-            remove(map[key]!!)
+        synchronized(lock) {
+            put(keySelector(key), key, value)
         }
-        val node = Node(key, value)
+    }
+
+    private fun put(cacheKey: Any?, key: T, value: R?) {
+        map.remove(cacheKey)?.let(::remove)
+        val node = Node(key, cacheKey, value)
         addAtEnd(node)
-        map[key] = node
+        map[cacheKey] = node
         if (map.size > capacity) {
             val first = head.next!!
             remove(first)
-            map.remove(first.key)
+            map.remove(first.cacheKey)
         }
+    }
+
+    private fun promote(node: Node<T, R>) {
+        remove(node)
+        addAtEnd(node)
     }
 
     private fun remove(node: Node<T, R>) {
@@ -87,12 +98,16 @@ class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY, val
         tail.prev = node
     }
 
-    data class Node<T, R>(val key: T? = null, val value: R? = null) {
+    private class Node<T, R>(
+        val key: T? = null,
+        val cacheKey: Any? = null,
+        val value: R? = null
+    ) {
         var next: Node<T, R>? = null
         var prev: Node<T, R>? = null
     }
 
-    companion object{
+    companion object {
         const val DEFAULT_LRU_CACHE_CAPACITY = 128
     }
 }

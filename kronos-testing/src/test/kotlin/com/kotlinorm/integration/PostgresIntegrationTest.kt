@@ -1,0 +1,59 @@
+package com.kotlinorm.integration
+
+import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
+import com.kotlinorm.integration.suites.CascadeIntegrationSuite
+import com.kotlinorm.integration.suites.ComplexQueryProjectionIntegrationSuite
+import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
+import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DmlUpsertCornerCaseIntegrationSuite
+import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.ErrorIntegrationSuite
+import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
+import com.kotlinorm.integration.suites.PostgresIndexSyncRegressionSuite
+import com.kotlinorm.integration.suites.PostgresUpsertOriginalCaseIntegrationSuite
+import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
+import com.kotlinorm.integration.suites.SafetyCornerCaseIntegrationSuite
+import com.kotlinorm.integration.suites.SchemaIntegrationSuite
+import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
+import com.kotlinorm.integration.suites.SerializedListProjectionIntegrationSuite
+import com.kotlinorm.integration.suites.StrategyIntegrationSuite
+import com.kotlinorm.integration.suites.TransactionIntegrationSuite
+import com.kotlinorm.integration.suites.TypeDialectDdlCornerIntegrationSuite
+import com.kotlinorm.integration.suites.UpsertIntegrationSuite
+import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
+import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
+import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.postgres
+import kotlin.test.Test
+
+class PostgresSchemaIntegrationTest : SchemaIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresSchemaSyncRegressionTest : SchemaSyncRegressionSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresIndexSyncRegressionTest : PostgresIndexSyncRegressionSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresSerializedListProjectionIntegrationTest :
+    SerializedListProjectionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresCrudWhereIntegrationTest : CrudWhereIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresQueryIntegrationTest : QueryIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresComplexQueryProjectionIntegrationTest : ComplexQueryProjectionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresDmlUpsertCornerCaseIntegrationTest : DmlUpsertCornerCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresUpsertOriginalCaseIntegrationTest :
+    PostgresUpsertOriginalCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresUpsertIntegrationTest : UpsertIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresErrorIntegrationTest : ErrorIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresWrapperSqlIntegrationTest : WrapperSqlIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresCascadeIntegrationTest : CascadeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresValueTypeIntegrationTest : ValueTypeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresTypeDialectDdlCornerIntegrationTest : TypeDialectDdlCornerIntegrationSuite(postgres, StandardIntegrationScenarioProfile) {
+    @Test
+    fun postgresRejectsNumericBooleanDefaultsAgainstRealDatabase() {
+        verifyPostgresRejectsNumericBooleanDefaultsAgainstRealDatabase()
+    }
+}
+class PostgresFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresTransactionIntegrationTest : TransactionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresSafetyCornerCaseIntegrationTest : SafetyCornerCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresStrategyIntegrationTest : StrategyIntegrationSuite(postgres, StandardIntegrationScenarioProfile)

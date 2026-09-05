@@ -134,7 +134,7 @@ class ConfigReaderTest {
         val kronosConfig = config.toKronosConfigs()
         val tbUserConfig = kronosConfig[0]
         assertEquals(
-            tbUserConfig.formatedComment, "// Sample Table Comment",
+            "// Sample Table Comment", tbUserConfig.formatedComment,
             "Expected comment to contain 'Sample Table Comment', but got '${tbUserConfig.formatedComment}'"
         )
 
@@ -318,5 +318,78 @@ class ConfigReaderTest {
 
         init(configPath)
         assertNotNull(codeGenConfig!!.strategy)
+    }
+
+    @Test
+    fun testReadConfigWithExtend() {
+        val baseConfig = File(tempDir, "base.toml").apply {
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_base"
+                className = "Base"
+
+                [output]
+                targetDir = "./src/main/kotlin/"
+
+                [dataSource]
+                wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
+                url = "jdbc:mysql://localhost:3306/test"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                """.trimIndent()
+            )
+        }
+        val extendConfig = File(tempDir, "extend.toml").apply {
+            writeTomlContent(
+                """
+                extend = "${baseConfig.absolutePath.replace("\\", "/")}"
+
+                [[table]]
+                name = "tb_child"
+                className = "Child"
+
+                [output]
+                targetDir = "./src/main/kotlin/"
+
+                [dataSource]
+                wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
+                url = "jdbc:mysql://localhost:3306/test"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                """.trimIndent()
+            )
+        }
+        val config = readConfig(extendConfig.absolutePath)
+        assertNotNull(config)
+        assertNotNull(config["table"])
+    }
+
+    @Test
+    fun testInitWithNoneNamingStrategy() {
+        val configPath = File(tempDir, "noneStrategy.toml").apply {
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_user"
+                className = "User"
+
+                [strategy]
+                tableNamingStrategy = "noneNamingStrategy"
+                fieldNamingStrategy = "noneNamingStrategy"
+
+                [output]
+                targetDir = "./src/main/kotlin/"
+
+                [dataSource]
+                dataSourceClassName = "org.apache.commons.dbcp2.BasicDataSource"
+                wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
+                url = "jdbc:mysql://localhost:3306/test"
+                username = "root"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                """.trimIndent()
+            )
+        }.path
+        init(configPath)
+        assertEquals(Kronos.noneNamingStrategy, codeGenConfig!!.strategy.tableNamingStrategy)
+        assertEquals(Kronos.noneNamingStrategy, codeGenConfig!!.strategy.fieldNamingStrategy)
     }
 }

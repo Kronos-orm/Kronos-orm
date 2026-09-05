@@ -16,10 +16,10 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.enums.JoinType
 import com.kotlinorm.interfaces.KPojo
-import kotlin.reflect.KClass
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.table.SqlJoinType
+import kotlin.reflect.KType
 
 /**
  * KJoinable
@@ -29,13 +29,14 @@ import kotlin.reflect.KClass
  * @property tableName The name of the table of the joint table
  * @property joinType The type of the table joint
  * @property condition Conditions for joining tables
- * @property kClass The class of the POJO
+ * @property kType The complete declared type of the POJO
  * @property kPojo The POJO object
  */
 class KJoinable (
     val tableName: String,
-    val joinType: JoinType,
-    val condition: Criteria?,
-    val kClass: KClass<KPojo>,
-    val kPojo: KPojo
+    val joinType: SqlJoinType,
+    val kType: KType,
+    val kPojo: KPojo,
+    val condition: SqlExpr? = null,
+    val tableAliasOverrides: Map<String, String> = emptyMap()
 )

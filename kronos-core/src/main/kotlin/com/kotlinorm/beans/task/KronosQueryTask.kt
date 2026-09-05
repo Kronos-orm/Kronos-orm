@@ -14,93 +14,243 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm.beans.task
 
 import com.kotlinorm.enums.QueryType
-import com.kotlinorm.enums.QueryType.Query
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryMap
-import com.kotlinorm.enums.QueryType.QueryMapOrNull
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.First
+import com.kotlinorm.enums.QueryType.ToList
+import com.kotlinorm.enums.QueryType.ToMap
+import com.kotlinorm.enums.QueryType.ToMapList
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosRow
+import com.kotlinorm.interfaces.KronosRowFirstResult
+import com.kotlinorm.interfaces.requireKronosRowMapping
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
- * KronosQueryTask class represents a collection of Kronos atomic query tasks used to execute SELECT operations.
- * It provides functionality to manage and execute a batch of read-only SQL queries.
+ * Executable facade around one [KronosAtomicQueryTask].
+ *
+ * Each terminal operation copies the atomic task with the requested logical [KType], invokes
+ * hooks and global query events in a deterministic order, and delegates execution to one
+ * [KronosDataSourceWrapper]. Result decoding is performed by the wrapper from that complete type
+ * and the task's result-column metadata.
+ *
+ * @property atomicTask planned SQL, parameters, target type, and result metadata
  */
-class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
-    var beforeQuery: (KronosQueryTask.() -> Any?)? = null //在执行之前执行的操作
-    var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)? = null //在执行之后执行的操作
+class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
+    /** Hook invoked immediately before global before-query events. Its return value is ignored. */
+    var beforeQuery: (KronosQueryTask.() -> Any?)? = null
 
-    fun doBeforeQuery(beforeQuery: KronosQueryTask.() -> Any?): KronosQueryTask { //设置在执行之前执行的操作
+    /** Hook invoked after global after-query events with the decoded result. Its return value is ignored. */
+    var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)? = null
+
+    /** Set by query features whose post-processing requires materialized KPojo results. */
+    internal var supportsKronosRowMapping: Boolean = true
+
+    /**
+     * Replaces the operation-local before-query hook.
+     *
+     * @return this task for fluent configuration
+     */
+    fun doBeforeQuery(beforeQuery: KronosQueryTask.() -> Any?): KronosQueryTask {
         this.beforeQuery = beforeQuery
         return this
     }
 
-    fun doAfterQuery(afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)): KronosQueryTask { // 设置在执行之后执行的操作(返回一个新的KronosQueryTask)
+    /**
+     * Replaces the operation-local after-query hook.
+     *
+     * @return this task for fluent configuration
+     */
+    fun doAfterQuery(afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -> Any?)): KronosQueryTask {
         this.afterQuery = afterQuery
         return this
     }
 
+    /**
+     * Executes [queryAction] with the explicit wrapper or Kronos default wrapper.
+     *
+     * Hook order is local-before, global-before, execution/logging, global-after, local-after.
+     * Exceptions propagate immediately and therefore skip the remaining later stages.
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @param queryType terminal operation classification passed to logging and hooks
+     * @param task atomic task passed to events and execution
+     * @param queryAction wrapper-specific execution operation
+     * @return the exact result returned by [queryAction]
+     */
     inline fun <T> executeQuery(
         wrapper: KronosDataSourceWrapper?,
         queryType: QueryType,
-        crossinline queryAction: (KronosDataSourceWrapper) -> T
+        task: KronosAtomicQueryTask = atomicTask,
+        crossinline queryAction: (KronosDataSourceWrapper, KronosAtomicQueryTask) -> T
     ): T {
         val dataSource = wrapper.orDefault()
         beforeQuery?.invoke(this)
-        QueryEvent.beforeQueryEvents.forEach { it(atomicTask, dataSource) }
+        QueryEvent.beforeQueryEvents.forEach { it(task, dataSource) }
 
-        val result = atomicTask.logAndReturn(queryAction(dataSource), queryType)
+        val result = task.logAndReturn(queryAction(dataSource, task), queryType)
 
-        QueryEvent.afterQueryEvents.forEach { it(atomicTask, dataSource) }
+        QueryEvent.afterQueryEvents.forEach { it(task, dataSource) }
         afterQuery?.invoke(result, queryType, dataSource)
         return result
     }
 
-    fun query(wrapper: KronosDataSourceWrapper? = null) = executeQuery(wrapper, Query) {
-        it.forList(atomicTask)
+    /**
+     * Executes the query and decodes every row as [targetType].
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @param targetType complete row type, including generic arguments and nullability
+     * @param queryType terminal operation classification used by hooks and logging
+     * @return decoded rows in result-set order
+     */
+    fun toList(
+        wrapper: KronosDataSourceWrapper?,
+        targetType: KType,
+        queryType: QueryType = ToList
+    ): List<Any?> {
+        val task = atomicTask.copy(targetType = targetType)
+        return executeQuery(wrapper, queryType, task) { dataSource, queryTask ->
+            dataSource.toList(queryTask)
+        }
     }
 
+    /**
+     * Executes the query and maps each active database row without materializing the selected type first.
+     *
+     * The wrapper must implement [com.kotlinorm.interfaces.KronosRowMappingDataSourceWrapper].
+     */
+    fun <T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> T
+    ): List<T> {
+        requireKronosRowMapping()
+        return executeQuery(wrapper, ToList) { dataSource, queryTask ->
+            dataSource.requireKronosRowMapping().toList(queryTask, mapper)
+        }
+    }
+
+    /**
+     * Executes the query and decodes the first row as [targetType].
+     *
+     * @param wrapper wrapper to use, or `null` to resolve the configured default
+     * @param targetType complete logical result type
+     * @param queryType terminal operation classification used by hooks and logging
+     * @param required whether an empty result must throw; defaults from target nullability
+     * @return decoded first row, or `null` when no row exists and [required] is false
+     * @throws NoSuchElementException when no row exists and [required] is true
+     */
+    fun first(
+        wrapper: KronosDataSourceWrapper?,
+        targetType: KType,
+        queryType: QueryType = First,
+        required: Boolean = !targetType.isMarkedNullable
+    ): Any? {
+        val task = atomicTask.copy(targetType = targetType)
+        val result = executeQuery(wrapper, queryType, task) { dataSource, queryTask ->
+            dataSource.first(queryTask)
+        }
+        if (result == null && required) {
+            throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+        }
+        return result
+    }
+
+    /**
+     * Executes the query and maps its first active database row.
+     *
+     * The wrapper advances at most one row. An empty result raises [NoSuchElementException].
+     */
+    fun <T> first(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> T
+    ): T {
+        return when (val result = firstRow(wrapper, mapper)) {
+            KronosRowFirstResult.Empty -> throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+            is KronosRowFirstResult.Present -> result.value
+        }
+    }
+
+    /** Executes the query and maps its first active database row, or returns null when no row exists. */
+    fun <T> firstOrNull(
+        wrapper: KronosDataSourceWrapper? = null,
+        mapper: (KronosRow) -> T
+    ): T? {
+        return when (val result = firstRow(wrapper, mapper)) {
+            KronosRowFirstResult.Empty -> null
+            is KronosRowFirstResult.Present -> result.value
+        }
+    }
+
+    private fun <T> firstRow(
+        wrapper: KronosDataSourceWrapper?,
+        mapper: (KronosRow) -> T
+    ): KronosRowFirstResult<T> {
+        requireKronosRowMapping()
+        var rowResult: KronosRowFirstResult<T>? = null
+        executeQuery(wrapper, First) { dataSource, queryTask ->
+            val result = dataSource.requireKronosRowMapping().first(queryTask, mapper)
+            rowResult = result
+            when (result) {
+                KronosRowFirstResult.Empty -> null
+                is KronosRowFirstResult.Present -> result.value
+            }
+        }
+        return checkNotNull(rowResult)
+    }
+
+    /** Returns every row as a raw, string-keyed map without a declared value type. */
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> queryList(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = emptyList()
-    ) = executeQuery(wrapper, QueryList) {
-        it.forList(atomicTask, T::class, isKPojo, superTypes) as List<T>
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
+        return toList(wrapper, typeOf<Map<String, Any?>>(), ToMapList) as List<Map<String, Any?>>
     }
 
-    fun queryMap(
-        wrapper: KronosDataSourceWrapper? = null
-    ) = executeQuery(wrapper, QueryMap) {
-        it.forMap(atomicTask) ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+    /** Executes and decodes every row using the complete reified type [T]. */
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        return toList(wrapper, typeOf<T>()) as List<T>
     }
 
-    fun queryMapOrNull(
-        wrapper: KronosDataSourceWrapper? = null
-    ) = executeQuery(wrapper, QueryMapOrNull) {
-        it.forMap(atomicTask)
+    /**
+     * Returns the first row as a raw map.
+     *
+     * @throws NoSuchElementException when the query returns no rows
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
+        return first(wrapper, typeOf<Map<String, Any?>>(), ToMap) as Map<String, Any?>
     }
 
-    inline fun <reified T> queryOne(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
-    ) = executeQuery(wrapper, QueryOne) {
-        it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?
-            ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+    /** Returns the first row as a raw map, or `null` when the query returns no rows. */
+    @Suppress("UNCHECKED_CAST")
+    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
+        return first(wrapper, typeOf<Map<String, Any?>?>(), ToMap) as Map<String, Any?>?
     }
 
-    inline fun <reified T> queryOneOrNull(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
-    ) = executeQuery(wrapper, QueryOneOrNull) {
-        it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?
+    /**
+     * Decodes the first row using the complete reified type [T].
+     *
+     * @throws NoSuchElementException when the query returns no rows
+     */
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
+        return first(wrapper, typeOf<T>()) as T
+    }
+
+    /** Decodes the first row as nullable [T], returning `null` for an empty result. */
+    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        return first(wrapper, typeOf<T?>()) as T?
+    }
+
+    private fun requireKronosRowMapping() {
+        if (!supportsKronosRowMapping) {
+            throw UnsupportedOperationException("KronosRow mapping does not support cascade queries")
+        }
     }
 
     companion object {

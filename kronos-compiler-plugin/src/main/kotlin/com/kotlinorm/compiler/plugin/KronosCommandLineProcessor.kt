@@ -18,37 +18,31 @@ package com.kotlinorm.compiler.plugin
 
 import com.google.auto.service.AutoService
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
-import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
+import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.CompilerConfigurationKey
 
+/**
+ * Command line processor for the Kronos compiler plugin
+ */
 @OptIn(ExperimentalCompilerApi::class)
 @AutoService(CommandLineProcessor::class)
 class KronosCommandLineProcessor : CommandLineProcessor {
-    companion object {
-        const val OPTION_DEBUG_MODE = "debug"
-        const val OPTION_DEBUG_INFO_PATH = "debug-info-path"
-
-        val ARG_OPTION_DEBUG_MODE = CompilerConfigurationKey<Boolean>(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE)
-        val ARG_OPTION_DEBUG_INFO_PATH = CompilerConfigurationKey<String>(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH)
-    }
-
     override val pluginId: String = "kronos-compiler-plugin"
 
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption(
-            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE,
-            valueDescription = "true or false",
-            description = "Enable debug mode, print debug information",
-            required = false,
+            optionName = GENERATED_PROVIDER_ID_OPTION_NAME,
+            valueDescription = "<stable-module-id>",
+            description = "Stable id for this compilation's generated type provider",
+            required = false
         ),
         CliOption(
-            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH,
-            valueDescription = "path",
-            description = "Debug information output path",
-            required = false,
+            optionName = GENERATED_PROVIDER_FQ_NAME_OPTION_NAME,
+            valueDescription = "<provider-fq-name>",
+            description = "Module-unique generated type provider class name",
+            required = false
         )
     )
 
@@ -57,14 +51,10 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("processOption:: option=$option value=$value")
-        return when (option.optionName) {
-            OPTION_DEBUG_MODE -> configuration.put(
-                ARG_OPTION_DEBUG_MODE, value.lowercase() == "true")
-            OPTION_DEBUG_INFO_PATH -> configuration.put(
-                ARG_OPTION_DEBUG_INFO_PATH, value)
+        when (option.optionName) {
+            GENERATED_PROVIDER_ID_OPTION_NAME -> configuration.put(GeneratedProviderIdKey, value)
+            GENERATED_PROVIDER_FQ_NAME_OPTION_NAME -> configuration.put(GeneratedProviderFqNameKey, value)
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }
-
 }

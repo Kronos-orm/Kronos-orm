@@ -24,10 +24,10 @@ object MathFunctions {
     fun FunctionHandler.abs(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.bin(x: Number?): Number? = null
+    fun FunctionHandler.bin(x: Number?): String? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.ceiling(x: Number?): Number? = null
+    fun FunctionHandler.ceil(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.exp(x: Number?): Number? = null
@@ -66,7 +66,7 @@ object MathFunctions {
     fun FunctionHandler.sqrt(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.truncate(x: Number?, y: Number?): Number? = null
+    fun FunctionHandler.trunc(x: Number?, y: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.add(vararg x: Number?): Number? = null

@@ -1,234 +1,206 @@
 /**
- * Copyright 2022-2025 kronos-orm
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 tasks.register("generateJoinClause") {
     group = "codegen"
-    description = "generate join clauses with maxJoinNum"
+    description = "generate join source APIs with maxJoinNum"
+
     doLast {
         val root = project.layout.projectDirectory.asFile.parent
         val joinDir = File("$root/kronos-core/src/main/kotlin/com/kotlinorm/orm/join")
         val maxJoinNum = 16
         val joinRange = 2..maxJoinNum
 
-        fun generatePatch() {
-            val fileName = "Patch.kt"
-            with(File(joinDir, fileName)) {
-                if (!exists()) {
-                    createNewFile()
+        fun typeNames(range: IntRange): String = range.joinToString(", ") { "T$it" }
+        fun constrainedTypes(range: IntRange): String = range.joinToString(", ") { "reified T$it : KPojo" }
+        fun sourceType(arity: Int, start: Int = 1): String =
+            "JoinSource$arity<${typeNames(start until start + arity)}>"
+        fun blockType(arity: Int): String =
+            "${sourceType(arity)}.(${typeNames(1..arity)}) -> R"
+        fun stateRows(arity: Int): String =
+            (1..arity).joinToString(", ") { index -> "state.sourceAt<T$index>(${index - 1})" }
+
+        fun directTableJoin(arity: Int): String {
+            val range = 1..arity
+            val tables = (2..arity).joinToString(",\n") { "    table$it: T$it" }
+            val tableNames = (2..arity).joinToString(", ") { "table$it" }
+            val blockArgs = range.joinToString(", ") { if (it == 1) "this" else "table$it" }
+            return """
+                |inline fun <${constrainedTypes(range)}, R : JoinResult> T1.join(
+                |$tables,
+                |    block: ${blockType(arity)}
+                |): R {
+                |    val source = ${sourceType(arity)}(tableJoinState(this, $tableNames))
+                |    return source.block($blockArgs)
+                |}
+            """.trimMargin()
+        }
+
+        fun tableRawJoin(rawArity: Int, selectableLeft: Boolean): String {
+            val arity = rawArity + 1
+            val range = 1..arity
+            val receiver = if (selectableLeft) "KSelectable<T1>" else "T1"
+            val helper = if (selectableLeft) {
+                "selectableRawJoinState(this, source.joinState)"
+            } else {
+                "prependJoinState(this, source.joinState)"
+            }
+            val args = if (selectableLeft) stateRows(arity) else
+                "this, " + (2..arity).joinToString(", ") { "state.sourceAt<T$it>(${it - 1})" }
+            return """
+                |inline fun <${constrainedTypes(range)}, R : JoinResult> $receiver.join(
+                |    source: ${sourceType(rawArity, 2)},
+                |    block: ${blockType(arity)}
+                |): R {
+                |    val state = $helper
+                |    val joined = ${sourceType(arity)}(state)
+                |    return joined.block($args)
+                |}
+            """.trimMargin()
+        }
+
+        fun rawSingleJoin(leftArity: Int, selectableRight: Boolean): String {
+            val arity = leftArity + 1
+            val range = 1..arity
+            val argument = if (selectableRight) "query: KSelectable<T$arity>" else "table$arity: T$arity"
+            val helper = if (selectableRight) {
+                "rawSelectableJoinState(joinState, query)"
+            } else {
+                "appendJoinState(joinState, table$arity)"
+            }
+            val args = if (selectableRight) stateRows(arity) else
+                (1..arity).joinToString(", ") { index ->
+                    if (index == arity) "table$arity" else "state.sourceAt<T$index>(${index - 1})"
                 }
-
-                writeText(
-                    """
-                    |/**
-                    |* Copyright 2022-2025 kronos-orm
-                    |*
-                    |* Licensed under the Apache License, Version 2.0 (the "License");
-                    |* you may not use this file except in compliance with the License.
-                    |* You may obtain a copy of the License at
-                    |*
-                    |*     http://www.apache.org/licenses/LICENSE-2.0
-                    |*
-                    |* Unless required by applicable law or agreed to in writing, software
-                    |* distributed under the License is distributed on an "AS IS" BASIS,
-                    |* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-                    |* See the License for the specific language governing permissions and
-                    |* limitations under the License.
-                    |*/
-                    |
-                    |package com.kotlinorm.orm.join
-                    | 
-                    |import com.kotlinorm.interfaces.KPojo
-                    |
-                    |// Generated by generate-join-clause.gradle.kts
-                    |${
-                        joinRange.joinToString("\n\n") { index ->
-                            val range = 1..index
-                            val nthOfType = range.joinToString(", ") { "T${it}" }
-                            """
-                            |inline fun <${range.joinToString(",") { "reified T$it : KPojo" }}> T1.join(
-                            |${range.drop(1).joinToString(",\n") { "    table$it: T$it" }},
-                            |    selectFrom: SelectFrom$index<$nthOfType>.($nthOfType) -> Unit
-                            |): SelectFrom$index<$nthOfType> {
-                            |    return SelectFrom$index(this, ${
-                                range.drop(1).joinToString(", ") { "table$it" }
-                            }).apply {
-                            |        selectFrom(${range.joinToString(", ") { "t$it" }})
-                            |    }
-                            |}
-                        """
-                        }
-                    }
-                    """.trimMargin())
-            }
+            return """
+                |inline fun <${constrainedTypes(range)}, R : JoinResult> ${sourceType(leftArity)}.join(
+                |    $argument,
+                |    block: ${blockType(arity)}
+                |): R {
+                |    val state = $helper
+                |    val joined = ${sourceType(arity)}(state)
+                |    return joined.block($args)
+                |}
+            """.trimMargin()
         }
 
-        fun generateSelectFromN(n: Int) {
-            val fileName = "SelectFrom$n.kt"
-            with(File(joinDir, fileName)) {
-                if (!exists()) {
-                    createNewFile()
+        fun rawRawJoin(leftArity: Int, rightArity: Int): String {
+            val arity = leftArity + rightArity
+            val range = 1..arity
+            return """
+                |inline fun <${constrainedTypes(range)}, R : JoinResult> ${sourceType(leftArity)}.join(
+                |    source: ${sourceType(rightArity, leftArity + 1)},
+                |    block: ${blockType(arity)}
+                |): R {
+                |    val state = rawRawJoinState(joinState, source.joinState)
+                |    val joined = ${sourceType(arity)}(state)
+                |    return joined.block(${stateRows(arity)})
+                |}
+            """.trimMargin()
+        }
+
+        val pairOverloads = """
+            |inline fun <reified T1 : KPojo, reified T2 : KPojo, R : JoinResult> T1.join(
+            |    query: KSelectable<T2>,
+            |    block: JoinSource2<T1, T2>.(T1, T2) -> R
+            |): R {
+            |    val (state, row) = selectableJoinState(this, query)
+            |    return JoinSource2<T1, T2>(state).block(this, row)
+            |}
+            |
+            |inline fun <reified T1 : KPojo, reified T2 : KPojo, R : JoinResult> KSelectable<T1>.join(
+            |    table: T2,
+            |    block: JoinSource2<T1, T2>.(T1, T2) -> R
+            |): R {
+            |    val (state, row, right) = selectableLeftJoinState(this, table)
+            |    return JoinSource2<T1, T2>(state).block(row, right)
+            |}
+            |
+            |inline fun <reified T1 : KPojo, reified T2 : KPojo, R : JoinResult> KSelectable<T1>.join(
+            |    query: KSelectable<T2>,
+            |    block: JoinSource2<T1, T2>.(T1, T2) -> R
+            |): R {
+            |    val state = selectableSelectableJoinState(this, query)
+            |    return JoinSource2<T1, T2>(state).block(state.sourceAt(0), state.sourceAt(1))
+            |}
+        """.trimMargin()
+
+        val overloads = buildList {
+            add(pairOverloads)
+            for (arity in joinRange) {
+                add(directTableJoin(arity))
+            }
+            for (rawArity in 2 until maxJoinNum) {
+                add(tableRawJoin(rawArity, selectableLeft = false))
+                add(tableRawJoin(rawArity, selectableLeft = true))
+                add(rawSingleJoin(rawArity, selectableRight = false))
+                add(rawSingleJoin(rawArity, selectableRight = true))
+            }
+            for (leftArity in 2 until maxJoinNum) {
+                for (rightArity in 2..(maxJoinNum - leftArity)) {
+                    add(rawRawJoin(leftArity, rightArity))
                 }
-                val range = 1..n
-                val nthOfType = range.joinToString(", ") { "T${it}" }
-                val nthOfType_ = range.joinToString(", ") { "T${it}: KPojo" }
-                writeText(
-                    """
-                        |/**
-                        |* Copyright 2022-2025 kronos-orm
-                        |*
-                        |* Licensed under the Apache License, Version 2.0 (the "License");
-                        |* you may not use this file except in compliance with the License.
-                        |* You may obtain a copy of the License at
-                        |*
-                        |*     http://www.apache.org/licenses/LICENSE-2.0
-                        |*
-                        |* Unless required by applicable law or agreed to in writing, software
-                        |* distributed under the License is distributed on an "AS IS" BASIS,
-                        |* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-                        |* See the License for the specific language governing permissions and
-                        |* limitations under the License.
-                        |*/
-                        |
-                        |package com.kotlinorm.orm.join
-                        |
-                        |import com.kotlinorm.cache.kPojoAllColumnsCache
-                        |import com.kotlinorm.cache.kPojoLogicDeleteCache
-                        |import com.kotlinorm.interfaces.KPojo
-                        |import com.kotlinorm.orm.pagination.PagedClause
-                        |import kotlin.reflect.KClass
-                        |
-                        |// Generated by generate-join-clause.gradle.kts
-                        |class SelectFrom$n<$nthOfType_>(
-                        |    override var t1: T1,
-                        |    ${range.drop(1).joinToString(", ") { "var t$it: T$it" }}
-                        |) : SelectFrom<T1>(t1) {
-                        |    override var tableName = t1.__tableName
-                        |    override var paramMap = (${range.joinToString(" + ") { "t$it.toDataMap()" }}).toMutableMap()
-                        |    ${ range.joinToString("\n    ") { "private var kClass$it = t$it.kClass()" } }
-                        |    override var logicDeleteStrategy = kPojoLogicDeleteCache[kClass1]
-                        |    override var allFields = kPojoAllColumnsCache[kClass1]!!
-                        |    override var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>> = mutableListOf(
-                        |        ${range.joinToString(", \n        ") { "kClass$it to t$it" }}
-                        |    )
-                        |    
-                        |    fun withTotal(): PagedClause<T1, SelectFrom$n<$nthOfType>> {
-                        |        return PagedClause(this)
-                        |    }
-                        |}
-                    """.trimMargin()
-                )
             }
+        }.joinToString("\n\n")
+
+        val patch = """
+            |/*
+            | * Copyright 2022-2026 kronos-orm
+            | *
+            | * Licensed under the Apache License, Version 2.0 (the "License");
+            | * you may not use this file except in compliance with the License.
+            | */
+            |
+            |@file:Suppress("MagicNumber", "TooManyFunctions")
+            |
+            |package com.kotlinorm.orm.join
+            |
+            |import com.kotlinorm.beans.dsl.KSelectable
+            |import com.kotlinorm.interfaces.KPojo
+            |
+            |// Generated by build-logic/scripts/codegen.gradle.kts.
+            |
+            |$overloads
+        """.trimMargin().trimEnd() + "\n"
+
+        val joinSources = """
+            |/*
+            | * Copyright 2022-2026 kronos-orm
+            | *
+            | * Licensed under the Apache License, Version 2.0 (the "License");
+            | * you may not use this file except in compliance with the License.
+            | */
+            |
+            |package com.kotlinorm.orm.join
+            |
+            |import com.kotlinorm.interfaces.KPojo
+            |
+            |// Generated by build-logic/scripts/codegen.gradle.kts.
+            |
+            |${joinRange.joinToString("\n\n") { arity ->
+                val range = 1..arity
+                """
+                    |class ${sourceType(arity).substringBefore('<')}<${range.joinToString(", ") { "T$it : KPojo" }}> @PublishedApi internal constructor(
+                    |    state: JoinSourceState<T1>
+                    |) : JoinSource<T1, ${sourceType(arity)}>(state) {
+                    |    @PublishedApi
+                    |    internal override fun recreate(state: JoinSourceState<T1>): ${sourceType(arity)} =
+                    |        ${sourceType(arity).substringBefore('<')}(state)
+                    |}
+                """.trimMargin()
+            }}
+        """.trimMargin().trimEnd() + "\n"
+
+        joinDir.listFiles()?.forEach { file ->
+            if (file.name.matches(Regex("SelectFrom\\d+\\.kt"))) file.delete()
         }
+        File(joinDir, "Patch.kt").writeText(patch)
+        File(joinDir, "JoinSources.kt").writeText(joinSources)
 
-        fun generateJoinClauseInfo() {
-            val fileName = "JoinClauseInfo.kt"
-            with(File(joinDir, fileName)) {
-                if (!exists()) {
-                    createNewFile()
-                }
-                writeText(
-                    """
-                    |/**
-                    |* Copyright 2022-2025 kronos-orm
-                    |*
-                    |* Licensed under the Apache License, Version 2.0 (the "License");
-                    |* you may not use this file except in compliance with the License.
-                    |* You may obtain a copy of the License at
-                    |*
-                    |*     http://www.apache.org/licenses/LICENSE-2.0
-                    |*
-                    |* Unless required by applicable law or agreed to in writing, software
-                    |* distributed under the License is distributed on an "AS IS" BASIS,
-                    |* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-                    |* See the License for the specific language governing permissions and
-                    |* limitations under the License.
-                    |*/
-                    |
-                    |package com.kotlinorm.orm.join
-                    |
-                    |import com.kotlinorm.beans.dsl.Field
-                    |
-                    |/**
-                    | *@program: kronos-orm
-                    | *@author: Jieyao Lu
-                    | *@description:
-                    | *@create: 2024/7/19 14:26
-                    | **/
-                    |// Generated by generate-join-clause.gradle.kts
-                    |data class JoinClauseInfo(
-                    |    val tableName: String,
-                    |    val selectFields: List<Pair<String , Field>>,
-                    |    val distinct: Boolean,
-                    |    val pagination: Boolean,
-                    |    val pageIndex: Int,
-                    |    val pageSize: Int,
-                    |    val limit: Int? = null,
-                    |    val databaseOfTable: Map<String, String> = mapOf(),
-                    |    val whereClauseSql: String? = null,
-                    |    val groupByClauseSql: String? = null,
-                    |    val orderByClauseSql: String? = null,
-                    |    val havingClauseSql: String? = null,
-                    |    val joinSql: String = ""
-                    |)""".trimMargin()
-                )
-            }
-        }
-
-        joinDir.listFiles()?.forEach {
-            if (it.name != "SelectFrom.kt") {
-                it.delete()
-            }
-        }
-
-        println()
-
-        println("=====================================")
-        println("> Start generating join clauses")
-        println("=====================================")
-
-        println()
-
-        println("Max join num is $maxJoinNum")
-        println("Join clauses will be generated in $joinDir")
-        println()
-
-        println("• Generating patch file:")
-        generatePatch()
-        println("✓ Patch file generated successfully")
-
-        println()
-
-        println("• Generating join clause info:")
-        generateJoinClauseInfo()
-        println("✓ Join clause info generated successfully")
-
-        println()
-
-        println("• Generating selectFromN files:")
-        val rangeList = joinRange.toList()
-        rangeList.forEachIndexed { index, num ->
-            println("• Generating SelectFrom${num.toString().padEnd(2, ' ')}.kt\t${index + 1}/${rangeList.size}")
-            generateSelectFromN(num)
-        }
-        println("✓ SelectFromN files generated successfully")
-
-        println()
-
-        println("=====================================")
-        println("✓ Join clauses generated successfully")
-        println("=====================================")
+        println("Generated JOIN sources for arity 2..$maxJoinNum in $joinDir")
     }
 }

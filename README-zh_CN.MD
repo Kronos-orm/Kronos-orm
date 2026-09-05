@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://www.kotlinorm.com">
-        <img src="https://cdn.leinbo.com/assets/images/kronos/logo_dark.png" alt="logo" height="256" width="256">
+        <img src="assets/logo_dark.png" alt="logo" height="256" width="256">
     </a>
 </p>
 
@@ -13,161 +13,221 @@
 [English](https://github.com/Kronos-orm/Kronos-orm/blob/main/README.MD) | 简体中文
 
 <h3 align="center">
-为Kotlin设计的现代ORM框架。
+为 Kotlin 设计的现代 ORM 框架。
 </h3>
 <div align="center">
 
-Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
+Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、多数据库支持，适用于 JVM 服务端和 Android/JVM SQLite 应用。
 
-基于KCP实现的表达式树解析和协程，Kronos拥有**强大的性能、表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
-
-[![Kotlin](https://img.shields.io/badge/kotlin-2.3.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-compiler-plugin.svg)](https://coverage.kotlinorm.com/kronos-compiler-plugin)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-core.svg)](https://coverage.kotlinorm.com/kronos-core)
+[![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-syntax.svg)](https://coverage.kotlinorm.com/kronos-syntax)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-codegen.svg)](https://coverage.kotlinorm.com/kronos-codegen)
 
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.1.0--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.3.2--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
 
+<p align="center">
+  <a href="https://github.com/Kronos-orm/Kronos-orm/stargazers">
+    <img src="assets/github-star-zoom.svg" alt="在 GitHub 上 Star Kronos ORM" width="820">
+  </a>
+</p>
+
 --------
 
-# 重新定义 Kotlin ORM
+## 为什么选择 Kronos
 
-❓ 为什么选择 Kronos？
+- **零反射** — 编译器插件在构建期生成所有映射代码，无运行时开销，无 GC 压力。
+- **Kotlin 原生 DSL** — 直接使用 `==`、`>`、`<`、`in`、`like` 编写条件，无需 `.eq()`、`.gt()`、`.lt()`。
+- **多数据库** — 内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言。
+- **功能完备** — 事务、级联（1:1 / 1:N / M:N）、表结构同步、序列化、跨库查询。
+- **内置策略** — 逻辑删除、乐观锁、创建/更新时间戳，均可自定义。
+- **框架与平台接入** — Spring Boot、Ktor、Vert.x、Solon 和 Android/JVM SQLite。
+- **协程友好** — 从底层为结构化并发设计。
+- **编译期映射** — KPojo 与 Map 互转，近乎零开销。
+- **编译期类型投影** — `select`、`join`、`union` 都会暴露生成结果类型，字段和 alias 由 Kotlin 在编译期检查。
+- **可组合查询** — 投影类型可以贯穿派生子查询、标量与谓词子查询、INSERT SELECT、CTAS 和 Union 查询层。
 
-- 充分利用 JVM 生态（驱动、日志、连接池等），并逐步面向和支持 Kotlin 多平台。
-- 编译器插件驱动，协程友好，核心路径零反射，性能强大且稳定。
-- Kotlin 原生语法的表达式 DSL：`==`、`>`、`<`、`in` 等（而非 `.eq`、`.gt`、`.lt`），强类型约束。
-- 开箱即用：事务、跨库查询、表/索引/备注创建与同步、序列化/反序列化、无外键的强力级联（一对一/一对多/多对多）。
-- 内置：逻辑删除、乐观锁、创建/更新时间，且均可自定义。
-- 轻松集成任意技术栈（Spring、Ktor、Vert.x、Solon、Android），下文提供示例仓库。
-- **基于命名参数的原生SQL数据库操作**。
-- 编译期 Map 映射与元信息 API，KPojo 转换零反射、近乎零开销。
+## 贡献者指引
 
-## 开发者文档
+AI 编程助手可参考 `.agents/skills/` 下的技能指南获取架构与工作流上下文。
 
-- 更完整的架构图、模块内部与高阶指南请见[开发者文档入口](./develop-docs/README-zh_CN.md)。
-- 适合阅读的人群：
-  - 贡献者 / 维护者：希望扩展或修改 Kronos。
-  - 高阶使用者：需要理解内部机制与设计取舍。
-  - 与三方集成 / 插件作者：编写日志、JDBC、代码生成、DSL、函数/方言、事件拦截等扩展，或将 Kronos 集成到你的平台中。
+--------
 
--------
-
-# 简单示例
-
-下面是一些最简单的示例，说明如何使用 Kronos-ORM 进行数据库操作。
+## 快速示例
 
 ```kotlin
-// 定义一个扩展 KPojo 的数据类
 data class User(
     @PrimaryKey(identity = true) val id: Long? = null,
     val username: String? = null,
     val age: Int? = null
 ) : KPojo
 
-//我们可以使用dataSource.table.createTable<User>()来创建表，
-//或dataSource.table.syncTable<User>()来同步表结构。
 dataSource.table.createTable<User>()
 
-// 向`user`表插入一条记录(username = "test", age = 18), 并获取插入的记录的id
-// 可以使用 List<User>.insert().execute() 来批量插入记录
-val id = User(username = "test", age = 18).insert().execute().lastInsertId
+val id = User(username = "test", age = 18).insert().withId().execute().lastInsertId
 
-// 查询`user`表中`age`为18的记录
-val listOfUser = User(age = 18).select().queryList()
+val listOfUser = User().select().where { it.age == 18 }.toList()
 
-// 更新`user`表中`id`为id的记录的`age`字段为19
 User(id = id, age = 19).update().by { it.id }.execute()
 
-// 删除`user`表中`id`为id的记录
-User(id = id).delete().execute()
+User(id = id).delete().by { it.id }.execute()
 ```
 
-## 🖥 JDK、Kotlin 和构建工具
+## 投影与子查询示例
 
-- **JDK 8+**
-- **Kotlin 2.3.0+**
-- **Maven 3.6.3+** or **Gradle 6.8.3+**
+Kronos 为 Kotlin 查询加入了编译期生成投影类型，选出的 alias 可以被下一层查询继续消费。
 
-> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.3.0 或更高版本。
->
-> 如果您在 **Intellij IDEA** 中构建失败，并使用 **Maven** 构建、
-> 请尝试启用以下设置: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner /
-Delegate IDE build/run actions to Maven**.
--------
+```kotlin
+val rankedOrders = Order()
+    .select {
+        [
+            it.id,
+            it.userId,
+            it.amount,
+            f.rowNumber()
+                .over {
+                    partitionBy(it.userId)
+                    orderBy(it.createTime.desc())
+                }
+                .alias("rn")
+        ]
+    }
+// 投影类型：{ id: Int?, userId: Int?, amount: BigDecimal?, rn: Long? }
 
-## 📦 安装
+val latestOrders = rankedOrders
+    .select { [it.id, it.userId, it.amount] }
+    .where { it.rn == 1 }
+    .toList()
+// 结果类型：List<{ id: Int?, userId: Int?, amount: BigDecimal? }>
 
-<summary>
+val orderCounts = Order()
+    .select { [it.userId, f.count(it.id).alias("orderCount")] }
+    .groupBy { it.userId }
+// 投影类型：{ userId: Int?, orderCount: Long? }
 
-### Gradle(kts)
+orderCounts
+    .insert<UserOrderSummary> { [it.userId, it.orderCount] }
+    .execute()
 
-</summary>
+val activeUsers = User()
+    .select { [it.id, it.name, it.status] }
+    .where { it.status == ACTIVE }
+// 投影类型：{ id: Long?, name: String?, status: Int? }
+
+dataSource.table.createTable(UserArchive(), activeUsers)
+
+val currentUsers = User().select { [it.id, it.name] }.where { it.enabled == true }
+// 投影类型：{ id: Long?, name: String? }
+
+val archivedUsers = ArchivedUser().select { [it.id, it.name] }
+// 投影类型：{ id: Long?, name: String? }
+
+val users = union(currentUsers, archivedUsers)
+    .select { [it.id, it.name] }
+    .toList()
+// 结果类型：List<{ id: Long?, name: String? }>
+```
+
+## 环境要求
+
+| 依赖 | 版本 |
+|------|------|
+| JDK | 8+ |
+| Kotlin | 2.4.0+ |
+| Gradle | Kotlin 2.4.0 支持的版本 |
+| Maven | 3.9+ |
+
+> 请确保 IDE 的 Kotlin 插件支持 Kotlin 2.4.0 或更高版本。
+
+## Kotlin 版本兼容性
+
+| Kronos 版本 | 支持的 Kotlin 版本 | 说明 |
+|-------------|--------------------|------|
+| `0.3.1` | `2.4.0+` | H2 和达梦方言、JDBC 连接与行映射，以及 Kotlin `String` 和跨方言 SQL 函数 |
+| `0.3.0` | `2.4.0+` | 支持 Android/JVM SQLite，见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) |
+| `0.2.0` - `0.2.4` | `2.4.0+` | Kotlin 2.4.0 版本线 |
+| `0.1.2` | `2.4.0+` | 修复表结构同步边缘场景并扩充跨数据库集成测试 |
+| `0.1.1` | `2.4.0+` | 补充投影文档、IDEA 插件文档与发版自动化改进 |
+| `0.1.0` | `2.3.0+` | 基于 Kotlin 2.3.0 的正式发布版本 |
+| `0.0.7` | `2.3.0+` | 在 0.0.7 中升级 Gradle 和 Kotlin |
+| `0.0.6` | `2.2.21+` | 添加 `kotlin.time.Instant` 支持 |
+| `0.0.2` - `0.0.5` | `2.2.0+` | 2.2.21 升级前的早期开发版本 |
+| `0.0.1` | `2.1.0+` | 初始公开发布版本线 |
+
+--------
+
+## 安装
 
 <details>
+<summary><b>Gradle (Kotlin DSL)</b></summary>
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.7"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.7")
+    implementation("com.kotlinorm:kronos-core:0.3.1")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
 
 </details>
 
-<summary>
-
-### Gradle(groovy)
-
-</summary>
-
 <details>
+<summary><b>Gradle (Groovy)</b></summary>
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.7'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.3.1'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.7'
+    implementation 'com.kotlinorm:kronos-core:0.3.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.3.1'
+    implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
 
 </details>
 
-<summary>
-
-### Maven
-
-</summary>
-
 <details>
+<summary><b>Maven</b></summary>
 
 ```xml
-
 <project>
     <dependencies>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.7</version>
+            <version>0.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kotlinorm</groupId>
+            <artifactId>kronos-jdbc-wrapper</artifactId>
+            <version>0.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql-connector-j.version}</version>
         </dependency>
     </dependencies>
 
@@ -186,7 +246,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.0.7</version>
+                        <version>0.3.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -197,149 +257,181 @@ dependencies {
 
 </details>
 
-## 🗄️ 支持的数据库
+### Android/JVM 和 SQLite
 
-Kronos-ORM 支持多种数据库：
+`0.3.0` 支持 Android/JVM。接入由 `kronos-core`、Gradle 插件以及围绕 Android `SQLiteDatabase` 实现的 `KronosDataSourceWrapper` 组成。配置和 wrapper 说明见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite)，完整应用见 [Android 示例](https://github.com/Kronos-orm/kronos-example-android)。
 
-- MySQL（MySQL）
-- PostgreSQL（PostgreSQL）
-- SQLite（SQLite）
-- Oracle（甲骨文数据库）
-- Microsoft SQL Server（SQL Server）
-- DB2（IBM DB2）
-- Sybase（Sybase）
-- H2（H2 Database）
-- OceanBase（OceanBase）
-- DM8（达梦数据库）
-- GaussDB（华为 GaussDB）
+## 支持的数据库
 
-> 说明：
-> - 不同方言的特性覆盖可能略有差异；核心 DSL、UPSERT/锁等语法尽量提供跨库兼容能力。
-> - 集成测试模块目前主要以 MySQL、PostgreSQL 为示例以便 CI 运行。
+MySQL | PostgreSQL | SQLite | H2 | SQL Server | Oracle | DM8（达梦）
 
-## 🚀 快速入门
+> Kronos 会根据当前数据库方言选择 SQL 渲染和表结构语句。
 
-### 🔗 连接数据库
+--------
 
-您可以通过以下方式设置默认数据源
+## 使用
+
+### 连接数据库
 
 ```kotlin
-Kronos.init {
-    dataSource = { KronosBasicWrapper(SomeDataSource()) }
-    // 具体数据源的示例：
-    //dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
-    //dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
-    //dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
-}
+import com.kotlinorm.Kronos
+import com.kotlinorm.connect
+
+Kronos.connect(
+    url = "jdbc:mysql://localhost:3306/kronos",
+    userName = "root",
+    password = "******",
+    driverClassName = "com.mysql.cj.jdbc.Driver"
+)
 ```
 
-有关连接数据库和使用动态数据源或多个数据源的更多详情，请参阅
-文档](https://kotlinorm.com/#/documentation/zh-CN/database/connect-to-db)。
+`Kronos.connect(...)`返回`KronosJdbcWrapper`并注册为默认数据源。
 
-### 🎨 表模型定义（通过注解）
+应用服务使用连接池时，添加所选连接池和JDBC Driver依赖后，可以直接提供其`DataSource`：
 
 ```kotlin
-@Table(name = "tb_movie")
-@TableIndex("idx_name", ["name"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+
+Kronos.dataSource = { KronosJdbcWrapper(SomeDataSource()) }
+```
+
+`KronosJdbcWrapper`也可以传入`databaseType = DBType.Mysql`和配置block。多数据源或动态数据源场景可以用`DriverManagerDataSource`创建独立wrapper，示例见[数据源包装器](https://kotlinorm.com/#/documentation/zh-CN/database/datasource-wrapper)。
+
+### Android/JVM SQLite
+
+Android 应用通过 `SQLiteDatabase` wrapper 配置 Kronos 数据源。完整接入见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite)，可从 [参考 wrapper](https://github.com/Kronos-orm/kronos-example-android/blob/main/app/src/main/java/com/kotlinorm/example/android/AndroidSQLiteDataSourceWrapper.kt) 开始实现。
+
+### 模型定义
+
+```kotlin
+@Table("tb_movie")
+@TableIndex("idx_name", ["name"], "UNIQUE", "BTREE")
 data class Movie(
     @PrimaryKey(identity = true)
-    val id: Long? = null,// 主键和自动递增
-    @Necessary val name: String? = null, // 电影名称
-    val directorId: Long? = null, // 导演 ID
+    val id: Long? = null,
+    @NonNull val name: String? = null,
+    val directorId: Long? = null,
     @Cascade(["directorId"], ["id"])
-    val director: Director? = null, // 级联关系：一对多
-    val relations: List<MovieActorRelation>? = null, // 级联关系：多对多
+    val director: Director? = null,
+    val relations: List<MovieActorRelation>? = null,
     @Serialize
-    val type: List<String>? = null, // 从字符串反序列化
+    val type: List<String>? = null,
     @Column("movie_summary")
-    val summary: String? = null, // 电影摘要，列别名
-    @Version val version: Long? = null, // 乐观锁的版本
-    @LogicDelete val deleted: Boolean? = null, // 逻辑删除
+    val summary: String? = null,
+    @Version val version: Long? = null,
+    @LogicDelete
+    @Default("0") // @Default("false") for Postgres
+    val deleted: Boolean? = null,
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
-    @UpdateTime val updateTime: String? = null, // 更新时间，日期格式化
-    @CreateTime val createTime: LocalDateTime? = null // 创建时间
-) : KPojo { // KPojo 是一个标记接口，用于标记实体类
-    var actors: List<Actor>? by manyToMany(::relations) // 使用 Kotlin 委托简化多对多关系的操作
+    @UpdateTime val updateTime: String? = null,
+    @CreateTime val createTime: LocalDateTime? = null
+) : KPojo {
+    var actors: List<Actor>? by manyToMany(::relations)
 }
 ```
 
-### 🎨 表模型定义(Dsl 风格)
-
-即将推出...[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
-
-------
-
-### 🔨 Table Operation
+`@Serialize` 字段在两个方向都使用属性声明上的完整 `KType`。应用只需注册一个 serialized `ValueCodec`，对象、`List<String>`、嵌套 List 和 `List<Enum>` 都无需逐类配置。
 
 ```kotlin
-// 表是否存在
-dataSource.table.exists<Movie>()
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.serializedValueCodec
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
-// 创建表
-dataSource.table.createTable<Movie>()
+val json = Json {
+    encodeDefaults = true
+    ignoreUnknownKeys = true
+}
 
-// 删除表
-dataSource.table.dropTable<Movie>()
-// 或者
-dataSource.table.dropTable("tb_movie")
-
-// 同步表结构
-dataSource.table.syncTable<Movie>()
+val serializationRegistration = Kronos.registerValueCodec(
+    serializedValueCodec(
+        encode = { value, type ->
+            @Suppress("UNCHECKED_CAST")
+            val valueSerializer = serializer(type) as KSerializer<Any>
+            json.encodeToString(valueSerializer, value)
+        },
+        decode = { text, type -> json.decodeFromString(serializer(type), text) }
+    )
+)
 ```
 
-------
+后注册的 codec 优先级更高；`serializationRegistration.close()` 只注销本次注册，主要用于测试或热更新。交给 Kotlinx Serialization 处理的 Kotlin data class 需要添加 `@kotlinx.serialization.Serializable`。完整 Gson 和 Kotlinx 示例见[序列化](https://kotlinorm.com/#/documentation/zh-CN/mapping/serialization)。
 
-### 📜 Query
+### 表操作
 
 ```kotlin
-// 一个简单的查询，包括指定字段、条件、排序、分组、去重
-val listOfUser: List<User> = User()
-    .select { it.id + it.username }
+dataSource.table.exists<Movie>()
+dataSource.table.createTable<Movie>()
+dataSource.table.syncTable<Movie>()
+dataSource.table.dropTable<Movie>()
+```
+
+### 查询
+
+```kotlin
+import com.kotlinorm.database.SqlExecutor.query
+
+val users = User()
+    .select { [it.id, it.username] }
     .where { it.id < 10 && it.age >= 18 }
     .distinct()
     .groupBy { it.id }
     .orderBy { it.username.desc() }
-    .queryList()
+    .toList()
+// 结果：List<{ id: Long?, username: String? }>
 
-// 带有分页和总数查询
-val (total, list) = User()
-    .select { it.id + it.username }
+// 使用命名 PageResult 分页
+val page = User()
+    .select { [it.id, it.username] }
     .where { it.id < 10 && it.username like "a%" }
-    .distinct()
-    .groupBy { it.id }
-    .orderBy { it.username.desc() }
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
+val total = page.total
+val list = page.records
+val totalPages = page.totalPages
 
 // 联表查询
-val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    on { user.id == relation.userId && user.id == role.userId }
-    select {
-        user.id + user.username + relation.id.as_("relationId") +
-                role.role + f.count(1).as_("count")
-    }
-    where { user.id < 10 }
-}.query()
+val usersWithRoles = User().join(UserRelation(), UserRole()) { user, relation, role ->
+    leftJoin { user.id == relation.userId }
+        .leftJoin { user.id == role.userId }
+        .select {
+            [user.id, user.username, relation.id.alias("relationId"),
+                    role.role, f.count(1).alias("count")]
+        }
+        .where { user.id < 10 }
+}.toList()
+// 结果类型：List<{ id: Long?, username: String?, relationId: Long?, role: String?, count: Long? }>
 
-// 使用原生 SQL + 命名参数 查询
-val result: Map<String, Any> = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
+// Union
+val currentUsers = User()
+    .select { [it.id, it.username] }
+    .where { it.enabled == true }
+// 投影类型：{ id: Long?, username: String? }
+
+val archivedUsers = ArchivedUser()
+    .select { [it.id, it.username] }
+// 投影类型：{ id: Long?, username: String? }
+
+val allUsers = union(currentUsers, archivedUsers).toList()
+// 结果类型：List<{ id: Long?, username: String? }>
+
+// 命名参数原生 SQL
+val result = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
 ```
 
-### ➕ Insert
+### 插入
 
 ```kotlin
-// 插入单个实体
 user.insert().execute()
-
-// 插入多个实体
 listOfUser.insert().execute()
 ```
 
-### ✏️ Update
+### 更新
 
 ```kotlin
-// 使用set函数更新
 user.update()
     .set {
         it.username = "123"
@@ -348,88 +440,96 @@ user.update()
     .by { it.id }
     .execute()
 
-// 根据某些条件更新，更新的数据来自传入的记录
-user.update { it.username + it.gender }
+user.update { [it.username, it.gender] }
     .by { it.id }
     .execute()
 ```
 
-### 🔄 Upsert
+### Upsert
 
 ```kotlin
-// 在某些列上执行插入或更新
 user.upsert { it.username }
     .on { it.id }
-//  .lock(PessimisticLock.X) // 您可以指定锁的类型，默认使用悲观锁
     .execute()
 
-// 只有在冲突时才更新
 user.upsert { it.username }
-    .onConflict() // 跨数据库的 UPSERT 兼容写法
+    .onConflict()
     .execute()
 ```
 
-### 🗑 Delete
+### 删除
 
 ```kotlin
-// 根据某些条件删除行
 user.delete()
     .where { it.id == 1 }
     .execute()
 ```
 
-------
+--------
 
-### 📝 动态创建`KPojo` & `KPojo` 与 Map互转 & 获取表名、列等信息
-
-- Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
-- Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
-- Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
+### KPojo 提供的方法
 
 ```kotlin
-val instance = Movie::class.newInstance() // -> Movie() ,通过引用动态创建 KPojo 实例，不使用反射
-fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // 通过引用动态创建 KPojo 实例，不使用反射
+val instance = Movie::class.newInstance()
 
-val movie = Movie(1)
-val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), 不使用反射
-val movie2: Movie = dataMap.mapperTo<Movie>() // 或 dataMap.mapperTo(Movie::class), 不使用反射
+val dataMap: Map<String, Any?> = movie.toDataMap()
+val movie2: Movie = dataMap.mapperTo<Movie>()
 
-val tableName = movie.kronosTable() // "tb_movie", 不使用反射
-val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 不使用反射
-// 实际上，我们提供了更多的功能，如获取表的创建时间、更新时间、字段设置的逻辑删除等。
+val tableName = movie.__tableName // 可读写
+val tableComment = movie.__tableComment
+val columns = movie.__columns
+val indexes = movie.__tableIndexes
+val createTime = movie.__createTime
+val updateTime = movie.__updateTime
+val logicDelete = movie.__logicDelete
+val optimisticLock = movie.__optimisticLock
 
-instance["fieldName"] // 通过字段名获取字段值, 不使用反射
-instance["fieldName"] = "value" // 通过字段名设置字段值, 不使用反射
+instance["fieldName"]
+instance["fieldName"] = "value"
 ```
 
-------
+所有操作在编译期完成，无反射。
 
-## 🛠️ 与 Spring 或其他框架集成
+--------
 
-有关更多信息，请参阅以下示例项目：
+## 框架集成
 
-- [SpringBoot 示例项目](https://github.com/Kronos-orm/kronos-example-spring-boot)
-- [Ktor 示例项目](https://github.com/Kronos-orm/kronos-example-ktor)
-- [Vert.x 示例项目](https://github.com/Kronos-orm/kronos-example-vertx)
-- [Solon 示例项目](https://github.com/Kronos-orm/kronos-example-solon)
-- [Android 示例项目](https://github.com/Kronos-orm/kronos-example-android)
+| 框架 | 示例 |
+|------|------|
+| Spring Boot | [kronos-example-spring-boot](https://github.com/Kronos-orm/kronos-example-spring-boot) |
+| Ktor | [kronos-example-ktor](https://github.com/Kronos-orm/kronos-example-ktor) |
+| Vert.x | [kronos-example-vertx](https://github.com/Kronos-orm/kronos-example-vertx) |
+| Solon | [kronos-example-solon](https://github.com/Kronos-orm/kronos-example-solon) |
+| Android/JVM + SQLite | [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) · [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) |
 
-## 📚 官方文档
+## AI 编程助手集成
 
-如需了解更多信息，请访问 [官方网站](https://www.kotlinorm.com) 或 
-[文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)。
+Kronos 提供 AI 技能指南，帮助编程助手理解和生成 Kronos 代码。可以直接从 `main` 分支安装 skill：
 
-## 📜 License
+| 工具 | 命令 |
+|------|------|
+| **Claude** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
+| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .codex/skills/kronos-orm-guide` |
+| **Cursor** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
+| **默认 / 通用** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 
-Kronos-ORM 遵循 Apache 2.0 许可发布。
+如果目标目录已存在，在 `degit` 后添加 `--force`。
 
-## 🤝 Contributing
+--------
 
-更多信息请参阅 [CONTRIBUTING.md](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md)。
+## 文档
 
-## Contributors
+完整文档请访问[官方网站](https://www.kotlinorm.com)或[文档中心](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)。
 
-我们对所有已经为 Kronos-ORM 做出贡献的个人表示感谢！
+## 许可证
+
+Kronos-ORM 遵循 [Apache 2.0 许可证](https://www.apache.org/licenses/LICENSE-2.0.html)发布。
+
+## 贡献
+
+参阅 [CONTRIBUTING.md](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md)。
+
+## 贡献者
 
 <a href="https://github.com/Kronos-orm/Kronos-orm/graphs/contributors">
   <img alt="contributors" src="https://contrib.rocks/image?repo=Kronos-orm/Kronos-orm"/>
@@ -437,12 +537,7 @@ Kronos-ORM 遵循 Apache 2.0 许可发布。
 
 -------------------
 
-如果你对 Kronos-ORM 感兴趣，欢迎加入我们的社区！
-
 [![discord](https://img.shields.io/badge/Discord-Kronos_ORM-blue?logo=discord&logoColor=white)](https://discord.gg/Vn8EzxRX)
-
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
 
 ![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
-
-**如果您喜欢 Kronos-ORM，请给我们一个Star ⭐️，谢谢！**

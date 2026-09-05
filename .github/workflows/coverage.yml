@@ -277,7 +277,7 @@ jobs:
       # ── push/merge_group 触发：生成 badge 并部署到 coverage 分支 ────────────
       - name: Generate the badge SVG image for Core
         if: github.event_name != 'pull_request'
-        uses: emibcn/badge-action@v2.0.3
+        uses: emibcn/badge-action@v2.0.4
         with:
           label: 'core coverage'
           status: ${{ steps.core-coverage.outputs.lines }}
@@ -295,7 +295,7 @@ jobs:
 
       - name: Generate the badge SVG image for Compiler Plugin
         if: github.event_name != 'pull_request'
-        uses: emibcn/badge-action@v2.0.3
+        uses: emibcn/badge-action@v2.0.4
         with:
           label: 'compiler plugin coverage'
           status: ${{ steps.compiler-plugin-coverage.outputs.lines }}
@@ -304,7 +304,7 @@ jobs:
 
       - name: Generate the badge SVG image for Codegen
         if: github.event_name != 'pull_request'
-        uses: emibcn/badge-action@v2.0.3
+        uses: emibcn/badge-action@v2.0.4
         with:
           label: 'codegen coverage'
           status: ${{ steps.codegen-coverage.outputs.lines }}

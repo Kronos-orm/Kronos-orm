@@ -35,34 +35,34 @@ jobs:
 
     steps:
       - name: Checkout Kronos
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: kronos-orm
           persist-credentials: false
 
       - name: Checkout Ktor example
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: Kronos-orm/kronos-example-ktor
           path: kronos-example-ktor
           persist-credentials: false
 
       - name: Checkout Spring Boot example
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: Kronos-orm/kronos-example-spring-boot
           path: kronos-example-spring-boot
           persist-credentials: false
 
       - name: Checkout Solon example
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: Kronos-orm/kronos-example-solon
           path: kronos-example-solon
           persist-credentials: false
 
       - name: Checkout Vert.x example
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: Kronos-orm/kronos-example-vertx
           path: kronos-example-vertx
@@ -78,7 +78,7 @@ jobs:
           echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: 21
           distribution: adopt

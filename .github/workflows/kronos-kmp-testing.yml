@@ -4,7 +4,7 @@ on:
   pull_request:
   merge_group:
   push:
-    branches: [ 'codex/**', 'release/**' ]
+    branches: [ 'release/**' ]
   workflow_dispatch:
   workflow_call:
 
@@ -55,7 +55,7 @@ jobs:
               if source_set.name == "test" or source_set.name.endswith("Test"):
                   continue
               for source in source_set.rglob("*.kt"):
-                  if "kotlin.reflect.full" in source.read_text():
+                  if "kotlin.reflect.full" in source.read_text(encoding="utf-8"):
                       violations.append(str(source))
           if violations:
               raise SystemExit("Production reflect.full regression:\n" + "\n".join(violations))

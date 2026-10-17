@@ -1,7 +1,8 @@
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
+import kronos.kronosNativeTargets
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    id("org.jetbrains.kotlin.multiplatform")
     alias(libs.plugins.ktx.serialization)
     alias(libs.plugins.kronos.gradle)
     alias(libs.plugins.kronos.publishing)
@@ -10,20 +11,53 @@ plugins {
 }
 
 kotlin {
+    jvm()
+    kronosNativeTargets()
+
     compilerOptions {
         freeCompilerArgs.add("-nowarn")
     }
+
+    sourceSets {
+        val commonMain by getting {
+        }
+        val nativeMain by getting {
+            dependencies {
+                implementation(libs.ktx.datetime)
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+        val jvmMain by getting {
+            // Keep the 0.3.x source layout while common runtime contracts are extracted.
+            kotlin.srcDir("src/main/kotlin")
+            resources.srcDir("src/main/resources")
+            dependencies {
+                api(project(":kronos-syntax"))
+                implementation(libs.ktx.datetime)
+            }
+        }
+        val jvmTest by getting {
+            kotlin.srcDir("src/test/kotlin")
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.gson)
+                implementation(libs.mockk)
+                implementation(libs.ktx.datetime)
+                implementation(libs.bundles.ktx.serialization)
+                implementation(libs.kotlin.reflect)
+            }
+        }
+    }
 }
 
-dependencies {
-    api(project(":kronos-syntax"))
-    implementation(libs.kotlin.reflect)
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.gson)
-    testImplementation(libs.mockk)
-    testImplementation(libs.ktx.datetime)
-    testImplementation(libs.bundles.ktx.serialization)
-    testImplementation(libs.kotlin.reflect)
+// Preserve the task name used by the 0.3.x CI and consumer scripts.
+tasks.register("test") {
+    group = "verification"
+    dependsOn("jvmTest")
 }
 
 kover {

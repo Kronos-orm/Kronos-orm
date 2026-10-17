@@ -18,6 +18,7 @@ package com.kotlinorm.interfaces
 
 import com.kotlinorm.annotations.InternalKronosApi
 import com.kotlinorm.beans.task.ResultColumnMetadata
+import com.kotlinorm.utils.StaticTypeInfo
 import kotlin.reflect.KType
 
 /**
@@ -33,6 +34,12 @@ interface KAtomicQueryTask : KAtomicTask {
      * Wrappers use this value to choose map, KPojo, or scalar mapping without erasing generics.
      */
     val targetType: KType
+
+    /**
+     * Compiler-generated static metadata for [targetType] when available.
+     */
+    val targetTypeInfo: StaticTypeInfo?
+        get() = null
 
     /**
      * Runtime hints carried from query planning into JDBC parameter binding.

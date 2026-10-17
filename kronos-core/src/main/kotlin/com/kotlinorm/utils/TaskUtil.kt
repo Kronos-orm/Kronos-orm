@@ -39,6 +39,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.infoIfEnabled
 import com.kotlinorm.syntax.statement.SqlDmlStatement
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import kotlin.reflect.typeOf
@@ -124,7 +125,7 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
             }
         }
     }
-    defaultLogger(Kronos).info(
+    defaultLogger(Kronos).infoIfEnabled {
         if (task is KronosAtomicBatchTask) {
             log {
                 -"Executing ["[green]
@@ -158,7 +159,7 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
                 +"-----------------------"[black, bold]
             }
         }
-    )
+    }
 }
 
 fun <T> KAtomicTask.logAndReturn(

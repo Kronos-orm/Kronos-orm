@@ -19,6 +19,9 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.utils.StaticContainerKind
+import com.kotlinorm.utils.StaticTypeInfo
+import com.kotlinorm.utils.StaticTypeRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -178,6 +181,60 @@ class FieldTest {
         assertEquals(typeOf<List<*>?>(), field.kType)
         assertNull(field.elementKType)
         assertTrue(field.cascadeIsCollectionOrArray)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldUsesGeneratedContainerKindBeforeJvmClassifierFallback() {
+        val iterableMetadata = StaticTypeInfo(
+            StaticTypeRef("test.Iterable", false),
+            containerKind = StaticContainerKind.ITERABLE
+        )
+        val noneMetadata = StaticTypeInfo(
+            StaticTypeRef("test.None", false),
+            containerKind = StaticContainerKind.NONE
+        )
+
+        assertTrue(
+            Field(
+                columnName = "items",
+                kType = typeOf<String>(),
+                typeInfo = iterableMetadata
+            ).cascadeIsCollectionOrArray
+        )
+        assertFalse(
+            Field(
+                columnName = "items",
+                kType = typeOf<List<FieldTestChild>>(),
+                typeInfo = noneMetadata
+            ).cascadeIsCollectionOrArray
+        )
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldDoesNotTreatMapMetadataAsCascadeCollection() {
+        val field = Field(
+            columnName = "items",
+            kType = typeOf<List<FieldTestChild>>(),
+            typeInfo = StaticTypeInfo(
+                StaticTypeRef("test.Map", false),
+                containerKind = StaticContainerKind.MAP
+            )
+        )
+
+        assertFalse(field.cascadeIsCollectionOrArray)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldJvmFallbackDoesNotTreatMapAsCascadeCollection() {
+        val field = Field(
+            columnName = "items",
+            kType = typeOf<Map<String, FieldTestChild>>()
+        )
+
+        assertFalse(field.cascadeIsCollectionOrArray)
     }
 
     @Test

@@ -61,7 +61,8 @@ internal object EnumValueCodec : RegistryCodec {
      */
     override fun supports(value: Any, request: ValueConversionRequest, context: ValueCodecContext): Boolean =
         (request.direction == ValueCodecDirection.ENCODE && value is Enum<*>) ||
-            (request.direction == ValueCodecDirection.DECODE && request.targetType.isConcreteEnumType())
+            (request.direction == ValueCodecDirection.DECODE &&
+                (request.targetTypeInfo?.isConcreteEnumType() == true || request.targetType.isConcreteEnumType()))
 
     /**
      * Encodes exactly once with `Enum.name` or `Enum.ordinal` according to the
@@ -89,7 +90,15 @@ internal object EnumValueCodec : RegistryCodec {
             return if (request.usesOrdinalStorage()) enumValue.ordinal else enumValue.name
         }
 
-        if (request.targetType.accepts(value, request.sourceType)) return value
+        if (request.targetType.accepts(
+                value,
+                request.sourceType,
+                request.sourceTypeInfo,
+                request.targetTypeInfo
+            )
+        ) {
+            return value
+        }
         val metadata = (generatedTypes ?: generatedTypeMetadata()).enumMetadata(request.targetType)
             ?: throw request.missingEnumMetadata()
         if (request.usesOrdinalStorage()) {

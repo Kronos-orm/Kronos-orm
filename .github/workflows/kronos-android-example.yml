@@ -1,19 +1,25 @@
 name: Kronos Android example
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   android-example:
-    name: Run Android example
-    runs-on: ubuntu-latest
+    name: Android API ${{ matrix.api }}
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [ 26, 35 ]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
 
     steps:
       - name: Checkout Kronos
@@ -26,6 +32,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: Kronos-orm/kronos-example-android
+          ref: f22b19b8a8e2d5117e121f95c102d3d7179c1a5d
           path: kronos-example-android
           persist-credentials: false
 
@@ -35,16 +42,31 @@ jobs:
           set -euo pipefail
           version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
           echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+          kotlin_version=$(sed -nE 's/^kotlin[[:space:]]*=[[:space:]]*"([^"]+)"/\1/p' libs.versions.toml)
+          test -n "$version"
+          test -n "$kotlin_version"
+          echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
 
       - name: Set up JDK 21 for Kronos publication
         uses: actions/setup-java@v5
         with:
           java-version: 21
-          distribution: adopt
+          distribution: temurin
 
-      - name: Publish current Kronos artifacts to Maven local
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish current Android JVM consumer artifacts to Maven local
         working-directory: kronos-orm
-        run: ./gradlew publishAllToMavenLocal --no-daemon --console=plain -x test
+        run: >-
+          ./gradlew
+          :kronos-core:publishKotlinMultiplatformPublicationToMavenLocal
+          :kronos-core:publishJvmPublicationToMavenLocal
+          :kronos-syntax:publishKotlinMultiplatformPublicationToMavenLocal
+          :kronos-syntax:publishJvmPublicationToMavenLocal
+          :kronos-logging:publishKotlinMultiplatformPublicationToMavenLocal
+          :kronos-logging:publishJvmPublicationToMavenLocal
+          :kronos-compiler-plugin:publishToMavenLocal
+          --no-daemon --console=plain
 
       - name: Publish current Kronos Gradle plugin to Maven local
         working-directory: kronos-orm/kronos-gradle-plugin
@@ -59,12 +81,15 @@ jobs:
           from pathlib import Path
 
           version = os.environ["KRONOS_EXAMPLE_VERSION"]
+          kotlin_version = os.environ["KRONOS_EXAMPLE_KOTLIN_VERSION"]
           replacements = {
               "kronos-example-android/build.gradle.kts": [
+                  (r'id\("org\.jetbrains\.kotlin\.android"\) version "[^"]+"', f'id("org.jetbrains.kotlin.android") version "{kotlin_version}"'),
                   (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
               ],
               "kronos-example-android/app/build.gradle.kts": [
                   (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
+                  (r'implementation\("com\.kotlinorm:kronos-logging:[^"]+"\)', f'implementation("com.kotlinorm:kronos-logging:{version}")'),
               ],
           }
 
@@ -95,3 +120,36 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew -PkronosUseMavenLocal=true :app:assembleDebug :app:lintDebug --no-daemon --console=plain
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run instrumented SQLite compatibility tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          working-directory: kronos-example-android
+          script: |
+            adb devices -l
+            adb shell getprop ro.build.version.sdk
+            ./gradlew -PkronosUseMavenLocal=true :app:connectedDebugAndroidTest --no-daemon --console=plain --stacktrace
+
+      - name: Require executed instrumentation tests
+        run: |
+          report_dir=kronos-example-android/app/build/outputs/androidTest-results/connected/debug
+          python3 kronos-orm/.github/scripts/verify-kmp-test-results.py "$report_dir"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kmp-android-api-${{ matrix.api }}-reports
+          path: |
+            kronos-example-android/app/build/reports/**
+            kronos-example-android/app/build/outputs/androidTest-results/**
+          if-no-files-found: error

@@ -558,6 +558,7 @@ fun buildFieldFromProperty(
             typeArguments[0] = propertyType
         }
     }
+    val typeInfoExpr = if (irProperty.isDelegated) null else buildStaticTypeInfo(propertyType)
 
     val ignoreExpr: IrExpression = cloneEnumVararg(ignoreAnnotation.arg(0)) ?: builder.irNull()
 
@@ -580,6 +581,7 @@ fun buildFieldFromProperty(
         arguments[12] = defaultValueExpr                       // defaultValue
         arguments[13] = builder.irBoolean(nullable)            // nullable
         arguments[14] = builder.irBoolean(serializable)        // serializable
+        if (typeInfoExpr != null) arguments[16] = typeInfoExpr // typeInfo
     }
 }
 

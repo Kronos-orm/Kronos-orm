@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.typeWith
 
 /**
  * Collection-related IR utility functions
@@ -33,15 +34,15 @@ import org.jetbrains.kotlin.ir.types.IrType
 /**
  * Creates an IR expression representing a call to `listOf` with the given elements
  *
- * @param type The type of the elements in the list
+ * @param elementType The type of the elements in the list
  * @param elements The elements to include in the list
  * @return An IR expression representing the list
  */
 context(builder: IrBuilderWithScope, context: IrPluginContext)
-fun irListOf(type: IrType, elements: List<IrExpression>): IrExpression {
+fun irListOf(elementType: IrType, elements: List<IrExpression>): IrExpression {
     return builder.irCall(listOfFunctionSymbol).apply {
-        typeArguments[0] = type
-        arguments[0] = builder.irVararg(type, elements)
+        type = context.irBuiltIns.listClass.typeWith(elementType)
+        typeArguments[0] = elementType
+        arguments[0] = builder.irVararg(elementType, elements)
     }
 }
-

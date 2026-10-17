@@ -68,5 +68,7 @@ private val KColumnTypeByFqName = mapOf(
     "java.time.LocalDateTime" to "DATETIME",
     "kotlinx.datetime.LocalDateTime" to "DATETIME",
     "java.sql.Timestamp" to "TIMESTAMP",
+    "kotlin.time.Instant" to "TIMESTAMP",
+    "kotlinx.datetime.Instant" to "TIMESTAMP",
     "kotlin.ByteArray" to "BLOB",
 )

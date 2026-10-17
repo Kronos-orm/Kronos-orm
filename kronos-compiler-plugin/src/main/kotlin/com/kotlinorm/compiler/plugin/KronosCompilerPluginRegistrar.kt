@@ -42,14 +42,10 @@ class KronosCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         FirExtensionRegistrar.registerExtension(KronosFirExtensionRegistrar())
 
-        val messageCollector = configuration.get(
-            org.jetbrains.kotlin.config.CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY,
-            org.jetbrains.kotlin.cli.common.messages.MessageCollector.NONE
-        )
         IrGenerationExtension.registerExtension(
             KronosIrGenerationExtension(
-                messageCollector,
-                configuration.generatedTypeProviderConfigurationOrNull()
+                configuration,
+                configuration.generatedTypeProviderMode()
             )
         )
     }

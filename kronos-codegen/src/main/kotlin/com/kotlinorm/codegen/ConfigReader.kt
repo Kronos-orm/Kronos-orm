@@ -25,6 +25,7 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.interfaces.infoIfEnabled
 import java.io.File
 
 
@@ -90,11 +91,11 @@ fun init(path: String) {
             initialDataSource(dataSource)
         )
     ).apply {
-        Kronos.defaultLogger(this).info(
+        Kronos.defaultLogger(this).infoIfEnabled {
             log {
                 +"Reading config file successfully: $path"[green]
             }
-        )
+        }
     }
 }
 
@@ -105,11 +106,11 @@ fun readConfig(path: String): Map<String, Any?> {
     ) ?: throw IllegalArgumentException("Config file not found or is empty")
     while (config["extend"] != null) {
         val extendPath = config["extend"] as String
-        Kronos.defaultLogger(extendPath).info(
+        Kronos.defaultLogger(extendPath).infoIfEnabled {
             log {
                 +"Config extension found: $extendPath"[blue, bold]
             }
-        )
+        }
         val extendConfig = mapper.readValue(
             File(extendPath),
             object : TypeReference<Map<String, Any?>?>() {}

@@ -17,6 +17,7 @@ package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.logging.log
+import com.kotlinorm.interfaces.infoIfEnabled
 import java.io.File
 
 /**
@@ -45,11 +46,11 @@ class KronosConfig(
                     }
                     writeText(it.str)
                 }
-                Kronos.defaultLogger(this).info(
+                Kronos.defaultLogger(this).infoIfEnabled {
                     log {
                         +"File generated successfully: ${it.outputPath}"[green]
                     }
-                )
+                }
             }
         }
     }

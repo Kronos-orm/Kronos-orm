@@ -19,6 +19,7 @@
 package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.Kronos.defaultLogger
+import com.kotlinorm.interfaces.infoIfEnabled
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.logging.log
@@ -251,7 +252,7 @@ private fun processRight(
 
 
 fun TableColumnDiff.doLog(tableName: String) {
-    defaultLogger("tableSync").info(
+    defaultLogger("tableSync").infoIfEnabled {
         log {
             +"Start sync table $tableName:"
             -"Add fields\t"[black, bold]
@@ -262,5 +263,5 @@ fun TableColumnDiff.doLog(tableName: String) {
             -"Delete fields\t"[black, bold]
             +toDelete.joinToString(", ") { it.columnName }.ifEmpty { "None" }[red]
         }
-    )
+    }
 }

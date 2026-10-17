@@ -58,8 +58,8 @@ dependencies {
     compileOnly(libs.auto.service)
     kapt(libs.auto.service)
     
-    implementation(libs.bundles.ktx.serialization)
-    
+    testImplementation(libs.bundles.ktx.serialization)
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.compiler)
     testImplementation(libs.kotlin.compiler.internal.test.framework)

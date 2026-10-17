@@ -1,0 +1,23 @@
+package kronos
+
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
+/** Native publication targets shared by runtime, SQL syntax and logging. */
+fun KotlinMultiplatformExtension.kronosNativeTargets() {
+    iosArm64()
+    iosSimulatorArm64()
+    iosX64()
+    macosArm64()
+    macosX64()
+    tvosArm64()
+    tvosSimulatorArm64()
+    tvosX64()
+    watchosArm64()
+    watchosDeviceArm64()
+    watchosSimulatorArm64()
+    watchosX64()
+    linuxX64()
+    linuxArm64()
+    mingwX64()
+    applyDefaultHierarchyTemplate()
+}

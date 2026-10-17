@@ -16,7 +16,7 @@
 
 package com.kotlinorm.utils
 
-import com.kotlinorm.Kronos.timeZone
+import com.kotlinorm.Kronos.resolvedTimeZone
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -29,5 +29,5 @@ object DateTimeUtil {
      * @return The formatted current date and time as a String.
      */
     fun currentDateTime(pattern: String) =
-        DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now(Clock.system(timeZone)))!!
+        DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now(Clock.system(resolvedTimeZone)))!!
 }

@@ -19,7 +19,7 @@
 
 Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、多数据库支持，适用于 JVM 服务端和 Android/JVM SQLite 应用。
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -145,6 +145,9 @@ val users = union(currentUsers, archivedUsers)
 ```
 
 ## 环境要求
+
+`0.4.0-SNAPSHOT` 开发分支使用 Kotlin `2.4.21` 推进 KMP 迁移。
+下方正式版环境要求适用于已发布的 `0.3.1`。
 
 | 依赖 | 版本 |
 |------|------|

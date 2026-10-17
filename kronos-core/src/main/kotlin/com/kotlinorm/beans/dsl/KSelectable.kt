@@ -28,6 +28,7 @@ import com.kotlinorm.orm.sql.SqlQueryPlan
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.types.ToInsertSelect
 import com.kotlinorm.utils.KTypeKey
+import com.kotlinorm.utils.StaticTypeInfo
 import com.kotlinorm.utils.createKPojo
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -63,9 +64,12 @@ abstract class KSelectable<Selected : KPojo>(
 
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
-    inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
+    inline fun <reified T> first(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): T {
         prepareFirstResult()
-        return build(wrapper).first(wrapper)
+        return build(wrapper).first<T>(wrapper, targetTypeInfo)
     }
 
     @JvmName("firstProjection")
@@ -86,9 +90,12 @@ abstract class KSelectable<Selected : KPojo>(
 
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
-    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+    inline fun <reified T> firstOrNull(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): T? {
         prepareFirstResult()
-        return build(wrapper).firstOrNull(wrapper)
+        return build(wrapper).firstOrNull<T>(wrapper, targetTypeInfo)
     }
 
     @JvmName("firstProjectionOrNull")

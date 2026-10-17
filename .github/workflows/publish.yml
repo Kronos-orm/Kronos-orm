@@ -9,9 +9,18 @@ permissions:
   pull-requests: write
 
 jobs:
+  kmp-verification:
+    uses: ./.github/workflows/kronos-kmp-testing.yml
+    permissions:
+      contents: read
+
   publish:
+    needs: kmp-verification
     name: Publish 🚀
-    runs-on: ubuntu-latest
+    runs-on: macos-26
+    timeout-minutes: 180
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v6
@@ -27,7 +36,8 @@ jobs:
       - name: Detect version and mode 🔎
         id: detect
         run: |
-          cur=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+          cur=$(sed -nE 's/^[[:space:]]*project\.version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' build-logic/src/main/kotlin/publishing.gradle.kts)
+          test -n "$cur"
           echo "Current version: $cur"
           echo "current=$cur" >> "$GITHUB_OUTPUT"
           if echo "$cur" | grep -q -- "-SNAPSHOT$"; then
@@ -146,7 +156,7 @@ jobs:
           cp "$idea_plugin_zip" dist/release/
           (
             cd dist/release
-            sha256sum * > SHA256SUMS.txt
+            shasum -a 256 * > SHA256SUMS.txt
             ls -1 > ARTIFACTS.txt
           )
 

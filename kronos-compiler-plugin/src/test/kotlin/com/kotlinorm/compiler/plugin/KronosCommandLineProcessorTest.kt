@@ -34,10 +34,17 @@ class KronosCommandLineProcessorTest {
 
         assertEquals("kronos-compiler-plugin", processor.pluginId)
         assertEquals(
-            listOf("generated-provider-id", "generated-provider-fq-name"),
+            listOf(
+                "generated-provider-id",
+                "generated-provider-fq-name",
+                "generated-provider-fragments",
+                "skip-generated-provider",
+                "native-provider-entry-fq-name",
+                "native-provider-id"
+            ),
             optionNames
         )
-        assertEquals(2, processor.pluginOptions.size)
+        assertEquals(6, processor.pluginOptions.size)
         processor.pluginOptions.forEach { option ->
             assertFalse(option.required, "${option.optionName} must be optional for IDE/FIR-only loading")
         }
@@ -46,6 +53,104 @@ class KronosCommandLineProcessorTest {
     @Test
     fun allowsProviderIdentityToBeAbsentForIdeFirOnlyLoading() {
         assertNull(CompilerConfiguration().generatedTypeProviderConfigurationOrNull())
+        assertEquals(GeneratedTypeProviderMode.Missing, CompilerConfiguration().generatedTypeProviderMode())
+    }
+
+    @Test
+    fun acceptsCommonNativeMetadataEntryWithoutJvmProviderIdentity() {
+        val processor = KronosCommandLineProcessor()
+        val configuration = CompilerConfiguration()
+        processor.processOption(
+            processor.option(NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME),
+            "com.kotlinorm.generated.native.installMetadata",
+            configuration
+        )
+        processor.processOption(
+            processor.option(NATIVE_PROVIDER_ID_OPTION_NAME),
+            "gradle:com.example:sample::commonMain#0123456789abcdef",
+            configuration
+        )
+
+        assertEquals(
+            GeneratedTypeProviderMode.Native(
+                "gradle:com.example:sample::commonMain#0123456789abcdef",
+                org.jetbrains.kotlin.name.FqName("com.kotlinorm.generated.native.installMetadata")
+            ),
+            configuration.generatedTypeProviderMode()
+        )
+    }
+
+    @Test
+    fun acceptsExplicitNativeProviderOptOutOnlyWithoutAnIdentity() {
+        val processor = KronosCommandLineProcessor()
+        val configuration = CompilerConfiguration()
+        processor.processOption(
+            processor.option("skip-generated-provider"),
+            "true",
+            configuration
+        )
+
+        assertEquals(GeneratedTypeProviderMode.Disabled, configuration.generatedTypeProviderMode())
+
+        configuration.put(GeneratedProviderIdKey, "gradle:com.example:sample::native#0123456789abcdef")
+        configuration.put(
+            GeneratedProviderFqNameKey,
+            "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_0123456789abcdef"
+        )
+        assertEquals(
+            "Compiler option 'skip-generated-provider' cannot be combined with generated provider options",
+            assertFailsWith<IllegalArgumentException> {
+                configuration.generatedTypeProviderMode()
+            }.message
+        )
+    }
+
+    @Test
+    fun rejectsNonExplicitNativeProviderOptOutValues() {
+        val processor = KronosCommandLineProcessor()
+        assertEquals(
+            "Compiler option 'skip-generated-provider' must be 'true'",
+            assertFailsWith<IllegalArgumentException> {
+                processor.processOption(
+                    processor.option("skip-generated-provider"),
+                    "false",
+                    CompilerConfiguration()
+                )
+            }.message
+        )
+    }
+
+    @Test
+    fun enablesSourceOwnedProviderFragments() {
+        val processor = KronosCommandLineProcessor()
+        val configuration = CompilerConfiguration()
+        processor.processOption(
+            processor.option("generated-provider-id"),
+            "gradle:com.example:sample::main#0123456789abcdef",
+            configuration
+        )
+        processor.processOption(
+            processor.option("generated-provider-fq-name"),
+            "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_0123456789abcdef",
+            configuration
+        )
+        processor.processOption(
+            processor.option("generated-provider-fragments"),
+            "true",
+            configuration
+        )
+
+        val mode = configuration.generatedTypeProviderMode()
+        assertEquals(
+            GeneratedTypeProviderConfiguration(
+                "gradle:com.example:sample::main#0123456789abcdef",
+                org.jetbrains.kotlin.name.FqName(
+                    "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_0123456789abcdef"
+                )
+            ),
+            (mode as GeneratedTypeProviderMode.Enabled).configuration
+        )
+        assertEquals(true, mode.useSourceFragments)
     }
 
     @Test

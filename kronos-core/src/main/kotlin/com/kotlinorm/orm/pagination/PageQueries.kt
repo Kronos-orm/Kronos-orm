@@ -21,6 +21,7 @@ import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.StaticTypeInfo
 
 data class PageResult<T>(
     val total: Int,
@@ -74,9 +75,12 @@ class OffsetPageQuery<Selected : KPojo> internal constructor(
 
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
-    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): List<T> {
         val dataSource = wrapper.orDefault()
-        return build(dataSource).toList(dataSource)
+        return build(dataSource).toList<T>(dataSource, targetTypeInfo)
     }
 
     @JvmName("toProjectionList")
@@ -134,13 +138,16 @@ class TotalPageQuery<Selected : KPojo> internal constructor(
 
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
-    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): PageResult<T> {
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): PageResult<T> {
         val dataSource = wrapper.orDefault()
         val tasks = build(dataSource)
         val total = tasks.countTask.first<Int>(dataSource)
         return PageResult(
             total = total,
-            records = tasks.recordsTask.toList<T>(dataSource),
+            records = tasks.recordsTask.toList<T>(dataSource, targetTypeInfo),
             totalPages = totalPages(total, pageQuery.pageSize),
             pageIndex = pageQuery.pageIndex,
             pageSize = pageQuery.pageSize
@@ -200,10 +207,13 @@ class CursorPageQuery<Selected : KPojo> internal constructor(
 
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
-    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): CursorResult<T> {
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): CursorResult<T> {
         val dataSource = wrapper.orDefault()
         requireCursorFieldsVisibleForTypedRows()
-        val rows = build(dataSource).toList<T>(dataSource)
+        val rows = build(dataSource).toList<T>(dataSource, targetTypeInfo)
         return pageResult(rows) { row, fieldName ->
             when (row) {
                 is KPojo -> row[fieldName]

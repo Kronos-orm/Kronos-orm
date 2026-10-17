@@ -27,7 +27,7 @@ import kotlin.reflect.KType
  * @property direction conversion direction selected by the caller
  * @property origin mapping boundary that created the request
  * @property declaredSourceType complete source KType supplied by the caller, when known
- * @property runtimeSourceType star-projected KType observed from the non-null runtime value
+ * @property runtimeSourceType optional runtime source KType when a boundary supplies one; the registry does not synthesize it
  * @property targetType complete logical target KType
  * @property fieldName mapped Kotlin field name, when available
  * @property columnName mapped database column name, when available

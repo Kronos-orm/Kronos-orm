@@ -20,9 +20,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.codec.accepts
 import com.kotlinorm.utils.codec.isBindableScalar
 import com.kotlinorm.utils.codec.isConcreteEnumType
-import kotlin.reflect.KClassifier
-import kotlin.reflect.KType
-import kotlin.reflect.KTypeProjection
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -54,19 +51,30 @@ class ValueCodecSupportTest {
     }
 
     @Test
-    fun `declared source KType participates after runtime validation`() {
+    fun `declared generic source requires descriptor relation after runtime validation`() {
+        val sourceInfo = StaticTypeInfo(
+            StaticTypeRef("test.ListOfString", false),
+            directSupertypes = listOf(StaticTypeRef("test.ListOfCharSequence", false))
+        )
+        val targetInfo = StaticTypeInfo(StaticTypeRef("test.ListOfCharSequence", false))
+
         assertTrue(
             typeOf<List<CharSequence>>().accepts(
                 listOf("value"),
-                typeOf<List<String>>()
+                typeOf<List<String>>(),
+                sourceInfo,
+                targetInfo
             )
         )
         assertFalse(
             typeOf<List<String>>().accepts(
                 listOf("value"),
-                typeOf<List<Any>>()
+                typeOf<List<Any>>(),
+                null,
+                null
             )
         )
+        assertFalse(typeOf<List<CharSequence>>().accepts(listOf("value"), typeOf<List<String>>(), null, null))
         assertFalse(typeOf<String>().accepts(1))
     }
 
@@ -95,22 +103,13 @@ class ValueCodecSupportTest {
     }
 
     @Test
-    fun `enum recognition requires a concrete non-generic KType`() {
-        assertTrue(typeOf<Status>().isConcreteEnumType())
-        assertTrue(typeOf<Status?>().isConcreteEnumType())
-        assertFalse(
-            SyntheticKType(
-                classifier = Status::class,
-                arguments = listOf(KTypeProjection.STAR)
+    fun `enum recognition uses compiler-generated descriptor metadata`() {
+        assertTrue(
+            StaticTypeInfo(
+                StaticTypeRef("example.Status", false),
+                enumKey = "example.Status"
             ).isConcreteEnumType()
         )
-        assertFalse(SyntheticKType(classifier = null).isConcreteEnumType())
+        assertFalse(StaticTypeInfo(StaticTypeRef("example.Status", false)).isConcreteEnumType())
     }
-
-    private data class SyntheticKType(
-        override val classifier: KClassifier?,
-        override val arguments: List<KTypeProjection> = emptyList(),
-        override val isMarkedNullable: Boolean = false,
-        override val annotations: List<Annotation> = emptyList()
-    ) : KType
 }

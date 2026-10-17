@@ -42,8 +42,9 @@ fun interface EnumFactory {
 }
 
 /**
- * Collects module-generated KPojo factories and enum metadata for one runtime
- * snapshot. Registration keys use exact KType structure and reject conflicts.
+ * Collects module-generated KPojo factories, enum metadata, and static type
+ * descriptors for one runtime snapshot. Static descriptor keys retain the
+ * complete compiler-generated type structure and ignore only root nullability.
  */
 @InternalKronosApi
 interface GeneratedTypeRegistrar {
@@ -72,11 +73,21 @@ interface GeneratedTypeRegistrar {
      * @throws IllegalArgumentException when the type or names are invalid
      */
     fun registerEnum(type: KType, entryNames: List<String>, factory: EnumFactory)
+
+    /**
+     * Contributes a compiler-generated descriptor for one complete static type.
+     *
+     * The default keeps existing provider implementations source compatible;
+     * generated providers override this through their emitted registration call.
+     * Registrations distinguish generic arguments, projections, and nested
+     * nullability while treating only the descriptor root as nullable-insensitive.
+     */
+    fun registerTypeInfo(typeInfo: StaticTypeInfo) = Unit
 }
 
 /**
- * Supplies one module's generated KPojo and enum metadata to the Kronos runtime.
- * Providers are discovered through the service loader and loaded lazily.
+ * Supplies one module's generated KPojo, enum, and static-type metadata to the
+ * Kronos runtime. Providers are discovered through the service loader and loaded lazily.
  */
 @InternalKronosApi
 interface GeneratedTypeProvider {
@@ -128,7 +139,8 @@ internal data class GeneratedEnumMetadata(
  */
 internal class GeneratedTypeMetadataSnapshot internal constructor(
     private val kPojoFactories: Map<KTypeKey, GeneratedFactoryEntry>,
-    private val enums: Map<KTypeKey, GeneratedEnumMetadata>
+    private val enums: Map<KTypeKey, GeneratedEnumMetadata>,
+    private val staticTypeInfos: Map<StaticTypeRef, StaticTypeInfo>
 ) {
     /**
      * Returns generated construction metadata for an exact supported KPojo type.
@@ -145,12 +157,22 @@ internal class GeneratedTypeMetadataSnapshot internal constructor(
      * @return matching generated metadata, or `null` when absent
      */
     internal fun enumMetadata(type: KType): GeneratedEnumMetadata? = enums[type.normalizedEnumType()]
+
+    /**
+     * Returns generated static metadata for an exact complete type reference.
+     *
+     * Only the root nullable marker is normalized. Every nested generic argument,
+     * projection, and nested nullable marker remains part of the lookup key.
+     */
+    internal fun typeInfo(type: StaticTypeRef): StaticTypeInfo? =
+        staticTypeInfos[type.withoutTopLevelNullability()]
 }
 
 private data class ProviderContribution(
     val providerId: String,
     val kPojoFactories: Map<KTypeKey, GeneratedFactoryEntry>,
-    val enums: Map<KTypeKey, GeneratedEnumMetadata>
+    val enums: Map<KTypeKey, GeneratedEnumMetadata>,
+    val staticTypeInfos: Map<StaticTypeRef, StaticTypeInfo>
 ) {
     val summary: List<String> = buildList {
         kPojoFactories.entries
@@ -162,6 +184,11 @@ private data class ProviderContribution(
             .sortedBy { it.key.stableSignature() }
             .forEach { (type, metadata) ->
                 add("ENUM|${type.stableSignature()}|${metadata.entryNames.joinToString("\u0000")}")
+            }
+        staticTypeInfos.entries
+            .sortedBy { it.key.structuralSignature() }
+            .forEach { (type, metadata) ->
+                add("TYPE|${type.structuralSignature()}|${metadata.structuralSignature()}")
             }
     }
 }
@@ -193,6 +220,7 @@ internal fun generatedTypeMetadata(): GeneratedTypeMetadataSnapshot = GeneratedT
  * @throws ConflictingGeneratedProvider when duplicate ids differ
  * @throws ConflictingGeneratedKPojoFactory when exact KPojo metadata conflicts
  * @throws ConflictingEnumMetadata when exact enum names conflict
+ * @throws IllegalStateException when complete static type metadata conflicts
  */
 internal fun loadGeneratedTypeMetadata(
     providers: Iterable<GeneratedTypeProvider>
@@ -211,6 +239,7 @@ internal fun loadGeneratedTypeMetadata(
 
     val kPojoFactories = linkedMapOf<KTypeKey, GeneratedFactoryEntry>()
     val enums = linkedMapOf<KTypeKey, GeneratedEnumMetadata>()
+    val staticTypeInfos = linkedMapOf<StaticTypeRef, StaticTypeInfo>()
     contributionsByProvider.values.sortedBy { it.providerId }.forEach { contribution ->
         contribution.kPojoFactories.forEach { (type, entry) ->
             val existing = kPojoFactories[type]
@@ -228,13 +257,21 @@ internal fun loadGeneratedTypeMetadata(
                 existing.entryNames != metadata.entryNames -> throw ConflictingEnumMetadata(existing.type)
             }
         }
+        contribution.staticTypeInfos.forEach { (type, metadata) ->
+            val existing = staticTypeInfos[type]
+            when {
+                existing == null -> staticTypeInfos[type] = metadata
+                existing != metadata -> throw conflictingStaticTypeMetadata(type)
+            }
+        }
     }
-    return GeneratedTypeMetadataSnapshot(kPojoFactories.toMap(), enums.toMap())
+    return GeneratedTypeMetadataSnapshot(kPojoFactories.toMap(), enums.toMap(), staticTypeInfos.toMap())
 }
 
 private fun GeneratedTypeProvider.collectContribution(providerId: String): ProviderContribution {
     val kPojoFactories = linkedMapOf<KTypeKey, GeneratedFactoryEntry>()
     val enums = linkedMapOf<KTypeKey, GeneratedEnumMetadata>()
+    val staticTypeInfos = linkedMapOf<StaticTypeRef, StaticTypeInfo>()
     contributeTo(object : GeneratedTypeRegistrar {
         override fun registerKPojo(
             type: KType,
@@ -263,6 +300,29 @@ private fun GeneratedTypeProvider.collectContribution(providerId: String): Provi
                 existing.entryNames != names -> throw ConflictingEnumMetadata(existing.type)
             }
         }
+
+        override fun registerTypeInfo(typeInfo: StaticTypeInfo) {
+            val normalized = typeInfo.normalizedForRegistry()
+            val key = normalized.type
+            val existing = staticTypeInfos[key]
+            when {
+                existing == null -> staticTypeInfos[key] = normalized
+                existing != normalized -> throw conflictingStaticTypeMetadata(key)
+            }
+        }
     })
-    return ProviderContribution(providerId, kPojoFactories.toMap(), enums.toMap())
+    return ProviderContribution(providerId, kPojoFactories.toMap(), enums.toMap(), staticTypeInfos.toMap())
 }
+
+private fun StaticTypeInfo.normalizedForRegistry(): StaticTypeInfo {
+    val normalizedType = type.withoutTopLevelNullability()
+    val normalizedSupertypes = directSupertypes.map(StaticTypeRef::withoutTopLevelNullability)
+    return if (normalizedType === type && normalizedSupertypes == directSupertypes) {
+        this
+    } else {
+        copy(type = normalizedType, directSupertypes = normalizedSupertypes)
+    }
+}
+
+private fun conflictingStaticTypeMetadata(type: StaticTypeRef): Nothing =
+    throw IllegalStateException("Conflicting generated static type metadata was registered for ${type.structuralSignature()}")

@@ -133,11 +133,35 @@ class ValueCodecRegistryTest {
     }
 
     @Test
-    fun `enum recognition uses complete KType subtype semantics`() {
-        assertTrue(typeOf<Status>().isConcreteEnumType())
-        assertTrue(typeOf<Status?>().isConcreteEnumType())
-        assertFalse(typeOf<List<Status>>().isConcreteEnumType())
-        assertFalse(NameOnlyKType("com.example.Status").isConcreteEnumType())
+    fun `enum recognition uses compiler-generated type metadata`() {
+        assertTrue(statusTypeInfo().isConcreteEnumType())
+        assertFalse(StaticTypeInfo(StaticTypeRef("test.Status", false)).isConcreteEnumType())
+    }
+
+    @Test
+    fun `custom logical codec remains selectable without static metadata`() {
+        var codecCalls = 0
+        val registration = Kronos.registerValueCodec(valueCodec(
+            supports = { _, context ->
+                if (context.targetType == typeOf<Money>()) {
+                    codecCalls += 1
+                    true
+                } else {
+                    false
+                }
+            },
+            convert = { value, _ -> Money((value as Number).toLong()) }
+        ))
+
+        try {
+            assertEquals(
+                Money(1_999),
+                ValueCodecRegistry.convert(ValueConversionRequest(1_999L, DECODE, DATABASE, typeOf<Money>()))
+            )
+            assertEquals(1, codecCalls)
+        } finally {
+            registration.close()
+        }
     }
 
     @Test
@@ -581,7 +605,7 @@ class ValueCodecRegistryTest {
             }
             assertEquals(typeOf<List<Status>>(), failure.targetType)
             assertNull(failure.declaredSourceType)
-            assertEquals(typeOf<String>(), failure.runtimeSourceType)
+            assertNull(failure.runtimeSourceType)
         } finally {
             wrongList.close()
         }
@@ -659,7 +683,7 @@ class ValueCodecRegistryTest {
                 ))
             }
             assertNull(failure.declaredSourceType)
-            assertEquals(typeOf<OtherStatus>(), failure.runtimeSourceType)
+            assertNull(failure.runtimeSourceType)
             assertEquals(typeOf<Status>(), failure.targetType)
             assertEquals(0, codecCalls)
         } finally {
@@ -1360,7 +1384,7 @@ class ValueCodecRegistryTest {
         val originalZone = Kronos.timeZone
         try {
             Kronos.defaultDateFormat = "dd-MM-yyyy HH:mm:ss"
-            Kronos.timeZone = ZoneId.of("Asia/Shanghai")
+            Kronos.timeZone = "Asia/Shanghai"
             val field = Field(
                 "created_at",
                 "createdAt",
@@ -1674,7 +1698,7 @@ class ValueCodecRegistryTest {
             }
 
             assertEquals(targetType, failure.declaredSourceType)
-            assertEquals(statuses::class.starProjectedType, failure.runtimeSourceType)
+            assertNull(failure.runtimeSourceType)
             assertEquals(targetType, failure.targetType)
             assertEquals("statuses", failure.fieldName)
             assertEquals("status_json", failure.columnName)
@@ -1725,7 +1749,7 @@ class ValueCodecRegistryTest {
                 ))
             }
             assertNull(failure.declaredSourceType)
-            assertEquals(typeOf<String>(), failure.runtimeSourceType)
+            assertNull(failure.runtimeSourceType)
             assertEquals(typeOf<Status>(), failure.targetType)
             assertEquals(0, codecCalls)
         } finally {
@@ -1790,7 +1814,7 @@ class ValueCodecRegistryTest {
                 ValueCodecRegistry.convert(decodeRequest("1", typeOf<Int>()))
             }
             assertNull(failure.declaredSourceType)
-            assertEquals(typeOf<String>(), failure.runtimeSourceType)
+            assertNull(failure.runtimeSourceType)
         } finally {
             wrongDecode.close()
         }
@@ -1875,7 +1899,7 @@ class ValueCodecRegistryTest {
     }
 
     @Test
-    fun `mapping failure distinguishes declared and runtime source KTypes`() {
+    fun `mapping failure retains declared source without synthesizing a runtime KType`() {
         val failure = assertFailsWith<ValueMappingException> {
             ValueCodecRegistry.convert(ValueConversionRequest(
                 "not-an-int",
@@ -1887,13 +1911,13 @@ class ValueCodecRegistryTest {
         }
 
         assertEquals(typeOf<Any>(), failure.declaredSourceType)
-        assertEquals(typeOf<String>(), failure.runtimeSourceType)
+        assertNull(failure.runtimeSourceType)
         assertTrue(failure.message.orEmpty().contains("declared source kotlin.Any"))
-        assertTrue(failure.message.orEmpty().contains("runtime source kotlin.String"))
+        assertTrue(failure.message.orEmpty().contains("runtime source unknown"))
     }
 
     @Test
-    fun `source KType reaches user codec unchanged with a runtime fallback`() {
+    fun `source KType reaches user codec unchanged without a runtime fallback`() {
         val sourceType = typeOf<List<String>>()
         var seenSourceType: KType? = null
         var seenRuntimeClass: kotlin.reflect.KClass<*>? = null
@@ -1918,11 +1942,11 @@ class ValueCodecRegistryTest {
             )
             assertEquals(sourceType, seenSourceType)
             assertEquals("ok", ValueCodecRegistry.convert(decodeRequest(7, typeOf<String>())))
-            assertEquals(typeOf<Int>(), seenSourceType)
+            assertNull(seenSourceType)
             assertEquals(Int::class, seenRuntimeClass)
             val runtimeList = listOf("a")
             assertEquals("ok", ValueCodecRegistry.convert(decodeRequest(runtimeList, typeOf<String>())))
-            assertEquals(runtimeList::class.starProjectedType, seenSourceType)
+            assertNull(seenSourceType)
         } finally {
             registration.close()
         }
@@ -1933,6 +1957,11 @@ class ValueCodecRegistryTest {
 
     private fun serializedDecode(value: Any, targetType: KType, origin: com.kotlinorm.enums.ValueCodecOrigin) =
         ValueConversionRequest(value, DECODE, origin, targetType, storage = SERIALIZED)
+
+    private fun statusTypeInfo(nullable: Boolean = false): StaticTypeInfo = StaticTypeInfo(
+        StaticTypeRef("test.Status", nullable),
+        enumKey = "test.Status"
+    )
 
     private fun enumMetadata(): GeneratedTypeMetadataSnapshot =
         loadGeneratedTypeMetadata(listOf(enumProvider(

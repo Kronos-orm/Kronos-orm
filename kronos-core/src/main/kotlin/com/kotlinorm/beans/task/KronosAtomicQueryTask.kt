@@ -24,6 +24,7 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.ConflictingResultColumnLabels
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.syntax.statement.SqlQuery
+import com.kotlinorm.utils.StaticTypeInfo
 import kotlin.reflect.KType
 
 /**
@@ -45,6 +46,7 @@ import kotlin.reflect.KType
  * @property stash mutable operation-local metadata shared with the data-source wrapper
  * @property resultColumns exact planned result labels and their logical decode metadata
  * @property listParameterOccurrences named-parameter occurrence indexes eligible for expansion
+ * @property targetTypeInfo compiler-generated static metadata for [targetType], when available
  * @throws ConflictingResultColumnLabels when distinct metadata keys differ only by case
  */
 data class KronosAtomicQueryTask(
@@ -56,7 +58,8 @@ data class KronosAtomicQueryTask(
     override val stash: MutableMap<String, Any?> = mutableMapOf(),
     @InternalKronosApi
     override val resultColumns: Map<String, ResultColumnMetadata> = emptyMap(),
-    val listParameterOccurrences: Set<Int> = emptySet()
+    val listParameterOccurrences: Set<Int> = emptySet(),
+    override val targetTypeInfo: StaticTypeInfo? = null
 ) : KAtomicQueryTask {
 
     init {

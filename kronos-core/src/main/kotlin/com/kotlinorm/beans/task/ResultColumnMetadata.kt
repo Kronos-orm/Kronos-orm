@@ -19,6 +19,7 @@ package com.kotlinorm.beans.task
 import com.kotlinorm.annotations.InternalKronosApi
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.ValueStorage
+import com.kotlinorm.utils.StaticTypeInfo
 import kotlin.reflect.KType
 
 /**
@@ -36,6 +37,7 @@ import kotlin.reflect.KType
  * @property field optional field metadata used for date format and serialized storage
  * @property storage storage gate used by the single ValueCodec decode pass
  * @property columnLabel planned JDBC label included in lookup and error context
+ * @property typeInfo compiler-generated static type metadata for [type], when available
  * @throws IllegalArgumentException when [storage] contradicts a supplied [field]
  */
 @InternalKronosApi
@@ -43,7 +45,8 @@ data class ResultColumnMetadata(
     val type: KType,
     val field: Field? = null,
     val storage: ValueStorage = field.storage(),
-    val columnLabel: String? = null
+    val columnLabel: String? = null,
+    val typeInfo: StaticTypeInfo? = field?.typeInfo
 ) {
     init {
         if (field != null) {

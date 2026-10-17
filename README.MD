@@ -19,7 +19,7 @@ A modern ORM framework designed for Kotlin.
 
 Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Built for JVM server applications and Android/JVM SQLite applications.
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -145,6 +145,9 @@ val users = union(currentUsers, archivedUsers)
 ```
 
 ## Requirements
+
+The `0.4.0-SNAPSHOT` development branch uses Kotlin `2.4.21` for the KMP migration.
+The published-release requirements below apply to `0.3.1`.
 
 | Dependency | Version |
 |------------|---------|
@@ -530,7 +533,7 @@ Kronos provides an AI skill guide that helps coding assistants understand and ge
 | Tool | Command |
 |------|---------|
 | **Claude** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
-| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .codex/skills/kronos-orm-guide` |
 | **Cursor** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
 | **Default / Generic** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 

@@ -16,7 +16,7 @@
 
 package com.kotlinorm.utils
 
-import com.kotlinorm.Kronos.timeZone
+import com.kotlinorm.Kronos.resolvedTimeZone
 import com.kotlinorm.annotations.InternalKronosApi
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
@@ -38,7 +38,6 @@ import com.kotlinorm.utils.codec.isTemporalRuntimeValue
 import java.time.Clock
 import java.time.LocalDateTime
 import kotlin.reflect.KType
-import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
 
 
@@ -51,7 +50,7 @@ fun KronosCommonStrategy.execute(
         field,
         if (timeStrategy) {
             PreparedValue(
-                value = LocalDateTime.now(Clock.system(timeZone)),
+                value = LocalDateTime.now(Clock.system(resolvedTimeZone)),
                 sourceType = typeOf<LocalDateTime>(),
                 kind = PreparedValueKind.STRATEGY_TEMPORAL
             )
@@ -103,6 +102,7 @@ fun getSafeValue(
             targetType = kType,
             field = column,
             storage = storage,
+            targetTypeInfo = column?.typeInfo,
             valueName = key
         )
     )
@@ -129,6 +129,7 @@ fun decodeDatabaseValue(
         targetType = metadata.type,
         field = metadata.field,
         storage = metadata.storage,
+        targetTypeInfo = metadata.typeInfo,
         dialect = dialect,
         valueName = valueName
     )
@@ -252,7 +253,7 @@ private fun prepareDatabaseValue(
         } else if (actualValue == null) {
             return null
         } else {
-            actualValue::class.starProjectedType
+            typeOf<Any>()
         }
     if (preparedValue?.kind == PreparedValueKind.READY_DATABASE_VALUE) {
         return ValueCodecRegistry.acceptPrepared(
@@ -263,6 +264,8 @@ private fun prepareDatabaseValue(
                 targetType = targetType,
                 sourceType = preparedValue.sourceType,
                 field = field,
+                targetTypeInfo = field.typeInfo,
+                sourceTypeInfo = preparedValue.sourceTypeInfo,
                 dialect = wrapper.sqlDialect,
                 dateFormat = preparedValue.dateFormat,
                 batchIndex = batchIndex,
@@ -284,6 +287,8 @@ private fun prepareDatabaseValue(
             sourceType = preparedValue?.sourceType ?: field.kType,
             field = field,
             physicalTargetType = physicalTargetType,
+            targetTypeInfo = field.typeInfo,
+            sourceTypeInfo = preparedValue?.sourceTypeInfo ?: field.typeInfo,
             dialect = wrapper.sqlDialect,
             dateFormat = preparedValue?.dateFormat,
             batchIndex = batchIndex,
@@ -310,7 +315,7 @@ private fun prepareRawSqlParameterValue(
         if (actualValue == null) {
             null
         } else if (value.kind == PreparedValueKind.READY_DATABASE_VALUE) {
-            val targetType = value.sourceType ?: actualValue::class.starProjectedType
+            val targetType = value.sourceType ?: typeOf<Any>()
             ValueCodecRegistry.acceptPrepared(
                 ValueConversionRequest(
                     value = actualValue,
@@ -318,13 +323,15 @@ private fun prepareRawSqlParameterValue(
                     origin = ValueCodecOrigin.PARAMETER,
                     targetType = targetType,
                     sourceType = value.sourceType,
+                    targetTypeInfo = value.sourceTypeInfo,
+                    sourceTypeInfo = value.sourceTypeInfo,
                     dateFormat = value.dateFormat,
                     batchIndex = batchIndex,
                     valueName = valueName
                 )
             )
         } else {
-            val targetType = value.sourceType ?: actualValue::class.starProjectedType
+            val targetType = value.sourceType ?: typeOf<Any>()
             ValueCodecRegistry.convert(
                 ValueConversionRequest(
                     value = actualValue,
@@ -332,6 +339,8 @@ private fun prepareRawSqlParameterValue(
                     origin = ValueCodecOrigin.PARAMETER,
                     targetType = targetType,
                     sourceType = value.sourceType,
+                    targetTypeInfo = value.sourceTypeInfo,
+                    sourceTypeInfo = value.sourceTypeInfo,
                     dateFormat = value.dateFormat,
                     batchIndex = batchIndex,
                     valueName = valueName
@@ -339,20 +348,16 @@ private fun prepareRawSqlParameterValue(
             )
         }
     }
-    is Enum<*> -> {
-        val enumType = value::class.starProjectedType
-        ValueCodecRegistry.convert(
-            ValueConversionRequest(
-                value = value,
-                direction = ValueCodecDirection.ENCODE,
-                origin = ValueCodecOrigin.PARAMETER,
-                targetType = enumType,
-                sourceType = enumType,
-                batchIndex = batchIndex,
-                valueName = valueName
-            )
+    is Enum<*> -> ValueCodecRegistry.convert(
+        ValueConversionRequest(
+            value = value,
+            direction = ValueCodecDirection.ENCODE,
+            origin = ValueCodecOrigin.PARAMETER,
+            targetType = typeOf<Any>(),
+            batchIndex = batchIndex,
+            valueName = valueName
         )
-    }
+    )
     is Iterable<*> -> value.mapIndexed { index, element ->
         prepareRawSqlParameterValue(element, "$valueName[$index]", batchIndex)
     }

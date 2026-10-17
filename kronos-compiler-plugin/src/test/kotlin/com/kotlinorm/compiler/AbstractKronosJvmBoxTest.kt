@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives
 import org.jetbrains.kotlin.test.model.DependencyKind
 import org.jetbrains.kotlin.test.model.TestModule
 import org.jetbrains.kotlin.test.runners.AbstractFirLightTreeDiagnosticsTest
-import org.jetbrains.kotlin.test.runners.codegen.AbstractFirBlackBoxCodegenTestBase
+import org.jetbrains.kotlin.test.runners.codegen.AbstractJvmBlackBoxCodegenTestBase
 import org.jetbrains.kotlin.test.services.EnvironmentBasedStandardLibrariesPathProvider
 import org.jetbrains.kotlin.test.services.EnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.KotlinStandardLibrariesPathProvider
@@ -50,7 +50,7 @@ import java.security.MessageDigest
  * resolution, FIR-to-IR conversion, backend code generation, IR verification, and
  * execution of `box(): String` from files under `kronos-compiler-plugin/testData/box`.
  */
-abstract class AbstractKronosJvmBoxTest : AbstractFirBlackBoxCodegenTestBase(FirParser.LightTree) {
+abstract class AbstractKronosJvmBoxTest : AbstractJvmBlackBoxCodegenTestBase(FirParser.LightTree) {
     /**
      * Uses the Kotlin test framework's environment-provided stdlib locations.
      */

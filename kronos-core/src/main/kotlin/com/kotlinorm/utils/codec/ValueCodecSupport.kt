@@ -21,12 +21,10 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.ValueCodec
 import com.kotlinorm.interfaces.ValueCodecContext
 import com.kotlinorm.utils.GeneratedTypeMetadataSnapshot
+import com.kotlinorm.utils.StaticTypeInfo
 import com.kotlinorm.utils.isStructurallyAssignableTo
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.withNullability
-import kotlin.reflect.typeOf
 
 /**
  * Internal adapter contract shared by user and built-in codecs.
@@ -126,16 +124,32 @@ internal fun ValueConversionRequest.effectiveTargetType(): KType =
 internal fun KType.accepts(value: Any): Boolean = acceptsRuntimeValue(value)
 
 /**
- * Combines runtime validation with complete declared source-to-target KType
- * assignability. A missing source type means runtime validation is sufficient.
+ * Combines runtime validation with declared source-to-target assignability.
+ *
+ * Compiler-generated descriptors carry generic variance and substituted
+ * supertypes. When they are unavailable, the existing JVM KType/runtime
+ * validation remains available without invoking full-reflection subtype APIs.
+ * A missing source type means runtime validation is sufficient.
  *
  * @param value non-null runtime value to validate
  * @param sourceType complete declared source type when available
+ * @param sourceTypeInfo compiler-generated metadata for [sourceType], when available
+ * @param targetTypeInfo compiler-generated metadata for this target, when available
  * @return whether runtime contents and declared structure are assignable
  */
-internal fun KType.accepts(value: Any, sourceType: KType?): Boolean {
+internal fun KType.accepts(
+    value: Any,
+    sourceType: KType?,
+    sourceTypeInfo: StaticTypeInfo?,
+    targetTypeInfo: StaticTypeInfo?
+): Boolean {
     if (!acceptsRuntimeValue(value)) return false
-    return sourceType == null || sourceType.isStructurallyAssignableTo(this)
+    if (sourceType == null || sourceType == this) return true
+    return if (sourceTypeInfo != null && targetTypeInfo != null) {
+        sourceTypeInfo.isStructurallyAssignableTo(targetTypeInfo)
+    } else {
+        sourceType.isStructurallyAssignableTo(this)
+    }
 }
 
 private fun KType.acceptsRuntimeValue(value: Any?): Boolean {
@@ -158,36 +172,29 @@ private fun KType.acceptsRuntimeValue(value: Any?): Boolean {
 }
 
 /**
- * Returns true only for a non-generic concrete enum KType suitable for the
- * generated name-to-entry metadata lookup.
+ * Returns whether generated static metadata identifies one concrete enum
+ * declaration suitable for name-to-entry decoding.
  *
- * Top-level nullability is normalized only for the subtype check; generic enum
- * arguments remain rejected. The subtype operation is intentionally guarded so
- * synthetic/foreign KTypes fall back to `false` instead of being recognized by
- * a runtime classifier name.
- *
- * @return whether this complete KType can be keyed in generated enum metadata
+ * Generated metadata is preferred because it is platform-neutral and carries
+ * the stable enum key.
  */
-internal fun KType.isConcreteEnumType(): Boolean {
-    if (arguments.isNotEmpty()) return false
-    val normalized = try {
-        withNullability(false)
-    } catch (_: LinkageError) {
-        return false
-    } catch (_: IllegalArgumentException) {
-        return false
-    } catch (_: ClassCastException) {
-        return false
-    }
-    return try {
-        normalized.isSubtypeOf(typeOf<Enum<*>>())
-    } catch (_: LinkageError) {
-        false
-    } catch (_: IllegalArgumentException) {
-        false
-    } catch (_: ClassCastException) {
-        false
-    }
+internal fun StaticTypeInfo.isConcreteEnumType(): Boolean = enumKey != null && type.arguments.isEmpty()
+
+/**
+ * Returns whether a concrete JVM KType can use the generated enum metadata
+ * lookup when no static descriptor accompanies the request.
+ *
+ * This is intentionally a direct classifier check: it does not traverse a
+ * reflective subtype graph or inspect generic arguments.
+ */
+internal fun KType.isConcreteEnumType(): Boolean = try {
+    arguments.isEmpty() && (classifier as? KClass<*>)?.java?.isEnum == true
+} catch (_: LinkageError) {
+    false
+} catch (_: IllegalArgumentException) {
+    false
+} catch (_: ClassCastException) {
+    false
 }
 
 /**

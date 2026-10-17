@@ -8,6 +8,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class BundledSimpleLoggerAdapterTest {
     private val logger = BundledSimpleLoggerAdapter(BundledSimpleLoggerAdapterTest::class.simpleName!!)
@@ -57,6 +58,18 @@ class BundledSimpleLoggerAdapterTest {
         logger.info(expected)
         val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
+    }
+
+    @Test
+    fun `disabled info level does not write a log task`() {
+        val originalEnabled = BundledSimpleLoggerAdapter.infoEnabled
+        try {
+            BundledSimpleLoggerAdapter.infoEnabled = false
+            logger.info(log { -"suppressed" })
+            assertFalse(logFile.exists())
+        } finally {
+            BundledSimpleLoggerAdapter.infoEnabled = originalEnabled
+        }
     }
 
     @Test

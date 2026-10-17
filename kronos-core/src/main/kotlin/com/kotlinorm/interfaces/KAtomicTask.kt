@@ -28,12 +28,12 @@ import com.kotlinorm.syntax.statement.SqlStatement
  * can be resolved by position. [statement] is optional planning context, not a substitute
  * for the materialized SQL contract.
  */
-interface KAtomicTask {
+interface KAtomicTask : KronosExecutionPlan {
     /**
      * Named-parameter SQL before JDBC positional materialization.
      * Implementations may make it mutable while planners finalize the statement.
      */
-    val sql: String
+    override val sql: String
 
     /**
      * Values keyed by names referenced from [sql].
@@ -45,7 +45,14 @@ interface KAtomicTask {
      * Operation classification used by execution hooks and wrappers.
      * It describes intent independently from the SQL string's leading token.
      */
-    val operationType: KOperationType
+    override val operationType: KOperationType
+
+    /**
+     * Common adapters consume [parameters] while the JVM compatibility path
+     * retains the historical [paramMap] name.
+     */
+    override val parameters: Map<String, Any?>
+        get() = paramMap
 
     /**
      * Structured statement that produced [sql], when retained by the planner.

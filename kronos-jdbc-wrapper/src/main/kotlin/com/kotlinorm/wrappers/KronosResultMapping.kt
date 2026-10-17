@@ -44,8 +44,6 @@ import java.util.Collections
 import java.util.IdentityHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 /**
@@ -652,67 +650,40 @@ private fun Any?.convert(metadata: ResultColumnMetadata, context: KronosStatemen
  * @throws UnsupportedTypeException when a Map subtype or unsupported key type is requested
  */
 private fun KType.directMapMappingOrNull(): ResultMapping.Map? {
-    val normalizedType = withoutTopLevelNullability()
-    if (!normalizedType.isSubtypeOf(typeOf<Map<*, *>>())) return null
-    if (!normalizedType.hasDirectMapDeclaration()) {
+    val declaration = classifierClass() ?: return null
+    if (!Map::class.java.isAssignableFrom(declaration.java)) return null
+    if (declaration != Map::class && declaration != MutableMap::class) {
         throw UnsupportedTypeException(
             "Unsupported Map result type $this: JDBC row mapping returns LinkedHashMap " +
                 "and supports only direct Map or MutableMap declarations"
         )
     }
 
-    val keyType = normalizedType.arguments.getOrNull(0)?.type
-    if (keyType != null && !keyType.equalsIgnoringTopLevelNullability(typeOf<String>())) {
+    val keyType = arguments.getOrNull(0)?.type
+    if (keyType != null && !keyType.isStringType()) {
         throw UnsupportedTypeException(
             "Unsupported Map key type $keyType in $this: JDBC row labels require String, String?, or *"
         )
     }
-    val valueType = normalizedType.arguments.getOrNull(1)?.type?.takeUnless { it.isAnyType() }
+    val valueType = arguments.getOrNull(1)?.type?.takeUnless { it.isAnyType() }
     return ResultMapping.Map(valueType)
 }
 
 /**
- * Confirms the concrete declaration boundary for the row container returned by JDBC mapping.
- *
- * This is intentionally the only class-level Map check: runtime construction always returns
- * [LinkedHashMap], so only the directly assignable Map and MutableMap declarations are valid.
- * Key/value semantics continue to come from the complete [KType] in [directMapMappingOrNull].
- * Kotlin type aliases resolve to their underlying declaration and therefore remain supported.
- *
- * @receiver top-level non-null logical Map type
- * @return true only for direct Map or MutableMap declarations
- */
-private fun KType.hasDirectMapDeclaration(): Boolean {
-    val declaration = classifierClass()
-    return declaration == Map::class || declaration == MutableMap::class
-}
-
-/**
- * Checks for the complete Any type after ignoring only top-level nullability.
+ * Checks for Any or Any? through its direct classifier and arguments.
  *
  * @receiver logical target type
- * @return true for Any or Any?, and false for every other complete KType
+ * @return true for Any or Any?, and false for every generic or other target type
  */
-private fun KType.isAnyType(): Boolean = equalsIgnoringTopLevelNullability(typeOf<Any>())
+private fun KType.isAnyType(): Boolean = classifierClass() == Any::class && arguments.isEmpty()
 
 /**
- * Compares complete types after removing only their top-level nullability marker.
+ * Checks for String or String? through its direct classifier and arguments.
  *
- * @receiver first type to compare
- * @param other second type to compare
- * @return true when all remaining KType structure is equal
+ * @receiver logical map key type
+ * @return true for String or String?, and false for every generic or other key type
  */
-private fun KType.equalsIgnoringTopLevelNullability(other: KType): Boolean =
-    withoutTopLevelNullability() == other.withoutTopLevelNullability()
-
-/**
- * Removes the top-level nullable marker without changing nested type arguments.
- *
- * @receiver type to normalize
- * @return this type when already non-nullable, otherwise its non-nullable form
- */
-private fun KType.withoutTopLevelNullability(): KType =
-    if (isMarkedNullable) withNullability(false) else this
+private fun KType.isStringType(): Boolean = classifierClass() == String::class && arguments.isEmpty()
 
 /**
  * Selects the row-mapping strategy for this complete logical result type.

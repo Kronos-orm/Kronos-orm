@@ -14,6 +14,7 @@ import {filter} from "rxjs";
 import TurndownService from 'turndown';
 import {gfm} from 'turndown-plugin-gfm';
 import {LanguageSwitchComponent} from "../../components/language-switch/language-switch.component";
+import {documentationAnchorUrl, repositorySourceUrl} from './doc-links';
 
 @Component({
     selector: 'app-documentation',
@@ -127,6 +128,8 @@ export class DocumentationComponent implements OnDestroy {
     private injectCopyButton(): void {
         this.copyObserver?.disconnect();
         this.copyObserver = new MutationObserver(() => {
+            this.patchHeadingAnchorLinks();
+            this.patchRepositorySourceLinks();
             const controls = document.querySelector('.ng-doc-page-controls');
             if (!controls) return;
             if (controls.querySelector('.kronos-copy-md-btn')) return;
@@ -160,10 +163,44 @@ export class DocumentationComponent implements OnDestroy {
             });
 
             controls.insertBefore(btn, controls.firstChild);
+            this.patchHeadingAnchorLinks();
+            this.patchRepositorySourceLinks();
             this.copyObserver?.disconnect();
         });
 
         this.copyObserver.observe(document.body, {childList: true, subtree: true});
+    }
+
+    private patchHeadingAnchorLinks(): void {
+        const route = this.router.url.split('#', 1)[0] || '/';
+        document.querySelectorAll<HTMLElement>('ng-doc-heading-anchor').forEach(anchor => {
+            const heading = anchor.closest('h1, h2, h3, h4, h5, h6');
+            const id = heading?.id || anchor.getAttribute('anchor');
+            const button = anchor.querySelector<HTMLButtonElement>('button');
+            if (!id || !button || button.dataset.kronosHashLink === 'true') return;
+
+            button.dataset.kronosHashLink = 'true';
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const url = documentationAnchorUrl(
+                    window.location.origin,
+                    window.location.pathname,
+                    route,
+                    id
+                );
+                void navigator.clipboard.writeText(url);
+            }, true);
+        });
+    }
+
+    private patchRepositorySourceLinks(): void {
+        document.querySelectorAll<HTMLAnchorElement>('.ng-doc-page-controls a[href]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            const patched = repositorySourceUrl(href);
+            if (patched !== href) link.setAttribute('href', patched);
+        });
     }
 
 }

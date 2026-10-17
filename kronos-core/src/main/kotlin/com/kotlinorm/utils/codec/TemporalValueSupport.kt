@@ -25,15 +25,12 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
-import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
 private data class JdbcTemporalType(
     val nonNull: KType,
-    val nullable: KType,
-    val runtimeClass: Class<*>
+    val nullable: KType
 )
 
 /**
@@ -55,18 +52,15 @@ private val jdbcTemporalTypes: JdbcTemporalTypes? by lazy {
         JdbcTemporalTypes(
             date = JdbcTemporalType(
                 typeOf<java.sql.Date>(),
-                typeOf<java.sql.Date?>(),
-                java.sql.Date::class.java
+                typeOf<java.sql.Date?>()
             ),
             time = JdbcTemporalType(
                 typeOf<java.sql.Time>(),
-                typeOf<java.sql.Time?>(),
-                java.sql.Time::class.java
+                typeOf<java.sql.Time?>()
             ),
             timestamp = JdbcTemporalType(
                 typeOf<java.sql.Timestamp>(),
-                typeOf<java.sql.Timestamp?>(),
-                java.sql.Timestamp::class.java
+                typeOf<java.sql.Timestamp?>()
             )
         )
     } catch (_: LinkageError) {
@@ -135,48 +129,12 @@ private fun JdbcTemporalType.matches(type: KType): Boolean =
     type == nonNull || type == nullable
 
 /**
- * Recognizes a declared temporal source from its complete KType.
- *
- * Exact built-in types are matched first. Custom JDBC/driver types then use
- * KType subtype relationships, ordered from JDBC timestamp/date/time to their
- * shared `java.util.Date` parent so local/instant semantics remain distinct.
- */
-private fun KType.temporalSourceKind(): TemporalRuntimeKind? {
-    if (classifier !is KClass<*>) return null
-    val jdbcTypes = jdbcTemporalTypes
-    return when {
-        jdbcTypes?.timestamp?.let { isSubtypeOfSafely(it.nullable) } == true -> TemporalRuntimeKind.SQL_TIMESTAMP
-        jdbcTypes?.date?.let { isSubtypeOfSafely(it.nullable) } == true -> TemporalRuntimeKind.SQL_DATE
-        jdbcTypes?.time?.let { isSubtypeOfSafely(it.nullable) } == true -> TemporalRuntimeKind.SQL_TIME
-        isSubtypeOfSafely(typeOf<java.util.Date?>()) -> TemporalRuntimeKind.UTIL_DATE
-        isSubtypeOfSafely(typeOf<LocalDateTime?>()) -> TemporalRuntimeKind.LOCAL_DATE_TIME
-        isSubtypeOfSafely(typeOf<LocalDate?>()) -> TemporalRuntimeKind.LOCAL_DATE
-        isSubtypeOfSafely(typeOf<LocalTime?>()) -> TemporalRuntimeKind.LOCAL_TIME
-        isSubtypeOfSafely(typeOf<Instant?>()) -> TemporalRuntimeKind.JAVA_INSTANT
-        isSubtypeOfSafely(typeOf<ZonedDateTime?>()) -> TemporalRuntimeKind.ZONED_DATE_TIME
-        isSubtypeOfSafely(typeOf<OffsetDateTime?>()) -> TemporalRuntimeKind.OFFSET_DATE_TIME
-        isSubtypeOfSafely(typeOf<kotlin.time.Instant?>()) -> TemporalRuntimeKind.KOTLIN_INSTANT
-        else -> null
-    }
-}
-
-private fun KType.isSubtypeOfSafely(supertype: KType): Boolean =
-    try {
-        isSubtypeOf(supertype)
-    } catch (_: LinkageError) {
-        false
-    } catch (_: IllegalArgumentException) {
-        false
-    }
-
-/**
  * Converts a temporal value to the exact classifier represented by [targetType].
  *
  * Target dispatch uses complete KType exact conditions, so nullable targets
  * retain the same conversion semantics without erasing generic/type information.
- * Source JDBC subclasses are recognized through declared KType supertypes first;
- * the optional JDBC holder is shared with runtime class fallback and remains
- * unavailable when the active classloader omits `java.sql`.
+ * Source values are recognized from their physical JVM type. JDBC values are
+ * checked only after the optional JDBC holder has loaded successfully.
  * The lazy formatter is evaluated only for text parsing/formatting, so an
  * irrelevant invalid `dateFormat` cannot break native or epoch conversion.
  *
@@ -209,7 +167,7 @@ internal fun convertTemporalValue(
 }
 
 /**
- * Classifies a runtime temporal source using explicit JVM superclass checks.
+ * Classifies a runtime temporal source using explicit JVM type checks.
  *
  * This recognizes driver/custom subclasses of JDBC and `java.util.Date`
  * classes without turning target matching into broad supertype construction.
@@ -220,7 +178,6 @@ internal fun convertTemporalValue(
  * @return the nearest supported temporal category, or `null` for a non-temporal value
  */
 private fun Any.temporalRuntimeKind(): TemporalRuntimeKind? {
-    val runtimeClass = javaClass
     return when {
         this is LocalDateTime -> TemporalRuntimeKind.LOCAL_DATE_TIME
         this is LocalDate -> TemporalRuntimeKind.LOCAL_DATE
@@ -229,17 +186,17 @@ private fun Any.temporalRuntimeKind(): TemporalRuntimeKind? {
         this is ZonedDateTime -> TemporalRuntimeKind.ZONED_DATE_TIME
         this is OffsetDateTime -> TemporalRuntimeKind.OFFSET_DATE_TIME
         this is kotlin.time.Instant -> TemporalRuntimeKind.KOTLIN_INSTANT
-        this is java.util.Date -> runtimeClass.optionalJdbcRuntimeKind() ?: TemporalRuntimeKind.UTIL_DATE
+        this is java.util.Date -> optionalJdbcRuntimeKind() ?: TemporalRuntimeKind.UTIL_DATE
         else -> null
     }
 }
 
-private fun Class<*>.optionalJdbcRuntimeKind(): TemporalRuntimeKind? {
-    val jdbcTypes = jdbcTemporalTypes ?: return null
-    return when {
-        jdbcTypes.timestamp.runtimeClass.isAssignableFrom(this) -> TemporalRuntimeKind.SQL_TIMESTAMP
-        jdbcTypes.date.runtimeClass.isAssignableFrom(this) -> TemporalRuntimeKind.SQL_DATE
-        jdbcTypes.time.runtimeClass.isAssignableFrom(this) -> TemporalRuntimeKind.SQL_TIME
+private fun Any.optionalJdbcRuntimeKind(): TemporalRuntimeKind? {
+    if (jdbcTemporalTypes == null) return null
+    return when (this) {
+        is java.sql.Timestamp -> TemporalRuntimeKind.SQL_TIMESTAMP
+        is java.sql.Date -> TemporalRuntimeKind.SQL_DATE
+        is java.sql.Time -> TemporalRuntimeKind.SQL_TIME
         else -> null
     }
 }
@@ -247,23 +204,15 @@ private fun Class<*>.optionalJdbcRuntimeKind(): TemporalRuntimeKind? {
 internal fun Any.isTemporalRuntimeValue(): Boolean = temporalRuntimeKind() != null
 
 /**
- * Determines temporal-source status from declared KType before runtime fallback.
+ * Determines temporal-source status from the physical runtime value.
  *
- * A known temporal declaration is authoritative. Runtime inspection is used
- * only when source metadata is absent, is broader than the actual runtime class,
- * or is incompatible with the value. This keeps complete KType metadata in the
- * normal path while supporting driver values exposed through broad APIs.
- *
- * @receiver declared source type from the conversion context, when available
+ * The declared source type is retained in the API for the conversion context,
+ * but a temporal route is chosen only for an actual temporal value.
  * @param value non-null runtime source
  * @return whether the source should enter temporal conversion
  */
 internal fun KType?.isTemporalSource(value: Any): Boolean {
-    if (this == null) return value.isTemporalRuntimeValue()
-    if (temporalSourceKind() != null) return true
-    val sourceClass = classifier as? KClass<*>
-    val runtimeFallbackRequired = sourceClass == null || sourceClass != value::class || !accepts(value)
-    return runtimeFallbackRequired && value.isTemporalRuntimeValue()
+    return value.isTemporalRuntimeValue()
 }
 
 private fun Any.toLocalDateTime(zoneId: ZoneId, formatter: Lazy<DateTimeFormatter>): LocalDateTime {

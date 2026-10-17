@@ -49,6 +49,7 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.StaticTypeInfo
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -372,9 +373,10 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
     inline fun <reified T> toList(
-        wrapper: KronosDataSourceWrapper? = null
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
     ): List<T> {
-        return build(wrapper).toList(wrapper)
+        return build(wrapper).toList<T>(wrapper, targetTypeInfo)
     }
 
     @JvmName("toProjectionList")

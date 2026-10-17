@@ -30,62 +30,95 @@ import kotlin.test.assertTrue
 
 class KTypeSupportTest {
     @Test
-    fun `assignability honors declaration-site covariance`() {
-        assertTrue(typeOf<List<String>>().isStructurallyAssignableTo(typeOf<List<CharSequence>>()))
-        assertFalse(typeOf<List<CharSequence>>().isStructurallyAssignableTo(typeOf<List<String>>()))
+    fun `static relation preserves root nullability`() {
+        val nonNull = typeInfo("example.String")
+        val nullable = typeInfo("example.String", nullable = true)
+
+        assertTrue(assignable(nonNull, nullable, nonNull, nullable))
+        assertFalse(assignable(nullable, nonNull, nonNull, nullable))
     }
 
     @Test
-    fun `assignability honors declaration-site contravariance`() {
-        assertTrue(typeOf<Contravariant<Any>>().isStructurallyAssignableTo(typeOf<Contravariant<String>>()))
-        assertFalse(typeOf<Contravariant<String>>().isStructurallyAssignableTo(typeOf<Contravariant<Any>>()))
+    fun `static relation follows a substituted direct supertype`() {
+        val string = typeRef("example.String")
+        val child = typeInfo(
+            "example.Child",
+            arguments = listOf(invariant(string)),
+            directSupertypes = listOf(typeRef("example.Parent", arguments = listOf(invariant(string))))
+        )
+        val parent = typeInfo("example.Parent", arguments = listOf(invariant(string)))
+
+        assertTrue(assignable(child, parent, child, parent))
     }
 
     @Test
-    fun `assignability conservatively follows reflected use-site projections`() {
-        val covariantTarget = MutableList::class.createType(
-            listOf(KTypeProjection.covariant(typeOf<CharSequence>()))
+    fun `static relation honors declaration-site covariance`() {
+        val string = typeInfo(
+            "example.String",
+            directSupertypes = listOf(typeRef("kotlin.CharSequence"))
         )
-        val contravariantTarget = MutableList::class.createType(
-            listOf(KTypeProjection.contravariant(typeOf<String>()))
+        val charSequence = typeInfo("kotlin.CharSequence")
+        val source = typeInfo(
+            "example.Box",
+            arguments = listOf(invariant(string.type)),
+            declarationVariances = listOf(StaticTypeVariance.OUT)
+        )
+        val target = typeInfo(
+            "example.Box",
+            arguments = listOf(invariant(charSequence.type)),
+            declarationVariances = listOf(StaticTypeVariance.OUT)
         )
 
-        assertTrue(typeOf<MutableList<String>>().isStructurallyAssignableTo(covariantTarget))
-        assertFalse(typeOf<MutableList<CharSequence>>().isStructurallyAssignableTo(typeOf<MutableList<String>>()))
-        // Kotlin/JVM reflection folds MutableList's classifier and declaration variance;
-        // conservatively reject this valid relationship until generic support is explicit.
-        assertFalse(typeOf<MutableList<Any>>().isStructurallyAssignableTo(contravariantTarget))
-        assertFalse(typeOf<MutableList<String>>().isStructurallyAssignableTo(typeOf<MutableList<Any>>()))
+        assertTrue(assignable(source, target, source, target, string, charSequence))
+        assertFalse(assignable(target, source, source, target, string, charSequence))
     }
 
     @Test
-    fun `assignability honors root and nested star projections`() {
-        assertTrue(typeOf<List<String>>().isStructurallyAssignableTo(typeOf<List<*>>()))
-        assertFalse(typeOf<List<*>>().isStructurallyAssignableTo(typeOf<List<String>>()))
-        assertTrue(
-            typeOf<Map<String, List<Int>>>()
-                .isStructurallyAssignableTo(typeOf<Map<String, List<*>>>())
+    fun `static relation honors declaration-site contravariance`() {
+        val string = typeInfo(
+            "example.String",
+            directSupertypes = listOf(typeRef("kotlin.Any"))
         )
-        assertFalse(
-            typeOf<Map<String, List<*>>>()
-                .isStructurallyAssignableTo(typeOf<Map<String, List<Int>>>())
+        val any = typeInfo("kotlin.Any")
+        val source = typeInfo(
+            "example.Sink",
+            arguments = listOf(invariant(any.type)),
+            declarationVariances = listOf(StaticTypeVariance.IN)
         )
+        val target = typeInfo(
+            "example.Sink",
+            arguments = listOf(invariant(string.type)),
+            declarationVariances = listOf(StaticTypeVariance.IN)
+        )
+
+        assertTrue(assignable(source, target, source, target, string, any))
+        assertFalse(assignable(target, source, source, target, string, any))
     }
 
     @Test
-    fun `assignability preserves top-level and nested nullability`() {
-        assertTrue(typeOf<String>().isStructurallyAssignableTo(typeOf<String?>()))
-        assertFalse(typeOf<String?>().isStructurallyAssignableTo(typeOf<String>()))
-        assertTrue(typeOf<List<String>>().isStructurallyAssignableTo(typeOf<List<String?>>()))
-        assertFalse(typeOf<List<String?>>().isStructurallyAssignableTo(typeOf<List<String>>()))
-        assertTrue(
-            typeOf<Map<String, List<Int>>>()
-                .isStructurallyAssignableTo(typeOf<Map<String, List<Int?>>?>())
+    fun `static relation accepts a target star projection`() {
+        val source = typeInfo(
+            "example.Box",
+            arguments = listOf(invariant(typeRef("example.String"))),
+            declarationVariances = listOf(StaticTypeVariance.OUT)
         )
-        assertFalse(
-            typeOf<Map<String, List<Int?>>?>()
-                .isStructurallyAssignableTo(typeOf<Map<String, List<Int>>>())
+        val target = typeInfo(
+            "example.Box",
+            arguments = listOf(StaticTypeArgument(StaticTypeVariance.STAR))
         )
+
+        assertTrue(assignable(source, target, source, target))
+    }
+
+    @Test
+    fun `static relation fails closed when an intermediate descriptor is absent`() {
+        val source = typeInfo(
+            "example.Child",
+            directSupertypes = listOf(typeRef("example.Parent"))
+        )
+        val target = typeInfo("example.Grandparent")
+
+        assertFalse(assignable(source, target, source, target))
     }
 
     @Test
@@ -148,6 +181,38 @@ class KTypeSupportTest {
         assertSame(assertion, assertionFailure)
     }
 
+    private fun assignable(
+        source: StaticTypeInfo,
+        target: StaticTypeInfo,
+        vararg available: StaticTypeInfo
+    ): Boolean {
+        val descriptors = available.associateBy { it.type.withoutTopLevelNullability() }
+        return source.isStructurallyAssignableTo(target) { type ->
+            descriptors[type.withoutTopLevelNullability()]
+        }
+    }
+
+    private fun typeInfo(
+        key: String,
+        nullable: Boolean = false,
+        arguments: List<StaticTypeArgument> = emptyList(),
+        directSupertypes: List<StaticTypeRef> = emptyList(),
+        declarationVariances: List<StaticTypeVariance> = emptyList()
+    ): StaticTypeInfo = StaticTypeInfo(
+        typeRef(key, nullable, arguments),
+        directSupertypes = directSupertypes,
+        declarationVariances = declarationVariances
+    )
+
+    private fun typeRef(
+        key: String,
+        nullable: Boolean = false,
+        arguments: List<StaticTypeArgument> = emptyList()
+    ): StaticTypeRef = StaticTypeRef(key, nullable, arguments)
+
+    private fun invariant(type: StaticTypeRef): StaticTypeArgument =
+        StaticTypeArgument(StaticTypeVariance.INVARIANT, type)
+
     private data class SyntheticKType(
         override val classifier: KClassifier?,
         override val arguments: List<KTypeProjection> = emptyList(),
@@ -163,5 +228,4 @@ class KTypeSupportTest {
         override val annotations: List<Annotation> = emptyList()
     }
 
-    private interface Contravariant<in T>
 }

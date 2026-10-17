@@ -1,0 +1,251 @@
+name: Kronos KMP
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [ 'release/**' ]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmp-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  jvm:
+    name: KMP JVM (${{ matrix.os }}, JDK ${{ matrix.java }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, java: '17' }
+          - { os: ubuntu-24.04, java: '21' }
+          - { os: ubuntu-24.04, java: '25' }
+          - { os: windows-2025, java: '21' }
+          - { os: macos-26, java: '21' }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test KMP report guard
+        run: python3 -m unittest discover -s .github/scripts -p test_verify_kmp_test_results.py
+      - name: Keep production core free of reflect.full
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          violations = []
+          for source_set in Path("kronos-core/src").iterdir():
+              if source_set.name == "test" or source_set.name.endswith("Test"):
+                  continue
+              for source in source_set.rglob("*.kt"):
+                  if "kotlin.reflect.full" in source.read_text(encoding="utf-8"):
+                      violations.append(str(source))
+          if violations:
+              raise SystemExit("Production reflect.full regression:\n" + "\n".join(violations))
+          print("Production core: no kotlin.reflect.full references")
+          PY
+      - name: JVM runtime and compiler-plugin tests
+        run: >-
+          ./gradlew :kronos-syntax:jvmTest :kronos-core:jvmTest
+          :kronos-logging:jvmTest :kronos-jdbc-wrapper:test :kronos-compiler-plugin:test
+          --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Real JVM SQLite integration
+        run: >-
+          ./gradlew :kronos-testing:test --tests 'com.kotlinorm.integration.Sqlite*'
+          --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Incremental provider and Gradle-plugin tests
+        run: >-
+          ./gradlew -p kronos-gradle-plugin test
+          --tests '*GenerateKronosGeneratedTypeServiceTest'
+          --tests '*GenerateKronosNativeMetadataEntryTest'
+          --tests '*GradleGeneratedTypeProviderIdentityTest'
+          --tests '*GradleSourceOwnedProviderFragmentsTest'
+          --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Require executed JVM tests
+        run: >-
+          python3 .github/scripts/verify-kmp-test-results.py
+          kronos-syntax/build/test-results/jvmTest
+          kronos-core/build/test-results/jvmTest
+          kronos-logging/build/test-results/jvmTest
+          kronos-jdbc-wrapper/build/test-results/test
+          kronos-testing/build/test-results/test
+          kronos-compiler-plugin/build/test-results/test
+          kronos-gradle-plugin/build/test-results/test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kmp-jvm-${{ matrix.os }}-jdk-${{ matrix.java }}-reports
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: error
+
+  native:
+    name: KMP iOS runtime and Native link
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Verify Apple Silicon and selected SDK
+        run: |
+          test "$(uname -m)" = arm64
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          xcrun --sdk iphonesimulator --show-sdk-version
+          xcrun simctl list devices available
+      - name: Run common runtime, SQL and logging tests on iOS
+        run: >-
+          ./gradlew :kronos-syntax:iosSimulatorArm64Test
+          :kronos-core:iosSimulatorArm64Test :kronos-logging:iosSimulatorArm64Test
+          :kronos-syntax:macosArm64Test :kronos-core:macosArm64Test :kronos-logging:macosArm64Test
+          :kronos-syntax:tvosSimulatorArm64Test :kronos-core:tvosSimulatorArm64Test
+          :kronos-logging:tvosSimulatorArm64Test
+          :kronos-syntax:watchosSimulatorArm64Test :kronos-core:watchosSimulatorArm64Test
+          :kronos-logging:watchosSimulatorArm64Test
+          :kronos-syntax:compileKotlinIosArm64 :kronos-core:compileKotlinIosArm64
+          :kronos-logging:compileKotlinIosArm64
+          :kronos-syntax:compileKotlinTvosArm64 :kronos-core:compileKotlinTvosArm64
+          :kronos-logging:compileKotlinTvosArm64
+          :kronos-syntax:compileKotlinWatchosArm64 :kronos-core:compileKotlinWatchosArm64
+          :kronos-logging:compileKotlinWatchosArm64
+          :kronos-syntax:compileKotlinWatchosDeviceArm64 :kronos-core:compileKotlinWatchosDeviceArm64
+          :kronos-logging:compileKotlinWatchosDeviceArm64
+          --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Run generated metadata and link both iOS frameworks
+        run: >-
+          ./gradlew -p kronos-gradle-plugin test
+          --tests '*GradleNativeMetadataEntryIntegrationTest'
+          --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Require executed Native tests
+        run: >-
+          python3 .github/scripts/verify-kmp-test-results.py
+          kronos-syntax/build/test-results/iosSimulatorArm64Test
+          kronos-core/build/test-results/iosSimulatorArm64Test
+          kronos-logging/build/test-results/iosSimulatorArm64Test
+          kronos-syntax/build/test-results/macosArm64Test
+          kronos-core/build/test-results/macosArm64Test
+          kronos-logging/build/test-results/macosArm64Test
+          kronos-syntax/build/test-results/tvosSimulatorArm64Test
+          kronos-core/build/test-results/tvosSimulatorArm64Test
+          kronos-logging/build/test-results/tvosSimulatorArm64Test
+          kronos-syntax/build/test-results/watchosSimulatorArm64Test
+          kronos-core/build/test-results/watchosSimulatorArm64Test
+          kronos-logging/build/test-results/watchosSimulatorArm64Test
+          kronos-gradle-plugin/build/test-results/test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kmp-native-reports
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: error
+
+  desktop-native:
+    name: KMP Native (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, target: linuxX64 }
+          - { os: windows-2025, target: mingwX64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run Native runtime, SQL and logging tests
+        env:
+          NATIVE_TARGET: ${{ matrix.target }}
+        run: >-
+          ./gradlew ":kronos-syntax:${NATIVE_TARGET}Test"
+          ":kronos-core:${NATIVE_TARGET}Test" ":kronos-logging:${NATIVE_TARGET}Test"
+          --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Cross-compile Linux ARM64
+        if: matrix.target == 'linuxX64'
+        run: |
+          tasks=()
+          for target in LinuxArm64; do
+            for module in kronos-syntax kronos-core kronos-logging; do
+              tasks+=(":$module:compileKotlin$target")
+            done
+          done
+          ./gradlew "${tasks[@]}" --no-daemon --max-workers=2 --console=plain --stacktrace
+      - name: Require executed Native tests
+        env:
+          NATIVE_TARGET: ${{ matrix.target }}
+        run: >-
+          python3 .github/scripts/verify-kmp-test-results.py
+          "kronos-syntax/build/test-results/${NATIVE_TARGET}Test"
+          "kronos-core/build/test-results/${NATIVE_TARGET}Test"
+          "kronos-logging/build/test-results/${NATIVE_TARGET}Test"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kmp-${{ matrix.target }}-reports
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: error
+
+  android:
+    uses: ./.github/workflows/kronos-android-example.yml
+    permissions:
+      contents: read
+
+  gate:
+    name: KMP gate
+    if: always()
+    needs: [ jvm, native, desktop-native, android ]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      JVM_RESULT: ${{ needs.jvm.result }}
+      NATIVE_RESULT: ${{ needs.native.result }}
+      ANDROID_RESULT: ${{ needs.android.result }}
+      DESKTOP_RESULT: ${{ needs.desktop-native.result }}
+    steps:
+      - name: Require every KMP job to pass
+        run: |
+          test "$JVM_RESULT" = success
+          test "$NATIVE_RESULT" = success
+          test "$ANDROID_RESULT" = success
+          test "$DESKTOP_RESULT" = success

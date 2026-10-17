@@ -12,7 +12,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.createKPojo
 import kotlin.reflect.KType
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 @PublishedApi
@@ -22,7 +21,7 @@ internal inline fun <T1 : KPojo, reified R : KPojo, reified C : KPojo> JoinSourc
     val projectionType = typeOf<R>()
     return createJoinedSelectQuery(
         projectionType = projectionType,
-        nullableProjectionType = projectionType.withNullability(true),
+        nullableProjectionType = typeOf<R?>(),
         contextPojo = createKPojo<C>(),
         fields = fields
     )

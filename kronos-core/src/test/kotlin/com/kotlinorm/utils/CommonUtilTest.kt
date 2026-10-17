@@ -5,7 +5,7 @@ import com.kotlinorm.utils.codec.PreparedValueKind
 import com.kotlinorm.utils.codec.ValueCodecRegistry
 import com.kotlinorm.utils.codec.ValueConversionRequest
 import com.kotlinorm.Kronos
-import com.kotlinorm.Kronos.timeZone
+import com.kotlinorm.Kronos.resolvedTimeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.KColumnType
@@ -40,7 +40,7 @@ class CommonUtilTest {
     @Test
     fun tesSetCommonStrategy() {
         val strategy = KronosCommonStrategy(false, Field("field"))
-        val clock = Clock.system(timeZone)
+        val clock = Clock.system(resolvedTimeZone)
 
         fun assertStrategyTemporalValue(
             target: KronosCommonStrategy,
@@ -176,7 +176,7 @@ class CommonUtilTest {
         // 测试Instant类型
         assertEquals(
             convert(typeOf<java.time.Instant>(), dateTimeString), LocalDateTime.parse(dateTimeString)
-                .atZone(timeZone).toInstant()
+                .atZone(resolvedTimeZone).toInstant()
         )
 
         // 测试java.util.Date类型
@@ -199,7 +199,7 @@ class CommonUtilTest {
 
         // 测试kotlinx.datetime类型
         val dateTime = kotlinx.datetime.LocalDateTime.parse(dateTimeString)
-        val instant = dateTime.toInstant(TimeZone.of(timeZone.id))
+        val instant = dateTime.toInstant(TimeZone.of(resolvedTimeZone.id))
         val localDate = dateTime.date
         val localTime = dateTime.time
 
@@ -243,6 +243,29 @@ class CommonUtilTest {
         try {
             assertEquals(42, toDatabaseValue(wrapper, intField, "42"))
             assertEquals(fieldType, seenSourceType)
+        } finally {
+            registration.close()
+        }
+    }
+
+    @Test
+    fun fieldBoundEncodeUsesFieldStaticMetadataForItsDeclaredSource() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val fieldType = typeOf<Int?>()
+        val typeInfo = StaticTypeInfo(StaticTypeRef("test.Int", nullable = true))
+        val intField = Field("age", "age", kType = fieldType, typeInfo = typeInfo)
+        var seenSourceTypeInfo: StaticTypeInfo? = null
+        val registration = Kronos.registerValueCodec(valueCodec(
+            supports = { _, context ->
+                seenSourceTypeInfo = context.sourceTypeInfo
+                context.direction == ValueCodecDirection.ENCODE && context.targetType == fieldType
+            },
+            convert = { _, _ -> 42 }
+        ))
+
+        try {
+            assertEquals(42, toDatabaseValue(wrapper, intField, "42"))
+            assertEquals(typeInfo, seenSourceTypeInfo)
         } finally {
             registration.close()
         }
@@ -409,11 +432,11 @@ class CommonUtilTest {
             toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<LocalDateTime>()), value)
         )
         assertEquals(
-            current.atZone(timeZone).toInstant().toEpochMilli(),
+            current.atZone(resolvedTimeZone).toInstant().toEpochMilli(),
             toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<Long>()), value)
         )
         assertEquals(
-            Date.from(current.atZone(timeZone).toInstant()),
+            Date.from(current.atZone(resolvedTimeZone).toInstant()),
             toDatabaseValue(wrapper, Field("created_at", type = KColumnType.VARCHAR, dateFormat = pattern, kType = typeOf<Date>()), value)
         )
     }
@@ -430,7 +453,7 @@ class CommonUtilTest {
         )
 
         assertEquals(
-            current.atZone(timeZone).toInstant().toEpochMilli(),
+            current.atZone(resolvedTimeZone).toInstant().toEpochMilli(),
             toDatabaseValue(wrapper, field, strategyTemporalValue(current))
         )
     }
@@ -442,7 +465,7 @@ class CommonUtilTest {
         val value = strategyTemporalValue(current)
         val cases = listOf(
             Field("as_bigint", type = KColumnType.BIGINT) to
-                current.atZone(timeZone).toInstant().toEpochMilli(),
+            current.atZone(resolvedTimeZone).toInstant().toEpochMilli(),
             Field("as_date", type = KColumnType.DATE) to java.sql.Date.valueOf(current.toLocalDate()),
             Field("as_time", type = KColumnType.TIME) to java.sql.Time.valueOf(current.toLocalTime()),
             Field("as_datetime", type = KColumnType.DATETIME) to current,

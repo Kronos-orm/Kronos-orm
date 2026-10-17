@@ -40,6 +40,7 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.StaticTypeInfo
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -295,8 +296,10 @@ class JoinedSelectQuery<Source : KPojo, Selected : KPojo, Context : KPojo> @Publ
 
     @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     @kotlin.internal.LowPriorityInOverloadResolution
-    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): List<T> =
-        build(wrapper).toList(wrapper)
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): List<T> = build(wrapper).toList<T>(wrapper, targetTypeInfo)
 
     @JvmName("toProjectionList")
     @Suppress("UNCHECKED_CAST")

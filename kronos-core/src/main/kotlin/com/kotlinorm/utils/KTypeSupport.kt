@@ -27,7 +27,6 @@ import kotlin.reflect.KClassifier
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeParameter
 import kotlin.reflect.KVariance
-import kotlin.reflect.full.isSubtypeOf
 
 /**
  * Immutable structural key for KType lookup without collapsing generic
@@ -80,11 +79,12 @@ internal data class KTypeArgumentKey(
 )
 
 /**
- * Returns whether this complete declared type is [KPojo] or reaches it through
- * its declared KType supertype graph.
+ * Returns whether this declared KType is a JVM [KPojo] class or a type
+ * parameter whose upper bound is one.
  *
- * Class supertypes and type-parameter upper bounds participate in the graph.
- * Type arguments do not: containing a KPojo does not make the container one.
+ * Runtime KType inspection is retained only for legacy JVM factory validation.
+ * Typed mapping must use [StaticTypeInfo.isKPojo] instead of this compatibility
+ * helper, because no static metadata is inferred from a KType at runtime.
  *
  * @receiver complete declared type to classify
  * @return `true` when this type is [KPojo] or has a declared KPojo supertype
@@ -94,62 +94,28 @@ fun KType.isKPojoType(): Boolean = isKPojoType(mutableSetOf())
 
 private fun KType.isKPojoType(visited: MutableSet<KClassifier>): Boolean {
     val currentClassifier = classifier ?: return false
-    if (currentClassifier == KPojo::class) return true
     if (!visited.add(currentClassifier)) return false
-    val declaredSupertypes = when (currentClassifier) {
-        is KClass<*> -> currentClassifier.supertypes
-        is KTypeParameter -> currentClassifier.upperBounds
-        else -> emptyList()
+    return when (currentClassifier) {
+        is KClass<*> -> KPojo::class.java.isAssignableFrom(currentClassifier.java)
+        is KTypeParameter -> currentClassifier.upperBounds.any { it.isKPojoType(visited) }
+        else -> false
     }
-    return declaredSupertypes.any { superType -> superType.isKPojoType(visited) }
 }
 
 /**
- * Checks complete KType assignability using Kotlin reflection subtype rules.
+ * Checks the narrow JVM compatibility subset of KType assignability.
  *
- * Declaration-site and use-site variance, star projections, nested
- * nullability and supertype substitution are delegated to [KType.isSubtypeOf].
- * The only fallback normalizes equivalent JVM primitive and boxed classifiers,
- * which can differ when a source type was inferred from a runtime value.
+ * Generic relationships are deliberately not inferred from runtime KTypes.
+ * Their complete relation is evaluated through
+ * [StaticTypeInfo.isStructurallyAssignableTo] when compiler-generated
+ * descriptors are available. This helper remains for scalar and legacy JVM
+ * factory paths only.
  *
  * @receiver declared or runtime-inferred source type
  * @param target complete declared target type
  * @return whether the source can safely flow to [target]
  */
 internal fun KType.isStructurallyAssignableTo(target: KType): Boolean {
-    if (isSubtypeOfSafely(target)) return true
-    return primitiveBoxingFallbackSafely(target)
-}
-
-/**
- * Applies Kotlin reflection subtype semantics without allowing unsupported or
- * unavailable reflection metadata to escape the assignability boundary.
- *
- * Linkage failures represent unavailable type metadata, while argument and
- * cast failures represent synthetic/foreign KType implementations unsupported
- * by Kotlin reflection. Cancellation and unrelated Errors are not caught.
- *
- * @param target complete declared target type
- * @return subtype result, or `false` when reflection cannot resolve the types
- */
-private fun KType.isSubtypeOfSafely(target: KType): Boolean = try {
-    isSubtypeOf(target)
-} catch (_: LinkageError) {
-    false
-} catch (_: IllegalArgumentException) {
-    false
-} catch (_: ClassCastException) {
-    false
-}
-
-/**
- * Checks the narrow runtime primitive/boxed equivalence fallback after Kotlin
- * reflection subtype resolution has failed or returned `false`.
- *
- * @param target complete declared target type
- * @return whether both non-generic types represent the same boxed JVM class
- */
-private fun KType.primitiveBoxingFallbackSafely(target: KType): Boolean {
     return try {
         when {
             arguments.isNotEmpty() || target.arguments.isNotEmpty() -> false
@@ -160,8 +126,7 @@ private fun KType.primitiveBoxingFallbackSafely(target: KType): Boolean {
                 if (sourceClass == null || targetClass == null) {
                     false
                 } else {
-                    val crossesPrimitiveBoundary = sourceClass.java.isPrimitive || targetClass.java.isPrimitive
-                    crossesPrimitiveBoundary && sourceClass.javaObjectType == targetClass.javaObjectType
+                    targetClass.javaObjectType.isAssignableFrom(sourceClass.javaObjectType)
                 }
             }
         }
@@ -171,6 +136,122 @@ private fun KType.primitiveBoxingFallbackSafely(target: KType): Boolean {
         false
     } catch (_: ClassCastException) {
         false
+    }
+}
+
+/**
+ * Checks complete static type assignability without consulting Kotlin's full
+ * reflection implementation.
+ *
+ * Direct supertype edges are compiler-substituted. The generated provider must
+ * therefore supply metadata for every edge reached during traversal; a missing
+ * node fails closed instead of falling back to runtime superclass inspection.
+ */
+internal fun StaticTypeInfo.isStructurallyAssignableTo(target: StaticTypeInfo): Boolean {
+    val supplied = linkedMapOf<StaticTypeRef, StaticTypeInfo>().apply {
+        put(this@isStructurallyAssignableTo.type.withoutTopLevelNullability(), this@isStructurallyAssignableTo)
+        put(target.type.withoutTopLevelNullability(), target)
+    }
+    return isStructurallyAssignableTo(target) { type ->
+        supplied[type.withoutTopLevelNullability()] ?: generatedTypeMetadata().typeInfo(type)
+    }
+}
+
+/**
+ * Pure descriptor relation used by focused tests and platform-neutral callers.
+ *
+ * The [resolver] receives normalized complete references for each transitive
+ * direct-supertype edge. Generic relationships without compiler-emitted
+ * declaration variance are rejected unless their complete arguments are equal.
+ */
+internal fun StaticTypeInfo.isStructurallyAssignableTo(
+    target: StaticTypeInfo,
+    resolver: (StaticTypeRef) -> StaticTypeInfo?
+): Boolean = StaticTypeRelation(resolver).isAssignable(type, target.type, mutableSetOf())
+
+private class StaticTypeRelation(
+    private val resolver: (StaticTypeRef) -> StaticTypeInfo?
+) {
+    fun isAssignable(
+        source: StaticTypeRef,
+        target: StaticTypeRef,
+        visited: MutableSet<Pair<StaticTypeRef, StaticTypeRef>>
+    ): Boolean {
+        if (source.nullable && !target.nullable) return false
+        val normalizedSource = source.withoutTopLevelNullability()
+        val normalizedTarget = target.withoutTopLevelNullability()
+        val pair = normalizedSource to normalizedTarget
+        if (!visited.add(pair)) return false
+
+        if (normalizedSource.key == normalizedTarget.key &&
+            argumentsAssignable(normalizedSource, normalizedTarget, visited)
+        ) {
+            return true
+        }
+
+        val sourceInfo = resolver(normalizedSource) ?: return false
+        return sourceInfo.directSupertypes.any { supertype ->
+            val inherited = if (source.nullable && !supertype.nullable) supertype.copy(nullable = true) else supertype
+            isAssignable(inherited, target, visited.toMutableSet())
+        }
+    }
+
+    private fun argumentsAssignable(
+        source: StaticTypeRef,
+        target: StaticTypeRef,
+        visited: MutableSet<Pair<StaticTypeRef, StaticTypeRef>>
+    ): Boolean {
+        if (source.arguments == target.arguments) return true
+        if (source.arguments.size != target.arguments.size) return false
+        val sourceInfo = resolver(source) ?: return false
+        if (sourceInfo.declarationVariances.size != source.arguments.size) return false
+
+        return source.arguments.indices.all { index ->
+            val sourceArgument = source.arguments[index]
+            val targetArgument = target.arguments[index]
+            argumentAssignable(
+                sourceArgument,
+                targetArgument,
+                sourceInfo.declarationVariances[index],
+                visited
+            )
+        }
+    }
+
+    private fun argumentAssignable(
+        source: StaticTypeArgument,
+        target: StaticTypeArgument,
+        declarationVariance: StaticTypeVariance,
+        visited: MutableSet<Pair<StaticTypeRef, StaticTypeRef>>
+    ): Boolean {
+        if (target.variance == StaticTypeVariance.STAR) return true
+        if (source.variance == StaticTypeVariance.STAR ||
+            source.variance != StaticTypeVariance.INVARIANT
+        ) {
+            return false
+        }
+        val sourceType = requireNotNull(source.type)
+        val targetType = requireNotNull(target.type)
+
+        return when (target.variance) {
+            StaticTypeVariance.OUT -> declarationVariance != StaticTypeVariance.IN &&
+                isAssignable(sourceType, targetType, visited.toMutableSet())
+
+            StaticTypeVariance.IN -> declarationVariance != StaticTypeVariance.OUT &&
+                isAssignable(targetType, sourceType, visited.toMutableSet())
+
+            StaticTypeVariance.INVARIANT -> when (declarationVariance) {
+                StaticTypeVariance.OUT -> isAssignable(sourceType, targetType, visited.toMutableSet())
+                StaticTypeVariance.IN -> isAssignable(targetType, sourceType, visited.toMutableSet())
+                StaticTypeVariance.INVARIANT ->
+                    isAssignable(sourceType, targetType, visited.toMutableSet()) &&
+                        isAssignable(targetType, sourceType, visited.toMutableSet())
+
+                StaticTypeVariance.STAR -> false
+            }
+
+            StaticTypeVariance.STAR -> true
+        }
     }
 }
 

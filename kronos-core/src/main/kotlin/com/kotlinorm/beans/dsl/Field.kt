@@ -22,9 +22,11 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.interfaces.ValueCodecField
+import com.kotlinorm.utils.StaticContainerKind
+import com.kotlinorm.utils.StaticTypeInfo
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 /**
@@ -47,15 +49,16 @@ import kotlin.reflect.typeOf
  * @property defaultValue the default value of the field
  * @property nullable whether the field is nullable
  * @property ignore whether the field should be ignored in some operations
+ * @property typeInfo compiler-generated static type metadata when available
  *
  * @author: OUSC
  */
 open class Field(
-    var columnName: String,
-    var name: String = fieldNamingStrategy.db2k(columnName),
-    val type: KColumnType = UNDEFINED,
+    override var columnName: String,
+    override var name: String = fieldNamingStrategy.db2k(columnName),
+    override val type: KColumnType = UNDEFINED,
     var primaryKey: PrimaryKeyType = PrimaryKeyType.NOT,
-    val dateFormat: String? = null,
+    override val dateFormat: String? = null,
     var tableName: String = "",
     val cascade: KCascade? = null,
     val kType: KType? = null,
@@ -64,17 +67,27 @@ open class Field(
     val length: Int = 0,
     val scale: Int = 0,
     val defaultValue: String? = null,
-    val nullable: Boolean = true,
-    val serializable: Boolean = false,
-    val kDoc: String? = null
-) {
+    override val nullable: Boolean = true,
+    override val serializable: Boolean = false,
+    val kDoc: String? = null,
+    override val typeInfo: StaticTypeInfo? = null
+) : ValueCodecField {
     val elementKType: KType? by lazy(LazyThreadSafetyMode.NONE) {
         kType?.primitiveArrayElementType()
             ?: kType?.arguments?.firstOrNull()?.type
     }
 
     val cascadeIsCollectionOrArray: Boolean by lazy(LazyThreadSafetyMode.NONE) {
-        kType?.isCollectionOrArrayType() == true
+        when (typeInfo?.containerKind) {
+            StaticContainerKind.ITERABLE,
+            StaticContainerKind.ARRAY,
+            StaticContainerKind.PRIMITIVE_ARRAY -> true
+
+            StaticContainerKind.NONE,
+            StaticContainerKind.MAP -> false
+
+            null -> kType?.isCollectionOrArrayType() == true
+        }
     }
 
     // Returns the name of the field as a string
@@ -131,7 +144,8 @@ open class Field(
         defaultValue,
         nullable,
         serializable,
-        kDoc
+        kDoc,
+        typeInfo
     )
 
     fun refUseFor(usage: KOperationType): Boolean {
@@ -154,7 +168,8 @@ open class Field(
         defaultValue: String? = this.defaultValue,
         nullable: Boolean = this.nullable,
         serializable: Boolean = this.serializable,
-        kDoc: String? = this.kDoc
+        kDoc: String? = this.kDoc,
+        typeInfo: StaticTypeInfo? = this.typeInfo
     ): Field {
         return Field(
             columnName,
@@ -172,31 +187,25 @@ open class Field(
             defaultValue,
             nullable,
             serializable,
-            kDoc
+            kDoc,
+            typeInfo
         )
     }
 
-    private fun KType.primitiveArrayElementType(): KType? = when (withoutTopLevelNullability()) {
-        typeOf<BooleanArray>() -> typeOf<Boolean>()
-        typeOf<ByteArray>() -> typeOf<Byte>()
-        typeOf<CharArray>() -> typeOf<Char>()
-        typeOf<DoubleArray>() -> typeOf<Double>()
-        typeOf<FloatArray>() -> typeOf<Float>()
-        typeOf<IntArray>() -> typeOf<Int>()
-        typeOf<LongArray>() -> typeOf<Long>()
-        typeOf<ShortArray>() -> typeOf<Short>()
+    private fun KType.primitiveArrayElementType(): KType? = when (classifier as? KClass<*>) {
+        BooleanArray::class -> typeOf<Boolean>()
+        ByteArray::class -> typeOf<Byte>()
+        CharArray::class -> typeOf<Char>()
+        DoubleArray::class -> typeOf<Double>()
+        FloatArray::class -> typeOf<Float>()
+        IntArray::class -> typeOf<Int>()
+        LongArray::class -> typeOf<Long>()
+        ShortArray::class -> typeOf<Short>()
         else -> null
     }
 
     private fun KType.isCollectionOrArrayType(): Boolean {
-        val normalized = withoutTopLevelNullability()
-        if (normalized.primitiveArrayElementType() != null) return true
-        return runCatching {
-            normalized.isSubtypeOf(typeOf<Iterable<*>>()) ||
-                normalized.isSubtypeOf(typeOf<Array<*>>())
-        }.getOrDefault(false)
+        val declaration = classifier as? KClass<*> ?: return false
+        return declaration.java.isArray || Iterable::class.java.isAssignableFrom(declaration.java)
     }
-
-    private fun KType.withoutTopLevelNullability(): KType =
-        if (isMarkedNullable) withNullability(false) else this
 }

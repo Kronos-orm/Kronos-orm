@@ -24,19 +24,18 @@ import org.gradle.testfixtures.ProjectBuilder
 
 class GenerateKronosGeneratedTypeServiceTest {
     @Test
-    fun writesServiceOnlyWhenTheGeneratedProviderClassExists() {
+    fun writesSortedLiveSourceProviderFragmentsAndRemovesDeletedEntries() {
         val projectDir = Files.createTempDirectory("kronos-generated-service-test").toFile()
         val project = ProjectBuilder.builder().withProjectDir(projectDir).build()
         val classDir = projectDir.resolve("classes")
         val outputDir = projectDir.resolve("generated")
-        val providerClassName = "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_test"
+        val providerClassNamePrefix = "com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_test"
         val serviceFile = outputDir.resolve(GENERATED_TYPE_PROVIDER_SERVICE_PATH)
         val task = project.tasks.create(
             "generateKronosTestGeneratedTypeService",
             GenerateKronosGeneratedTypeService::class.java
         ).apply {
-            this.providerClassName.set(providerClassName)
-            serviceContent.set("$providerClassName\n")
+            this.providerClassNamePrefix.set(providerClassNamePrefix)
             providerClassDirectories.from(classDir)
             outputDirectory.set(outputDir)
         }
@@ -44,11 +43,28 @@ class GenerateKronosGeneratedTypeServiceTest {
         task.generate()
         assertFalse(serviceFile.exists())
 
-        val providerClassFile = classDir.resolve(providerClassName.replace('.', '/') + ".class")
-        providerClassFile.parentFile.mkdirs()
-        providerClassFile.writeBytes(byteArrayOf())
+        val secondFragment = classDir.resolve("${providerClassNamePrefix.replace('.', '/')}_bbbbbbbbbbbbbbbb.class")
+        val firstFragment = classDir.resolve("${providerClassNamePrefix.replace('.', '/')}_aaaaaaaaaaaaaaaa.class")
+        listOf(secondFragment, firstFragment).forEach { providerClassFile ->
+            providerClassFile.parentFile.mkdirs()
+            providerClassFile.writeBytes(byteArrayOf())
+        }
+        // Compiler-generated lambda classes must not become service providers.
+        classDir.resolve("${providerClassNamePrefix.replace('.', '/')}_aaaaaaaaaaaaaaaa\$contributeTo\$1.class")
+            .writeBytes(byteArrayOf())
 
         task.generate()
-        assertEquals("$providerClassName\n", serviceFile.readText())
+        assertEquals(
+            "${providerClassNamePrefix}_aaaaaaaaaaaaaaaa\n${providerClassNamePrefix}_bbbbbbbbbbbbbbbb\n",
+            serviceFile.readText()
+        )
+
+        assertEquals(true, secondFragment.delete())
+        task.generate()
+        assertEquals("${providerClassNamePrefix}_aaaaaaaaaaaaaaaa\n", serviceFile.readText())
+
+        assertEquals(true, firstFragment.delete())
+        task.generate()
+        assertFalse(serviceFile.exists())
     }
 }

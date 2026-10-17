@@ -17,6 +17,7 @@
 package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.core.buildStaticTypeInfo
 import com.kotlinorm.compiler.core.kTableForConditionSymbol
 import com.kotlinorm.compiler.core.kTableForInsertSelectSymbol
 import com.kotlinorm.compiler.core.kTableForReferenceSymbol
@@ -25,12 +26,14 @@ import com.kotlinorm.compiler.core.kTableForSetSymbol
 import com.kotlinorm.compiler.core.kTableForSortSymbol
 import com.kotlinorm.compiler.core.firstTypeArgument
 import com.kotlinorm.compiler.core.isKPojoType
+import com.kotlinorm.compiler.core.typeOfFunctionSymbol
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+import com.kotlinorm.compiler.utils.KronosAtomicQueryTaskFqName
 import com.kotlinorm.compiler.utils.extensionReceiver
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irBlock
@@ -38,17 +41,20 @@ import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrTypeProjection
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.defaultType
@@ -72,24 +78,44 @@ import org.jetbrains.kotlin.ir.util.statements
  */
 class KronosParserTransformer(
     private val pluginContext: IrPluginContext,
-    messageCollector: MessageCollector
+    configuration: CompilerConfiguration
 ) : IrElementTransformerVoidWithContext() {
 
-    private val errorReporter = ErrorReporter(messageCollector)
+    private val errorReporter = ErrorReporter(configuration)
     val kPojoClasses = mutableSetOf<IrClass>()
     val enumClasses = mutableSetOf<IrClass>()
+    val directQueryTaskTypeRoots = linkedSetOf<IrType>()
+    /**
+     * Source ownership for metadata that is discovered at a use site rather than declaration
+     * traversal. Source-owned provider fragments use these maps so an incremental compilation
+     * updates only the fragment that owns the changed call site.
+     */
+    val enumClassesByFile = linkedMapOf<IrFile, MutableSet<IrClass>>()
+    val directQueryTaskTypeRootsByFile = linkedMapOf<IrFile, MutableSet<IrType>>()
     private val transformedKPojoClasses = mutableSetOf<IrClass>()
+    private var currentSourceFile: IrFile? = null
 
     override fun visitFileNew(declaration: IrFile): IrFile {
+        val previousFile = currentSourceFile
+        currentSourceFile = declaration
         errorReporter.currentFileEntry = declaration.fileEntry
-        return super.visitFileNew(declaration)
+        return try {
+            super.visitFileNew(declaration)
+        } finally {
+            currentSourceFile = previousFile
+        }
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitClassNew(declaration: IrClass): IrStatement =
         if (declaration.isGeneratedProjectionClass()) declaration else {
             if (with(pluginContext) { declaration.defaultType.isKPojoType() }) {
-                processKPojoClass(declaration)
+                // Interfaces participate in static type metadata even though they cannot
+                // receive generated bodies or a construction factory.
+                kPojoClasses.add(declaration)
+                if (declaration.kind != ClassKind.INTERFACE) {
+                    processKPojoClass(declaration)
+                }
             }
             super.visitClassNew(declaration)
         }
@@ -105,7 +131,7 @@ class KronosParserTransformer(
                 expression.typeArguments[i]?.collectConcreteEnumLeaves()
             }
         }
-        return super.visitCall(expression) as IrCall
+        return (super.visitCall(expression) as IrCall).also(::injectStaticTypedResultTypeInfo)
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -117,7 +143,115 @@ class KronosParserTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
         collectKPojoFactoryCandidate(expression.type)
-        return super.visitConstructorCall(expression)
+        val transformed = super.visitConstructorCall(expression) as IrConstructorCall
+        injectDirectQueryTaskTypeInfo(transformed)
+        return transformed
+    }
+
+    /**
+     * Adds a compiler-generated static descriptor to direct task construction when the
+     * target is expressed as a concrete `typeOf<T>()`. Inline query facade bodies do
+     * contain task construction in their defining module, but their `T` is still the
+     * facade's type parameter before call-site inlining. Those calls are deliberately
+     * skipped so library type-parameter metadata is never used for a caller's result type.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun injectDirectQueryTaskTypeInfo(call: IrConstructorCall) {
+        val constructor = call.symbol.owner
+        if ((constructor.parent as? IrClass)?.fqNameWhenAvailable != KronosAtomicQueryTaskFqName) return
+
+        val targetTypeIndex = constructor.parameters.indexOfFirst {
+            it.kind == IrParameterKind.Regular && it.name.asString() == "targetType"
+        }
+        val targetTypeInfoIndex = constructor.parameters.indexOfFirst {
+            it.kind == IrParameterKind.Regular && it.name.asString() == "targetTypeInfo"
+        }
+        if (targetTypeIndex < 0 || targetTypeInfoIndex < 0 || call.arguments[targetTypeInfoIndex] != null) return
+
+        val typeOfCall = call.arguments[targetTypeIndex] as? IrCall ?: return
+        if (typeOfCall.symbol != with(pluginContext) { typeOfFunctionSymbol }) return
+        val targetType = typeOfCall.typeArguments.singleOrNull() ?: return
+        if (targetType.containsTypeParameter()) return
+
+        collectKPojoFactoryCandidate(targetType)
+        targetType.collectConcreteEnumLeaves()
+        val builder = currentScope?.scope?.scopeOwnerSymbol?.let { DeclarationIrBuilder(pluginContext, it) }
+            ?: DeclarationIrBuilder(pluginContext, call.symbol)
+        val typeInfo = with(pluginContext) {
+            with(builder) { buildStaticTypeInfo(targetType) }
+        } ?: return
+        call.arguments[targetTypeInfoIndex] = typeInfo
+        recordDirectQueryTaskTypeRoot(targetType)
+    }
+
+    /**
+     * Writes generated metadata into typed terminal calls at the user call site.
+     *
+     * Library inline bodies only know their own type parameter and are intentionally skipped.
+     * A caller that supplies a dynamic KType also remains unannotated because that value can
+     * describe a different target than the reified result parameter.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun injectStaticTypedResultTypeInfo(call: IrCall) {
+        if (!call.isStaticTypedResultCall()) return
+
+        val function = call.symbol.owner
+        val targetTypeInfoIndex = function.parameters.indexOfFirst {
+            it.kind == IrParameterKind.Regular && it.name.asString() == "targetTypeInfo"
+        }
+        if (targetTypeInfoIndex < 0 || call.arguments[targetTypeInfoIndex] != null) return
+
+        val targetType = call.staticTypedResultTargetType() ?: return
+        if (targetType.containsTypeParameter()) return
+
+        collectKPojoFactoryCandidate(targetType)
+        targetType.collectConcreteEnumLeaves()
+        val builder = currentScope?.scope?.scopeOwnerSymbol?.let { DeclarationIrBuilder(pluginContext, it) }
+            ?: DeclarationIrBuilder(pluginContext, call.symbol)
+        val typeInfo = with(pluginContext) {
+            with(builder) { buildStaticTypeInfo(targetType) }
+        } ?: return
+        call.arguments[targetTypeInfoIndex] = typeInfo
+        recordDirectQueryTaskTypeRoot(targetType)
+    }
+
+    /**
+     * Resolves the exact target represented by a typed terminal call.
+     *
+     * Explicit typeOf arguments win. Other dynamic KType expressions have no static descriptor
+     * and must not fall back to the reified result type. Nullable terminals synthesize the same
+     * top-level nullability as their default typeOf<T?> argument.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrCall.staticTypedResultTargetType(): IrType? {
+        val function = symbol.owner
+        val targetTypeParameterIndex = function.parameters.indexOfFirst {
+            it.kind == IrParameterKind.Regular && it.name.asString() == "targetType"
+        }
+        if (targetTypeParameterIndex >= 0) {
+            val targetTypeArgument = arguments[targetTypeParameterIndex]
+            if (targetTypeArgument != null) {
+                val typeOfCall = targetTypeArgument as? IrCall ?: return null
+                if (typeOfCall.symbol != with(pluginContext) { typeOfFunctionSymbol }) return null
+                return typeOfCall.typeArguments.singleOrNull()
+            }
+        }
+
+        val resultTypeParameterIndex = function.typeParameters.indexOfFirst { it.name.asString() == "T" }
+        val resultType = typeArguments.getOrNull(resultTypeParameterIndex) ?: return null
+        return if (function.name.asString() in NullableStaticResultFunctionNames) {
+            resultType.makeNullable()
+        } else {
+            resultType
+        }
+    }
+
+    private fun IrType.containsTypeParameter(): Boolean {
+        val simpleType = this as? IrSimpleType ?: return true
+        if (simpleType.classifier is IrTypeParameterSymbol) return true
+        return simpleType.arguments
+            .filterIsInstance<IrTypeProjection>()
+            .any { it.type.containsTypeParameter() }
     }
 
     /**
@@ -125,10 +259,9 @@ class KronosParserTransformer(
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun processKPojoClass(irClass: IrClass) {
-        if (irClass.kind == ClassKind.INTERFACE || irClass.isGeneratedProjectionClass()) {
+        if (irClass.isGeneratedProjectionClass()) {
             return
         }
-        kPojoClasses.add(irClass)
         collectCascadeTargetKPojoClasses(irClass)
         if (transformedKPojoClasses.add(irClass)) {
             irClass.properties.forEach { property ->
@@ -169,10 +302,22 @@ class KronosParserTransformer(
         val simpleType = this as? IrSimpleType ?: return
         simpleType.classOrNull?.owner
             ?.takeIf { it.kind == ClassKind.ENUM_CLASS }
-            ?.let(enumClasses::add)
+            ?.let { enumClass ->
+                enumClasses += enumClass
+                currentSourceFile?.let { sourceFile ->
+                    enumClassesByFile.getOrPut(sourceFile, ::linkedSetOf) += enumClass
+                }
+            }
         simpleType.arguments
             .filterIsInstance<IrTypeProjection>()
             .forEach { it.type.collectConcreteEnumLeaves() }
+    }
+
+    private fun recordDirectQueryTaskTypeRoot(type: IrType) {
+        directQueryTaskTypeRoots += type
+        currentSourceFile?.let { sourceFile ->
+            directQueryTaskTypeRootsByFile.getOrPut(sourceFile, ::linkedSetOf) += type
+        }
     }
 
     /**
@@ -233,5 +378,10 @@ private val StaticTypedResultFunctionNames = setOf(
     "queryOneOrNull",
     "toList",
     "first",
+    "firstOrNull"
+)
+
+private val NullableStaticResultFunctionNames = setOf(
+    "queryOneOrNull",
     "firstOrNull"
 )

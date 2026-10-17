@@ -28,6 +28,7 @@ import com.kotlinorm.interfaces.KronosRow
 import com.kotlinorm.interfaces.KronosRowFirstResult
 import com.kotlinorm.interfaces.requireKronosRowMapping
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.StaticTypeInfo
 import com.kotlinorm.utils.logAndReturn
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -106,15 +107,20 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
      *
      * @param wrapper wrapper to use, or `null` to resolve the configured default
      * @param targetType complete row type, including generic arguments and nullability
+     * @param targetTypeInfo compiler-generated static metadata for [targetType], when available
      * @param queryType terminal operation classification used by hooks and logging
      * @return decoded rows in result-set order
      */
     fun toList(
         wrapper: KronosDataSourceWrapper?,
         targetType: KType,
-        queryType: QueryType = ToList
+        queryType: QueryType = ToList,
+        targetTypeInfo: StaticTypeInfo? = null
     ): List<Any?> {
-        val task = atomicTask.copy(targetType = targetType)
+        val task = atomicTask.copy(
+            targetType = targetType,
+            targetTypeInfo = targetTypeInfo ?: atomicTask.targetTypeInfo?.takeIf { atomicTask.targetType == targetType }
+        )
         return executeQuery(wrapper, queryType, task) { dataSource, queryTask ->
             dataSource.toList(queryTask)
         }
@@ -140,6 +146,7 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
      *
      * @param wrapper wrapper to use, or `null` to resolve the configured default
      * @param targetType complete logical result type
+     * @param targetTypeInfo compiler-generated static metadata for [targetType], when available
      * @param queryType terminal operation classification used by hooks and logging
      * @param required whether an empty result must throw; defaults from target nullability
      * @return decoded first row, or `null` when no row exists and [required] is false
@@ -149,9 +156,13 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
         wrapper: KronosDataSourceWrapper?,
         targetType: KType,
         queryType: QueryType = First,
-        required: Boolean = !targetType.isMarkedNullable
+        required: Boolean = !targetType.isMarkedNullable,
+        targetTypeInfo: StaticTypeInfo? = null
     ): Any? {
-        val task = atomicTask.copy(targetType = targetType)
+        val task = atomicTask.copy(
+            targetType = targetType,
+            targetTypeInfo = targetTypeInfo ?: atomicTask.targetTypeInfo?.takeIf { atomicTask.targetType == targetType }
+        )
         val result = executeQuery(wrapper, queryType, task) { dataSource, queryTask ->
             dataSource.first(queryTask)
         }
@@ -212,8 +223,11 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
 
     /** Executes and decodes every row using the complete reified type [T]. */
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-        return toList(wrapper, typeOf<T>()) as List<T>
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): List<T> {
+        return toList(wrapper, typeOf<T>(), targetTypeInfo = targetTypeInfo) as List<T>
     }
 
     /**
@@ -238,13 +252,19 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) {
      * @throws NoSuchElementException when the query returns no rows
      */
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
-        return first(wrapper, typeOf<T>()) as T
+    inline fun <reified T> first(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): T {
+        return first(wrapper, typeOf<T>(), targetTypeInfo = targetTypeInfo) as T
     }
 
     /** Decodes the first row as nullable [T], returning `null` for an empty result. */
-    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        return first(wrapper, typeOf<T?>()) as T?
+    inline fun <reified T> firstOrNull(
+        wrapper: KronosDataSourceWrapper? = null,
+        targetTypeInfo: StaticTypeInfo? = null
+    ): T? {
+        return first(wrapper, typeOf<T?>(), targetTypeInfo = targetTypeInfo) as T?
     }
 
     private fun requireKronosRowMapping() {

@@ -19,19 +19,21 @@ package com.kotlinorm.interfaces
 import com.kotlinorm.enums.ValueCodecDirection
 import com.kotlinorm.enums.ValueCodecOrigin
 import com.kotlinorm.enums.ValueStorage
+import com.kotlinorm.utils.StaticTypeInfo
 import kotlin.reflect.KType
 
 import com.kotlinorm.beans.dsl.Field
-
 /**
  * Public information available while selecting and running a [ValueCodec].
  *
  * @property direction whether the logical Kotlin value is being encoded for storage or decoded from input
  * @property origin the conversion boundary; codecs may use it for fine-grained matching
- * @property sourceType the declared source type when known, otherwise a runtime star-projected fallback
+ * @property sourceType the declared source type when the calling boundary provides one
  * @property targetType the complete logical Kotlin target type, including nullability and type arguments
  * @property field field metadata when the conversion belongs to a mapped property
  * @property storage the field storage policy; serialized codecs must require [ValueStorage.SERIALIZED]
+ * @property sourceTypeInfo compiler-generated metadata for [sourceType], when available
+ * @property targetTypeInfo compiler-generated metadata for [targetType], when available
  */
 data class ValueCodecContext(
     val direction: ValueCodecDirection,
@@ -39,7 +41,9 @@ data class ValueCodecContext(
     val sourceType: KType?,
     val targetType: KType,
     val field: Field? = null,
-    val storage: ValueStorage = ValueStorage.NONE
+    val storage: ValueStorage = ValueStorage.NONE,
+    val sourceTypeInfo: StaticTypeInfo? = null,
+    val targetTypeInfo: StaticTypeInfo? = null
 )
 
 /**

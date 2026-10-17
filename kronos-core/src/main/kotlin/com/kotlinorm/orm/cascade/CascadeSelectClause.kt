@@ -26,6 +26,7 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.First
 import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.warnIfEnabled
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.selectWithType
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
@@ -228,11 +229,11 @@ object CascadeSelectClause {
         if (propField == null) {
             val key = "${parentFirst::class.simpleName}.$prop"
             if (cascadeFieldNotFoundWarned.add(key)) {
-                Kronos.defaultLogger("CascadeSelectClause").warn(
+                Kronos.defaultLogger("CascadeSelectClause").warnIfEnabled {
                     log {
                         +"Cascade field '$prop' not found in ${parentFirst::class.simpleName}, skipping cascade query. Consider disabling cascade for this query."
                     }
-                )
+                }
             }
             return
         }

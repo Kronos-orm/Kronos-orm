@@ -23,18 +23,23 @@ import com.kotlinorm.enums.ValueCodecOrigin
 import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.exceptions.MissingSerializedCodec
 import com.kotlinorm.exceptions.ValueMappingException
+import com.kotlinorm.interfaces.JvmValueCodecPlatformContext
+import com.kotlinorm.interfaces.KronosValueCodecs
+import com.kotlinorm.interfaces.StaticValueCodec
+import com.kotlinorm.interfaces.StaticValueCodecContext
+import com.kotlinorm.interfaces.StaticValueCodecException
 import com.kotlinorm.interfaces.ValueCodec
 import com.kotlinorm.interfaces.ValueCodecContext
 import com.kotlinorm.interfaces.ValueCodecRegistration
+import com.kotlinorm.interfaces.asStaticValueCodec
+import com.kotlinorm.interfaces.asValueCodecRegistration
+import com.kotlinorm.interfaces.toStaticTypeRef
 import com.kotlinorm.syntax.render.SqlDialect
 import com.kotlinorm.utils.GeneratedTypeMetadataSnapshot
+import com.kotlinorm.utils.StaticTypeInfo
 import java.time.ZoneId
 import java.util.concurrent.CancellationException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.reflect.KType
-import kotlin.reflect.full.starProjectedType
 
 /**
  * Marks whether a caller supplied a final database value or a temporal value
@@ -58,12 +63,14 @@ internal enum class PreparedValueKind {
  * @property sourceType complete declared source type when the caller knows it
  * @property dateFormat explicit text format, which takes precedence over field and global formats
  * @property kind whether conversion is complete or still requires temporal encoding
+ * @property sourceTypeInfo compiler-generated static metadata for [sourceType], when available
  */
 internal data class PreparedValue(
     val value: Any?,
     val sourceType: KType?,
     val dateFormat: String? = null,
-    val kind: PreparedValueKind
+    val kind: PreparedValueKind,
+    val sourceTypeInfo: StaticTypeInfo? = null
 )
 
 /**
@@ -78,7 +85,7 @@ internal data class PreparedValue(
  * @property direction ENCODE for parameters/delegate writes, DECODE for safe Map/JDBC/delegate reads
  * @property origin the boundary creating this request
  * @property targetType complete logical Kotlin target type, including generic arguments and nullability
- * @property sourceType complete declared source type when known; runtime fallback is created only when absent
+ * @property sourceType complete declared source type when known
  * @property field optional mapped field metadata such as serialization and date format
  * @property storage storage protocol gate; serialized requests never fall through to built-in scalar codecs
  * @property physicalTargetType optional JDBC binding type used only to validate/shape encoded results
@@ -89,6 +96,9 @@ internal data class PreparedValue(
  * @property strict whether implicit basic/temporal DECODE coercion is disabled
  * @property batchIndex source index included in conversion failures
  * @property valueName parameter or result label included in conversion failures
+ * @property targetTypeInfo compiler-generated metadata for [targetType], when available
+ * @property sourceTypeInfo compiler-generated metadata for [sourceType], when available
+ * @property physicalTargetTypeInfo compiler-generated metadata for [physicalTargetType], when available
  */
 internal data class ValueConversionRequest(
     val value: Any?,
@@ -101,10 +111,13 @@ internal data class ValueConversionRequest(
     val physicalTargetType: KType? = null,
     val dialect: SqlDialect? = null,
     val dateFormat: String? = null,
-    val timeZone: ZoneId = Kronos.timeZone,
+    val timeZone: ZoneId = Kronos.resolvedTimeZone,
     val strict: Boolean = Kronos.strictSetValue,
     val batchIndex: Int? = null,
-    val valueName: String? = null
+    val valueName: String? = null,
+    val targetTypeInfo: StaticTypeInfo? = field?.typeInfo,
+    val sourceTypeInfo: StaticTypeInfo? = null,
+    val physicalTargetTypeInfo: StaticTypeInfo? = null
 ) {
     val effectiveDateFormat: String
         get() = dateFormat ?: this.field?.dateFormat ?: Kronos.defaultDateFormat
@@ -128,11 +141,6 @@ internal data class ValueConversionRequest(
  * then the built-in codecs are checked in their fixed order.
  */
 internal object ValueCodecRegistry {
-    private data class Entry(val id: Long, val codec: UserRegistryCodec)
-
-    private val nextId = AtomicLong()
-    private val entries = AtomicReference<List<Entry>>(emptyList())
-
     /**
      * Registers one user codec at the highest current priority.
      *
@@ -143,19 +151,8 @@ internal object ValueCodecRegistry {
      * @param codec user codec to place at the highest current priority
      * @return an idempotent registration handle scoped to this entry
      */
-    fun register(codec: ValueCodec): ValueCodecRegistration {
-        val entry = Entry(nextId.incrementAndGet(), UserRegistryCodec(codec))
-        entries.updateAndGet { listOf(entry) + it }
-        return object : ValueCodecRegistration {
-            private val closed = AtomicBoolean(false)
-
-            override fun close() {
-                if (closed.compareAndSet(false, true)) {
-                    entries.updateAndGet { current -> current.filterNot { it.id == entry.id } }
-                }
-            }
-        }
-    }
+    fun register(codec: ValueCodec): ValueCodecRegistration =
+        KronosValueCodecs.register(codec.asStaticValueCodec()).asValueCodecRegistration()
 
     /**
      * Converts one request through the single registry boundary.
@@ -186,7 +183,6 @@ internal object ValueCodecRegistry {
         request: ValueConversionRequest,
         generatedTypes: GeneratedTypeMetadataSnapshot?
     ): Any? {
-        val userCodecs = entries.get()
         val value = request.value
         val context = request.context()
 
@@ -194,7 +190,12 @@ internal object ValueCodecRegistry {
 
         if (request.direction == ValueCodecDirection.ENCODE) {
             val logicalInputType = request.targetType
-            if (!logicalInputType.accepts(value, request.sourceType) &&
+            if (!logicalInputType.accepts(
+                    value,
+                    request.sourceType,
+                    request.sourceTypeInfo,
+                    request.targetTypeInfo
+                ) &&
                 !canBuiltInCoerceEncode(value, request, context)
             ) {
                 throw request.failure(
@@ -206,18 +207,17 @@ internal object ValueCodecRegistry {
         if (request.storage == ValueStorage.SERIALIZED &&
             request.direction == ValueCodecDirection.DECODE &&
             request.origin == ValueCodecOrigin.MAP &&
-            request.targetType.accepts(value, request.sourceType)
+            request.targetType.accepts(
+                value,
+                request.sourceType,
+                request.sourceTypeInfo,
+                request.targetTypeInfo
+            )
         ) {
             return value
         }
 
-        var selectedCodec: RegistryCodec? = null
-        for ((_, codec) in userCodecs) {
-            if (invokeCodec(request, codec, "supports") { codec.supports(value, request, context) }) {
-                selectedCodec = codec
-                break
-            }
-        }
+        var selectedCodec: RegistryCodec? = request.selectStaticUserCodec(value, context)
 
         if (selectedCodec == null && request.storage == ValueStorage.NONE) {
             for (codec in builtInCodecs) {
@@ -237,7 +237,13 @@ internal object ValueCodecRegistry {
         }
 
         if (request.storage == ValueStorage.NONE) {
-            if (request.targetType.accepts(value, request.sourceType)) {
+            if (request.targetType.accepts(
+                    value,
+                    request.sourceType,
+                    request.sourceTypeInfo,
+                    request.targetTypeInfo
+                )
+            ) {
                 return validateResult(value, request)
             }
         }
@@ -350,20 +356,77 @@ internal object ValueCodecRegistry {
 }
 
 /**
- * Derives the runtime source KType without overwriting caller-supplied
- * declared type metadata.
+ * Runtime source KTypes are intentionally not synthesized. The public
+ * diagnostic field remains available for source compatibility and is `null`
+ * unless a future caller provides an explicit non-reflective representation.
  */
 internal val ValueConversionRequest.runtimeSourceType: KType?
-    get() = value?.let { it::class.starProjectedType }
+    get() = null
 
 private fun ValueConversionRequest.context(): ValueCodecContext = ValueCodecContext(
     direction,
     origin,
-    sourceType ?: runtimeSourceType,
+    sourceType,
     targetType,
     field,
-    storage
+    storage,
+    sourceTypeInfo,
+    targetTypeInfo
 )
+
+/**
+ * Resolves shared common codec registrations before JVM-only built-ins. The
+ * compatibility context lets legacy KType codecs participate in the same
+ * newest-registration-first ledger as descriptor-based common codecs.
+ */
+private fun ValueConversionRequest.selectStaticUserCodec(
+    value: Any,
+    legacyContext: ValueCodecContext
+): RegistryCodec? {
+    val staticContext = StaticValueCodecContext(
+        direction = direction,
+        origin = origin,
+        sourceType = sourceType?.toStaticTypeRef(sourceTypeInfo),
+        targetType = targetType.toStaticTypeRef(targetTypeInfo),
+        field = field,
+        storage = storage,
+        sourceTypeInfo = sourceTypeInfo,
+        targetTypeInfo = targetTypeInfo,
+        timeZone = Kronos.timeZone
+    ).also { context ->
+        context.platformContext = JvmValueCodecPlatformContext(legacyContext)
+    }
+    val codec = try {
+        KronosValueCodecs.findMatchingCodec(value, staticContext)
+    } catch (cause: StaticValueCodecException) {
+        throw failure(cause.detail, cause.cause ?: cause)
+    } catch (cause: CancellationException) {
+        throw cause
+    } catch (cause: ValueMappingException) {
+        throw cause
+    } catch (cause: Error) {
+        throw cause
+    } catch (cause: Throwable) {
+        throw failure("user StaticValueCodec failed in supports", cause)
+    }
+    return codec?.let { SelectedStaticValueCodec(it, staticContext) }
+}
+
+private class SelectedStaticValueCodec(
+    private val codec: StaticValueCodec,
+    private val staticContext: StaticValueCodecContext
+) : RegistryCodec {
+    override val description: String = codec.description
+
+    override fun supports(value: Any, request: ValueConversionRequest, context: ValueCodecContext): Boolean = true
+
+    override fun convert(
+        value: Any,
+        request: ValueConversionRequest,
+        context: ValueCodecContext,
+        generatedTypes: GeneratedTypeMetadataSnapshot?
+    ): Any? = codec.convert(value, staticContext)
+}
 
 /**
  * Creates one diagnostic carrying the full conversion location and declared

@@ -22,11 +22,17 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSetContainer
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
+import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+import java.util.Properties
+
+private const val CompilerPluginVersionResource = "META-INF/kronos/compiler-plugin.properties"
 
 class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
     lateinit var project: Project
@@ -41,19 +47,32 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         pluginId = "kronos-compiler-plugin"
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
-        version = "0.3.2-SNAPSHOT"
+        version = compilerPluginVersion()
         target.logger.lifecycle("Loaded Gradle plugin ${javaClass.name} version $version")
         target.logger.lifecycle("Loaded Compiler plugin $group.$artifactId version $version")
-        configureKotlinIncrementalCompilation(target)
         configureGeneratedTypeProviderService(target)
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val target = kotlinCompilation.target.project
+        if (kotlinCompilation.target is KotlinNativeTarget) {
+            return target.provider {
+                // Native platform compilations consume the entry emitted by the
+                // common metadata compilation. They must not regenerate it (or
+                // attempt to discover KLIB resources), so only the common
+                // metadata compilation receives the Native entry options.
+                listOf(SubpluginOption(SKIP_GENERATED_PROVIDER_OPTION_NAME, "true"))
+            }
+        }
         val compilationName = kotlinCompilation.defaultSourceSet.name
         return target.provider {
             val identity = gradleGeneratedTypeProviderIdentity(target.moduleCoordinate(compilationName))
-            identity.compilerOptions.map { (key, value) -> SubpluginOption(key, value) }
+            val options = if (kotlinCompilation.target is KotlinMetadataTarget) {
+                identity.nativeCompilerOptions
+            } else {
+                identity.compilerOptions
+            }
+            options.map { (key, value) -> SubpluginOption(key, value) }
         }
     }
 
@@ -75,22 +94,6 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         KronosGradlePlugin::class.java
     )
 
-    private fun configureKotlinIncrementalCompilation(target: Project) {
-        target.tasks.withType(KotlinCompilationTask::class.java).configureEach {
-            it.disableIncrementalCompilation()
-        }
-    }
-
-    private fun KotlinCompilationTask<*>.disableIncrementalCompilation() {
-        // KPojo factory generation depends on a complete module IR view.
-        javaClass.methods
-            .firstOrNull { method ->
-                method.name == "setIncremental" &&
-                    method.parameterTypes.contentEquals(arrayOf(Boolean::class.javaPrimitiveType))
-            }
-            ?.invoke(this, false)
-    }
-
     private fun configureGeneratedTypeProviderService(target: Project) {
         target.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
             target.extensions.findByType(SourceSetContainer::class.java)
@@ -104,6 +107,34 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
                     // Passing the producer itself preserves task dependencies for every resource consumer.
                     sourceSet.resources.srcDir(task)
                 }
+        }
+        target.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+            target.extensions.configure(KotlinMultiplatformExtension::class.java) { kotlin ->
+                // The common source set owns one explicit Native entry. Every
+                // Native target compiles that same source entry with the same
+                // identity, so platform artifacts do not create separate
+                // registrations or depend on ServiceLoader resources.
+                kotlin.sourceSets.findByName("commonMain")?.let { commonMain ->
+                    val identity = target.gradleGeneratedTypeProviderIdentityFor("commonMain")
+                    val task = target.registerGeneratedNativeMetadataEntry(identity)
+                    commonMain.kotlin.srcDir(task)
+                }
+                kotlin.targets.withType(KotlinJvmTarget::class.java).configureEach { jvmTarget ->
+                    jvmTarget.compilations.configureEach { compilation ->
+                        val task = target.registerGeneratedTypeProviderService(
+                            name = compilation.defaultSourceSet.name,
+                            compilationTaskName = compilation.compileKotlinTaskName,
+                            // MPP's aggregate classesDirs includes processed resources and would create a cycle:
+                            // compile -> resources (including this task) -> generated provider. The compile task's
+                            // own outputs contain the generated classes and keep the producer edge acyclic.
+                            providerClassDirectories = compilation.compileTaskProvider
+                        )
+                        // The generated service belongs to the JVM compilation only; Native uses explicit metadata
+                        // registration in later KMP tasks and must not consume JVM ServiceLoader resources.
+                        compilation.defaultSourceSet.resources.srcDir(task)
+                    }
+                }
+            }
         }
         target.pluginManager.withPlugin("com.android.application") {
             target.configureAndroidGeneratedTypeProviderService()
@@ -186,13 +217,36 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         val identity = provider {
             gradleGeneratedTypeProviderIdentity(moduleCoordinate(name))
         }
-        task.providerClassName.set(identity.map { it.fqName })
-        task.serviceContent.set(identity.map { it.serviceContent })
+        task.providerClassNamePrefix.set(identity.map { it.fqName })
         task.providerClassDirectories.from(providerClassDirectories)
         task.outputDirectory.set(layout.buildDirectory.dir("generated/kronos/generatedTypeService/$name"))
         task.dependsOn(compilationTaskName)
     }
 
+    private fun Project.gradleGeneratedTypeProviderIdentityFor(compilationName: String) =
+        provider { gradleGeneratedTypeProviderIdentity(moduleCoordinate(compilationName)) }.get()
+
+    private fun Project.registerGeneratedNativeMetadataEntry(
+        identity: GradleGeneratedTypeProviderIdentity
+    ) = tasks.register(
+        "generateKronos${identity.nativeEntryFqName.substringAfterLast('.')}Source",
+        GenerateKronosNativeMetadataEntry::class.java
+    ) { task ->
+        task.entryFqName.set(identity.nativeEntryFqName)
+        task.providerId.set(identity.id)
+        task.outputDirectory.set(layout.buildDirectory.dir("generated/kronos/nativeMetadata/commonMain"))
+    }
+
     private fun Project.moduleCoordinate(compilationName: String): String =
         "gradle:${this.group}:${name}:${path}:$compilationName"
+
+    private fun compilerPluginVersion(): String {
+        val properties = Properties()
+        val stream = javaClass.classLoader.getResourceAsStream(CompilerPluginVersionResource)
+            ?: error("Missing $CompilerPluginVersionResource in the Kronos Gradle plugin artifact")
+        stream.use(properties::load)
+        return properties.getProperty("version")
+            ?.takeIf(String::isNotBlank)
+            ?: error("Missing compiler plugin version in $CompilerPluginVersionResource")
+    }
 }

@@ -41,7 +41,7 @@ import com.kotlinorm.utils.registerKPojoFactory as registerExactKPojoFactory
 import java.time.ZoneId
 import kotlin.reflect.KType
 
-object Kronos {
+actual object Kronos {
     /**
      * Registers one bidirectional value codec at highest priority.
      *
@@ -79,15 +79,21 @@ object Kronos {
     fun createKPojo(type: KType): KPojo = createRegisteredKPojo(type)
 
     // 默认日志适配器
-    var defaultLogger: KLoggerFactory =
+    actual var defaultLogger: KLoggerFactory =
         {
             BundledSimpleLoggerAdapter(
                 it as? String ?: it::class.simpleName!!
             )
         }
+        set(value) {
+            field = value
+            // An explicit factory is a complete logger configuration. Keep
+            // platform detection from replacing it on a later startup call.
+            loggerType = KLoggerType.NONE
+        }
 
     // 日志类型
-    var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
+    actual var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
 
     // 日志路径
     var logPath = ["console"]
@@ -114,8 +120,11 @@ object Kronos {
     // 严格模式（将提高性能，但当数据库类型与字段类型不匹配时会抛出异常，而不是尝试进行转换）
     var strictSetValue = false
 
-    // 当前时区
-    var timeZone: ZoneId = ZoneId.systemDefault()
+    /** IANA time-zone id; `null` keeps the JVM system-default behavior. */
+    actual var timeZone: String? = null
+
+    internal val resolvedTimeZone: ZoneId
+        get() = timeZone?.let(ZoneId::of) ?: ZoneId.systemDefault()
 
     val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
 

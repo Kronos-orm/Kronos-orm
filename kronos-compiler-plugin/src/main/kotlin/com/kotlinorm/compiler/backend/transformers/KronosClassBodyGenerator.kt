@@ -375,6 +375,7 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
             .forEach { prop ->
                 val propertyName = prop.name.asString()
                 val mapGet = irCall(mapGetSymbol).apply {
+                    type = context.irBuiltIns.anyNType
                     dispatchReceiver = mapParam()
                     arguments[1] = irString(propertyName)
                 }
@@ -500,6 +501,7 @@ private fun IrBuilderWithScope.buildMutableListOf(
         it.owner.parameters.valueParameters.singleOrNull()?.isVararg == true
     }
     return irCall(mutableListOfSymbol).apply {
+        type = context.irBuiltIns.mutableListClass.typeWith(elementType)
         typeArguments[0] = elementType
         arguments[0] = irVararg(elementType, elements)
     }
@@ -520,6 +522,7 @@ private fun IrBuilderWithScope.buildMutableMapOf(
     }
     val pairType = pairClassSymbol.typeWith(keyType, valueType)
     return irCall(mutableMapOfSymbol).apply {
+        type = context.irBuiltIns.mutableMapClass.typeWith(keyType, valueType)
         typeArguments[0] = keyType
         typeArguments[1] = valueType
         arguments[0] = irVararg(pairType, pairs)
@@ -531,6 +534,7 @@ context(context: IrPluginContext)
 private fun IrBuilderWithScope.buildPairOf(first: IrExpression, second: IrExpression): IrExpression {
     val pairConstructor = pairClassSymbol.constructors.first()
     return irCall(pairConstructor).apply {
+        type = pairClassSymbol.typeWith(context.irBuiltIns.stringType, context.irBuiltIns.anyNType)
         typeArguments[0] = context.irBuiltIns.stringType
         typeArguments[1] = context.irBuiltIns.anyNType
         arguments[0] = first

@@ -1,7 +1,7 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos.defaultDateFormat
-import com.kotlinorm.Kronos.timeZone
+import com.kotlinorm.Kronos.resolvedTimeZone
 import com.kotlinorm.enums.ValueStorage
 import com.kotlinorm.interfaces.ValueCodec
 import com.kotlinorm.interfaces.ValueCodecContext
@@ -46,7 +46,7 @@ object KotlinXDateTimeCodec : ValueCodec {
         val localDateTime = if (value is Number) {
             val instant = Instant.fromEpochMilliseconds(value.toLong())
             if (targetType == instantType) return instant
-            instant.toLocalDateTime(TimeZone.of(timeZone.id))
+            instant.toLocalDateTime(TimeZone.of(resolvedTimeZone.id))
         } else {
             try {
                 LocalDateTime.parse(value.toString(), pattern)
@@ -56,10 +56,10 @@ object KotlinXDateTimeCodec : ValueCodec {
         }
         return when (targetType) {
             localDateTimeType -> localDateTime
-            instantType -> localDateTime.toInstant(TimeZone.of(timeZone.id))
+            instantType -> localDateTime.toInstant(TimeZone.of(resolvedTimeZone.id))
             stringType -> localDateTime.format(pattern)
             longType ->
-                localDateTime.toInstant(TimeZone.of(timeZone.id)).toEpochMilliseconds()
+                localDateTime.toInstant(TimeZone.of(resolvedTimeZone.id)).toEpochMilliseconds()
             localDateType -> localDateTime.date
             localTimeType -> localDateTime.time
             else -> error("Unsupported target type: ${context.targetType}")

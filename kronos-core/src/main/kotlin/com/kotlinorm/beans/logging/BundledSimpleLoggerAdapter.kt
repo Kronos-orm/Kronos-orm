@@ -67,6 +67,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
+        if (!isTraceEnabled()) return
         logTaskList.add(
             LogTask(
                 KLogLevel.TRACE,
@@ -84,6 +85,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
+        if (!isDebugEnabled()) return
         logTaskList.add(
             LogTask(
                 KLogLevel.DEBUG,
@@ -101,6 +103,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
+        if (!isInfoEnabled()) return
         logTaskList.add(
             LogTask(
                 KLogLevel.INFO,
@@ -118,6 +121,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
+        if (!isWarnEnabled()) return
         logTaskList.add(
             LogTask(
                 KLogLevel.WARN,
@@ -135,6 +139,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {
+        if (!isErrorEnabled()) return
         logTaskList.add(
             LogTask(
                 KLogLevel.ERROR,

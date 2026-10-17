@@ -24,7 +24,6 @@ import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.KTypeKey
 import com.kotlinorm.utils.createKPojo
 import kotlin.reflect.KType
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 @PublishedApi
@@ -80,7 +79,7 @@ internal inline fun <T : KPojo, reified R : KPojo, reified C : KPojo> T.selectGe
     } else {
         createKPojo<C>()
     }
-    return SelectClause(this, fields, projectionType, projectionType.withNullability(true), contextPojo)
+    return SelectClause(this, fields, projectionType, typeOf<R?>(), contextPojo)
 }
 
 @PublishedApi
@@ -93,7 +92,7 @@ internal inline fun <S : KPojo, reified R : KPojo, reified C : KPojo> KSelectabl
         source,
         fields,
         projectionType,
-        projectionType.withNullability(true),
+        typeOf<R?>(),
         createKPojo<C>(),
         sourceQuery = this,
         sourceAlias = DerivedQueryAlias
@@ -103,7 +102,7 @@ internal inline fun <S : KPojo, reified R : KPojo, reified C : KPojo> KSelectabl
 /**
  * Selects rows as [R] using a complete projection [KType].
  *
- * [projectionType] must equal `typeOf<R>()`; the nullable selected type is derived from it.
+ * [projectionType] must equal `typeOf<R>()`; the nullable selected type is `typeOf<R?>()`.
  *
  * @throws IllegalArgumentException when [projectionType] does not match the reified [R]
  */
@@ -113,7 +112,7 @@ inline fun <reified T : KPojo, reified R : KPojo> T.select(
     noinline fields: ToSelect<T, Any?> = null
 ): SelectClause<T, R, T> {
     val validatedType = requireProjectionType(projectionType, typeOf<R>())
-    return SelectClause(this, fields, validatedType, validatedType.withNullability(true))
+    return SelectClause(this, fields, validatedType, typeOf<R?>())
 }
 
 fun <T : KPojo> T.db(name: String) = this to name
@@ -124,7 +123,7 @@ inline fun <reified T : KPojo> Pair<T, String>.select(noinline fields: ToSelect<
 /**
  * Selects rows from a named database as [R] using a complete projection [KType].
  *
- * [projectionType] must equal `typeOf<R>()`; the nullable selected type is derived from it.
+ * [projectionType] must equal `typeOf<R>()`; the nullable selected type is `typeOf<R?>()`.
  *
  * @throws IllegalArgumentException when [projectionType] does not match the reified [R]
  */
@@ -132,7 +131,7 @@ inline fun <T : KPojo, reified R : KPojo> Pair<T, String>.select(
     projectionType: KType = typeOf<R>(),
     noinline fields: ToSelect<T, Any?> = null
 ) = requireProjectionType(projectionType, typeOf<R>()).let { validatedType ->
-    SelectClause<T, R, T>(this.first, fields, validatedType, validatedType.withNullability(true)).db(this.second)
+    SelectClause<T, R, T>(this.first, fields, validatedType, typeOf<R?>()).db(this.second)
 }
 
 /**

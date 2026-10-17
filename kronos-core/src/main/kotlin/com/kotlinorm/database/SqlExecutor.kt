@@ -25,6 +25,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosRow
 import com.kotlinorm.interfaces.KronosRowFirstResult
 import com.kotlinorm.interfaces.requireKronosRowMapping
+import com.kotlinorm.utils.StaticTypeInfo
 import com.kotlinorm.utils.prepareRawSqlParameters
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -55,25 +56,28 @@ object SqlExecutor {
     inline fun <reified T> KronosDataSourceWrapper.queryList(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
-        targetType: KType = typeOf<T>()
+        targetType: KType = typeOf<T>(),
+        targetTypeInfo: StaticTypeInfo? = null
     ): List<T> {
-        return toList(sql, paramMap, targetType)
+        return toList(sql, paramMap, targetType, targetTypeInfo)
     }
 
     inline fun <reified T> KronosDataSourceWrapper.queryOne(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
-        targetType: KType = typeOf<T>()
+        targetType: KType = typeOf<T>(),
+        targetTypeInfo: StaticTypeInfo? = null
     ): T {
-        return first(sql, paramMap, targetType)
+        return first(sql, paramMap, targetType, targetTypeInfo)
     }
 
     inline fun <reified T> KronosDataSourceWrapper.queryOneOrNull(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
-        targetType: KType = typeOf<T?>()
+        targetType: KType = typeOf<T?>(),
+        targetTypeInfo: StaticTypeInfo? = null
     ): T? {
-        return firstOrNull(sql, paramMap, targetType)
+        return firstOrNull(sql, paramMap, targetType, targetTypeInfo)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -109,10 +113,16 @@ object SqlExecutor {
     inline fun <reified T> KronosDataSourceWrapper.toList(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
-        targetType: KType = typeOf<T>()
+        targetType: KType = typeOf<T>(),
+        targetTypeInfo: StaticTypeInfo? = null
     ): List<T> {
         return this.toList(
-            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = targetType)
+            KronosAtomicQueryTask(
+                sql,
+                prepareRawSqlParameters(paramMap),
+                targetType = targetType,
+                targetTypeInfo = targetTypeInfo
+            )
         ) as List<T>
     }
 
@@ -129,10 +139,16 @@ object SqlExecutor {
     @Throws(NoSuchElementException::class)
     inline fun <reified T> KronosDataSourceWrapper.first(
         sql: String, paramMap: Map<String, Any?> = emptyMap(),
-        targetType: KType = typeOf<T>()
+        targetType: KType = typeOf<T>(),
+        targetTypeInfo: StaticTypeInfo? = null
     ): T {
         val result = this.first(
-            KronosAtomicQueryTask(sql, prepareRawSqlParameters(paramMap), targetType = targetType)
+            KronosAtomicQueryTask(
+                sql,
+                prepareRawSqlParameters(paramMap),
+                targetType = targetType,
+                targetTypeInfo = targetTypeInfo
+            )
         )
         if (result == null && !targetType.isMarkedNullable) {
             throw NoSuchElementException("No result found")
@@ -155,9 +171,10 @@ object SqlExecutor {
     inline fun <reified T> KronosDataSourceWrapper.firstOrNull(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
-        targetType: KType = typeOf<T?>()
+        targetType: KType = typeOf<T?>(),
+        targetTypeInfo: StaticTypeInfo? = null
     ): T? {
-        return first(sql, paramMap, targetType)
+        return first(sql, paramMap, targetType, targetTypeInfo)
     }
 
     /** Maps the first raw SQL result row directly through the wrapper's [KronosRow] capability. */

@@ -54,6 +54,10 @@ data class KronosAtomicBatchTask(
     val listParameterOccurrences: Set<Int> = emptySet()
 ) : KAtomicActionTask, KBatchTask {
 
+    /** Common execution view used by a platform adapter. */
+    val executionEntries: List<Map<String, Any?>>
+        get() = paramMapArr?.toList() ?: emptyList()
+
     @Deprecated("Please use 'paramMapArr' instead.")
     override val paramMap: Map<String, Any?> = mapOf()
 

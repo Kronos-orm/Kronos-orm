@@ -2,6 +2,7 @@ package kronos
 
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import java.net.URI
 import org.gradle.api.publish.PublishingExtension
@@ -27,7 +28,7 @@ plugins {
 value class PublishConfiguration(val project: Project) {
     init {
         project.group = "com.kotlinorm"
-        project.version = "0.3.2-SNAPSHOT"
+        project.version = "0.4.0-SNAPSHOT"
         project.description = when (project.name) {
             "kronos-core" -> "Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of Kronos, which provides basic ORM functions."
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
@@ -79,7 +80,12 @@ val publishingToMavenLocal = gradle.startParameter.taskNames.any { taskName ->
 }
 
 configure<MavenPublishBaseExtension> {
-    configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
+    val isKotlinMultiplatform = project.name in setOf("kronos-core", "kronos-syntax", "kronos-logging")
+    if (isKotlinMultiplatform) {
+        configure(KotlinMultiplatform(JavadocJar.Empty(), sourcesJar = true))
+    } else {
+        configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
+    }
     coordinates(publish.group, publish.name, publish.version)
 
     pom {
@@ -157,15 +163,17 @@ configure<PublishingExtension> {
         mavenLocal()
     }
 }
-if (project.name == "kronos-orm") {
-    tasks.register("publishAllToMavenLocal") {
+if (project == rootProject) {
+    val publishAllToMavenLocal = tasks.register("publishAllToMavenLocal") {
         group = "kronos publishing"
-        project.subprojects.forEach {
-            if (it.plugins.hasPlugin("com.vanniktech.maven.publish")) {
-                dependsOn(it.tasks.named("publishToMavenLocal"))
-            }
+    }
+    gradle.projectsEvaluated {
+        publishAllToMavenLocal.configure {
+            project.subprojects
+                .filter { it.plugins.hasPlugin("com.vanniktech.maven.publish") }
+                .forEach { dependsOn(it.tasks.named("publishToMavenLocal")) }
+            dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishToMavenLocal"))
         }
-        dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishToMavenLocal"))
     }
     if (!snapshot.publishRequired) {
         tasks.register("publishAllToMavenCentral") {

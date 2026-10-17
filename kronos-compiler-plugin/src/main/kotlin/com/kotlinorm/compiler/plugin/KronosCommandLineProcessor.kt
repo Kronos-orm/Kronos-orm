@@ -43,6 +43,30 @@ class KronosCommandLineProcessor : CommandLineProcessor {
             valueDescription = "<provider-fq-name>",
             description = "Module-unique generated type provider class name",
             required = false
+        ),
+        CliOption(
+            optionName = GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME,
+            valueDescription = "true",
+            description = "Emit source-owned generated type provider fragments for incremental compilation",
+            required = false
+        ),
+        CliOption(
+            optionName = SKIP_GENERATED_PROVIDER_OPTION_NAME,
+            valueDescription = "true",
+            description = "Explicitly skip JVM generated provider emission for a Native compilation",
+            required = false
+        ),
+        CliOption(
+            optionName = NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME,
+            valueDescription = "<entry-fq-name>",
+            description = "Common-source Native generated metadata entry function",
+            required = false
+        ),
+        CliOption(
+            optionName = NATIVE_PROVIDER_ID_OPTION_NAME,
+            valueDescription = "<stable-module-id>",
+            description = "Stable identity for a Native generated metadata entry",
+            required = false
         )
     )
 
@@ -54,6 +78,22 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         when (option.optionName) {
             GENERATED_PROVIDER_ID_OPTION_NAME -> configuration.put(GeneratedProviderIdKey, value)
             GENERATED_PROVIDER_FQ_NAME_OPTION_NAME -> configuration.put(GeneratedProviderFqNameKey, value)
+            GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME -> {
+                require(value == "true") {
+                    "Compiler option '$GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME' must be 'true'"
+                }
+                configuration.put(GeneratedProviderFragmentsKey, true)
+            }
+            SKIP_GENERATED_PROVIDER_OPTION_NAME -> {
+                require(value == "true") {
+                    "Compiler option '$SKIP_GENERATED_PROVIDER_OPTION_NAME' must be 'true'"
+                }
+                configuration.put(SkipGeneratedProviderKey, true)
+            }
+            NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME ->
+                configuration.put(NativeProviderEntryFqNameKey, value)
+            NATIVE_PROVIDER_ID_OPTION_NAME ->
+                configuration.put(NativeProviderIdKey, value)
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }

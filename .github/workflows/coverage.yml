@@ -286,7 +286,7 @@ jobs:
 
       - name: Generate the badge SVG image for Syntax
         if: github.event_name != 'pull_request'
-        uses: emibcn/badge-action@v2.0.3
+        uses: emibcn/badge-action@v2.0.4
         with:
           label: 'syntax coverage'
           status: ${{ steps.syntax-coverage.outputs.lines }}

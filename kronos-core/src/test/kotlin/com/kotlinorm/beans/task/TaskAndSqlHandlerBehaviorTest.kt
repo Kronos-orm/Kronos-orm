@@ -419,7 +419,7 @@ class TaskAndSqlExecutorBehaviorTest {
 
             assertEquals(1, failure.batchIndex)
             assertEquals("status", failure.valueName)
-            assertEquals(typeOf<RawStatus>(), failure.targetType)
+            assertEquals(typeOf<Any>(), failure.targetType)
         } finally {
             registration.close()
         }

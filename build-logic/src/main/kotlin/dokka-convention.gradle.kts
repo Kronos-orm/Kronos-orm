@@ -18,17 +18,12 @@ plugins {
 
 @Suppress("IMPLICIT_CAST_TO_ANY")
 if (project == project.rootProject) {
-    tasks.register("dokkaGenerateAll") {
+    val dokkaAggregate = tasks.register("dokkaGenerateAll") {
         group = "dokka"
         val root = project.rootProject.layout.projectDirectory.dir("docs").asFile
         doFirst {
             root.deleteRecursively()
             root.mkdirs()
-        }
-        project.subprojects.forEach { subproject ->
-            if (subproject.plugins.hasPlugin("org.jetbrains.dokka")) {
-                dependsOn(subproject.tasks.named("dokkaGenerate"))
-            }
         }
         doLast {
             project.subprojects.forEach { subproject ->
@@ -46,6 +41,18 @@ if (project == project.rootProject) {
             }
         }
     }
+
+    // Subprojects are evaluated after the root project. Register the dependency
+    // when Dokka is actually applied so KMP publications cannot be skipped.
+    gradle.projectsEvaluated {
+        project.subprojects.forEach { evaluatedProject ->
+            if (evaluatedProject.plugins.hasPlugin("org.jetbrains.dokka")) {
+                dokkaAggregate.configure {
+                    dependsOn(evaluatedProject.tasks.named("dokkaGeneratePublicationHtml"))
+                }
+            }
+        }
+    }
 } else {
     // DGP v2 configuration using top-level dokka {} DSL
     configure<org.jetbrains.dokka.gradle.DokkaExtension> {
@@ -53,7 +60,12 @@ if (project == project.rootProject) {
             includes.from("README.md")
             reportUndocumented.set(true)
             jdkVersion.set(17)
-            sourceRoots.from(file("src/main/kotlin"))
+            // Kotlin Multiplatform source roots are supplied by the Kotlin
+            // plugin (commonMain, jvmMain, and Native target source sets).
+            // JVM-only modules retain the historical src/main/kotlin layout.
+            if (!project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
+                sourceRoots.from(file("src/main/kotlin"))
+            }
         }
     }
 }

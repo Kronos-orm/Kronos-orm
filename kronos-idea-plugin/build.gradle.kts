@@ -84,7 +84,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(project(":kronos-compiler-plugin"))
     testImplementation("junit:junit:4.13.2")
-    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.4")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:6.1.3")
     add(
         ideaFixtureCompilerPluginArtifact.name,
         project(path = ":kronos-compiler-plugin", configuration = "runtimeElements"),

@@ -922,7 +922,7 @@ class KronosResultMappingTest {
             ) { row ->
                 failedRow = row
                 row.get<String>("marker")
-                throw IllegalStateException("mapper failure")
+                error("mapper failure")
             }
         }
         assertEquals("mapper failure", mapperFailure.message)

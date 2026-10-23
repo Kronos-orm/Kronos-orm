@@ -1,0 +1,30 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: Real IDEA and KEFS editor integration tests.
+
+repositories:
+  - id: intellijDependencies
+    url: https://packages.jetbrains.team/maven/p/ij/intellij-dependencies
+
+settings:
+  junit: junit-4
+  jvm:
+    release: 25
+    jdk:
+      version: 25
+  publishing:
+    enabled: false
+
+test-dependencies:
+  - $libs.ide.sdk
+  - $libs.kotlin.test
+  - $libs.junit4
+
+
+test-settings:
+  jvm:
+    release: 25

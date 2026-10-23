@@ -1,0 +1,33 @@
+product:
+  type: kmp/lib
+  platforms:
+    - jvm
+    - iosArm64
+    - iosX64
+    - iosSimulatorArm64
+    - linuxArm64
+    - linuxX64
+    - macosArm64
+    - macosX64
+    - mingwX64
+    - tvosArm64
+    - tvosSimulatorArm64
+    - tvosX64
+    - watchosArm64
+    - watchosDeviceArm64
+    - watchosSimulatorArm64
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: Multiplatform SQL syntax trees, validators and database dialect renderers.
+
+plugins:
+  kronos-native:
+    enabled: true
+    generateMetadata: false
+    sourceDirectories:
+      common: [src]
+      native: [src@native]
+    bootstrapStageRepository: ../build/repository/bootstrap
+    freeCompilerArgs: [-opt, -ea]

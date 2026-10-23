@@ -361,7 +361,7 @@ WHERE "id" = :id
 
 In Kronos, we can set up logical deletion using the `logic` method, at which point Kronos generates the SQL statement for logical deletion.
 
-Please refer to Enabling Logical Deletion and Field Setting Settings for logical deletion: {{ $.keyword("configuration/global-config", ["Global Config", "Logical Deletion Strategy"]) }}, {{ $.keyword("mapping/annotations", ["Annotation Config", "Table logical deletion"]) }}, {{ $.keyword("mapping/annotations", ["Annotation Config", "Column logical deletion"]) }}.
+Please refer to Enabling Logical Deletion and Field Setting Settings for logical deletion: {{ $.keyword("configuration/global-config", ["Global Config", "Logical Deletion Strategy"]) }}, {{ $.keyword("mapping/annotations", ["Annotation Config", "@LogicDeleteTable Logical Deletion"]) }}, {{ $.keyword("mapping/annotations", ["Annotation Config", "@LogicDeleteLogical Deletion Column"]) }}.
 
 ```kotlin group="Case 4" name="kotlin" icon="kotlin" {5}
 val user: User = User(

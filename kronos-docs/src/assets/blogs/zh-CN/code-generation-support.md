@@ -1,17 +1,21 @@
 # Kronos 代码生成器
 
-<center>
-<img src="/assets/images/features/img-3.png" width="300"/>
-</center>
-
---------
-
 Kronos Codegen 提供 Database First 入口，适用于项目中已经存在数据库表结构的场景。它读取表 metadata，按命名策略和注解策略生成 Kotlin `KPojo` 类，并通过 `toml` 配置和 Kotlin 脚本模板控制输出内容。
+
+<figure class="article-cover">
+<img src="/assets/images/features/img-3.png" alt="Kotlin 数据库表结构转换为类型化代码文件" width="1672" height="941">
+<figcaption>从数据库表结构，经过 TOML 配置与 Kotlin 脚本模板，生成 KPojo 源文件。</figcaption>
+</figure>
 
 ## Database First
 
 在`Database First`模式下，代码生成器可以根据数据库中的表结构自动生成对应的`Kronos`
 实体类和相关的查询代码。这样，开发者可以直接使用生成的代码进行数据库操作，而无需手动编写实体类。
+
+<figure class="article-figure">
+<img src="/assets/images/blog/codegen-database-first.svg" alt="表结构决定输入，命名策略和模板决定生成的 Kotlin 代码。" width="1000" height="420" loading="lazy">
+<figcaption>表结构决定输入，命名策略和模板决定生成的 Kotlin 代码。</figcaption>
+</figure>
 
 ## 代码生成器的设计过程
 
@@ -104,9 +108,9 @@ MySQL Connector/J 和连接池版本选择与数据库服务端、JDK 匹配的�
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 @file:DependsOn("com.alibaba:druid:<latest-stable>")
 
@@ -172,3 +176,6 @@ kotlinc -script example.main.kts
 ```
 
 这将会根据配置文件中的信息生成代码，并写入到指定的目录中。
+
+
+完整参数和模板接口见 [代码生成器指南](/documentation/zh-CN/resources/codegen).

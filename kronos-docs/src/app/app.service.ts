@@ -1,24 +1,11 @@
-import {Injectable} from "@angular/core";
+import {Injectable, inject} from '@angular/core';
+import {LocaleService} from './locale/locale.service';
+import {isLocale} from './locale/locale-policy';
 
-@Injectable()
+/** Application facade retained for shared homepage and blog components. */
+@Injectable({providedIn: 'root'})
 export class AppService {
-  _language = 'en';
-
-  get language(): string {
-    if (typeof window !== 'undefined') {
-      if (localStorage.getItem('language')) {
-        this._language = localStorage.getItem('language')!!;
-      } else {
-        window.localStorage.setItem('language', navigator.language.includes("zh") ? "zh-CN" : "en");
-      }
-    }
-    return this._language;
-  }
-
-  set language(value: string) {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('language', value);
-    }
-    this._language = value;
-  }
+    private readonly locale = inject(LocaleService);
+    get language(): string { return this.locale.current(); }
+    set language(value: string) { if (isLocale(value)) this.locale.setLanguage(value); }
 }

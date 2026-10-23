@@ -1,6 +1,11 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+
+## Native 驱动
+
+为平台驱动实现 `KronosExecutionDataSource`，再通过 `KronosExecutionWrapper` 执行共享 ORM 查询。完整连接示例见 {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }}。
+
 ## 为现有框架实现wrapper
 
 `KronosDataSourceWrapper`让Kronos使用项目中已有的数据库执行层。wrapper接收Kronos SQL task，并把它们委托给框架的query、update、batch和transaction API。

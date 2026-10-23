@@ -53,11 +53,13 @@ They are generated output or dependencies unless the user explicitly asks otherw
 
 Use the current repository implementation as the source of truth.
 
-- Use stable release-style versions such as `0.3.1` in recommended user-facing dependency snippets. Do not use `-SNAPSHOT` in copyable install examples unless the page is explicitly about snapshot/source development; merge/release flow will bump versions after docs changes land.
+- Keep all usage documentation aligned with the latest implementation and supported API. Write direct setup, usage and behavior instructions. Record version changes, upgrade history and migration notes only on the bilingual release-notes pages.
+- Keep development progress, verification matrices, pending acceptance and implementation status in local task records. Ordinary usage pages describe the supported behavior directly.
+- Use the current target release `0.4.0` in recommended user-facing dependency snippets and Kotlin `2.4.21` in build setup. Snapshot coordinates belong in source-development setup when needed.
 - In `kronos-docs/src/app/docs` Markdown, source current Kronos versions from the docs macros instead of hard-coding them. Use `{{ $.kronosVersion() }}`, `{{ $.kronosSnapshotVersion() }}`, and `{{ $.kronosSnapshotBadgeVersion() }}` after the page imports its language macro file.
 - README files, homepage TypeScript snippets, module READMEs, and blog assets do not share the `kronos-docs` Markdown macro pipeline; keep their version text explicit or use local constants when the file already has that pattern.
-- Verify the current repository development version from `build-logic/src/main/kotlin/publishing.gradle.kts` before changing source-development or snapshot-specific text.
-- Current Kotlin catalog is in `gradle/libs.versions.toml`; verify before updating Kotlin requirements.
+- Verify the current repository development version with `scripts/run version show` before changing source-development or snapshot-specific text.
+- Current Kotlin catalog is in `libs.versions.toml`; verify before updating Kotlin requirements.
 - Complete database dialects are MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8. H2 uses standard quoted identifiers, a dedicated MERGE renderer, INFORMATION_SCHEMA metadata, and JDBC generated keys for identity inserts. DM8 uses Oracle-compatible query and metadata SQL with DM8-native identity-column DDL.
 - `Kronos` global configuration is direct property assignment on the `Kronos` object; do not document `Kronos.init { ... }` unless it exists again.
 - `KronosJdbcWrapper` lives in `com.kotlinorm.wrappers`, takes a `DataSource`, optional `DBType`, and `KronosJdbcConfig` block; database type is inferred from JDBC metadata when `databaseType` is not supplied.
@@ -184,7 +186,7 @@ These scans are not automatic proof of failure. Inspect matches and decide wheth
 
 Known high-risk patterns:
 
-- `0.1.0` or `-SNAPSHOT` in runnable install snippets when the recommended docs version should be stable-style `0.3.1`.
+- Stale Kronos or Kotlin versions in runnable install snippets; the current target release is `0.4.0` with Kotlin `2.4.21`.
 - Hard-coded current Kronos versions in `kronos-docs/src/app/docs` Markdown when the value should come from `$.kronosVersion()` or the snapshot macros.
 - Broken version macro text such as `{{ 9kronosVersion() }}` after shell or Perl replacements.
 - `latest.release` in copyable dependency examples.
@@ -269,3 +271,26 @@ If the docs change invalidates guide examples, update the guide in the same task
 - Prefer preserving established docs style over introducing a new prose pattern.
 - Prefer a short verified example over a broad unverified feature claim.
 - Prefer linking to one authority page over duplicating long explanations across pages.
+
+## Website Runtime And Static Output
+
+- `src/app/locale/locale.service.ts` owns language state. Documentation URL language takes precedence; before Angular initial navigation, the service reads a valid documentation hash deep link. Persisted preferences and browser language apply to language-neutral pages. Keep Transloco, `html.lang`, and navigation aligned through this service. `AppService` remains a facade for homepage/blog components.
+- Language switches preserve the current document path, query parameters, and heading fragment. Do not add component-local `setActiveLang` calls or page reloads.
+- `DocumentationComponent` owns layout. Theme lifetime, NgDoc source/heading-link compatibility, and Markdown copying belong to their dedicated directive/component files in the same directory. Scope DOM compatibility observers to the documentation host and clean up on destruction.
+- `scripts/docs-model.mjs` reads route/title/order metadata. `check-docs.mjs` checks bilingual routes, page/category orders, macro language, keywords and local documentation links.
+- `pnpm build` compiles NgDoc and Angular, then builds readable static pages from the generated NgDoc `headerContent` and `pageContent`. It also generates search indexes, canonical/alternate links, sitemap, robots and static-route redirects. `check-static-docs.mjs` validates every output route/anchor, code alternative, table and metadata field. Generated HTML is not source-maintained.
+- Static documentation lives at `/documentation/<language>/<section>/<page>/`; the Angular interactive application retains `/#/documentation/...`. Keep both reachable. This pipeline emits static documentation HTML; Angular SSR/hydration requires its own server-safe application setup.
+- A one-label `$.keyword("route", ["Page"])` targets the page without guessing an anchor from display text. Two-label links target an actual section heading; keep their section label synchronized with the generated heading ID. Confirm with the static link gate.
+- `deploy-docs.sh` uses `scripts/merge-site.mjs` to combine Angular/static and Dokka outputs. Preserve `/api/*` before exact static documentation rules and the final SPA fallback.
+
+Run these checks for website architecture or navigation changes:
+
+```bash
+cd kronos-docs
+pnpm test:policies
+pnpm check:links
+pnpm build
+pnpm run test --watch=false --browsers=ChromeHeadless
+```
+
+On macOS, set `CHROME_BIN` to the installed Chrome executable if Karma cannot find it. Run the full Angular test command after NgDoc generation; `test:architecture` is available for isolated behavior checks while generated pages are being rebuilt.

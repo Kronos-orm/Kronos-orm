@@ -7,8 +7,14 @@ Add the ORM runtime, the Kronos compiler plugin, the JDBC wrapper, and the datab
 
 ```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -34,7 +40,6 @@ import com.kotlinorm.wrappers.KronosJdbcWrapper
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import org.apache.commons.dbcp2.BasicDataSource
-import java.time.ZoneId
 
 val wrapper by lazy {
     KronosJdbcWrapper(
@@ -52,7 +57,6 @@ fun configureKronos() {
         dataSource = { wrapper }
         tableNamingStrategy = lineHumpNamingStrategy
         fieldNamingStrategy = lineHumpNamingStrategy
-        timeZone = ZoneId.systemDefault()
         defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
         createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
         updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))

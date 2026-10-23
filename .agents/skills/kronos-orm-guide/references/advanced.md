@@ -709,7 +709,7 @@ Affected rows: 1
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.3.1")
+    implementation("com.kotlinorm:kronos-logging:0.4.0")
 }
 ```
 
@@ -791,15 +791,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.3.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.4.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -910,3 +910,28 @@ kotlinc -script example.main.kts
 ```text
 File generated successfully: src/main/kotlin/com/example/entity/User.kt
 ```
+
+
+## Kotlin Multiplatform 数据库接入
+
+共享模型与查询放在 `commonMain`，每个声明模型或查询的模块都应用 Kronos 插件。应用提供 `KronosExecutionDataSource`，通过执行桥配置默认连接：
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.KronosExecutionDataSource
+import com.kotlinorm.utils.initializeKronosMetadata
+import com.kotlinorm.wrappers.KronosExecutionWrapper
+
+fun configureDatabase(source: KronosExecutionDataSource): KronosExecutionWrapper {
+    initializeKronosMetadata()
+    val wrapper = KronosExecutionWrapper(source)
+    Kronos.dataSource = { wrapper }
+    return wrapper
+}
+```
+
+平台连接由应用管理。[iOS 与 Native SQLite 示例](https://github.com/Kronos-orm/kronos-example-ios) 提供调用共享 Kotlin CRUD 的 SwiftUI 应用、Apple/Linux AndroidX 驱动和 Windows SQLite C API 驱动；README 包含 XcodeGen 和 `KronosIosApp` scheme 的运行步骤，连接生命周期、事务与生成主键操作见 `database/native-sqlite`。共享配置用 `Kronos.timeZone = "Asia/Shanghai"`，Java 类型与 JDBC 配置放在 JVM source set。
+
+## IDE 编辑器支持
+
+根据 [Kronos ORM / KEFS / IDEA 兼容表](https://kotlinorm.com/#/documentation/zh-CN/resources/kefs) 选择版本组合，使用 KEFS 加载 Kronos 编译器支持。安装由 [Mr3zee](https://github.com/Mr3zee) 开发的 [Kotlin External FIR Support](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support)，在 `Tools -> Kotlin External FIR Support -> Artifacts` 配置 `com.kotlinorm:kronos-compiler-plugin`、Exact 匹配及 Maven Central；启用 `-Xcollection-literals` 并重新加载项目。投影字段、nullable 类型、子查询和 INSERT SELECT 诊断来自 Kotlin 编译器分析。项目配置保存在可共享的 `.idea/kotlin-plugins.xml`；Kotlin Toolchain 项目安装官方 Toolchain IDE 插件并打开 `project.yaml`。配置和可用 receiver 示例见 docs 的 `resources/kefs`，实体文件生成见 `resources/codegen`。

@@ -17,7 +17,7 @@
 
 ## DSL Beans
 
-Located in `kronos-core/src/main/kotlin/com/kotlinorm/beans/dsl/`.
+Located in `kronos-core/src/com/kotlinorm/beans/dsl/`.
 
 ### Field
 The fundamental column/property representation:
@@ -117,7 +117,7 @@ data class KCascade(
 
 ## ORM Clause Classes
 
-Located in `kronos-core/src/main/kotlin/com/kotlinorm/orm/`. Each operation follows the same pattern:
+Located in `kronos-core/src/com/kotlinorm/orm/`. Each operation follows the same pattern:
 
 ### Entry Points (Patch.kt files)
 Each operation has a `Patch.kt` with extension functions on `KPojo`:
@@ -198,7 +198,7 @@ Two modes:
 
 ## Task System
 
-Located in `kronos-core/src/main/kotlin/com/kotlinorm/beans/task/`.
+Located in `kronos-core/src/com/kotlinorm/beans/task/`.
 
 ### Task Hierarchy
 ```
@@ -572,7 +572,7 @@ This enables querying across MySQL + PostgreSQL (or any combination) in a single
 
 ## Internationalization (i18n)
 
-`kronos-core/src/main/kotlin/com/kotlinorm/i18n/` — error messages and logging support multiple languages. Exception messages can be localized.
+`kronos-core/src/com/kotlinorm/i18n/` — error messages and logging support multiple languages. Exception messages can be localized.
 
 ---
 

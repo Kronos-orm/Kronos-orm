@@ -2,7 +2,6 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {SharedModule} from "./shared.module";
 import {MessageService} from 'primeng/api';
 import {AppService} from "./app.service";
-import {TranslocoService} from "@jsverse/transloco";
 import {
     NavigationCancel,
     NavigationEnd,
@@ -21,13 +20,12 @@ import {updatePrimaryPalette} from "@primeuix/themes";
     imports: [SharedModule],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css',
-    providers: [AppService, MessageService]
+    providers: [MessageService]
 })
 export class AppComponent implements OnInit, OnDestroy {
     private unsubscribe$ = new Subject<void>();
     constructor(
         private primengConfig: PrimeNG,
-        private translocoService: TranslocoService,
         private appService: AppService,
         router: Router,
         messageService: MessageService
@@ -77,7 +75,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.primengConfig.ripple.set(true);
-        this.translocoService.setActiveLang(this.appService.language);
+        void this.appService.language;
     }
     isFetching = false;
 }

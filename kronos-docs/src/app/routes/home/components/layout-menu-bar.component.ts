@@ -36,7 +36,14 @@ import {Popover} from "primeng/popover";
                         <i [ngClass]="item.icon"></i>
                         <span class="mx-2">{{ item.label | transloco }}</span>
                     </a>
-                    <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink" pRipple
+                    <a *ngIf="item.url" [href]="item.url" [target]="item.target || '_self'" pRipple
+                       class="flex items-center p-4 cursor-pointer mb-2 gap-2">
+                        <span class="inline-flex items-center justify-center rounded-full bg-primary text-primary-contrast w-12 h-12">
+                            <i [ngClass]="item.icon + ' text-lg'"></i>
+                        </span>
+                        <span class="font-medium text-lg">{{ item.label | transloco }}</span>
+                    </a>
+                    <a *ngIf="!item.root && !item.image && !item.url" [routerLink]="item.routerLink" [queryParams]="item.queryParams" pRipple
                        routerLinkActive="p-menuitem-active"
                        class="flex items-center p-4 cursor-pointer mb-2 gap-2">
                     <span
@@ -279,51 +286,35 @@ export class LayoutMenuBarComponent implements OnInit {
                         }, {
                             label: "KRONOS_CORE_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-core');
-                            }
+                            url: '/api/kronos-core/index.html'
                         }, {
                             label: "KRONOS_COMPILER_PLUGIN_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-compiler-plugin');
-                            }
+                            url: '/api/kronos-compiler-plugin/index.html'
                         }, {
                             label: "KRONOS_JDBC_WRAPPER_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-jdbc-wrapper');
-                            }
+                            url: '/api/kronos-jdbc-wrapper/index.html'
                         }, {
                             label: "KRONOS_CODEGEN_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-codegen');
-                            }
+                            url: '/api/kronos-codegen/index.html'
                         }, {
                             label: "KRONOS_LOGGING_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-logging');
-                            }
+                            url: '/api/kronos-logging/index.html'
                         }, {
                             label: "KRONOS_SYNTAX_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-syntax');
-                            }
+                            url: '/api/kronos-syntax/index.html'
                         }, {
                             label: "KRONOS_MAVEN_PLUGIN_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-maven-plugin');
-                            }
+                            url: '/api/kronos-maven-plugin/index.html'
                         }, {
                             label: "KRONOS_GRADLE_PLUGIN_API_DOCS",
                             icon: 'pi pi-file',
-                            command: () => {
-                                window.open('/api/kronos-gradle-plugin');
-                            }
+                            url: '/api/kronos-gradle-plugin/index.html'
                         }]
                     }],
                     [{
@@ -339,8 +330,8 @@ export class LayoutMenuBarComponent implements OnInit {
                         items: [{
                             image: '/assets/icons/kronos-circle.svg',
                             styleClass: 'w-36',
-                            label: 'COMING_SOON',
-                            subtext: 'IDE_PLUGIN',
+                            label: 'KEFS_EDITOR_SUPPORT',
+                            routerLink: `/documentation/${this.appService.language}/resources/kefs`,
                         }]
                     }],
                 ]
@@ -378,8 +369,7 @@ export class LayoutMenuBarComponent implements OnInit {
     ) {
         if (this.appService.language === lang) return;
         this.appService.language = lang; // update language
-        this.translocoService.setActiveLang(lang);
-        window.location.reload();
+
     }
 
     languages = [

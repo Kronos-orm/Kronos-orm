@@ -71,11 +71,11 @@ The docs entry for that workflow is {{ $.keyword("database/create-database-diale
 Ask the assistant to run the smallest meaningful command first, then broaden only when the touched module needs it.
 
 ```bash group="Validate" name="compiler plugin" icon="terminal"
-./gradlew :kronos-compiler-plugin:test
+scripts/run build test -m kronos-compiler-plugin -p jvm
 ```
 
 ```bash group="Validate" name="core" icon="terminal"
-./gradlew :kronos-core:test
+scripts/run build test -m kronos-core -p jvm
 ```
 
 ```bash group="Validate" name="docs" icon="terminal"

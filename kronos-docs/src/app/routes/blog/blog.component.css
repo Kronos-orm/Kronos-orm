@@ -218,85 +218,99 @@ a {
 }
 
 .article-shell {
-    padding-top: 9rem;
-    padding-bottom: 5rem;
     width: min(100%, 1240px);
+    padding-top: 9rem;
+    padding-bottom: 7rem;
 }
 
 .article-toolbar {
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1rem;
-    padding: 0.85rem 1rem;
-    border: 1px solid rgba(246, 247, 239, 0.14);
-    background: rgba(255, 255, 255, 0.032);
-    isolation: isolate;
+    margin-bottom: 2.7rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(246, 247, 239, 0.12);
 }
 
 .article-toolbar > span {
-    min-width: 0;
-    color: rgba(246, 247, 239, 0.58);
-    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.78rem;
-    overflow-wrap: anywhere;
+    color: #8c9898;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
 }
 
-.back-button {
-    position: relative;
-    z-index: 1;
-    gap: 0.55rem;
-    padding: 0 0.9rem;
-    appearance: none;
-    overflow: hidden;
-    background: #0b0d0c;
-    box-shadow: 0 0 0 1px rgba(5, 6, 6, 0.82);
-}
-
-.back-button svg {
-    width: 1rem;
-    height: 1rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
+.article-toolbar > span span { margin: 0 0.6rem; color: #50605b; }
+.back-button { gap: 0.55rem; padding: 0 0.8rem; border-color: transparent; background: transparent; color: #c0cbc4; }
+.back-button:hover { color: #dfff67; border-color: rgba(223, 255, 103, 0.25); }
+.back-button svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.article-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; align-items: start; gap: 3.5rem; }
+.article-sidebar { height: 100%; min-width: 0; }
+.article-toc { position: sticky; top: 8rem; padding-left: 1.3rem; border-left: 1px solid rgba(246, 247, 239, 0.13); }
+.article-toc p { margin: 0 0 1rem; color: #e8ede6; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; }
+.article-toc a { display: flex; gap: 0.7rem; padding: 0.45rem 0; color: #8e9c97; font-size: 0.77rem; line-height: 1.65; }
+.article-toc a span { flex: 0 0 1rem; color: #50605b; font-family: ui-monospace, monospace; font-size: 0.65rem; padding-top: 0.15rem; }
+.article-toc a:hover, .article-toc a:focus-visible { color: #dfff67; }
 
 :host ::ng-deep .markdown-body {
     display: block;
-    width: 100%;
     min-width: 0;
-    padding: clamp(1.25rem, 4vw, 2.5rem);
-    border: 1px solid rgba(246, 247, 239, 0.14);
-    background: #0a0b0b;
-    color: rgba(246, 247, 239, 0.82);
+    padding: 0;
+    color: #bcc6c3;
+    background: transparent;
+    font-family: "IBM Plex Sans", Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 1.035rem;
+    line-height: 1.95;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
 }
 
-.article-shell > .markdown-body {
-    display: block;
-    width: 100%;
-}
+:host ::ng-deep .markdown-body > :first-child { margin-top: 0; }
+:host ::ng-deep .markdown-body h1 { margin: 0 0 1.6rem; border: 0; color: #f4f7ed; font-size: clamp(2rem, 3.6vw, 2.9rem); font-weight: 600; line-height: 1.3; letter-spacing: -0.025em; text-wrap: balance; }
+:host ::ng-deep .markdown-body h1 + p { margin-bottom: 2rem; color: #a3b1aa; font-size: 1.13rem; line-height: 1.9; }
+:host ::ng-deep .markdown-body h2 { margin: 3.6rem 0 1.25rem; padding-top: 1.65rem; border-top: 1px solid rgba(246, 247, 239, 0.12); border-bottom: 0; color: #f0f4e8; font-size: 1.5rem; font-weight: 600; line-height: 1.5; scroll-margin-top: 8rem; }
+:host ::ng-deep .markdown-body h3 { margin: 2rem 0 1rem; color: #e8eee5; font-size: 1.15rem; font-weight: 600; line-height: 1.6; scroll-margin-top: 8rem; }
+:host ::ng-deep .markdown-body h4 { margin: 1.6rem 0 0.7rem; color: #e8eee5; font-size: 1rem; font-weight: 600; }
+:host ::ng-deep .markdown-body p { margin: 0 0 1.4rem; }
+:host ::ng-deep .markdown-body strong { color: #eef3e7; font-weight: 600; }
+:host ::ng-deep .markdown-body a { color: #d6ec92; text-decoration: underline; text-decoration-color: rgba(214, 236, 146, 0.32); text-underline-offset: 0.22em; transition: color 150ms; }
+:host ::ng-deep .markdown-body a:hover { color: #efffbf; text-decoration-color: currentColor; }
+:host ::ng-deep .markdown-body ul, :host ::ng-deep .markdown-body ol { padding-left: 1.6rem; margin: 1rem 0 1.6rem; }
+:host ::ng-deep .markdown-body ul { list-style: disc; }
+:host ::ng-deep .markdown-body ol { list-style: decimal; }
+:host ::ng-deep .markdown-body li { padding-left: 0.25rem; margin: 0.55rem 0; }
+:host ::ng-deep .markdown-body li::marker { color: #829568; }
+:host ::ng-deep .markdown-body li > p { margin-bottom: 0.6rem; }
+:host ::ng-deep .markdown-body blockquote { margin: 1.8rem 0; padding: 1rem 1.3rem; border: 0; border-left: 3px solid #a4bc75; background: #111812; color: #bccbb6; }
+:host ::ng-deep .markdown-body blockquote p:last-child { margin-bottom: 0; }
+:host ::ng-deep .markdown-body :not(pre) > code { padding: 0.15em 0.4em; border: 1px solid rgba(180, 164, 238, 0.13); border-radius: 4px; background: rgba(160, 138, 220, 0.07); color: #c9b6ee; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; white-space: break-spaces; overflow-wrap: anywhere; }
+:host ::ng-deep .markdown-body .article-code { margin: 1.5rem 0 2rem; overflow: hidden; border: 1px solid #26312f; border-radius: 10px; background: #0b1011; }
+:host ::ng-deep .markdown-body .article-code-toolbar { display: flex; align-items: center; justify-content: space-between; min-height: 2.6rem; padding: 0 1rem; border-bottom: 1px solid #222d29; background: #12191a; font-family: ui-monospace, monospace; font-size: 0.72rem; line-height: 1.4; }
+:host ::ng-deep .markdown-body .article-code-toolbar > span { color: #92a69b; }
+:host ::ng-deep .markdown-body .article-code-toolbar button { padding: 0.35rem 0.55rem; border: 0; border-radius: 4px; background: transparent; color: #a4b7aa; font: inherit; cursor: pointer; }
+:host ::ng-deep .markdown-body .article-code-toolbar button:hover { color: #e6f5d4; background: #223029; }
+:host ::ng-deep .markdown-body pre { margin: 0; padding: 1.3rem; border: 0; border-radius: 0; background: #0b1011; overflow-x: auto; font-size: 0.82rem; line-height: 1.8; tab-size: 4; }
+:host ::ng-deep .markdown-body pre.line-numbers { padding-left: 4rem; }
+:host ::ng-deep .markdown-body pre code { padding: 0; border: 0; background: none; color: #dce4d7; font: inherit; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; word-break: normal; word-wrap: normal; text-shadow: none; }
+:host ::ng-deep .markdown-body .line-numbers-rows { border-color: #26312d; }
+:host ::ng-deep .markdown-body .line-numbers-rows > span::before { color: #4d6258; }
+:host ::ng-deep .markdown-body .token { text-shadow: none; background: transparent; }
+:host ::ng-deep .markdown-body .token.table { display: initial !important; }
+:host ::ng-deep .markdown-body table { display: block; width: 100%; max-width: 100%; margin: 1.8rem 0 2rem; overflow-x: auto; border-spacing: 0; border-collapse: collapse; font-size: 0.88rem; line-height: 1.8; }
+:host ::ng-deep .markdown-body th, :host ::ng-deep .markdown-body td { padding: 0.8rem 1rem; border: 1px solid #29352d; background: transparent; text-align: left; vertical-align: top; }
+:host ::ng-deep .markdown-body th { color: #e0ecd9; background: #141d17; font-weight: 600; }
+:host ::ng-deep .markdown-body tr { border: 0; background: transparent; }
+:host ::ng-deep .markdown-body tr:nth-child(2n) { background: #0b100d; }
+:host ::ng-deep .markdown-body figure { margin: 2rem 0 2.8rem; }
+:host ::ng-deep .markdown-body img { display: block; max-width: 100%; height: auto; margin: 0 auto; border-radius: 10px; background: #111716; }
+:host ::ng-deep .markdown-body figcaption { margin-top: 0.8rem; color: #81968a; font-size: 0.77rem; line-height: 1.7; text-align: center; }
+:host ::ng-deep .markdown-body hr { height: 1px; margin: 3rem 0; border: 0; background: #26312b; }
+:host ::ng-deep .markdown-body a:focus-visible, :host ::ng-deep .markdown-body button:focus-visible { outline: 2px solid #cfdf9f; outline-offset: 4px; }
 
-:host ::ng-deep .markdown-body h1,
-:host ::ng-deep .markdown-body h2,
-:host ::ng-deep .markdown-body h3 {
-    color: #ffffff;
-}
-
-:host ::ng-deep .markdown-body a {
-    color: #dfff67;
-}
-
-:host ::ng-deep .markdown-body pre {
-    background: rgba(0, 0, 0, 0.34);
-    border: 1px solid rgba(246, 247, 239, 0.12);
-}
-
-:host ::ng-deep .token.table {
-    display: initial !important;
+@media (max-width: 1050px) {
+    .article-layout { grid-template-columns: minmax(0, 1fr); }
+    .article-sidebar { display: none; }
+    .article-shell { max-width: 880px; }
 }
 
 @media (max-width: 860px) {
@@ -338,8 +352,9 @@ a {
         font-size: 2.8rem;
     }
 
-    .article-toolbar {
-        align-items: flex-start;
-        flex-direction: column;
-    }
+    .article-toolbar { align-items: flex-start; flex-direction: column; gap: 0.7rem; margin-bottom: 1.7rem; }
+    .article-shell { padding-top: 7rem; }
+    :host ::ng-deep .markdown-body { font-size: 1rem; }
+    :host ::ng-deep .markdown-body h1 { font-size: 1.95rem; }
+    :host ::ng-deep .markdown-body h2 { margin-top: 2.7rem; }
 }

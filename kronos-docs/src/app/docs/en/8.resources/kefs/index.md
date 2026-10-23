@@ -1,202 +1,129 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-The Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ IDEA. It is useful when your project already builds with the Gradle or Maven compiler plugin, but you also want the editor to understand generated `KPojo` members, projection result types, subquery shapes, and database-first code generation.
+Use **Kotlin External FIR Support (KEFS)** by [Mr3zee](https://github.com/Mr3zee) to load Kronos compiler support in IntelliJ IDEA. Kotlin's editor analysis then provides generated projection members, property completion, inferred types and Kronos DSL diagnostics.
 
-| Area | What the plugin adds |
-|------|----------------------|
-| Project model | Loads the bundled Kronos FIR compiler plugin during IDEA analysis |
-| Projection docs | Shows generated `KronosSelectResult_*` and `KronosSelectContext_*` shapes in quick documentation |
-| Editor diagnostics | Surfaces projection, scalar subquery, predicate subquery, and INSERT SELECT shape errors in the editor |
-| Code Generator | Reads IDEA Database data sources and previews or writes `KPojo` files |
-| Templates | Lets you copy the built-in KPojo template into `.kronos/templates` and customize generated code |
+## Configure a Gradle project
 
-## UI tour
+Apply the Gradle plugin and add the runtime dependency in each module that uses Kronos:
 
-Projection completion uses the generated result or context shape, so aliases such as `nameLength`, `rn`, and aggregate fields are available in the editor.
-
-<img src="/assets/images/idea-plugin/kronos-idea-projection-completion.png" alt="Kronos IDEA plugin projection completion" style="width: 100%; max-width: 640px; height: auto;" />
-
-Quick documentation on the current query context renders the generated context class, including aliases that can be used by `orderBy { ... }`.
-
-<img src="/assets/images/idea-plugin/kronos-idea-projection-context-docs.png" alt="Kronos IDEA plugin projection context documentation" style="width: 100%; max-width: 640px; height: auto;" />
-
-Quick documentation on a local result value renders the generated result-row class, including field names and Kotlin types.
-
-<img src="/assets/images/idea-plugin/kronos-idea-projection-docs.png" alt="Kronos IDEA plugin projection documentation" style="width: 100%; max-width: 640px; height: auto;" />
-
-The `Kronos-ORM` tool window includes the Code Generator tab for choosing IDEA Database data sources, selecting tables, previewing generated Kotlin, and writing KPojo files.
-
-<img src="/assets/images/idea-plugin/kronos-idea-code-generator.png" alt="Kronos IDEA plugin code generator" style="width: 100%; max-width: 640px; height: auto;" />
-
-## Install {{ $.title("Kronos-ORM") }}
-
-The IDEA plugin is packaged as `kronos-idea-plugin.zip`. Install it from a downloaded GitHub Release artifact or from a locally built zip.
-
-```text group="Install 1" name="IDEA"
-Settings / Preferences -> Plugins -> Install Plugin from Disk...
-Select kronos-idea-plugin.zip
-Restart IntelliJ IDEA
-```
-
-Formal releases attach the IDEA plugin zip to the GitHub Release together with JVM jars and checksum files. The GitHub Release notes are generated from merged changes.
-
-```text group="Install 2" name="release artifact"
-kronos-idea-plugin-{{ $.kronosVersion() }}.zip
-```
-
-When building from source, the zip is written to the plugin distribution directory.
-
-```bash group="Install 3" name="source build" icon="terminal"
-./gradlew :kronos-idea-plugin:buildPlugin -Pkronos.idea.version=2026.2
-```
-
-```text group="Install 3" name="output"
-kronos-idea-plugin/build/distributions/kronos-idea-plugin.zip
-```
-
-## Match the project setup
-
-The IDEA plugin provides editor analysis. The Gradle or Maven compiler plugin is still required for command-line builds and CI.
-
-```kotlin group="Project setup 1" name="build.gradle.kts" icon="gradlekts"
+```kotlin name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
 }
+
+repositories { mavenCentral() }
 
 dependencies {
     implementation("com.kotlinorm:kronos-core:{{ $.kronosVersion() }}")
 }
-```
 
-After installing the IDEA plugin, reload the Gradle project or reimport the Maven project, then run Kotlin compilation once.
-
-```bash group="Project setup 2" name="shell" icon="terminal"
-./gradlew compileKotlin
-```
-
-```text group="Project setup 2" name="output"
-[Kronos] Kronos compiler plugin K2 initialized
-BUILD SUCCESSFUL
-```
-
-Use an IntelliJ IDEA build and Kotlin plugin that support Kotlin 2.4.0. The repository build targets IntelliJ IDEA `2026.2` for release plugin artifacts.
-
-## Configure the plugin
-
-The installed plugin adds a `Kronos-ORM` tool window and a settings page.
-
-| UI entry | Use |
-|----------|-----|
-| `Kronos-ORM` tool window | Open Kronos IDE tools and code generation templates |
-| `Settings / Preferences -> Kronos ORM Setting` | Set the Kronos config JSON file path |
-
-The settings page stores the config path in `KronosPluginSettings`. The default value is `kronos.json`.
-
-```json group="Settings" name="kronos.json"
-{
-  "dataSources": [
-    {
-      "dataSourceName": "main",
-      "dataSourceUrl": "jdbc:mysql://localhost:3306/kronos_demo",
-      "dataSourceUser": "root",
-      "dataSourcePassword": "your_password",
-      "dataSourceDriver": "com.mysql.cj.jdbc.Driver",
-      "default": true
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcollection-literals")
     }
-  ],
-  "templates": [
-    "KPojoTemplate.kts",
-    "ServiceTemplate.kts"
-  ]
 }
 ```
 
-For script-based entity generation, use {{ $.keyword("resources/codegen", ["Code Generator"]) }}.
+Reload the Gradle project so IDEA imports the compiler plugin and collection-literal option. KEFS provides editor integration for Gradle projects. Kotlin Toolchain projects use their corresponding build-model import plugin.
 
-## Generate KPojo files in IDEA
+## Version compatibility
 
-Open `Kronos-ORM` from the right tool-window bar. The `Code Generator` tab reads tables from IDEA Database Tools instead of asking you to maintain a separate connection list.
+Choose a Kronos ORM, KEFS and IntelliJ IDEA combination from this table. `IDE Kotlin` identifies IDEA's embedded compiler, which KEFS uses to select the Kronos editor artifact. The project Kotlin version is managed by the build configuration.
 
-```text group="Code Generator" name="workflow"
-1. Configure a database connection in IDEA Database.
-2. Open Kronos-ORM -> Code Generator.
-3. Select a data source and one or more tables.
-4. Set the package name and output directory.
-5. Select a template.
-6. Click Preview to inspect generated Kotlin.
-7. Click Generate to write files into the project.
+{{ $.kefsCompatibilityTable() }}
+
+Run `KEFS: Copy Kotlin IDE Version` through IDEA's **Find Action** to inspect the embedded compiler. Kronos editor artifacts use the version form `<IDE Kotlin>-<Kronos ORM>`, for example `2.4.20-ij262-52-{{ $.kronosVersion() }}`. Check the complete combination when upgrading, then reload the project.
+
+## Install KEFS
+
+Choose a combination from the compatibility table and install the corresponding version of [Kotlin External FIR Support](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support) from Marketplace:
+
+```text name="IDEA settings"
+Settings / Preferences -> Plugins -> Marketplace
+Search: Kotlin External FIR Support
+Install -> Restart IDE
 ```
 
-The generator maps table metadata to Kronos fields: table names become `@Table`, primary keys become `@PrimaryKey`, indexes become `@TableIndex`, SQL types are converted to `KColumnType`, and column comments are preserved in the generated file where metadata is available.
+For a Kotlin Toolchain project, also install the [Kotlin Toolchain plugin](https://kotlin-toolchain.org/latest/getting-started/ide-setup/) and open the directory containing `project.yaml`.
 
-```kotlin group="Code Generator" name="output" icon="kotlin"
-package com.example.entity
+## Configure Kronos in KEFS
 
-import com.kotlinorm.annotations.Table
-import com.kotlinorm.interfaces.KPojo
+Open `Settings / Preferences -> Tools -> Kotlin External FIR Support -> Artifacts`.
 
-@Table(name = "tb_user")
-data class TbUser(
-    var id: Long? = null,
-    var name: String? = null,
-) : KPojo
+1. In **Maven Repositories**, select Maven Central or add the URL `https://repo.maven.apache.org/maven2`.
+2. In **Kotlin Compiler Plugins**, add a bundle named `Kronos`.
+3. Enter `com.kotlinorm:kronos-compiler-plugin` under **Coordinates**, without a version.
+4. Select **Exact** version matching, link Maven Central, and enable the bundle for the project.
+5. Apply the settings and reload the project using its build tool.
+
+KEFS saves the project configuration in `.idea/kotlin-plugins.xml`. Commit this file to share the configuration with other contributors.
+
+Kronos's compiler dependency is configured by the project build; KEFS selects its matching editor artifact. See {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} for build setup.
+
+## Confirm the compiler plugin loaded
+
+Open a Kotlin file containing a Kronos query, then open the **KEFS Diagnostics** tool window. Kronos should show **Successfully Loaded**. The details display the loaded JAR and its version.
+
+Match the versions displayed in the tool window to the table’s `IDE Kotlin` and Kronos ORM entries, then check the loaded artifact coordinate.
+
+Use **Find Action** (`⌘⇧A` on macOS) to run:
+
+- `KEFS: Update Plugins`: check for artifact updates.
+- `KEFS: Refresh Plugins`: reload compiler plugins.
+- `KEFS: Copy Kotlin IDE Version`: inspect the exact embedded compiler version.
+
+For local development, add a **Local (File path)** Maven repository pointing to the compatible compiler artifact repository and associate it with the Kronos bundle. `Plugin is Not Requested` means analysis has not requested the plugin yet. For `Not Found`, check the selected repositories, library version and matching compatibility artifact.
+
+## Develop Kronos from source
+
+The Kronos repository includes a shared [`.idea/kotlin-plugins.xml`](https://github.com/Kronos-orm/Kronos-orm/blob/main/.idea/kotlin-plugins.xml) with the Kronos bundle and its bootstrap, Maven Central and Sonatype snapshot repositories.
+
+Install the official Kotlin Toolchain IDE plugin and KEFS, then prepare the source-built compiler:
+
+```bash name="repository bootstrap" icon="terminal"
+scripts/run build bootstrap
 ```
 
-Enable `Overwrite existing files` only when you want the generator to replace an existing file with the same relative path.
+The Toolchain IDE plugin imports the project model, while KEFS loads compiler extensions for editor analysis. Bootstrap prepares the ordinary compiler coordinate in Maven Local for project import and the KEFS artifact in `build/repository/bootstrap`. Open the repository directory containing `project.yaml` and reload the project. The shared KEFS configuration refers to the private repository through `$PROJECT_DIR$`.
 
-## Customize templates
+## Enable collection-literal syntax
 
-The `Templates` tab lists built-in templates and project templates. Use `Copy to Project` to copy the built-in KPojo template into `.kronos/templates`, then edit it in your project.
+Enable `-Xcollection-literals` in the project build so both compilation and the imported IDE model recognize the `[]` DSL.
 
-Project templates can use these placeholders:
-
-| Placeholder | Value |
-|-------------|-------|
-| {{ $.templatePlaceholder("packageName") }} | Package entered in the Code Generator tab |
-| {{ $.templatePlaceholder("imports") }} | Imports required by generated annotations and types |
-| {{ $.templatePlaceholder("tableComment") }} | Formatted table comment |
-| {{ $.templatePlaceholder("generatedAt") }} | Generation timestamp |
-| {{ $.templatePlaceholder("tableName") }} | Source table name |
-| {{ $.templatePlaceholder("className") }} | Generated Kotlin class name |
-| {{ $.templatePlaceholder("tableIndexes") }} | Rendered `@TableIndex` annotations |
-| {{ $.templatePlaceholder("fields") }} | Rendered Kotlin properties with Kronos annotations |
-
-Keep this marker in project KPojo templates so the IDEA plugin can identify supported templates:
-
-```kotlin group="Template" name="marker" icon="kotlin"
-// KRONOS_IDEA_TEMPLATE:KPOJO
+```kotlin name="build.gradle.kts" icon="gradlekts"
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcollection-literals")
+    }
+}
 ```
+
+```yaml name="module.yaml"
+settings:
+  kotlin:
+    version: 2.4.21
+    freeCompilerArgs: [ -Xcollection-literals ]
+```
+
+Reload the project after changing compiler arguments. The KEFS **General** tab shows the editor compiler version; compare it with `IDE Kotlin` in the compatibility table.
 
 ## Use editor analysis
 
-Many Kronos features come from compile-time generated information: `KPojo` metadata and dynamic accessors, the fields available inside each query lambda, temporary `KPojo` projection classes generated by `select { ... }`, and shape-based diagnostics for subqueries and insert-select.
+Write a projection and access its result fields using ordinary Kotlin completion:
 
-The IntelliJ IDEA plugin makes that generated information visible to IDEA K2 analysis. That lets the editor complete, type-check, and report errors at positions such as `toDataMap()`, `it.nameLength`, `it.rn`, `rows.first().totalAmount`, and `insert<Target> { ... }`.
-
-Quick documentation on a generated projection receiver renders the generated class shape, so you can inspect which fields are available without finding an internal generated source file.
-
-```kotlin group="Editor Analysis" name="projection" icon="kotlin"
+```kotlin name="projection" icon="kotlin"
 val rows = User()
-    .select {
-        [it.id, f.length(it.name).alias("nameLength")]
-    }
+    .select { [it.id, f.length(it.name).alias("nameLength")] }
     .toList()
 
-rows.first().nameLength
+val length: Int? = rows.first().nameLength
 ```
 
-Quick documentation for the result type is equivalent to:
+`nameLength` is inferred as `Int?`. The same inferred types drive property completion and type errors in subsequent query lambdas.
 
-```kotlin group="Editor Analysis" name="generated shape" icon="kotlin"
-data class KronosSelectResult_UserNameLength(
-    var id: Int? = null,
-    var nameLength: Int? = null,
-) : KPojo
-```
-
-If completion works in Gradle output but not in the editor, reload the project and check that the installed plugin name is `Kronos-ORM` with plugin ID `com.kotlinorm.kronos-idea-plugin`.
+For database entity generation, see {{ $.keyword("resources/codegen", ["Code Generator"]) }}.
 
 ## Three KPojo shapes in one query
 
@@ -299,7 +226,7 @@ val filtered = query
     .toList()
 ```
 
-Subqueries, repeated `.select { ... }`, joins with query sources, and insert-select can all produce more result-row classes and ordering context classes. Application code does not need to reference their generated names; the IDEA plugin uses them for completion and checks.
+Subqueries, repeated `.select { ... }`, joins with query sources, and insert-select can all produce more result-row classes and ordering context classes. Application code does not need to reference their generated names; Kotlin editor analysis uses them for completion and checks.
 
 ## Window function results
 
@@ -632,7 +559,7 @@ rows.first().id_2
 rows.first().id_1
 ```
 
-The requested names `id`, `id`, `id_1` resolve to `id`, `id_2`, `id_1`. IDEA uses these resolved names for completion and generated projection documentation. Prefer explicit aliases when the values have different meanings.
+The requested names `id`, `id`, `id_1` resolve to `id`, `id_2`, `id_1`. IDEA uses these resolved names for completion and type inference. Prefer explicit aliases when the values have different meanings.
 
 An alias may reuse an input field name. The alias itself, and Source clauses such as `where`, `groupBy`, and `having`, do not require opt-in:
 
@@ -672,7 +599,7 @@ This table only summarizes the examples above:
 
 ## Supported diagnostics
 
-The IDEA plugin surfaces these Kronos DSL rules directly in the editor:
+Kronos compiler diagnostics are displayed by Kotlin editor analysis through KEFS:
 
 | Scenario | Why it is invalid |
 |----------|-------------------|
@@ -689,13 +616,13 @@ The IDEA plugin surfaces these Kronos DSL rules directly in the editor:
 
 ## Troubleshoot editor behavior
 
-Use these checks when Gradle or Maven succeeds but IDEA does not show Kronos completions.
+Use these checks when the project builds but IDEA does not show Kronos completions.
 
 | Symptom | Check | Fix |
 |---------|-------|-----|
 | `toDataMap()` or `__tableName` behaves like the default `KPojo` body | The source set was not compiled with Kronos support | Enable {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} and reimport the project |
-| Projection aliases such as `nameLength` are missing | The IDEA plugin was installed before the project import completed | Reload Gradle/Maven and reopen the Kotlin file |
-| Diagnostics are visible in build output but not in the editor | IDEA is using an incompatible Kotlin plugin or stale project model | Update IDEA/Kotlin plugin to a Kotlin 2.4.0-compatible build and invalidate caches if needed |
-| Codegen UI cannot find data source settings | The config path does not point to the intended JSON file | Set `Config File` on `Kronos ORM Setting` |
+| Projection aliases such as `nameLength` are missing | Check the Kronos bundle in KEFS Artifacts | Enable the bundle, select Maven Central, and reload the project |
+| Build diagnostics are missing in the editor | Check the Kronos artifact status in the KEFS tool window | Update KEFS artifacts and reload the project |
+| `[]` has a syntax error | Check the imported compiler arguments | Enable `-Xcollection-literals` in the build and reload the project |
 
 For more query, subquery, and INSERT SELECT rules, see {{ $.keyword("query/subqueries", ["Subqueries"]) }}. For setup problems, see {{ $.keyword("resources/troubleshooting", ["Troubleshooting"]) }}.

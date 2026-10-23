@@ -3,17 +3,17 @@ import ResourcesCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本章介绍 Kronos IntelliJ IDEA 插件配置和编辑器诊断。
- * @status:info 新
+ * This chapter introduces the KEFS setup, Kotlin editor completion and compiler diagnostics.
+ * @status:info NEW
  */
-const IdeaPluginPage: NgDocPage = {
-    title: `IntelliJ IDEA 插件`,
+const KefsPage: NgDocPage = {
+    title: `IDE Support with KEFS`,
     mdFile: './index.md',
-    route: 'idea-plugin',
+    route: 'kefs',
     order: 2,
     category: ResourcesCategory,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default IdeaPluginPage;
+export default KefsPage;

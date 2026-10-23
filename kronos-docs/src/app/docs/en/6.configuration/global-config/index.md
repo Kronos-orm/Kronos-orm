@@ -6,7 +6,7 @@ Use this table to choose the global settings to configure first.
 | Level | Configure | Entry |
 |-------|-----------|-------|
 | Required | Default data source wrapper | [Default Data Source Settings](#default-data-source-settings) |
-| Common | Table and column naming, default date format, time zone, logging | [Global Table Name Strategy](#global-table-name-strategy), [Global Column Naming Strategy](#global-column-naming-strategy), [Default Date Time Format](#default-date-time-format), [Default Time Zone](#default-time-zone), [Log output path and switch](#log-output-path-and-switch) |
+| Common | Table and column naming, default date format, temporal time zone, logging | [Global Table Name Strategy](#global-table-name-strategy), [Global Column Naming Strategy](#global-column-naming-strategy), [Default Date Time Format](#default-date-time-format), [Temporal Time Zone](#temporal-time-zone), [Log output path and switch](#log-output-path-and-switch) |
 | Enable by business need | Common field strategies, no-value behavior, JSON serialization, custom value mapping, map value conversion | [Creation Time Strategy](#creation-time-strategy), [Logical Deletion Strategy](#logical-deletion-strategy), [No-value strategy](#no-value-strategy), {{ $.keyword("mapping/serialization", ["Serialization"]) }}, [Custom value mapping](#custom-value-mapping), [Map value conversion](#map-value-conversion) |
 
 Compiler-plugin setup is configured in the build tool. See {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} for source-set and diagnostic checks.
@@ -244,25 +244,22 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 > **Note**
 > Configure `@DateTimeFormat` on an individual model to override the global setting. See {{ $.keyword("mapping/annotations", ["Annotations"]) }}.
 
-## Default Time Zone
+## Temporal Time Zone
 
-Used to specify the default time zone, following the `ISO 8601` standard, for use when creating timestamps, updating timestamps, and formatting date/time.
+`Kronos.timeZone` is one IANA time-zone id shared by the common API. Its default value is `null`, which uses
+the current platform's system default. JVM resolves the id with `ZoneId`; Native resolves it with
+`kotlinx.datetime.TimeZone`.
 
-**Parameters**:
-{{$.params([['timeZone', 'Default Time Zone', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
+`kotlin.time.Instant` and the compatible `kotlinx.datetime.Instant` represent UTC instants. The configured
+zone is used only when automatic codec or time strategies convert an instant to a local calendar value.
+`LocalDate`, `LocalDateTime`, and `LocalTime` retain their timezone-free text semantics.
 
-Kronos uses the current system time zone by default. You can change the default time zone by doing the following:
-
-```kotlin group="Time 2" name="zone" icon="kotlin"
+```kotlin group="Time zone" name="kotlin" icon="kotlin"
 import com.kotlinorm.Kronos
-import java.time.ZoneId
 
-with(Kronos) {
-    timeZone = ZoneId.of("UTC")
-    timeZone = ZoneId.of("Asia/Shanghai")
-    timeZone = ZoneId.systemDefault()
-    timeZone = ZoneId.of("GMT+8")
-}
+Kronos.timeZone = null              // platform system default
+Kronos.timeZone = "UTC"
+Kronos.timeZone = "Asia/Shanghai"
 ```
 
 ## No-value strategy

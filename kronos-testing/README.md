@@ -37,42 +37,27 @@ Integration test module for Kronos ORM. Default tests cover external database in
 | `H2_PASSWORD` | empty |
 | `SQLITE_URL` | Temp-file SQLite database |
 
-Local defaults live in the tracked `envsetup.defaults` file. `envsetup.sh` and `envsetup.bat` load that file and keep any environment variable you set before calling them. Put local overrides in the ignored `envsetup.local.properties`, or set them in the environment before loading the defaults.
-
+Integration defaults live in `scripts/common.main.kts`. Kotlin build and CI commands load them automatically. Set local overrides in the ignored `kronos-testing/env.local.properties`; existing environment variables take precedence.
 The bundled DM8 service uses `DM_USERNAME` and `DM_PASSWORD` for the test connection. `DM_SYSAUDITOR_PASSWORD` configures the service's SYSAUDITOR account. Override these values together with `DM_JDBC_URL` when connecting to an externally managed DM8 instance.
 
 ## Running
 
-```bash
-# Set up env vars
-source envsetup.sh
+Run from the repository root:
 
-# Run all integration tests
-./gradlew :kronos-testing:test --info --stacktrace
+```sh
+# Start the database services, execute integration tests and stop the services
+scripts/run ci integration
 
-# Or use the test script (checks DB connectivity first)
-./test.sh
+# Use database services that are already running
+scripts/run build test -m kronos-testing -p jvm
+
+# SQLite tests need no external database service
+scripts/run build test -m kronos-testing -p jvm --include-classes='com.kotlinorm.integration.Sqlite*'
 ```
 
-External database suites require their matching database service. SQLite and H2 run in-process and require no Compose service.
-
-For fast local feedback without external services:
-
-```bash
-./gradlew :kronos-testing:test --tests "com.kotlinorm.integration.SqliteIntegrationTest" --info --stacktrace
-```
-
-To start local database services with Docker:
-
-```bash
-source envsetup.sh
-docker compose -f kronos-testing/docker-compose.integration.yml up -d --wait
-docker exec kronos-testing-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U "${SQLSERVER_USERNAME}" -P "${SQLSERVER_PASSWORD}" -C -Q "IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}"
-./gradlew :kronos-testing:test --info --stacktrace
-docker compose -f kronos-testing/docker-compose.integration.yml down
-```
-
-`./test.sh` and `test.bat` run the Docker compose environment automatically, then run integration, core, syntax, codegen, and compiler-plugin tests.
+External database suites require their matching database service. SQLite and H2 run in-process.
+The `integration` command uses `docker-compose.integration.yml` and prepares the SQL Server
+integration database before running the tests.
 
 ## CI
 

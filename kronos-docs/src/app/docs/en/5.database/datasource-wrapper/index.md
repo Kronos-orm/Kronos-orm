@@ -2,6 +2,11 @@
 
 `KronosDataSourceWrapper` connects Kronos SQL tasks to a database execution engine. The built-in JDBC implementation is `KronosJdbcWrapper`, and custom wrappers can delegate execution to Spring JDBC, JDBI, MyBatis, or another data access layer.
 
+
+## Native drivers
+
+Implement `KronosExecutionDataSource` for a platform driver and wrap it with `KronosExecutionWrapper` to execute shared ORM queries. See {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }} for the complete connection example.
+
 ## Configure the default data source
 
 `Kronos.connect(...)` configures `Kronos.dataSource` and returns the `KronosJdbcWrapper`.

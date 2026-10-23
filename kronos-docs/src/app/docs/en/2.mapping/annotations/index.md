@@ -3,7 +3,7 @@
 
 ## {{ $.annotation("Table") }} Table Name Setting
 
-Used to specify the table name for the data class. The annotation takes precedence over {{ $.keyword("configuration/global-config", ["Global Settings", "Global Table Naming Strategy"]) }}.
+Used to specify the table name for the data class. The annotation takes precedence over {{ $.keyword("configuration/global-config", ["Global Settings", "Global Table Name Strategy"]) }}.
 
 **Parameters**：
 {{$.params([['name', 'table name', 'String']])}}
@@ -167,7 +167,7 @@ data class User(
 
 ## {{ $.annotation("DateTimeFormat") }}Date and time format
 
-The annotation is used to specify the date/time format for the data table, and its effective priority is higher than that of {{$.keyword("configuration/global-config", ["Global Settings", "Default Date/Time Format"])}}.
+The annotation is used to specify the date/time format for the data table, and its effective priority is higher than that of {{$.keyword("configuration/global-config", ["Global Settings", "Default Date Time Format"])}}.
 
 **Parameters**:
 
@@ -194,7 +194,7 @@ For setup and complete examples, see {{ $.keyword("mapping/serialization", ["Ser
 
 ## {{ $.annotation("Cascade") }}Cascading Relationship Declaration
 
-This annotation is used to declare the cascade relationship of columns, please refer to {{ $.keyword("advanced/cascade", ["Advanced Usage", "Cascade Relationship Definition"]) }} for detailed definition and usage.
+This annotation is used to declare the cascade relationship of columns, please refer to {{ $.keyword("advanced/cascade", ["Advanced Usage", "Cascading Relationship Annotation"]) }} for detailed definition and usage.
 
 > **Note**
 > Please add this annotation to an attribute of type `KPojo` or `Collection<KPojo>` to ensure that there is an associated field within the currently defined table (e.g. companyId in the following example).

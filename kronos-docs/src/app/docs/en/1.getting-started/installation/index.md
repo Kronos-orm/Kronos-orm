@@ -1,6 +1,10 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+## Kotlin Multiplatform
+
+For shared models, Native targets and version-catalog configuration, see {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}.
+
 ## Runtime and compiler plugin
 
 Add `kronos-core` for the ORM runtime and the Kronos compiler plugin for compile-time DSL support.
@@ -9,8 +13,14 @@ Use `{{ $.kronosVersion() }}` for copyable dependency examples. Use the snapshot
 
 ```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -20,8 +30,14 @@ dependencies {
 
 ```groovy group="Gradle" name="build.gradle" icon="gradle"
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
     id 'com.kotlinorm.kronos-gradle-plugin' version '{{ $.kronosVersion() }}'
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -32,7 +48,7 @@ dependencies {
 ```xml group="Maven" name="pom.xml" icon="maven"
 <project>
     <properties>
-        <kotlin.version>2.4.0</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <kronos.version>{{ $.kronosVersion() }}</kronos.version>
     </properties>
 
@@ -52,6 +68,10 @@ dependencies {
                 <version>${kotlin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <args>
+                        <arg>-Xcollection-literals</arg>
+                        <arg>-Xcontext-sensitive-resolution</arg>
+                    </args>
                     <compilerPlugins>
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
@@ -107,10 +127,10 @@ dependencies {
 ## Minimum environment
 
 - JDK 8 or later.
-- Kotlin 2.4.0 or later.
-- Maven 3.9+ or a Gradle version supported by Kotlin 2.4.0.
+- Kotlin 2.4.21 or later.
+- Maven 3.9+ or a Gradle version supported by Kotlin 2.4.21.
 
 > **Warning**
-> Make sure the Kotlin plugin used by your IDE supports Kotlin 2.4.0 or later.
+> Make sure the Kotlin plugin used by your IDE supports Kotlin 2.4.21 or later.
 
 Next, follow {{ $.keyword("getting-started/first-query", ["First Query"]) }} for the smallest model, table creation, insert, and select flow.

@@ -11,13 +11,13 @@ Android 应用使用 {{ $.code("KPojo") }} 模型，并通过应用内的 {{ $.c
 ```kotlin name="build.gradle.kts" icon="gradlekts"
 plugins {
     id("com.android.application") version "8.13.2" apply false
-    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.21" apply false
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}" apply false
 }
 ```
 
 > **Note**
-> 本文示例使用 Android Gradle Plugin `8.13.2` 和 Kotlin `2.4.0`。参考应用使用 `minSdk 26` 和 JDK 17。
+> 本文示例使用 Android Gradle Plugin `8.13.2` 和 Kotlin `2.4.21`。参考应用使用 `minSdk 26` 和 JDK 17。
 
 在每个声明 {{ $.code("KPojo") }} 的 Android application 或 library 模块中应用该插件。
 
@@ -26,6 +26,12 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.kotlinorm.kronos-gradle-plugin")
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {

@@ -1,48 +1,21 @@
+import {inject, Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
 import {NgDocSearchEngine, NgDocSearchResult} from '@ng-doc/app';
 import {NgDocPageIndex} from '@ng-doc/core';
-import {from, Observable} from 'rxjs';
-import {map, shareReplay, switchMap} from 'rxjs/operators';
+import {Observable, combineLatest, defer} from 'rxjs';
+import {toObservable} from '@angular/core/rxjs-interop';
+import {map, shareReplay} from 'rxjs/operators';
+import {LocaleService} from './locale/locale.service';
+import {rankDocumentation} from './search-policy';
 
+@Injectable()
 export class DocSearchEngine extends NgDocSearchEngine {
-  // Load indexes from assets
-  indexes: Observable<NgDocPageIndex[]> =
-      from(fetch(`assets/ng-doc/indexes.json`)).pipe(
-        switchMap((response: Response) => response.json() as Promise<NgDocPageIndex[]>),
-        // Use `shareReplay(1)` to cache the response and avoid making multiple requests
-        shareReplay(1),
-      )
-
-  search(query: string): Observable<NgDocSearchResult[]> {
-    return this.indexes.pipe(
-      map((indexes: NgDocPageIndex[]) => this.filterIndexes(indexes, query)),
-    );
-  }
-
-  private filterIndexes(indexes: NgDocPageIndex[], query: string): NgDocSearchResult[] {
-    return (
-      indexes
-        // Filter indexes by query
-        .filter((index: NgDocPageIndex) =>
-          index.route.split("/")[1] === window.location.hash.split("/")[2] && index.content?.toLowerCase().includes(query.toLowerCase())
-        )
-        // Get first 10 results, you can remove this line to get all results
-        // it's recommended to limit the number of results to avoid performance issues
-        .slice(0, 10)
-        // Map indexes to search results
-        .map((index: NgDocPageIndex) => ({
-          index,
-          // You can provide a list of positions where the query was found in the title
-          // then the search component will highlight them
-          positions: {
-            // Provide the key of the section where the query was found and it's position
-            content: [
-              {
-                start: index.content?.toLowerCase().indexOf(query.toLowerCase()) ?? 0,
-                length: query.length,
-              },
-            ],
-          },
-        }))
-    );
-  }
+    private readonly locale = inject(LocaleService);
+    private readonly http = inject(HttpClient);
+    private readonly language = toObservable(this.locale.current);
+    readonly indexes = defer(() => this.http.get<NgDocPageIndex[]>('assets/ng-doc/indexes.json'))
+        .pipe(shareReplay({bufferSize: 1, refCount: false}));
+    search(query: string): Observable<NgDocSearchResult[]> {
+        return combineLatest([this.indexes, this.language]).pipe(map(([indexes, language]) => rankDocumentation(indexes, query, language)));
+    }
 }

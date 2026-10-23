@@ -64,7 +64,7 @@
   "FEATURE_BLOG_CONTENT_1": "Kronos目前对 kotlin 多平台的支持情况以及我们的kotlin多平台的开发和发布计划。",
   "FEATURE_BLOG_TITLE_2": "Kronos 代码生成器",
   "FEATURE_BLOG_CONTENT_2": "Kronos 代码生成器可以读取数据库表，并通过简单配置生成 Kotlin ORM 类。",
-  "IDE_PLUGIN": "IDE 插件",
+  "KEFS_EDITOR_SUPPORT": "KEFS 编辑器支持",
   "HIGHLIGHT_TITLE": "为什么选择 Kronos",
   "HIGHLIGHT_SUBTITLE": "专为 Kotlin 打造的现代化 ORM 框架",
   "HL_ZERO_REFLECT_TITLE": "零运行时反射",

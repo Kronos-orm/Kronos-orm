@@ -1,6 +1,11 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+
+## Native drivers
+
+Implement `KronosExecutionDataSource` for a platform driver and wrap it with `KronosExecutionWrapper` to execute shared ORM queries. See {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }} for the complete connection example.
+
 ## Build a wrapper for an existing framework
 
 `KronosDataSourceWrapper` lets Kronos use an execution layer that already exists in your project. A wrapper receives Kronos SQL tasks and delegates them to the framework's query, update, batch, and transaction APIs.

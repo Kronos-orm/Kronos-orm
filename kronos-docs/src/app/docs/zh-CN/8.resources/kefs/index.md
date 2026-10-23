@@ -1,202 +1,129 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos IDEA 插件会把 Kronos 编译器插件的信息接入 IntelliJ IDEA。项目已经能通过 Gradle 或 Maven 编译后，安装它可以让编辑器理解生成的 `KPojo` 成员、投影结果类型、子查询形态，以及 Database First 代码生成。
+在 IntelliJ IDEA 中安装由 [Mr3zee](https://github.com/Mr3zee) 开发的 **Kotlin External FIR Support（KEFS）**，加载 Kronos 编译器支持。Kotlin 编辑器分析会识别生成的投影成员，提供属性补全、类型推断和 Kronos DSL 诊断。
 
-| 能力 | 插件提供什么 |
-|------|--------------|
-| 项目模型 | 在 IDEA 分析阶段加载随插件打包的 Kronos FIR 编译器插件 |
-| 投影文档 | 在 quick documentation 中展示生成的 `KronosSelectResult_*` 和 `KronosSelectContext_*` 形态 |
-| 编辑器诊断 | 在编辑器里提示投影、标量子查询、谓词子查询和 INSERT SELECT 的形态错误 |
-| Code Generator | 读取 IDEA Database 数据源，预览或写入 `KPojo` 文件 |
-| Templates | 将内置 KPojo 模板复制到 `.kronos/templates`，并按项目定制生成代码 |
+## 配置 Gradle 项目
 
-## 界面概览
+在使用 Kronos 的模块中应用 Gradle 插件并添加运行时依赖：
 
-投影补全会读取生成的结果行或上下文形态，因此 `nameLength`、`rn`、聚合字段这类 alias 可以直接在编辑器中补全。
-
-<img src="/assets/images/idea-plugin/kronos-idea-projection-completion.png" alt="Kronos IDEA 插件投影补全" style="width: 100%; max-width: 640px; height: auto;" />
-
-在当前查询上下文上打开 quick documentation 时，插件会渲染生成的上下文类，展示 `orderBy { ... }` 等位置可读取的 alias。
-
-<img src="/assets/images/idea-plugin/kronos-idea-projection-context-docs.png" alt="Kronos IDEA 插件投影上下文文档" style="width: 100%; max-width: 640px; height: auto;" />
-
-在局部结果值上打开 quick documentation 时，插件会渲染生成的结果行类，展示字段名和 Kotlin 类型。
-
-<img src="/assets/images/idea-plugin/kronos-idea-projection-docs.png" alt="Kronos IDEA 插件投影文档" style="width: 100%; max-width: 640px; height: auto;" />
-
-`Kronos-ORM` 工具窗口提供 Code Generator 标签页，用于选择 IDEA Database 数据源、选择表、预览生成的 Kotlin，并写入 KPojo 文件。
-
-<img src="/assets/images/idea-plugin/kronos-idea-code-generator.png" alt="Kronos IDEA 插件代码生成器" style="width: 100%; max-width: 640px; height: auto;" />
-
-## 安装 {{ $.title("Kronos-ORM") }}
-
-IDEA 插件会打包为 `kronos-idea-plugin.zip`。可以安装从 GitHub Release 附件下载到本地的 zip，也可以安装本地构建出的 zip。
-
-```text group="Install 1" name="IDEA"
-Settings / Preferences -> Plugins -> Install Plugin from Disk...
-选择 kronos-idea-plugin.zip
-重启 IntelliJ IDEA
-```
-
-正式版本会把 IDEA 插件 zip、JVM jar 和 checksum 文件附加到 GitHub Release。GitHub Release notes 会根据已合入的变更自动生成。
-
-```text group="Install 2" name="release artifact"
-kronos-idea-plugin-{{ $.kronosVersion() }}.zip
-```
-
-从源码构建时，zip 会写入插件分发目录。
-
-```bash group="Install 3" name="source build" icon="terminal"
-./gradlew :kronos-idea-plugin:buildPlugin -Pkronos.idea.version=2026.2
-```
-
-```text group="Install 3" name="output"
-kronos-idea-plugin/build/distributions/kronos-idea-plugin.zip
-```
-
-## 匹配项目配置
-
-IDEA 插件负责编辑器分析。命令行构建和 CI 仍然需要 Gradle 或 Maven 编译器插件。
-
-```kotlin group="Project setup 1" name="build.gradle.kts" icon="gradlekts"
+```kotlin name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
 }
+
+repositories { mavenCentral() }
 
 dependencies {
     implementation("com.kotlinorm:kronos-core:{{ $.kronosVersion() }}")
 }
-```
 
-安装 IDEA 插件后，重新加载 Gradle 项目或重新导入 Maven 项目，并运行一次 Kotlin 编译。
-
-```bash group="Project setup 2" name="shell" icon="terminal"
-./gradlew compileKotlin
-```
-
-```text group="Project setup 2" name="output"
-[Kronos] Kronos compiler plugin K2 initialized
-BUILD SUCCESSFUL
-```
-
-IntelliJ IDEA 和 Kotlin 插件需要支持 Kotlin 2.4.0。仓库构建出的正式插件目标 IntelliJ IDEA 版本为 `2026.2`。
-
-## 配置插件
-
-插件安装后会增加 `Kronos-ORM` 工具窗口和设置页面。
-
-| UI 入口 | 用途 |
-|---------|------|
-| `Kronos-ORM` 工具窗口 | 打开 Kronos IDE 工具和代码生成模板 |
-| `Settings / Preferences -> Kronos ORM Setting` | 设置 Kronos config JSON 文件路径 |
-
-设置页会把配置路径保存到 `KronosPluginSettings`，默认值为 `kronos.json`。
-
-```json group="Settings" name="kronos.json"
-{
-  "dataSources": [
-    {
-      "dataSourceName": "main",
-      "dataSourceUrl": "jdbc:mysql://localhost:3306/kronos_demo",
-      "dataSourceUser": "root",
-      "dataSourcePassword": "your_password",
-      "dataSourceDriver": "com.mysql.cj.jdbc.Driver",
-      "default": true
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcollection-literals")
     }
-  ],
-  "templates": [
-    "KPojoTemplate.kts",
-    "ServiceTemplate.kts"
-  ]
 }
 ```
 
-基于脚本生成实体请使用 {{ $.keyword("resources/codegen", ["代码生成器"]) }}。
+重新加载 Gradle 项目，让 IDEA 导入编译器插件及集合字面量参数。Gradle 项目的编辑器接入由 KEFS 完成；Kotlin Toolchain 项目使用对应的构建模型导入插件。
 
-## 在 IDEA 中生成 KPojo
+## 版本兼容表
 
-从右侧工具窗口栏打开 `Kronos-ORM`。`Code Generator` 标签页读取 IDEA Database Tools 中已经配置的数据源，不需要再维护一份单独的连接列表。
+按下表选择 Kronos ORM、KEFS 和 IntelliJ IDEA 的版本组合。`IDE Kotlin` 是 IDEA 内置编译器的版本，KEFS 用它选择 Kronos 编辑器制品；项目自身的 Kotlin 版本由构建配置管理。
 
-```text group="Code Generator" name="workflow"
-1. 在 IDEA Database 中配置数据库连接。
-2. 打开 Kronos-ORM -> Code Generator。
-3. 选择数据源和一个或多个表。
-4. 设置 package name 和 output directory。
-5. 选择模板。
-6. 点击 Preview 预览生成的 Kotlin。
-7. 点击 Generate 写入项目文件。
+{{ $.kefsCompatibilityTable() }}
+
+可在 IDEA 的 **Find Action** 中运行 `KEFS: Copy Kotlin IDE Version` 查看当前内置编译器版本。Kronos 编辑器制品使用 `<IDE Kotlin>-<Kronos ORM>` 版本形式，例如 `2.4.20-ij262-52-{{ $.kronosVersion() }}`。升级时一起核对表中的组合，并重新加载项目。
+
+## 安装 KEFS
+
+选择兼容表中的版本组合，从 IDEA 插件商店安装对应版本的 [Kotlin External FIR Support](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support)：
+
+```text name="IDEA 设置"
+Settings / Preferences -> Plugins -> Marketplace
+搜索：Kotlin External FIR Support
+Install -> Restart IDE
 ```
 
-生成器会把表元数据转换为 Kronos 字段：表名变成 `@Table`，主键变成 `@PrimaryKey`，索引变成 `@TableIndex`，SQL 类型转换为 `KColumnType`，数据库返回列注释时会写入生成文件。
+Kotlin Toolchain 项目还需安装 [Kotlin Toolchain 插件](https://kotlin-toolchain.org/latest/getting-started/ide-setup/)，然后打开包含 `project.yaml` 的目录。
 
-```kotlin group="Code Generator" name="output" icon="kotlin"
-package com.example.entity
+## 在 KEFS 中配置 Kronos
 
-import com.kotlinorm.annotations.Table
-import com.kotlinorm.interfaces.KPojo
+打开 `Settings / Preferences -> Tools -> Kotlin External FIR Support -> Artifacts`。
 
-@Table(name = "tb_user")
-data class TbUser(
-    var id: Long? = null,
-    var name: String? = null,
-) : KPojo
+1. 在 **Maven Repositories** 中选择 Maven Central，或添加地址 `https://repo.maven.apache.org/maven2`。
+2. 在 **Kotlin Compiler Plugins** 中添加名为 `Kronos` 的插件组。
+3. 在 **Coordinates** 中填写 `com.kotlinorm:kronos-compiler-plugin`，不带版本号。
+4. 版本匹配选择 **Exact**，关联 Maven Central，并启用当前项目中的插件组。
+5. 应用设置，再通过项目使用的构建工具重新加载项目。
+
+KEFS 将项目配置保存到 `.idea/kotlin-plugins.xml`。将此文件提交到版本控制，让其他开发者使用相同配置。
+
+项目构建负责配置 Kronos 编译器依赖，KEFS 会选择匹配的编辑器制品。构建配置见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
+
+## 确认编译器插件已加载
+
+打开使用 Kronos 查询的 Kotlin 文件，再打开 **KEFS Diagnostics** 工具窗口。Kronos 的状态应为 **Successfully Loaded**，详情中可以查看已加载的 JAR 和版本。
+
+将工具窗口显示的版本与本页兼容表中的 `IDE Kotlin`、Kronos ORM 版本对应起来，再检查加载的制品坐标。
+
+通过 **Find Action**（macOS 为 `⌘⇧A`）可以运行：
+
+- `KEFS: Update Plugins`：检查制品更新。
+- `KEFS: Refresh Plugins`：重新加载编译器插件。
+- `KEFS: Copy Kotlin IDE Version`：查看 IDEA 内置编译器的准确版本。
+
+本地开发时，在 **Maven Repositories** 添加 **Local (File path)** 仓库，选择编译器兼容制品的 Maven 仓库目录，并在 Kronos 插件组中关联该仓库。`Plugin is Not Requested` 表示尚未触发分析；`Not Found` 时检查关联仓库、构建版本及对应的兼容制品。
+
+## 开发 Kronos 源码
+
+Kronos 仓库包含共享的 [`.idea/kotlin-plugins.xml`](https://github.com/Kronos-orm/Kronos-orm/blob/main/.idea/kotlin-plugins.xml)，已配置 Kronos 插件组及 bootstrap、Maven Central 和 Sonatype snapshot 仓库。
+
+安装官方 Kotlin Toolchain IDE 插件和 KEFS，再准备从源码构建的编译器：
+
+```bash name="仓库 bootstrap" icon="terminal"
+scripts/run build bootstrap
 ```
 
-只有确实要覆盖同名文件时，才启用 `Overwrite existing files`。
+Toolchain IDE 插件负责导入项目模型，KEFS 负责为编辑器分析加载编译扩展。Bootstrap 会将普通编译器坐标准备到 Maven Local 供项目导入使用，将 KEFS 制品放在 `build/repository/bootstrap`。打开包含 `project.yaml` 的仓库目录并重新加载项目；共享 KEFS 配置使用 `$PROJECT_DIR$` 引用私有仓库。
 
-## 自定义模板
+## 启用集合字面量语法
 
-`Templates` 标签页会列出内置模板和项目模板。使用 `Copy to Project` 可以把内置 KPojo 模板复制到 `.kronos/templates`，再按当前项目修改。
+在项目构建中启用 `-Xcollection-literals`，让编译器和导入后的 IDE 模型识别 `[]` DSL。
 
-项目模板可使用这些占位符：
-
-| 占位符 | 值 |
-|--------|----|
-| {{ $.templatePlaceholder("packageName") }} | Code Generator 标签页填写的包名 |
-| {{ $.templatePlaceholder("imports") }} | 生成注解和类型需要的 import |
-| {{ $.templatePlaceholder("tableComment") }} | 格式化后的表注释 |
-| {{ $.templatePlaceholder("generatedAt") }} | 生成时间 |
-| {{ $.templatePlaceholder("tableName") }} | 来源表名 |
-| {{ $.templatePlaceholder("className") }} | 生成的 Kotlin 类名 |
-| {{ $.templatePlaceholder("tableIndexes") }} | 渲染后的 `@TableIndex` 注解 |
-| {{ $.templatePlaceholder("fields") }} | 带 Kronos 注解的 Kotlin 属性 |
-
-项目 KPojo 模板需要保留这个标记，IDEA 插件会用它识别支持的模板：
-
-```kotlin group="Template" name="marker" icon="kotlin"
-// KRONOS_IDEA_TEMPLATE:KPOJO
+```kotlin name="build.gradle.kts" icon="gradlekts"
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcollection-literals")
+    }
+}
 ```
+
+```yaml name="module.yaml"
+settings:
+  kotlin:
+    version: 2.4.21
+    freeCompilerArgs: [ -Xcollection-literals ]
+```
+
+修改编译参数后重新加载项目。KEFS 的 **General** 页会显示编辑器使用的编译器版本，可与本页兼容表中的 `IDE Kotlin` 对照。
 
 ## 使用编辑器分析
 
-Kronos 有不少能力来自编译期生成信息：`KPojo` 会生成字段元数据和动态访问器，查询 DSL 会生成每个 lambda 可访问的字段，`select { ... }` 会生成查询结果行的临时 `KPojo` 投影类，子查询和 insert-select 还会根据字段形状做诊断。
+编写投影后，通过 Kotlin 标准属性补全访问结果字段：
 
-IntelliJ IDEA 插件会把这些编译期信息交给 IDEA K2 分析。这样，编辑器可以在 `toDataMap()`、`it.nameLength`、`it.rn`、`rows.first().totalAmount`、`insert<Target> { ... }` 这些位置给出补全、类型展示和错误提示。
-
-在生成投影 receiver 上打开 quick documentation 时，插件会渲染对应的生成类形态。你可以直接看到当前结果行有哪些字段，不需要去找内部生成源码。
-
-```kotlin group="Editor Analysis" name="projection" icon="kotlin"
+```kotlin name="projection" icon="kotlin"
 val rows = User()
-    .select {
-        [it.id, f.length(it.name).alias("nameLength")]
-    }
+    .select { [it.id, f.length(it.name).alias("nameLength")] }
     .toList()
 
-rows.first().nameLength
+val length: Int? = rows.first().nameLength
 ```
 
-结果类型的 quick documentation 等价于：
+`nameLength` 推断为 `Int?`。这些类型也会用于后续查询 lambda 的属性补全和类型检查。
 
-```kotlin group="Editor Analysis" name="generated shape" icon="kotlin"
-data class KronosSelectResult_UserNameLength(
-    var id: Int? = null,
-    var nameLength: Int? = null,
-) : KPojo
-```
-
-如果 Gradle 输出中能正常编译，但编辑器没有补全，请重新加载项目，并确认已安装的插件名为 `Kronos-ORM`、插件 ID 为 `com.kotlinorm.kronos-idea-plugin`。
+数据库实体生成见 {{ $.keyword("resources/codegen", ["代码生成器"]) }}。
 
 ## 一个查询里的三个 KPojo
 
@@ -299,7 +226,7 @@ val filtered = query
     .toList()
 ```
 
-有子查询、多次 `.select { ... }`、join 子查询或 insert-select 时，也会继续产生更多类似的结果行类和排序上下文类。业务代码不需要引用这些类名，IDEA 插件会把它们用于补全和检查。
+有子查询、多次 `.select { ... }`、join 子查询或 insert-select 时，也会继续产生更多类似的结果行类和排序上下文类。业务代码不需要引用这些类名，Kotlin 编辑器分析会把它们用于补全和检查。
 
 ## 窗口函数结果
 
@@ -632,7 +559,7 @@ rows.first().id_2
 rows.first().id_1
 ```
 
-请求名 `id`、`id`、`id_1` 会解析为 `id`、`id_2`、`id_1`。IDEA 补全和生成投影文档都使用这些解析后名称。不同值具有不同含义时，优先使用显式 alias。
+请求名 `id`、`id`、`id_1` 会解析为 `id`、`id_2`、`id_1`。IDEA 补全和类型推断都使用这些解析后名称。不同值具有不同含义时，优先使用显式 alias。
 
 alias 可以复用输入字段名。alias 本身以及 `where`、`groupBy`、`having` 等 Source 子句不需要 opt-in：
 
@@ -672,7 +599,7 @@ val ordered = User()
 
 ## 支持的诊断场景
 
-IDEA 插件会把这些 Kronos DSL 规则直接显示在编辑器中：
+Kronos 编译器诊断会通过 KEFS 显示在 Kotlin 编辑器分析中：
 
 | 场景 | 为什么会报错 |
 |------|--------------|
@@ -689,13 +616,13 @@ IDEA 插件会把这些 Kronos DSL 规则直接显示在编辑器中：
 
 ## 排查编辑器行为
 
-当 Gradle 或 Maven 可以通过，但 IDEA 没有显示 Kronos 补全时，按下面顺序检查。
+项目可以构建，但 IDEA 没有显示 Kronos 补全时，按下面顺序检查。
 
 | 现象 | 检查点 | 修复方式 |
 |------|--------|----------|
 | `toDataMap()` 或 `__tableName` 表现为默认 `KPojo` 方法 | source set 没有经过 Kronos 编译期支持 | 启用 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }} 后重新导入项目 |
-| `nameLength` 这类投影 alias 没有补全 | 项目导入完成前已安装插件，IDE 模型较旧 | 重新加载 Gradle/Maven，并重新打开 Kotlin 文件 |
-| 构建输出有诊断，但编辑器没有提示 | IDEA 使用的 Kotlin 插件或项目模型不匹配 | 更新到支持 Kotlin 2.4.0 的 IDEA/Kotlin 插件，必要时清理缓存 |
-| Codegen UI 找不到数据源配置 | 配置路径没有指向目标 JSON 文件 | 在 `Kronos ORM Setting` 中设置 `Config File` |
+| 投影 alias（如 `nameLength`）缺失 | 检查 KEFS Artifacts 中的 Kronos 插件组 | 启用插件组，选择 Maven Central，再重新加载项目 |
+| 构建输出有诊断，编辑器没有提示 | 查看 KEFS 工具窗口中的 Kronos 制品状态 | 更新 KEFS 制品并重新加载项目 |
+| `[]` 出现语法错误 | 检查导入后的编译参数 | 在构建中启用 `-Xcollection-literals` 并重新加载项目 |
 
 更多查询、子查询和 INSERT SELECT 规则见 {{ $.keyword("query/subqueries", ["子查询"]) }}。安装与运行问题见 {{ $.keyword("resources/troubleshooting", ["故障排查"]) }}。

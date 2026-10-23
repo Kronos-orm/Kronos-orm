@@ -1,18 +1,19 @@
-# Kronos IntelliJ IDEA 插件
-
-<center>
-<img src="/assets/images/features/img-2.png" width="300"/>
-</center>
-
---------
+# 使用 KEFS 支持 Kronos 编辑器分析
 
 Kronos 的 DSL 很依赖 Kotlin 编译期信息。`select { ... }` 会生成查询结果行的投影字段，查询结果继续 `select { ... }` 时又会成为新的输入类型，`orderBy { ... }` 还会拿到当前查询可排序的字段集合。
 
-IntelliJ IDEA 插件会把这些编译期生成的信息交给 IDEA K2 分析，让编辑器里的补全、类型展示和红线尽量贴近真实编译结果。
+<figure class="article-cover">
+<img src="/assets/images/features/img-2.png" alt="Kotlin 编辑器分析生成的投影属性、补全与跳转" width="1672" height="941">
+<figcaption>KEFS 将 Kronos 编译器分析接入 Kotlin 编辑器，让投影字段参与类型提示、诊断和导航。</figcaption>
+</figure>
 
-## 插件支持哪些能力
+由 [Mr3zee](https://github.com/Mr3zee) 开发的 [Kotlin External FIR Support（KEFS）](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support) 会将 Kronos 编译器插件加载到 IDEA K2 分析中，由 Kotlin 提供补全、类型推断和 DSL 诊断。安装和共享项目配置见 [编辑器接入指南](/documentation/zh-CN/resources/kefs)。
 
-插件目前重点覆盖这些编辑场景：
+按 [Kronos ORM / KEFS / IDEA 兼容表](/documentation/zh-CN/resources/kefs) 选择版本组合，再按同页的步骤配置编译器制品。
+
+## 编辑器分析支持哪些能力
+
+编辑器分析覆盖这些场景：
 
 - 识别 `KPojo` 生成成员，例如 `toDataMap`、`fromMapData`、字段 metadata 和动态访问能力。
 - 识别 `select { ... }` 编译期生成的结果行字段。
@@ -20,6 +21,11 @@ IntelliJ IDEA 插件会把这些编译期生成的信息交给 IDEA K2 分析，
 - 在 `orderBy { ... }` 中同时提示原始字段和当前查询生成的 alias。
 - 在 `where`、`groupBy`、`having` 中按 Kronos 规则提示当前可用字段。
 - 将缺 alias、投影名重复、标量子查询形态错误、谓词子查询列数错误、insert-select 字段数量和类型错误等 DSL 问题直接显示在编辑器中。
+
+<figure class="article-figure">
+<img src="/assets/images/blog/kefs-projection-navigation.svg" alt="生成属性 rn 保留类型信息，点击属性可以追溯到查询中的 alias 声明。" width="1000" height="420" loading="lazy">
+<figcaption>生成属性 rn 保留类型信息，点击属性可以追溯到查询中的 alias 声明。</figcaption>
+</figure>
 
 ## 生成投影字段会被 IDEA 理解
 
@@ -264,7 +270,7 @@ Order().select().where {
 
 ## insert-select 的提示
 
-`insert<Target> { ... }` 的 lambda receiver 来自源查询生成的结果行。IDEA 插件会让你在 values 中访问源投影字段，并提示数量或类型不匹配的问题。
+`insert<Target> { ... }` 的 lambda receiver 来自源查询生成的结果行。Kotlin 编辑器分析会让你在 values 中访问源投影字段，并提示数量或类型不匹配的问题。
 
 ```kotlin
 data class UserOrderSummary(
@@ -297,7 +303,7 @@ orderCounts.insert<UserOrderSummary> {
 
 ## 推荐阅读
 
-更完整的规则和 SQL 语义见文档中的子查询章节与 IntelliJ IDEA 插件章节：
+更完整的规则和 SQL 语义见文档中的子查询章节与 KEFS 配置章节：
 
 - [子查询](/documentation/zh-CN/query/subqueries)
-- [IntelliJ IDEA 插件](/documentation/zh-CN/resources/idea-plugin)
+- [KEFS 编辑器支持](/documentation/zh-CN/resources/kefs)

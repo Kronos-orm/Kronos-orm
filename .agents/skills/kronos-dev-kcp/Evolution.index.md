@@ -1,4 +1,21 @@
 | Symptom / keyword | Record |
 |---|---|
+| Kotlin 2.4.21; IrAnnotation.symbol; finderForSource; UnsafeDuringIrConstructionAPI; ownerGenerator | [Use annotation and declaration finder APIs while preserving generated ownership](evolution/2026-10-22-compiler-api-warning-cleanup.md) |
+| afterFilter；Unit/null return；internal callback；with误告警；JVM artifact diagnostics handler | [Condition lowering preserves callbacks without a condition value](evolution/2026-10-21-condition-unit-null-callbacks.md) |
+| Native publication; `METADATA_KLIB`; `_native`/`_apple`/`_linux`; Unsupported compiler module | [Native shared metadata uses a Native compiler platform](evolution/2026-10-21-native-shared-metadata-platform.md) |
+| sort; `run`/`with`; initializer or assignment becomes null; `KTableForSort`; nested scope return | [Sort scope callbacks must preserve consumed return values](evolution/2026-10-21-sort-scope-return-value-context.md) |
+| FIR session retention; single JVM compiler tests OOM; weak-key map values; generated member cache | [Projection caches must be owned by their FIR session](evolution/2026-10-21-projection-session-cache-lifetime.md) |
+| KEFS; generated property hover; navigation falls back to file; `getAllowedPsi`; relocated PSI descriptors | [Generated properties need navigable PSI declaration views](evolution/2026-10-21-generated-property-navigation.md) |
+| JVM 17; `IllegalAccessError`; final backing field; mapped `val`; generated dynamic setter | [Writable mapped properties need writable JVM backing fields](evolution/2026-10-20-mapped-val-backing-field.md) |
+| `IR_VALIDATION_ERROR`; generic return type; type parameter not available in scope; `mutableMapOf`; `Map.get` | [Generic IR calls need substituted result types](evolution/2026-10-17-ir-generic-call-result-types.md) |
+| Kotlin 2.4.21; `unwrapVarargValue`; direct message collector; source-less diagnostics; renderer map constructor | [Kotlin 2.4.21 FIR and reporting API migration](evolution/2026-10-16-kotlin-2421-fir-and-reporting.md) |
 | IDEA FIR-only loading; `Required plugin option not present`; generated provider identity; paired optional CLI options | [IDE FIR-only loading must allow build identity to be absent](evolution/2026-07-22-ide-fir-optional-build-identity.md) |
 | `ClassFormatError`; illegal method name `<get-id>`; backend-generated property getter; `DEFAULT_PROPERTY_ACCESSOR` | [Backend-generated getters must belong to an IR property](evolution/2026-07-20-backend-generated-property-getter.md) |
+| Native `IrLinkageError`; generated member call drops a value parameter; `dispatchReceiver`; `arguments[0]` | [IR member calls include the dispatch receiver in their argument indices](evolution/2026-09-07-ir-member-call-argument-indices.md) |
+| Native `IrLinkageError`; generated provider constructor absent across KLIB; source-visible provider skeleton | [Native provider constructors need a source-visible skeleton](evolution/2026-10-18-native-provider-source-skeleton.md) |
+| External enum KLIB/JVM header; main-to-test enum; empty enum factory; incremental query adds enum reference | [Enum factories belong to source declarations](evolution/2026-10-18-enum-factory-source-ownership.md) |
+| Native projection unlinked class; `typeOf`; KLIB imported but not declared signatures; IR-only file | [Native projection classes need a frontend source anchor](evolution/2026-10-20-native-projection-source-anchor.md) |
+| Native SIGILL; `ud2`; transformed DSL lambda; missing `IrReturn` | [Transformed DSL lambdas must retain their returns](evolution/2026-10-20-dsl-lambda-return-abi.md) |
+| Native mangling; `No container found for type parameter`; IDE refined signature; `SubstitutionOverride.CallSite` | [Refined calls need a declaration-site symbol mapping](evolution/2026-10-20-fir-refined-callee-type-parameters.md) |
+| KEFS; `LLContainingClassCalculator`; generated property owner; fixed-symbol lookup tag; `PluginGenerated.Custom` | [IDE-generated projection members need an explicit symbol owner](evolution/2026-10-20-kefs-generated-symbol-ownership.md) |
+| Kotlin Toolchain; module-coordinate; provider SHA; metadata module name; JVM source-set prefix; FIR-only Missing | [Derive provider identities from module coordinates and compiler scope](evolution/2026-10-21-toolchain-module-provider-identity.md) |

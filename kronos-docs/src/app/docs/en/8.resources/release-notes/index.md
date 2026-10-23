@@ -7,6 +7,20 @@
 
 ## Update Logs
 
+### 0.4.0
+
+- Share KPojo models, SQL construction, queries, mutations, table operations and value codecs through Kotlin Multiplatform `commonMain`. Publish JVM and Kotlin/Native variants for Apple, Linux and Windows targets.
+- Connect platform database drivers through `KronosExecutionDataSource` and `KronosExecutionWrapper`. Add the [KMP setup](/documentation/en/getting-started/kmp) and [Native SQLite](/documentation/en/database/native-sqlite) guides alongside the Android/JVM SQLite guide.
+- Generate and aggregate KPojo factories and enum metadata across Native module dependencies. Initialize the final application metadata graph with `initializeKronosMetadata()`.
+- Use Kotlin `2.4.21` and manage test serialization dependencies with the version catalog.
+- Add GitHub Actions gates for JVM, Android/JVM, Apple, Linux and Windows, including real SQLite execution in the reference applications.
+
+#### Upgrade notes
+
+- Update Kronos libraries and compiler/Gradle plugins together to `0.4.0`, and use Kotlin `2.4.21`.
+- Set the shared time zone with an IANA identifier, for example `Kronos.timeZone = "Asia/Shanghai"`. For a JVM `java.time.ZoneId` value, assign its `.id` string.
+- Put portable models and query code in `commonMain`; keep Java and JDBC types in JVM source sets. Call `initializeKronosMetadata()` in the final Kotlin application or framework before database operations.
+
 ### 0.3.1
 
 - ✨ Add built-in H2 and DM8 dialects for queries, table operations, schema metadata, pagination, and upserts. Set `databaseType` to `DBType.H2` or `DBType.DM8`; H2 uses `MERGE` for upserts and DM8 supports native identity columns ([#288](https://github.com/Kronos-orm/Kronos-orm/pull/288), [#289](https://github.com/Kronos-orm/Kronos-orm/pull/289)).
@@ -29,7 +43,7 @@
 - 🐛 Diagnose unregistered captured KPojo fields in conditions at compile time while preserving ordinary captured Kotlin values, and add `takeUnless` condition gates ([#271](https://github.com/Kronos-orm/Kronos-orm/pull/271), [#272](https://github.com/Kronos-orm/Kronos-orm/pull/272)).
 - 🐛 Report unsupported generic KPojo declarations during FIR analysis instead of failing later in IR generation ([#278](https://github.com/Kronos-orm/Kronos-orm/pull/278)).
 - 🧩 Add opt-in source alias overrides for duplicate projection outputs and use stable `_N` names such as `id_1` for mapped, generated, and derived fields ([#279](https://github.com/Kronos-orm/Kronos-orm/pull/279)).
-- 📚 Document dialect-specific `@Default` expressions, logic-delete defaults, and IDEA plugin release usage ([#275](https://github.com/Kronos-orm/Kronos-orm/pull/275), [#277](https://github.com/Kronos-orm/Kronos-orm/pull/277)).
+- 📚 Document dialect-specific `@Default` expressions, logic-delete defaults ([#275](https://github.com/Kronos-orm/Kronos-orm/pull/275), [#277](https://github.com/Kronos-orm/Kronos-orm/pull/277)).
 - 🔧 Check the external Ktor, Spring Boot, Solon, Vert.x, and Android examples against the current Maven Local artifacts in CI ([#285](https://github.com/Kronos-orm/Kronos-orm/pull/285)).
 
 #### Upgrade notes
@@ -58,7 +72,7 @@
 - ✨ Use typed cursor pagination through `cursor(pageSize, after)`, returning `CursorResult(hasNext, nextCursor, records)` as an execution-only stage.
 - ✨ Use `page(...).withTotal().toList()` / `toMapList()` for named `PageResult(total, records, totalPages, pageIndex, pageSize)` values; offset pages remain selectable.
 - 🐛 Fix derived-source and window-alias projection SQL so logical output names such as `rn`, `userName`, and `createTime` remain available in later query layers.
-- 🧩 Improve the IDEA plugin projection experience, including generated projection completion for `it.` and safer handling of IntelliJ cancellation exceptions.
+- 🧩 Improve projection completion, including generated projection completion for `it.` and safer handling of IntelliJ cancellation exceptions.
 - 📚 Refresh README, documentation macros, release snippets, and AI skill guidance for `0.2.3`.
 
 ### 0.2.2
@@ -131,7 +145,7 @@ Query tasks and the conversion pipeline now carry complete Kotlin `KType` metada
 - 🐛 Fix Kotlinx Serialization deserialization for generic collection and data-class fields, and preserve selected `null` values in map and scalar query results ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix generated projection types for `select { it }`, `select { [it] }`, KPojo-minus projections, and mixed full-row plus alias projections using `[]` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 Fix SQLite UNION rendering, SQLite schema synchronization, default string values, and other ORM edge cases found by expanded compiler, core, and integration tests ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
-- 💪 Expand projection, serialization, nullable-result, schema-sync, and cross-database regression coverage; update the README, user docs, AI skill guide, Gradle plugin, and IDEA plugin for `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 💪 Expand projection, serialization, nullable-result, schema-sync, and cross-database regression coverage; update the README, user docs, AI skill guide, and Gradle plugin for `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 
 ### 0.1.2
 
@@ -144,9 +158,8 @@ Query tasks and the conversion pipeline now carry complete Kotlin `KType` metada
 ### 0.1.1
 
 - ✨ Add projection and subquery DSL coverage for generated result-row classes, scalar subqueries, predicate subqueries, INSERT SELECT, and window-function aliases ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
-- ✨ Add user-facing IDEA plugin documentation for generated KPojo shapes, projection receivers, editor diagnostics, and plugin installation from GitHub Release artifacts ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 - 💪 Reorganize user documentation around getting started, mapping, query, mutation, database, configuration, advanced topics, and resources; refresh examples for table mapping, functions, projection, dialect behavior, and codegen workflows ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
-- 💪 Improve release automation so formal releases publish Maven artifacts, build JVM jars and the IDEA plugin zip, attach them to a GitHub Release, and generate release notes automatically ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 💪 Improve release automation so formal releases publish Maven artifacts, build JVM jars, attach them to a GitHub Release, and generate release notes automatically ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 - 🐛 Fix compiler-plugin type-parameter handling for `SelectFrom10` through `SelectFrom16` query functions and add official compiler tests for query return types and projection behavior ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 - 🔧 Use the official Gradle distribution URL for all wrappers to avoid CI failures caused by mirror download timeouts ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 
@@ -366,3 +379,19 @@ dependencies {
   </build>
 </project>
 ```
+
+## Kotlin Compatibility
+
+| Kronos version | Supported Kotlin version | Notes |
+|----------------|--------------------------|-------|
+| `0.4.0` | `2.4.21` | Kotlin Multiplatform: JVM, Android/JVM and Kotlin/Native |
+| `0.3.1` | `2.4.0+` | H2 and DM8 dialects, JDBC connection and row mapping, and Kotlin `String` / cross-dialect SQL functions |
+| `0.3.0` | `2.4.0+` | Android/JVM SQLite support; see the [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) |
+| `0.2.0` - `0.2.4` | `2.4.0+` | Kotlin 2.4.0 release line |
+| `0.1.2` | `2.4.0+` | Fixes schema synchronization edge cases and expands cross-database integration coverage |
+| `0.1.1` | `2.4.0+` | Adds projection docs and release automation improvements |
+| `0.1.0` | `2.3.0+` | Stable release line based on Kotlin 2.3.0 |
+| `0.0.7` | `2.3.0+` | Upgraded Gradle and Kotlin in the 0.0.7 release |
+| `0.0.6` | `2.2.21+` | Added `kotlin.time.Instant` support |
+| `0.0.2` - `0.0.5` | `2.2.0+` | Early development releases before the 2.2.21 upgrade |
+| `0.0.1` | `2.1.0+` | Initial public release line |

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" role="img" aria-labelledby="title desc">
+<style>text{font-family:Inter,system-ui,sans-serif;fill:#dce8df} .muted{fill:#95aa9b;font-size:17px} .label{font-size:23px;font-weight:600} .code{font-family:ui-monospace,monospace;font-size:18px;fill:#d4c4f4} .box{fill:#151e1a;stroke:#3a4b40;stroke-width:1.5} .line{fill:none;stroke:#a9c57e;stroke-width:2}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10" fill="#a9c57e"/></marker></defs>
+<rect width="1000" height="420" rx="16" fill="#0c1310"/>
+<title id="title">Database-first Kotlin model generation</title><desc id="desc">Database metadata is combined with TOML configuration and a main.kts template to generate a Kotlin KPojo source file.</desc>
+<text class="muted" x="40" y="55">SCHEMA</text><text class="muted" x="365" y="55">CONFIGURATION + TEMPLATE</text><text class="muted" x="718" y="55">KOTLIN SOURCE</text>
+<rect class="box" x="28" y="85" width="270" height="245" rx="12"/><text class="label" x="50" y="128">tb_user</text><path d="M29 149h268M29 204h268M29 259h268" stroke="#3a4b40"/><text class="code" x="50" y="184">id    INTEGER</text><text class="code" x="50" y="239">name  VARCHAR</text><text class="muted" x="50" y="304">Table and column metadata</text>
+<path class="line" d="M299 205h40" marker-end="url(#arrow)"/>
+<rect class="box" x="350" y="85" width="300" height="108" rx="12"/><text class="code" x="372" y="126">config.toml</text><text class="muted" x="372" y="162">Names · strategies · output</text>
+<rect class="box" x="350" y="213" width="300" height="117" rx="12"/><text class="code" x="372" y="256">example.main.kts</text><text class="muted" x="372" y="295">Kotlin string template</text>
+<path class="line" d="M651 205h40" marker-end="url(#arrow)"/>
+<rect class="box" x="702" y="85" width="270" height="245" rx="12"/><text class="label" x="724" y="128">User.kt</text><text class="code" x="724" y="177">data class User(</text><text class="code" x="724" y="218">  var id: Int?,</text><text class="code" x="724" y="259">  var name: String?</text><text class="code" x="724" y="300">) : KPojo</text>
+<text class="muted" x="500" y="386" text-anchor="middle">Database schema → naming and template rules → editable Kotlin models</text>
+</svg>

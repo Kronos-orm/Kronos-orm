@@ -1,4 +1,4 @@
-<ng-doc-root [noWidthLimit]="true" [footerContent]="footer" [class]="(wikiMode ? 'wiki_mode' : '') + (sidebarCollapsed ? ' sidebar-collapsed' : '')">
+<ng-doc-root kronosDocLinks kronosDocumentationTheme [noWidthLimit]="true" [footerContent]="footer" [class]="(wikiMode ? 'wiki_mode' : '') + (sidebarCollapsed ? ' sidebar-collapsed' : '')">
     <ng-doc-navbar>
         <div ngDocNavbarLeft class="flex items-center gap-4">
             <a class="logo" [routerLink]="['/']">
@@ -27,6 +27,7 @@
         </div>
         <div ngDocNavbarRight>
             <div class="ng-doc-header-controls">
+                <kronos-copy-markdown [container]="elementRef.nativeElement"/>
                 <kronos-language-switch [appendTo]="elementRef.nativeElement"/>
                 <ng-doc-theme-toggle></ng-doc-theme-toggle>
                 <a

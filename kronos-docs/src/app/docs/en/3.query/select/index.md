@@ -694,7 +694,7 @@ The `lock` method is used to set a **row lock** on a query, at which point Krono
 
 By default, Kronos will use **Exclusive Lock** (`SqlLock.Update()`) from **SqlLock**, which can be changed to **Shared Lock** from **SqlLock** by passing the parameter (`SqlLock.Share()`).
 
-For **optimistic locks**, see {{$.keyword("query/locks", ["Advanced Usage", "Locking Mechanisms"])}}.
+For **optimistic locks**, see {{$.keyword("query/locks", ["Advanced Usage", "Optimistic locking is a mutation strategy"])}}.
 
 ```kotlin group="Case 18" name="kotlin" icon="kotlin"
 val listOfUser: List<User> = User().select()
@@ -895,7 +895,7 @@ FROM `user` LIMIT 1
 
 Cascading query loads related data through separate query steps. A common flow is to load parent rows first, then load child rows from those parent results.
 
-The detailed cascade select API is covered in {{$.keyword("advanced/cascade-select", ["advanced usage","cascade query"])}}.
+The detailed cascade select API is covered in {{$.keyword("advanced/cascade-select", ["advanced usage","Cascading queries"])}}.
 
 ## Specify the data source to be used
 

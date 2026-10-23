@@ -3,7 +3,7 @@
 
 ## Cascading Relationship Annotation
 
-KPojo provides the `@Cascade` annotation to define the cascade relationship, see: {{ $.keyword("mapping/annotations", ["annotation configuration", "@Cascade cascade relationship definition"]) }}.
+KPojo provides the `@Cascade` annotation to define the cascade relationship, see: {{ $.keyword("mapping/annotations", ["annotation configuration", "@CascadeCascading Relationship Declaration"]) }}.
 
 ## 1. One-to-many cascading relationship
 

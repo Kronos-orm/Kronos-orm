@@ -23,8 +23,7 @@ import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
-import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.isAnnotation
 import org.jetbrains.kotlin.name.FqName
 
 /**
@@ -53,8 +52,8 @@ private val IrFunctionAccessExpression.valueArgs: List<IrExpression?>
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrAnnotationContainer.findAnnotation(fqName: FqName): IrConstructorCall? {
-    return annotations.find { 
-        it.symbol.owner.returnType.getClass()?.fqNameWhenAvailable == fqName 
+    return annotations.find {
+        it.isAnnotation(fqName)
     }
 }
 

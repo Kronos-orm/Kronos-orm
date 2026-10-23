@@ -3,13 +3,13 @@
 
 ## Set the Kotlin project baseline
 
-Kronos compile-time support is loaded by the Kotlin build. Use JDK 8+, Kotlin 2.4.0+, Maven 3.9+, or a Gradle version supported by Kotlin 2.4.0.
+Kronos compile-time support is loaded by the Kotlin build. Use JDK 8+, Kotlin 2.4.21+, Maven 3.9+, or a Gradle version supported by Kotlin 2.4.21.
 
 ```kotlin group="Baseline 1" name="gradle(kts)" icon="gradlekts"
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
 }
 
 kotlin {
@@ -21,7 +21,7 @@ kotlin {
 
 ```xml group="Baseline 1" name="maven" icon="maven"
 <properties>
-    <kotlin.version>2.4.0</kotlin.version>
+    <kotlin.version>2.4.21</kotlin.version>
     <maven.compiler.release>8</maven.compiler.release>
 </properties>
 ```
@@ -39,8 +39,14 @@ Add the Kronos Gradle plugin and `kronos-core` to a JVM Kotlin project. The Grad
 
 ```kotlin group="Gradle 1" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -67,7 +73,7 @@ In Maven, add `kronos-core` as an application dependency and register `kronos-ma
 ```xml group="Maven 1" name="pom.xml" icon="maven"
 <project>
     <properties>
-        <kotlin.version>2.4.0</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <kronos.version>{{ $.kronosVersion() }}</kronos.version>
     </properties>
 
@@ -87,6 +93,10 @@ In Maven, add `kronos-core` as an application dependency and register `kronos-ma
                 <version>${kotlin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <args>
+                        <arg>-Xcollection-literals</arg>
+                        <arg>-Xcontext-sensitive-resolution</arg>
+                    </args>
                     <compilerPlugins>
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
@@ -313,4 +323,4 @@ Removing a field first makes the replacement intentional without opt-in:
 val query = User().select { [it - it.name, f.length(it.name).alias("name")] }
 ```
 
-For build setup, start from {{ $.keyword("getting-started/quick-start", ["Quick Start"]) }}. For database execution and SQL logging, see {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }} and {{ $.keyword("configuration/logging", ["Logging"]) }}. For IDE inspection behavior, see {{ $.keyword("resources/idea-plugin", ["IntelliJ IDEA Plugin"]) }}.
+For build setup, start from {{ $.keyword("getting-started/quick-start", ["Quick Start"]) }}. For database execution and SQL logging, see {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }} and {{ $.keyword("configuration/logging", ["Logging"]) }}. For IDE inspection behavior, see {{ $.keyword("resources/kefs", ["IDE Support with KEFS"]) }}.

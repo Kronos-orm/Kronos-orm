@@ -26,6 +26,12 @@ import org.junit.jupiter.api.Test
  * not appear in isolated transformer tests.
  */
 class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
+    @Test
+    fun transformedDslReturnsPreserveCollectedValues() = box("transformedDslReturnsPreserveCollectedValues")
+
+    @Test
+    fun explicitDslReturnTypesPreserveCallingConvention() = box("typedDslReturnsKeepCovariantApiArguments")
+
     /**
      * Verifies select clause SQL statement construction after compiler-plugin field transformation.
      */

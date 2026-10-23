@@ -1,20 +1,24 @@
 # Kronos Code Generator
 
-<center>
-<img src="/assets/images/features/img-3.png" width="300"/>
-</center>
-
---------
-
 Kronos Codegen provides the Database First path for projects that already have database tables. It reads table metadata,
 applies naming and annotation strategies, and writes Kotlin `KPojo` classes from a `toml` configuration and a Kotlin
 script template.
+
+<figure class="article-cover">
+<img src="/assets/images/features/img-3.png" alt="Database tables transformed into typed Kotlin source files" width="1672" height="941">
+<figcaption>Database metadata, TOML configuration and a Kotlin script template produce KPojo source files.</figcaption>
+</figure>
 
 ## Database First
 
 In the `Database First` mode, the code generator can automatically generate corresponding `Kronos` entity classes and
 related query code based on the table structure in the database. This allows developers to directly use the generated
 code for database operations without manually writing entity classes.
+
+<figure class="article-figure">
+<img src="/assets/images/blog/codegen-database-first.svg" alt="Schema metadata supplies the input; naming strategies and templates shape the generated Kotlin code." width="1000" height="420" loading="lazy">
+<figcaption>Schema metadata supplies the input; naming strategies and templates shape the generated Kotlin code.</figcaption>
+</figure>
 
 ## Design of Code Generator
 
@@ -122,9 +126,9 @@ Use the latest stable MySQL Connector/J and connection pool versions that match 
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 @file:DependsOn("com.alibaba:druid:<latest-stable>")
 
@@ -193,3 +197,6 @@ kotlinc -script example.main.kts
 ```
 
 This will generate code based on the information in the configuration file and write it to the specified directory.
+
+
+See the [Code generation guide](/documentation/en/resources/codegen).

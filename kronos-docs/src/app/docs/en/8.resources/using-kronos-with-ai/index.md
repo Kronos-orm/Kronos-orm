@@ -60,7 +60,7 @@ Use prompts that name the build tool, database, and expected Kronos API. This ke
 
 ```text group="Prompt 1" name="project setup"
 Use the Kronos ORM skill. Add Kronos to this JVM Kotlin Gradle project.
-Use Kotlin 2.4.0, com.kotlinorm.kronos-gradle-plugin, kronos-core,
+Use Kotlin 2.4.21, com.kotlinorm.kronos-gradle-plugin, kronos-core,
 and kronos-jdbc-wrapper. Configure Kronos.dataSource with KronosJdbcWrapper.
 Use direct property assignment on the Kronos object for global settings.
 ```
@@ -69,8 +69,14 @@ The expected dependency shape is:
 
 ```kotlin group="Prompt 2" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {

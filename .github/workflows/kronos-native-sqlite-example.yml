@@ -1,0 +1,111 @@
+name: Kronos Native SQLite example
+on:
+  workflow_call:
+    inputs:
+      example-ref:
+        required: true
+        type: string
+      group:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      publication-artifact:
+        required: true
+        type: string
+permissions:
+  contents: read
+env:
+  ORG_GRADLE_PROJECT_kronosRepository: ${{ github.workspace }}/build/ci-publications
+jobs:
+  runtime:
+    name: SQLite ${{ inputs.group }} runtime
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: ${{ startsWith(inputs.runner, 'macos') && '/Applications/Xcode_26.4.app/Contents/Developer' || '' }}
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: sqlite-${{ inputs.group }}
+    - uses: ./.github/actions/prepare-native-sqlite
+      with:
+        example-ref: ${{ inputs.example-ref }}
+        publication-artifact: ${{ inputs.publication-artifact }}
+    - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+      if: inputs.group == 'windows'
+      with:
+        msystem: MINGW64
+        update: true
+        install: mingw-w64-x86_64-gcc
+    - name: Expose the Windows C compiler
+      if: inputs.group == 'windows'
+      shell: msys2 {0}
+      run: cygpath -w /mingw64/bin >> "$GITHUB_PATH"
+    - name: Run actual SQLite tests and build the platform applications
+      working-directory: kronos-example-ios
+      env:
+        GROUP: ${{ inputs.group }}
+      run: |
+        case "$GROUP" in
+          ios) tasks=(:shared:iosSimulatorArm64Test :shared:compileKotlinIosArm64 :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64) ;;
+          macos) tasks=(:shared:macosArm64Test :shared:runDebugExecutableMacosArm64) ;;
+          tvos) tasks=(:shared:tvosSimulatorArm64Test :shared:compileKotlinTvosArm64) ;;
+          watchos) tasks=(:shared:watchosSimulatorArm64Test :shared:compileKotlinWatchosArm64 :shared:compileKotlinWatchosDeviceArm64) ;;
+          linux) tasks=(:shared:linuxX64Test :shared:runDebugExecutableLinuxX64 :shared:linkDebugTestLinuxArm64 :shared:linkDebugExecutableLinuxArm64) ;;
+          windows) tasks=(:shared:mingwX64Test :shared:runDebugExecutableMingwX64) ;;
+          *) exit 1 ;;
+        esac
+        "$GITHUB_WORKSPACE/scripts/run" .github/scripts/run-kmp-gradle-gate.main.kts bash ./gradlew "${tasks[@]}" --no-daemon --max-workers=2 --console=plain --stacktrace
+    - name: Require generated ORM SQLite execution
+      env:
+        GROUP: ${{ inputs.group }}
+      run: |
+        case "$GROUP" in
+          ios) target=iosSimulatorArm64 ;; macos) target=macosArm64 ;; tvos) target=tvosSimulatorArm64 ;;
+          watchos) target=watchosSimulatorArm64 ;; linux) target=linuxX64 ;; windows) target=mingwX64 ;; *) exit 1 ;;
+        esac
+        scripts/run .github/scripts/verify-kmp-test-results.main.kts --require-suite "${target}Test.com.kotlinorm.example.ios.NativeOrmIntegrationTest" "kronos-example-ios/shared/build/test-results/${target}Test"
+    - name: Build and run the iOS application UI test
+      if: inputs.group == 'ios'
+      working-directory: kronos-example-ios/iosApp
+      run: |
+        if ! command -v xcodegen; then brew install xcodegen; fi
+        xcodegen generate
+        device_id=$(xcrun simctl list devices available --json | jq -er '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+        xcodebuild -project KronosIosApp.xcodeproj -scheme KronosIosApp -destination "platform=iOS Simulator,id=$device_id" -configuration Debug -resultBundlePath build/SqliteApp.xcresult CODE_SIGNING_ALLOWED=NO test
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: inputs.group == 'linux'
+      with:
+        name: kmp-sqlite-linux-arm64-binaries
+        retention-days: 3
+        if-no-files-found: error
+        path: |
+          kronos-example-ios/shared/build/bin/linuxArm64/debugTest/test.kexe
+          kronos-example-ios/shared/build/bin/linuxArm64/debugExecutable/*.kexe
+        overwrite: true
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: kmp-sqlite-${{ inputs.group }}-reports
+        if-no-files-found: error
+        path: |
+          kronos-example-ios/shared/build/test-results/**
+          kronos-example-ios/shared/build/reports/tests/**
+          kronos-example-ios/iosApp/build/SqliteApp.xcresult
+        overwrite: true
+    - name: Record consumed candidate bytes
+      run: scripts/run release receipt --repository build/ci-publications --group sqlite-${{ inputs.group }} --family native --output "$GITHUB_WORKSPACE/consumer-receipt.json"
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: receipt-sqlite-${{ inputs.group }}
+        path: consumer-receipt.json
+        if-no-files-found: error
+        overwrite: true

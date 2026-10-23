@@ -96,7 +96,7 @@ class SortTransformer(
         }
 
         return with(pluginContext) {
-            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock(resultType = expression.type) {
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
                 val fields = collectSortFields(irFunction, expression.value)
@@ -110,7 +110,11 @@ class SortTransformer(
                         arguments[1] = sortedField
                     }
                 }
-                if (fields.isEmpty()) +expression
+                if (fields.isEmpty()) {
+                    +expression
+                } else {
+                    +neutralDslReturn(expression, irFunction.returnType)
+                }
             }
         }
     }

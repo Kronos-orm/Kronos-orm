@@ -211,11 +211,11 @@ Use Codegen when database metadata should produce KPojo files.
 @file:DependsOn("com.kotlinorm:kronos-codegen:{{ $.kronosVersion() }}")
 ```
 
-Use the IDEA plugin page for editor support and diagnostics.
+Use the KEFS setup page for editor support and diagnostics.
 
 ```text group="Tools 2" name="pages"
 Resources -> Code Generator
-Resources -> IntelliJ IDEA Plugin
+Resources -> IDE Support with KEFS
 ```
 
-See {{ $.keyword("resources/codegen", ["Code Generator"]) }} and {{ $.keyword("resources/idea-plugin", ["IntelliJ IDEA Plugin"]) }}.
+See {{ $.keyword("resources/codegen", ["Code Generator"]) }} and {{ $.keyword("resources/kefs", ["IDE Support with KEFS"]) }}.

@@ -6,7 +6,7 @@
 | 层级 | 配置项 | 入口 |
 |------|--------|------|
 | 必须 | 默认数据源 wrapper | [默认数据源设置](#默认数据源设置) |
-| 常用 | 表名/列名策略、默认日期格式、时区、日志 | [全局表名策略](#全局表名策略)、[全局列名策略](#全局列名策略)、[默认日期时间格式](#默认日期时间格式)、[默认时区](#默认时区)、[日志输出路径及开关](#日志输出路径及开关) |
+| 常用 | 表名/列名策略、默认日期格式、时间时区、日志 | [全局表名策略](#全局表名策略)、[全局列名策略](#全局列名策略)、[默认日期时间格式](#默认日期时间格式)、[时间时区](#时间时区)、[日志输出路径及开关](#日志输出路径及开关) |
 | 按业务启用 | 通用字段策略、无值行为、JSON 序列化、自定义值映射、Map 值转换 | [创建时间策略](#创建时间策略)、[逻辑删除策略](#逻辑删除策略)、[无值策略](#无值策略)、{{ $.keyword("mapping/serialization", ["序列化"]) }}、[自定义值映射](#自定义值映射)、[Map 值转换](#map-值转换) |
 
 编译插件配置在构建工具中完成。source set 和诊断检查见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
@@ -248,25 +248,21 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 > **Note**
 > 在单个模型上配置 `@DateTimeFormat` 可以覆盖全局设置，见 {{ $.keyword("mapping/annotations", ["注解"]) }}。
 
-## 默认时区
+## 时间时区
 
-用于指定默认时区，遵循`ISO 8601`规范，在创建时间、更新时间及格式化日期/时间时使用。
+`Kronos.timeZone` 是 common API 统一使用的 IANA 时区字符串。默认值为 `null`，表示使用当前平台
+的 system default。JVM 使用 `ZoneId` 解析，Native 使用 `kotlinx.datetime.TimeZone` 解析。
 
-**参数**：
-{{$.params([['timeZone', '默认时区', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
+`kotlin.time.Instant` 以及兼容的 `kotlinx.datetime.Instant` 表示 UTC 时间点。自动 codec 或时间策略
+需要把时间点转换成本地日历值时使用该配置；`LocalDate`、`LocalDateTime` 和 `LocalTime` 继续保持
+无时区文本语义。
 
-Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
-
-```kotlin group="Time 2" name="zone" icon="kotlin"
+```kotlin group="Time zone" name="kotlin" icon="kotlin"
 import com.kotlinorm.Kronos
-import java.time.ZoneId
 
-with(Kronos) {
-    timeZone = ZoneId.of("UTC")
-    timeZone = ZoneId.of("Asia/Shanghai")
-    timeZone = ZoneId.systemDefault()
-    timeZone = ZoneId.of("GMT+8")
-}
+Kronos.timeZone = null              // 使用平台 system default
+Kronos.timeZone = "UTC"
+Kronos.timeZone = "Asia/Shanghai"
 ```
 
 ## 无值策略
@@ -317,17 +313,20 @@ JSON 对象和集合使用 {{ $.annotation("Serialize") }}，配置方式见 {{ 
 
 ## 日志输出路径及开关
 
-用于设置全局默认条件下的日志输出位置。
+通过 `Kronos.logging` 统一配置日志开关、内置输出位置和适配器类型。
 
 **参数**：
-{{$.params([['logPath', '日志输出路径', 'Array<String>', '["console"]']])}}
+{{$.params([['logging.enabled', '日志总开关', 'Boolean', 'true'], ['logging.path', '内置日志输出路径', 'Array<String>', '["console"]'], ['logging.type', '日志适配器类型', 'KLoggerType', 'DEFAULT_LOGGER']])}}
 
-设置 `logPath` 后，Kronos 会向控制台和指定路径输出日志。输出位置和 logger 适配器见 {{ $.keyword("configuration/logging", ["Kronos-logging"]) }}。
+设置 `logging.path` 后，Kronos 会向控制台和指定路径输出日志。输出位置和 logger 适配器见 {{ $.keyword("configuration/logging", ["Kronos-logging"]) }}。
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
 import com.kotlinorm.Kronos
 
-Kronos.logPath = ["console", "/var/log/kronos"]
+Kronos.logging.enabled = false
+// 重新开启时保留原配置。
+Kronos.logging.enabled = true
+Kronos.logging.path = ["console", "/var/log/kronos"]
 ```
 
 ## Map 值转换

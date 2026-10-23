@@ -1,8 +1,10 @@
-import {CommonModule} from '@angular/common';
-import {Component} from '@angular/core';
+import {CommonModule, Location} from '@angular/common';
+import {Component, ElementRef, signal, ViewChild} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {MarkdownComponent} from 'ngx-markdown';
 import {AppService} from '../../app.service';
+import {applicationRoute} from '../../application-links';
 
 type LocalizedText = {
     zh: string;
@@ -30,6 +32,9 @@ type BlogEntry = {
 })
 export class BlogComponent {
     blog?: string;
+    readMinutes = 1;
+    readonly headings = signal<{id: string; title: string}[]>([]);
+    @ViewChild('articleBody', {read: ElementRef}) private articleBody?: ElementRef<HTMLElement>;
 
     readonly blogs: BlogEntry[] = [
         {
@@ -40,12 +45,12 @@ export class BlogComponent {
                 en: 'Kotlin multiplatform support'
             },
             copy: {
-                zh: 'Kronos 当前对 Kotlin 多平台的支持情况，以及后续开发和发布计划。',
-                en: 'Current Kotlin multiplatform support in Kronos, plus development and release plans.'
+                zh: '在 JVM、Android/JVM 和 Kotlin/Native 间共享模型与查询，并接入平台数据库连接。',
+                en: 'Share models and queries across JVM, Android/JVM and Kotlin/Native, with platform database connections.'
             },
             tag: {
-                zh: '路线图',
-                en: 'Roadmap'
+                zh: '多平台',
+                en: 'Multiplatform'
             }
         },
         {
@@ -65,11 +70,11 @@ export class BlogComponent {
             }
         },
         {
-            slug: 'intellij-idea-plugin',
+            slug: 'kefs-editor-support',
             image: '/assets/images/features/img-2.png',
             title: {
-                zh: 'Kronos IntelliJ IDEA 插件',
-                en: 'Kronos IntelliJ IDEA plugin'
+                zh: '使用 KEFS 支持 Kronos 编辑器分析',
+                en: 'Kronos editor support with KEFS'
             },
             copy: {
                 zh: '让 IDEA K2 分析理解 Kronos 生成成员、生成投影和 DSL diagnostics。',
@@ -82,9 +87,10 @@ export class BlogComponent {
         }
     ];
 
-    constructor(public appService: AppService, activatedRoute: ActivatedRoute, private router: Router) {
-        activatedRoute.queryParams.subscribe(params => {
-            this.blog = params['blog'];
+    constructor(public appService: AppService, activatedRoute: ActivatedRoute, private router: Router,
+                private location: Location) {
+        activatedRoute.queryParams.pipe(takeUntilDestroyed()).subscribe(params => {
+            this.blog = this.blogs.some(entry => entry.slug === params['blog']) ? params['blog'] : undefined;
         });
     }
 
@@ -107,6 +113,85 @@ export class BlogComponent {
     get articleTitle(): string {
         const item = this.blogs.find(blog => blog.slug === this.blog);
         return item ? this.text(item.title) : 'Kronos Blog';
+    }
+
+    get articleTag(): string {
+        const entry = this.blogs.find(item => item.slug === this.blog);
+        return entry ? this.text(entry.tag) : 'Kronos Blog';
+    }
+
+    onArticleLoad(markdown: string): void {
+        this.readMinutes = Math.max(1, Math.ceil(this.isZh ? markdown.length / 650 : markdown.split(/\s+/).length / 220));
+    }
+
+    headingUrl(id: string): string {
+        return this.location.prepareExternalUrl(`${this.router.url.split('#')[0]}#${encodeURIComponent(id)}`);
+    }
+
+    prepareArticle(): void {
+        const body = this.articleBody?.nativeElement;
+        if (!body) return;
+        const used = new Set<string>();
+        this.headings.set(Array.from(body.querySelectorAll('h2')).map((heading, index) => {
+            const title = heading.textContent?.trim() || '';
+            const base = title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${index + 1}`;
+            let id = base;
+            let suffix = 2;
+            while (used.has(id)) id = `${base}-${suffix++}`;
+            used.add(id);
+            heading.id = id;
+            return {id, title};
+        }));
+        for (const link of Array.from(body.querySelectorAll('a[href]'))) {
+            const route = applicationRoute(link.getAttribute('href')!, location.origin, this.router.url);
+            if (route) link.setAttribute('href', this.location.prepareExternalUrl(route));
+            else if (/^https?:\/\//.test(link.getAttribute('href')!)) {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            }
+        }
+        for (const pre of Array.from(body.querySelectorAll('pre'))) {
+            if (pre.parentElement?.classList.contains('article-code')) continue;
+            const code = pre.querySelector('code');
+            if (!code) continue;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'article-code';
+            const toolbar = document.createElement('div');
+            toolbar.className = 'article-code-toolbar';
+            const language = document.createElement('span');
+            language.textContent = Array.from(code.classList).find(value => value.startsWith('language-'))?.slice(9) || 'code';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset['copyCode'] = '';
+            button.textContent = this.isZh ? '复制代码' : 'Copy code';
+            button.setAttribute('aria-live', 'polite');
+            toolbar.append(language, button);
+            pre.before(wrapper);
+            wrapper.append(toolbar, pre);
+        }
+    }
+
+    async onArticleClick(event: MouseEvent): Promise<void> {
+        if (!(event.target instanceof Element)) return;
+        const copy = event.target.closest<HTMLButtonElement>('button[data-copy-code]');
+        if (copy) {
+            const code = copy.closest('.article-code')?.querySelector('code')?.textContent;
+            if (code != null) {
+                try {
+                    await navigator.clipboard.writeText(code);
+                    copy.textContent = this.isZh ? '已复制' : 'Copied';
+                } catch { copy.textContent = this.isZh ? '复制失败' : 'Copy failed'; }
+            }
+            return;
+        }
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+        const link = event.target.closest<HTMLAnchorElement>('a[href]');
+        if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+        const route = applicationRoute(link.getAttribute('href')!, location.origin, this.router.url);
+        if (route) {
+            event.preventDefault();
+            await this.router.navigateByUrl(route);
+        }
     }
 
     text(value: LocalizedText): string {

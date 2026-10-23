@@ -83,6 +83,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
+import org.jetbrains.kotlin.ir.util.isAnnotation
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
@@ -156,7 +157,7 @@ fun DeclarationIrBuilder.createTableIndexes(irClass: IrClass): IrExpressionBody 
     val listType = kTableIndexSymbol.defaultType
 
     val tableIndexAnnotations = irClass.annotations.filter {
-        it.symbol.owner.returnType.classFqName == AnnotationFqNames.TableIndex
+        it.isAnnotation(AnnotationFqNames.TableIndex)
     }
 
     val indexExpressions = tableIndexAnnotations.map { annotation ->
@@ -198,7 +199,7 @@ fun DeclarationIrBuilder.createKronosSpecialField(irClass: IrClass, annotationFq
 context(context: IrPluginContext)
 private fun IrBuilderWithScope.buildKronosSpecialField(irClass: IrClass, annotationFqName: FqName): IrExpression {
     // Check class-level annotation first (e.g., @CreateTime(enable = false) on the class)
-    val classAnno = irClass.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
+    val classAnno = irClass.annotations.firstOrNull { it.isAnnotation(annotationFqName) }
     if (classAnno != null) {
         val classEnabled = if (classAnno.arguments.isNotEmpty()) {
             val firstArg = classAnno.arguments[0]
@@ -221,7 +222,7 @@ private fun IrBuilderWithScope.buildKronosSpecialField(irClass: IrClass, annotat
     val prop = irClass.properties.firstOrNull { it.hasAnnotation(annotationFqName) }
     if (prop != null) {
         // Check if annotation explicitly disables the strategy: @LogicDelete(false)
-        val anno = prop.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
+        val anno = prop.annotations.firstOrNull { it.isAnnotation(annotationFqName) }
         val enabled = if (anno != null && anno.arguments.isNotEmpty()) {
             val firstArg = anno.arguments[0]
             !(firstArg is IrConst && firstArg.value == false)
@@ -375,6 +376,7 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
             .forEach { prop ->
                 val propertyName = prop.name.asString()
                 val mapGet = irCall(mapGetSymbol).apply {
+                    type = context.irBuiltIns.anyNType
                     dispatchReceiver = mapParam()
                     arguments[1] = irString(propertyName)
                 }
@@ -462,7 +464,7 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
 context(context: IrPluginContext)
 internal fun IrBuilderWithScope.getTableNameExpr(irClass: IrClass): IrExpression {
     val tableAnnotation = irClass.annotations.firstOrNull {
-        it.symbol.owner.returnType.classFqName == TableAnnotationFqName
+        it.isAnnotation(TableAnnotationFqName)
     }
     return if (tableAnnotation != null) {
         tableAnnotation.arguments[0].stringValueOrNull()?.let { irString(it) }
@@ -500,6 +502,7 @@ private fun IrBuilderWithScope.buildMutableListOf(
         it.owner.parameters.valueParameters.singleOrNull()?.isVararg == true
     }
     return irCall(mutableListOfSymbol).apply {
+        type = context.irBuiltIns.mutableListClass.typeWith(elementType)
         typeArguments[0] = elementType
         arguments[0] = irVararg(elementType, elements)
     }
@@ -520,6 +523,7 @@ private fun IrBuilderWithScope.buildMutableMapOf(
     }
     val pairType = pairClassSymbol.typeWith(keyType, valueType)
     return irCall(mutableMapOfSymbol).apply {
+        type = context.irBuiltIns.mutableMapClass.typeWith(keyType, valueType)
         typeArguments[0] = keyType
         typeArguments[1] = valueType
         arguments[0] = irVararg(pairType, pairs)
@@ -531,6 +535,7 @@ context(context: IrPluginContext)
 private fun IrBuilderWithScope.buildPairOf(first: IrExpression, second: IrExpression): IrExpression {
     val pairConstructor = pairClassSymbol.constructors.first()
     return irCall(pairConstructor).apply {
+        type = pairClassSymbol.typeWith(context.irBuiltIns.stringType, context.irBuiltIns.anyNType)
         typeArguments[0] = context.irBuiltIns.stringType
         typeArguments[1] = context.irBuiltIns.anyNType
         arguments[0] = first
@@ -547,7 +552,7 @@ private fun IrBuilderWithScope.buildPairOf(first: IrExpression, second: IrExpres
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrProperty.ignoreAnnotationValue(): IrConstructorCall? {
-    return annotations.find { it.symbol.owner.returnType.classFqName == IgnoreAnnotationFqName }
+    return annotations.find { it.isAnnotation(IgnoreAnnotationFqName) }
 }
 
 /**

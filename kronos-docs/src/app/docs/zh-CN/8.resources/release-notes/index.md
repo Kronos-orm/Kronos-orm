@@ -7,6 +7,24 @@
 
 ## 📝 更新日志
 
+### 0.4.0
+
+- 统一日志配置为 `Kronos.logging`，通过 `enabled = false` 关闭所有 Kronos 日志，保留默认 `["console"]` 输出；移除 `KLoggerType.NONE`，并增加共享的最低级别过滤（[#292](https://github.com/Kronos-orm/Kronos-orm/issues/292)）。
+
+- 通过 Kotlin Multiplatform `commonMain` 共享 KPojo 模型、SQL 构建、查询、写操作、表操作和 ValueCodec，发布 JVM 及 Apple、Linux、Windows 的 Kotlin/Native 构件。
+- 通过 `KronosExecutionDataSource` 和 `KronosExecutionWrapper` 接入平台数据库驱动。补充 [KMP 配置](/documentation/zh-CN/getting-started/kmp) 与 [Native SQLite](/documentation/zh-CN/database/native-sqlite) 指南，与 Android/JVM SQLite 指南共同覆盖平台接入。
+- 跨 Native 模块依赖生成并聚合 KPojo 工厂和枚举元数据，通过 `initializeKronosMetadata()` 初始化最终应用的元数据图。
+- 使用 Kotlin `2.4.21`，通过版本目录统一管理测试使用的序列化依赖。
+- 增加 JVM、Android/JVM、Apple、Linux 和 Windows 的 GitHub Actions 门禁，运行参考应用中的真实 SQLite 连接与 ORM 操作。
+
+#### 升级说明
+
+- 将 `Kronos.logPath`、`Kronos.loggerType` 和 `Kronos.defaultLogger` 分别改为 `Kronos.logging.path`、`Kronos.logging.type` 和 `Kronos.logging.factory`；关闭日志使用 `Kronos.logging.enabled = false`。
+
+- 将 Kronos 库、编译插件和 Gradle 插件统一升级到 `0.4.0`，并使用 Kotlin `2.4.21`。
+- 共享时区配置使用 IANA 标识符，例如 `Kronos.timeZone = "Asia/Shanghai"`。JVM 代码已有 `java.time.ZoneId` 值时，将其 `.id` 字符串赋给该配置。
+- 将可移植模型和查询代码放到 `commonMain`，Java 与 JDBC 类型保留在 JVM source set。在最终 Kotlin 应用或 framework 执行数据库操作前调用 `initializeKronosMetadata()`。
+
 ### 0.3.1
 
 - ✨ 新增 H2 和达梦（DM8）内置方言，可用于查询、表操作、表结构元数据、分页和 upsert。将 `databaseType` 设为 `DBType.H2` 或 `DBType.DM8`；H2 使用 `MERGE` 完成 upsert，DM8 支持原生 identity 列（[#288](https://github.com/Kronos-orm/Kronos-orm/pull/288)、[#289](https://github.com/Kronos-orm/Kronos-orm/pull/289)）。
@@ -29,7 +47,7 @@
 - 🐛 在编译期诊断条件中未注册的捕获 KPojo 字段，同时保留普通 Kotlin 捕获值，并新增 `takeUnless` 条件 gate（[#271](https://github.com/Kronos-orm/Kronos-orm/pull/271)、[#272](https://github.com/Kronos-orm/Kronos-orm/pull/272)）。
 - 🐛 在 FIR 分析阶段报告不支持的泛型 KPojo 声明，避免后续 IR 生成阶段失败（[#278](https://github.com/Kronos-orm/Kronos-orm/pull/278)）。
 - 🧩 为重复 projection 输出新增 source alias override opt-in，并为映射、生成和派生字段使用 `id_1` 这类稳定的 `_N` 名称（[#279](https://github.com/Kronos-orm/Kronos-orm/pull/279)）。
-- 📚 补充方言相关的 `@Default` 表达式、逻辑删除默认值和 IDEA 插件发布使用说明（[#275](https://github.com/Kronos-orm/Kronos-orm/pull/275)、[#277](https://github.com/Kronos-orm/Kronos-orm/pull/277)）。
+- 📚 补充方言相关的 `@Default` 表达式、逻辑删除默认值（[#275](https://github.com/Kronos-orm/Kronos-orm/pull/275)、[#277](https://github.com/Kronos-orm/Kronos-orm/pull/277)）。
 - 🔧 在 CI 中使用当前 Maven Local 构件检查外部 Ktor、Spring Boot、Solon、Vert.x 和 Android 示例（[#285](https://github.com/Kronos-orm/Kronos-orm/pull/285)）。
 
 #### 升级说明
@@ -58,7 +76,7 @@
 - ✨ 使用类型化游标分页 `cursor(pageSize, after)`，返回执行阶段 `CursorResult(hasNext, nextCursor, records)`。
 - ✨ 使用 `page(...).withTotal().toList()` / `toMapList()` 返回命名的 `PageResult(total, records, totalPages, pageIndex, pageSize)`；offset page 仍可作为派生 source。
 - 🐛 修复派生 source 与 window alias 投影 SQL，确保 `rn`、`userName`、`createTime` 等逻辑输出名可继续用于后续查询层。
-- 🧩 改进 IDEA 插件投影体验，包括 `it.` 上的生成投影字段补全，以及 IntelliJ 取消异常的安全处理。
+- 🧩 改进投影补全体验，包括 `it.` 上的生成投影字段补全，以及 IntelliJ 取消异常的安全处理。
 - 📚 将 README、文档宏、发布片段和 AI skill 指南同步到 `0.2.3`。
 
 ### 0.2.2
@@ -131,7 +149,7 @@ override fun first(task: KAtomicQueryTask): Any?
 - 🐛 修复 Kotlinx Serialization 对泛型集合和 data class 字段的反序列化，并在 Map 与标量查询结果中保留被选中的 `null` 值 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 `select { it }`、`select { [it] }`、KPojo 排除投影，以及使用 `[]` 混合完整行与 alias 时的生成类型 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 - 🐛 修复 SQLite UNION 渲染、SQLite 表结构同步、字符串默认值及扩展测试发现的其他 ORM 边缘问题 ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
-- 💪 扩充投影、序列化、空值结果、表结构同步和跨数据库回归测试，并将 README、用户文档、AI skill、Gradle 插件和 IDEA 插件同步到 `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
+- 💪 扩充投影、序列化、空值结果、表结构同步和跨数据库回归测试，并将 README、用户文档、AI skill和 Gradle 插件同步到 `0.2.0` ([#232](https://github.com/Kronos-orm/Kronos-orm/pull/232))
 
 ### 0.1.2
 
@@ -144,9 +162,8 @@ override fun first(task: KAtomicQueryTask): Any?
 ### 0.1.1
 
 - ✨ 补全投影和子查询 DSL 能力，包括生成结果行类、标量子查询、谓词子查询、INSERT SELECT 和窗口函数 alias 的使用说明 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
-- ✨ 新增 IDEA 插件用户文档，说明生成的 KPojo 形态、投影 receiver、编辑器诊断，以及从 GitHub Release 附件安装插件 zip ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 - 💪 重新整理用户文档结构，覆盖起步、映射、查询、修改、数据库、配置、高级主题和资源页；刷新表映射、内置函数、投影、方言行为和 codegen 工作流示例 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
-- 💪 改进正式发版自动化：发布 Maven 构件，构建 JVM jar 和 IDEA 插件 zip，附加到 GitHub Release，并自动生成 release notes ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 💪 改进正式发版自动化：发布 Maven 构件，构建 JVM jar，附加到 GitHub Release，并自动生成 release notes ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 - 🐛 修复编译器插件对 `SelectFrom10` 到 `SelectFrom16` 查询函数的类型参数处理，并补充 query return type 和投影行为的官方编译器测试 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 - 🔧 所有 Gradle wrapper 改用官方分发地址，避免镜像下载超时导致 CI 失败 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
 
@@ -364,3 +381,19 @@ dependencies {
   </build>
 </project>
 ```
+
+## Kotlin 版本兼容性
+
+| Kronos 版本 | 支持的 Kotlin 版本 | 说明 |
+|-------------|--------------------|------|
+| `0.4.0` | `2.4.21` | Kotlin Multiplatform：JVM、Android/JVM 和 Kotlin/Native |
+| `0.3.1` | `2.4.0+` | H2 和达梦方言、JDBC 连接与行映射，以及 Kotlin `String` 和跨方言 SQL 函数 |
+| `0.3.0` | `2.4.0+` | 支持 Android/JVM SQLite，见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) |
+| `0.2.0` - `0.2.4` | `2.4.0+` | Kotlin 2.4.0 版本线 |
+| `0.1.2` | `2.4.0+` | 修复表结构同步边缘场景并扩充跨数据库集成测试 |
+| `0.1.1` | `2.4.0+` | 补充投影文档与发版自动化改进 |
+| `0.1.0` | `2.3.0+` | 基于 Kotlin 2.3.0 的正式发布版本 |
+| `0.0.7` | `2.3.0+` | 在 0.0.7 中升级 Gradle 和 Kotlin |
+| `0.0.6` | `2.2.21+` | 添加 `kotlin.time.Instant` 支持 |
+| `0.0.2` - `0.0.5` | `2.2.0+` | 2.2.21 升级前的早期开发版本 |
+| `0.0.1` | `2.1.0+` | 初始公开发布版本线 |

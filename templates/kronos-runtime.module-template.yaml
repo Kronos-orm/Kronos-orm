@@ -1,0 +1,10 @@
+settings:
+  kotlin:
+    # This build emits one aggregate provider per compilation. Gradle consumers
+    # retain source-owned providers and their incremental compilation behavior.
+    compileIncrementally: false
+
+# Native KLIBs are always compiled as a whole; this switch enables debug linker caches.
+settings@native:
+  kotlin:
+    compileIncrementally: true

@@ -1,0 +1,15 @@
+modules:
+  - kronos-codegen
+  - kronos-compiler-plugin
+  - kronos-core
+  - kronos-gradle-plugin
+  - kronos-jdbc-wrapper
+  - kronos-logging
+  - kronos-maven-plugin
+  - kronos-syntax
+  - kronos-testing
+  - kronos-testing/ide
+  - plugins/kronos-native
+
+plugins:
+  - ./plugins/kronos-native

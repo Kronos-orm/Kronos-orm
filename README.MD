@@ -17,9 +17,9 @@ A modern ORM framework designed for Kotlin.
 </h3>
 <div align="center">
 
-Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Built for JVM server applications and Android/JVM SQLite applications.
+Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Share models and queries across JVM, Android/JVM and Kotlin/Native applications.
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -29,15 +29,10 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-syntax.svg)](https://coverage.kotlinorm.com/kronos-syntax)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-codegen.svg)](https://coverage.kotlinorm.com/kronos-codegen)
 
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
+[![CI](https://github.com/Kronos-orm/Kronos-orm/actions/workflows/kronos-kmp-testing.yml/badge.svg)](https://github.com/Kronos-orm/Kronos-orm/actions/workflows/kronos-kmp-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.3.2--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.4.1--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -57,7 +52,8 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 - **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng).
 - **Full-featured** — Transactions, cascading (1:1 / 1:N / M:N), schema sync, serialization, cross-database joins.
 - **Built-in strategies** — Logical deletion, optimistic lock, create/update timestamps. All configurable.
-- **Framework and platform integration** — Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLite.
+- **Framework and platform integration** — Spring Boot, Ktor, Vert.x, Solon, Android/JVM SQLite, and Native SQLite on Apple, Linux and Windows.
+- **Kotlin Multiplatform** — Share models and ORM operations in `commonMain`; see the [KMP guide](https://kotlinorm.com/#/documentation/en/getting-started/kmp).
 - **Coroutine-friendly** — Designed for structured concurrency from the ground up.
 - **Compile-time mappers** — KPojo to/from Map conversion with near-zero overhead.
 - **Compile-time typed projections** — `select`, `join`, and `union` expose generated result types whose fields and aliases are checked by Kotlin.
@@ -65,7 +61,23 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 
 ## For Contributors
 
-AI coding assistants can leverage the skill guide under `.agents/skills/` for architecture and workflow context.
+Build the repository with JDK 21 and the checked-in Kotlin Toolchain wrapper. `scripts/run` downloads and verifies the Kotlin script SDK selected by `libs.versions.toml`; use `scripts\run.cmd` on Windows:
+
+```sh
+scripts/run build bootstrap
+scripts/run build build -m kronos-core -p jvm
+scripts/run build test -m kronos-syntax -p jvm
+scripts/run build test -m kronos-compiler-plugin -p jvm
+scripts/run build test -m kronos-core -p jvm
+```
+
+`scripts/build.main.kts` builds the compiler plugin from source and prepares the local Maven repository before running the requested Kotlin Toolchain command. For Native, select a target such as `-p iosArm64`.
+
+The multi-module build is declared in `project.yaml`. Shared configuration lives in `templates/`, local Toolchain plugins in `plugins/`, repository commands in `scripts/`, and editor integration tests in `kronos-testing/ide/`. Each production module keeps its own `module.yaml` and tests.
+
+Install the official [Kotlin Toolchain IDE plugin](https://kotlin-toolchain.org/latest/getting-started/ide-setup/) and KEFS, then open this repository's `project.yaml`. The Toolchain plugin imports the build model; KEFS loads Kronos compiler extensions for editor analysis. Bootstrap prepares the ordinary compiler coordinate in Maven Local for import and keeps KEFS compatibility artifacts in `build/repository/bootstrap`. The shared `.idea/kotlin-plugins.xml` configures the local bootstrap, Maven Central and snapshot repositories. See [IDE integration tests](kronos-testing/ide/README.md) for editor verification.
+
+AI coding assistants can use the skill guide under `.agents/skills/` for architecture and workflow context.
 
 --------
 
@@ -149,26 +161,13 @@ val users = union(currentUsers, archivedUsers)
 | Dependency | Version |
 |------------|---------|
 | JDK | 8+ |
-| Kotlin | 2.4.0+ |
-| Gradle | A version supported by Kotlin 2.4.0 |
+| Kotlin | 2.4.21+ |
+| Gradle | A version supported by Kotlin 2.4.21 |
 | Maven | 3.9+ |
 
-> Ensure your IDE's Kotlin plugin supports Kotlin 2.4.0 or higher.
+For IntelliJ IDEA, install [Kotlin External FIR Support (KEFS)](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support) by [Mr3zee](https://github.com/Mr3zee) and configure the Kronos compiler bundle. See [IDE support](https://kotlinorm.com/#/documentation/en/resources/kefs) for setup.
 
-## Kotlin Compatibility
-
-| Kronos version | Supported Kotlin version | Notes |
-|----------------|--------------------------|-------|
-| `0.3.1` | `2.4.0+` | H2 and DM8 dialects, JDBC connection and row mapping, and Kotlin `String` / cross-dialect SQL functions |
-| `0.3.0` | `2.4.0+` | Android/JVM SQLite support; see the [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) |
-| `0.2.0` - `0.2.4` | `2.4.0+` | Kotlin 2.4.0 release line |
-| `0.1.2` | `2.4.0+` | Fixes schema synchronization edge cases and expands cross-database integration coverage |
-| `0.1.1` | `2.4.0+` | Adds projection docs, IDEA plugin docs, and release automation improvements |
-| `0.1.0` | `2.3.0+` | Stable release line based on Kotlin 2.3.0 |
-| `0.0.7` | `2.3.0+` | Upgraded Gradle and Kotlin in the 0.0.7 release |
-| `0.0.6` | `2.2.21+` | Added `kotlin.time.Instant` support |
-| `0.0.2` - `0.0.5` | `2.2.0+` | Early development releases before the 2.2.21 upgrade |
-| `0.0.1` | `2.1.0+` | Initial public release line |
+[Release notes](https://kotlinorm.com/#/documentation/en/resources/release-notes)
 
 --------
 
@@ -179,12 +178,19 @@ val users = union(currentUsers, archivedUsers)
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1"
+    kotlin("jvm") version "2.4.21"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.4.0"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.3.1")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+    implementation("com.kotlinorm:kronos-core:0.4.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -196,12 +202,19 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.3.1'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.4.0'
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.3.1'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.3.1'
+    implementation 'com.kotlinorm:kronos-core:0.4.0'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.4.0'
     implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
@@ -217,12 +230,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.3.1</version>
+            <version>0.4.0</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.3.1</version>
+            <version>0.4.0</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -236,8 +249,13 @@ dependencies {
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
+                <version>2.4.21</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <args>
+                        <arg>-Xcollection-literals</arg>
+                        <arg>-Xcontext-sensitive-resolution</arg>
+                    </args>
                     <compilerPlugins>
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
@@ -246,7 +264,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.3.1</version>
+                        <version>0.4.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -259,7 +277,11 @@ dependencies {
 
 ### Android/JVM and SQLite
 
-Android/JVM support is available in `0.3.0`. It uses `kronos-core`, the Gradle plugin, and a `KronosDataSourceWrapper` around Android `SQLiteDatabase`. The [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) covers setup and wrapper integration; the [Android example](https://github.com/Kronos-orm/kronos-example-android) provides a complete application.
+Android/JVM applications use `kronos-core`, the Gradle plugin, and a `KronosDataSourceWrapper` around Android `SQLiteDatabase`. The [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) covers setup and wrapper integration; the [Android example](https://github.com/Kronos-orm/kronos-example-android) provides a complete application.
+
+### Kotlin Multiplatform and Native SQLite
+
+Share KPojo models and queries in `commonMain`, then provide a platform connection through `KronosExecutionWrapper`. The [KMP guide](https://kotlinorm.com/#/documentation/en/getting-started/kmp) covers setup and initialization. The [Native SQLite guide](https://kotlinorm.com/#/documentation/en/database/native-sqlite) and [Native reference application](https://github.com/Kronos-orm/kronos-example-ios) cover Apple, Linux and Windows connections.
 
 ## Supported Databases
 
@@ -522,6 +544,8 @@ All operations are resolved at compile time. No reflection.
 | Vert.x | [kronos-example-vertx](https://github.com/Kronos-orm/kronos-example-vertx) |
 | Solon | [kronos-example-solon](https://github.com/Kronos-orm/kronos-example-solon) |
 | Android/JVM + SQLite | [Android SQLite guide](https://kotlinorm.com/#/documentation/en/database/android-sqlite) · [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) |
+| iOS + SQLite | [iOS SQLite guide](https://kotlinorm.com/#/documentation/en/database/native-sqlite) · [SwiftUI example](https://github.com/Kronos-orm/kronos-example-ios#run-the-ios-app) |
+| Kotlin/Native + SQLite | [Native SQLite guide](https://kotlinorm.com/#/documentation/en/database/native-sqlite) · [kronos-example-ios](https://github.com/Kronos-orm/kronos-example-ios) |
 
 ## AI Coding Assistant Integration
 
@@ -530,7 +554,7 @@ Kronos provides an AI skill guide that helps coding assistants understand and ge
 | Tool | Command |
 |------|---------|
 | **Claude** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
-| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .codex/skills/kronos-orm-guide` |
 | **Cursor** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
 | **Default / Generic** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 

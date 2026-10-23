@@ -3,15 +3,15 @@
 
 ## Use the bundled logger
 
-Kronos writes SQL execution logs through `Kronos.defaultLogger`. The bundled logger is available from `kronos-core` and can print to the console, write to files, or do both.
+Configure SQL execution logging through `Kronos.logging`. The bundled logger is available from `kronos-core`; its JVM implementation can print to the console, write to files, or do both.
 
 ```kotlin group="Default Logger 1 1" name="console and file" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.enums.KLoggerType
 
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = ["console", "logs/kronos"]
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = ["console", "logs/kronos"]
 }
 ```
 
@@ -27,12 +27,12 @@ Found rows: 1
 
 ## Write bundled logs to a directory
 
-Add a directory path to `Kronos.logPath` when the bundled logger should create a daily log file.
+Add a directory path to `Kronos.logging.path` when the bundled logger should create a daily log file.
 
 ```kotlin group="Default Logger 2 1" name="file only" icon="kotlin"
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = ["logs/kronos"]
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = ["logs/kronos"]
 }
 ```
 
@@ -41,6 +41,44 @@ The file name follows the bundled logger rule.
 ```text group="Default Logger 2 2" name="file"
 logs/kronos/kronos-log-yyyy-MM-dd.log
 ```
+
+## Enable or disable logging
+
+`Kronos.logging.enabled` is the global output switch. It applies to bundled, platform and custom loggers on JVM and Kotlin/Native. The default is `true`, with `path = ["console"]`.
+
+```kotlin name="disable logging" icon="kotlin"
+Kronos.logging.enabled = false
+```
+
+Enable output again without losing the selected adapter, paths or custom factory:
+
+```kotlin name="enable logging" icon="kotlin"
+Kronos.logging.enabled = true
+```
+
+Disabled logging skips adapter creation and lazy message construction. To filter by level while retaining the adapter's own level settings:
+
+```kotlin name="minimum log level" icon="kotlin"
+import com.kotlinorm.enums.KLogLevel
+
+Kronos.logging.minimumLevel = KLogLevel.WARN
+```
+
+`path` selects bundled output destinations; an empty array stops that output without changing a custom or framework adapter:
+
+```kotlin name="bundled destinations" icon="kotlin"
+Kronos.logging.path = []
+```
+
+On Kotlin/Native, the bundled adapter uses the `console` destination and includes exception stack traces. Directory output uses the JVM bundled logger. Applications can supply their platform logging integration through a custom factory:
+
+```kotlin name="custom logging factory" icon="kotlin"
+Kronos.logging.factory = { source -> applicationLogger(source) }
+// Return to the installed platform adapter.
+Kronos.logging.factory = null
+```
+
+`applicationLogger` is an application function returning `KLogger`. The global switch and minimum level apply to its logger as well. Assigning a factory preserves `logging.type`.
 
 ## Android logging
 
@@ -75,7 +113,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.JDK_LOGGER
+Kronos.logging.type = KLoggerType.JDK_LOGGER
 ```
 
 JDK Logger receives the same ORM execution message.
@@ -106,15 +144,121 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.COMMONS_LOGGER
+Kronos.logging.type = KLoggerType.COMMONS_LOGGER
 ```
 
 > **Note**
 > The adapter creates the target logger from classes on the runtime classpath. Add the logging API and binding used by your application before selecting its `KLoggerType`.
 
+## Use SLF4J with Logback
+
+`kronos-logging` sends messages to SLF4J. Add one SLF4J binding to the application; Logback is a common choice.
+
+```kotlin group="Logback" name="gradle(kts)" icon="gradlekts"
+dependencies {
+    implementation("com.kotlinorm:kronos-logging:{{ $.kronosVersion() }}")
+    implementation("ch.qos.logback:logback-classic:<version>")
+}
+```
+
+```xml group="Logback" name="maven" icon="maven"
+<dependency>
+    <groupId>com.kotlinorm</groupId>
+    <artifactId>kronos-logging</artifactId>
+    <version>{{ $.kronosVersion() }}</version>
+</dependency>
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>${logback.version}</version>
+</dependency>
+```
+
+Create `src/main/resources/logback.xml` and choose the appenders and levels for the application:
+
+```xml group="Logback" name="logback.xml" icon="xml"
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="com.kotlinorm" level="INFO"/>
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
+```
+
+Select the SLF4J adapter during application startup:
+
+```kotlin group="SLF4J" name="kotlin" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.KronosLoggerApp
+import com.kotlinorm.enums.KLoggerType
+
+KronosLoggerApp.detectLoggerImplementation()
+Kronos.logging.type = KLoggerType.SLF4J_LOGGER
+```
+
+## Use SLF4J with Log4j2
+
+Log4j2 connects through its SLF4J 2 binding. Keep the three Log4j2 modules on the same version.
+
+```kotlin group="Log4j2" name="gradle(kts)" icon="gradlekts"
+dependencies {
+    implementation("com.kotlinorm:kronos-logging:{{ $.kronosVersion() }}")
+    implementation("org.apache.logging.log4j:log4j-api:<version>")
+    runtimeOnly("org.apache.logging.log4j:log4j-core:<version>")
+    runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:<version>")
+}
+```
+
+```xml group="Log4j2" name="maven" icon="maven"
+<dependency>
+    <groupId>com.kotlinorm</groupId>
+    <artifactId>kronos-logging</artifactId>
+    <version>{{ $.kronosVersion() }}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-api</artifactId>
+    <version>${log4j2.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-core</artifactId>
+    <version>${log4j2.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-slf4j2-impl</artifactId>
+    <version>${log4j2.version}</version>
+</dependency>
+```
+
+Create `src/main/resources/log4j2.xml` and configure the `com.kotlinorm` logger:
+
+```xml group="Log4j2" name="log4j2.xml" icon="xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.kotlinorm" level="info"/>
+        <Root level="warn">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
+```
+
 ## Detect an available adapter
 
-`detectLoggerImplementation()` checks the runtime classpath and assigns `Kronos.defaultLogger` to the detected adapter.
+`detectLoggerImplementation()` checks the runtime classpath and installs the detected platform adapter. An explicitly assigned `Kronos.logging.factory` is preserved.
 
 ```kotlin group="Detect Logger 1" name="kotlin" icon="kotlin"
 import com.kotlinorm.Kronos
@@ -122,7 +266,7 @@ import com.kotlinorm.KronosLoggerApp
 
 KronosLoggerApp.detectLoggerImplementation()
 
-println(Kronos.loggerType)
+println(Kronos.logging.type)
 ```
 
 On a standard JVM project that only has the JDK logger available, the detected type is:

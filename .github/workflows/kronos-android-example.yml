@@ -1,97 +1,178 @@
 name: Kronos Android example
-
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+  workflow_call:
+    inputs:
+      publication-artifact:
+        description: Toolchain Maven repository artifact from the publication gate.
+        type: string
+        required: true
+permissions:
+  contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  android-example:
-    name: Run Android example
-    runs-on: ubuntu-latest
-
+  build:
+    name: Build and lint Android APKs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
-      - name: Checkout Kronos
-        uses: actions/checkout@v6
-        with:
-          path: kronos-orm
-          persist-credentials: false
-
-      - name: Checkout Android example
-        uses: actions/checkout@v6
-        with:
-          repository: Kronos-orm/kronos-example-android
-          path: kronos-example-android
-          persist-credentials: false
-
-      - name: Detect Kronos version
-        working-directory: kronos-orm
-        run: |
-          set -euo pipefail
-          version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
-          echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
-
-      - name: Set up JDK 21 for Kronos publication
-        uses: actions/setup-java@v5
-        with:
-          java-version: 21
-          distribution: adopt
-
-      - name: Publish current Kronos artifacts to Maven local
-        working-directory: kronos-orm
-        run: ./gradlew publishAllToMavenLocal --no-daemon --console=plain -x test
-
-      - name: Publish current Kronos Gradle plugin to Maven local
-        working-directory: kronos-orm/kronos-gradle-plugin
-        run: ./gradlew publishToMavenLocal --no-daemon --console=plain -x test
-
-      - name: Point Android example to current Kronos version
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          version = os.environ["KRONOS_EXAMPLE_VERSION"]
-          replacements = {
-              "kronos-example-android/build.gradle.kts": [
-                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
-              ],
-              "kronos-example-android/app/build.gradle.kts": [
-                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
-              ],
-          }
-
-          for file_name, patterns in replacements.items():
-              path = Path(file_name)
-              text = path.read_text()
-              for pattern, replacement in patterns:
-                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
-                  if count != 1:
-                      raise SystemExit(f"missing expected pattern in {file_name}: {pattern}")
-              path.write_text(text)
-          PY
-
-      - name: Set up JDK 17 for Android
-        uses: actions/setup-java@v5
-        with:
-          java-version: 17
-          distribution: temurin
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Build and lint Android example
-        working-directory: kronos-example-android
-        run: |
-          chmod +x ./gradlew
-          ./gradlew -PkronosUseMavenLocal=true :app:assembleDebug :app:lintDebug --no-daemon --console=plain
+    - name: Checkout Kronos
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        path: kronos-orm
+        persist-credentials: false
+    - name: Checkout Android example
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        repository: Kronos-orm/kronos-example-android
+        ref: 680c490ea08f9d0a9b07d732ff372b9b87cc654b
+        path: kronos-example-android
+        persist-credentials: false
+    - name: Set up JDK 21 for Kronos publication
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        java-version: 21
+        distribution: temurin
+    - uses: ./kronos-orm/.github/actions/setup-toolchain
+      with:
+        lane: android-build
+    - name: Detect Kronos version
+      working-directory: kronos-orm
+      run: |
+        set -euo pipefail
+        version=$(scripts/run version show)
+        echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+        kotlin_version=$(scripts/run version json | jq -er .kotlin)
+        test -n "$version"
+        test -n "$kotlin_version"
+        echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
+    - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        name: ${{ inputs.publication-artifact }}
+        path: kronos-orm/build/android-publications
+    - name: Verify the JVM candidate
+      working-directory: kronos-orm
+      run: scripts/run release check-candidate --repository build/android-publications
+    - name: Select the Toolchain-built Maven repository
+      run: echo "JAVA_TOOL_OPTIONS=-Dmaven.repo.local=$GITHUB_WORKSPACE/kronos-orm/build/android-publications" >> "$GITHUB_ENV"
+    - name: Point Android example to current Kronos version
+      run: |
+        set -euo pipefail
+        kronos-orm/scripts/run .github/scripts/prepare-examples.main.kts android --workspace "$GITHUB_WORKSPACE"
+    - name: Set up JDK 17 for Android
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        java-version: 17
+        distribution: temurin
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+      with:
+        packages: platform-tools
+    - name: Install Android SDK packages
+      run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+    - name: Build and lint Android example
+      working-directory: kronos-example-android
+      run: |
+        chmod +x ./gradlew
+        "$GITHUB_WORKSPACE/kronos-orm/scripts/run" .github/scripts/run-kmp-gradle-gate.main.kts bash ./gradlew -PkronosUseMavenLocal=true :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug --no-daemon --console=plain
+    - name: Package the APK candidate
+      run: |
+        mkdir -p android-apks
+        cp kronos-example-android/app/build/outputs/apk/debug/app-debug.apk android-apks/app.apk
+        cp kronos-example-android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk android-apks/test.apk
+        kronos-orm/scripts/run release stamp --repository "$GITHUB_WORKSPACE/android-apks" --group android
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: ci-android-apks
+        path: android-apks
+        if-no-files-found: error
+        retention-days: 3
+        overwrite: true
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: kmp-android-lint-reports
+        path: kronos-example-android/app/build/reports/**
+        if-no-files-found: error
+        overwrite: true
+    - name: Record consumed candidate bytes
+      run: scripts/run release receipt --repository build/android-publications --group android-build --family jvm --output "$GITHUB_WORKSPACE/consumer-receipt.json"
+      working-directory: kronos-orm
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: receipt-android-build
+        path: consumer-receipt.json
+        if-no-files-found: error
+        overwrite: true
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: android-apk-manifest
+        path: android-apks/ci-candidate.json
+        if-no-files-found: error
+        overwrite: true
+  android-example:
+    name: Android API ${{ matrix.api }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        api:
+        - 26
+        - 35
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '17'
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: android-runtime
+    - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+      with:
+        packages: platform-tools
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        name: ci-android-apks
+        path: android-apks
+    - name: Verify APK candidate
+      run: scripts/run release check-candidate --repository android-apks
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+    - name: Run instrumented SQLite compatibility tests
+      uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+      with:
+        api-level: ${{ matrix.api }}
+        arch: x86_64
+        target: google_apis
+        disable-animations: true
+        script: |
+          adb devices -l
+          adb shell getprop ro.build.version.sdk
+          scripts/run .github/scripts/run-android-apks.main.kts --bundle android-apks --report android-reports/TEST-instrumentation.xml
+    - name: Require executed SQLite instrumentation tests
+      run: scripts/run .github/scripts/verify-kmp-test-results.main.kts --require-suite com.kotlinorm.example.android.AndroidKronosIntegrationTest android-reports
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: kmp-android-api-${{ matrix.api }}-reports
+        path: android-reports/**
+        if-no-files-found: error
+        overwrite: true
+    - name: Record consumed candidate bytes
+      run: scripts/run release receipt --repository android-apks --group android-api-${{ matrix.api }} --family apk --output "$GITHUB_WORKSPACE/consumer-receipt.json"
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: receipt-android-api-${{ matrix.api }}
+        path: consumer-receipt.json
+        if-no-files-found: error
+        overwrite: true

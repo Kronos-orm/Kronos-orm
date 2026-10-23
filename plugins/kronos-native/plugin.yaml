@@ -1,0 +1,66 @@
+tasks:
+  generateNativeMetadata:
+    action: !com.kotlinorm.toolchain.generateNativeMetadata
+      moduleName: ${module.name}
+      group: ${module.settings.publishing.group}
+      generateMetadata: ${pluginSettings.generateMetadata}
+      jvmSourceSetPrefix: ${pluginSettings.jvmSourceSetPrefix}
+      dependencyMetadata: ${pluginSettings.dependencyMetadata}
+      mainSources: ${taskOutputDir}/main
+      testSources: ${taskOutputDir}/test
+      resources: ${taskOutputDir}/resources
+      jvmMainResources: ${taskOutputDir}/jvm-main-resources
+      jvmTestResources: ${taskOutputDir}/jvm-test-resources
+  resolveWatchDependencies:
+    action: !com.kotlinorm.toolchain.resolveWatchDependencies
+      catalogFile: ${project.rootDir}/libs.versions.toml
+      bootstrapRepository: ${project.rootDir}/build/repository/bootstrap
+      libraryAliases: ${pluginSettings.watchExternalDependencies}
+      includeCompilerPlugin: ${pluginSettings.generateMetadata}
+      outputDirectory: ${taskOutputDir}
+  buildWatchosX64:
+    action: !com.kotlinorm.toolchain.compileWatchosX64
+      moduleName: ${module.name}
+      group: ${module.settings.publishing.group}
+      generateMetadata: ${pluginSettings.generateMetadata}
+      compilerExecutable: ${pluginSettings.compilerExecutable}
+      sourceDirectories: ${pluginSettings.sourceDirectories}
+      generatedSources: ${tasks.generateNativeMetadata.action.mainSources}
+      libraries: ${pluginSettings.watchLibraries}
+      resolvedDependencies: ${tasks.resolveWatchDependencies.action.outputDirectory}
+      compilerPlugin: ${pluginSettings.compilerPlugin}
+      compilerPluginId: ${pluginSettings.compilerPluginId}
+      compilerOptions: ${pluginSettings.compilerOptions}
+      freeCompilerArgs: ${pluginSettings.freeCompilerArgs}
+      outputDirectory: ${taskOutputDir}
+  finalizeNativePublication:
+    action: !com.kotlinorm.toolchain.finalizeNativePublication
+      moduleName: ${module.name}
+      group: ${module.settings.publishing.group}
+      artifact: ${module.settings.publishing.artifactId}
+      version: ${module.settings.publishing.version}
+      templateTarget: ${pluginSettings.publicationTemplateTarget}
+      stageRepository: ${pluginSettings.stageRepository}
+      bootstrapStageRepository: ${pluginSettings.bootstrapStageRepository}
+      watchArtifacts: ${tasks.buildWatchosX64.action.outputDirectory}
+      metadataResources: ${tasks.generateNativeMetadata.action.resources}
+      finalRepository: ${taskOutputDir}/repository
+generated:
+  sources:
+    - directory: ${tasks.generateNativeMetadata.action.mainSources}
+    - directory: ${tasks.generateNativeMetadata.action.testSources}
+      fragment:
+        isTest: true
+  resources:
+    - directory: ${tasks.generateNativeMetadata.action.jvmMainResources}
+      fragment:
+        modifier: ${pluginSettings.jvmResourceFragment}
+    - directory: ${tasks.generateNativeMetadata.action.jvmTestResources}
+      fragment:
+        modifier: ${pluginSettings.jvmResourceFragment}
+        isTest: true
+commands:
+  - generateNativeMetadata
+  - resolveWatchDependencies
+  - buildWatchosX64
+  - finalizeNativePublication

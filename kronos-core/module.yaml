@@ -1,0 +1,68 @@
+product:
+  type: kmp/lib
+  platforms:
+    - jvm
+    - iosArm64
+    - iosX64
+    - iosSimulatorArm64
+    - linuxArm64
+    - linuxX64
+    - macosArm64
+    - macosX64
+    - mingwX64
+    - tvosArm64
+    - tvosSimulatorArm64
+    - tvosX64
+    - watchosArm64
+    - watchosDeviceArm64
+    - watchosSimulatorArm64
+
+apply:
+  - //templates/common.module-template.yaml
+  - //templates/kronos-runtime.module-template.yaml
+
+description: Multiplatform Kronos ORM runtime, query DSL and SQL execution contracts.
+
+dependencies:
+  - //kronos-syntax: exported
+
+dependencies@jvm:
+  - $libs.ktx.datetime
+
+dependencies@native:
+  - $libs.ktx.datetime
+
+test-dependencies@jvm:
+  - $libs.gson
+  - $libs.mockk
+  - $libs.ktx.serialization.core
+  - $libs.ktx.serialization.json
+  - $libs.kotlin.reflect
+
+test-settings:
+  kotlin:
+    serialization: enabled
+
+plugins:
+  kronos-native:
+    enabled: true
+    jvmResourceFragment: '@jvm'
+    compilerExecutable: ../build/tasks/_kronos-syntax_buildWatchosX64@kronos-native/compiler/bin/konanc
+    sourceDirectories:
+      common: [src]
+      native: [src@native]
+      apple: [src@apple]
+    watchLibraries:
+      - ../build/tasks/_kronos-syntax_buildWatchosX64@kronos-native/kronos-syntax-watchosx64.klib
+    watchExternalDependencies: [ktx-datetime]
+    stageRepository: ../build/tasks/_kronos-syntax_finalizeNativePublication@kronos-native/repository
+    freeCompilerArgs: [-Xcontext-sensitive-resolution, -Xcollection-literals, -Xexpect-actual-classes, -opt, -ea]
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: $libs.kronos.compiler.plugin
+        options:
+          module-coordinate: com.kotlinorm:kronos-core
+          jvm-source-set-prefix: jvm

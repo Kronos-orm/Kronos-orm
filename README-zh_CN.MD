@@ -17,9 +17,9 @@
 </h3>
 <div align="center">
 
-Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、多数据库支持，适用于 JVM 服务端和 Android/JVM SQLite 应用。
+Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、多数据库支持，支持在 JVM、Android/JVM 和 Kotlin/Native 应用间共享模型与查询。
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -29,15 +29,10 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-syntax.svg)](https://coverage.kotlinorm.com/kronos-syntax)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-codegen.svg)](https://coverage.kotlinorm.com/kronos-codegen)
 
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml)
-[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
+[![CI](https://github.com/Kronos-orm/Kronos-orm/actions/workflows/kronos-kmp-testing.yml/badge.svg)](https://github.com/Kronos-orm/Kronos-orm/actions/workflows/kronos-kmp-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.3.2--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.4.1--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -50,6 +45,8 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 
 --------
 
+[Kotlin Multiplatform 配置与共享模型](https://kotlinorm.com/#/documentation/zh-CN/getting-started/kmp) · [Native SQLite 连接](https://kotlinorm.com/#/documentation/zh-CN/database/native-sqlite)
+
 ## 为什么选择 Kronos
 
 - **零反射** — 编译器插件在构建期生成所有映射代码，无运行时开销，无 GC 压力。
@@ -57,13 +54,29 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 - **多数据库** — 内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言。
 - **功能完备** — 事务、级联（1:1 / 1:N / M:N）、表结构同步、序列化、跨库查询。
 - **内置策略** — 逻辑删除、乐观锁、创建/更新时间戳，均可自定义。
-- **框架与平台接入** — Spring Boot、Ktor、Vert.x、Solon 和 Android/JVM SQLite。
+- **框架与平台接入** — Spring Boot、Ktor、Vert.x、Solon、Android/JVM SQLite，以及 Apple、Linux 和 Windows 的 Native SQLite。
 - **协程友好** — 从底层为结构化并发设计。
 - **编译期映射** — KPojo 与 Map 互转，近乎零开销。
 - **编译期类型投影** — `select`、`join`、`union` 都会暴露生成结果类型，字段和 alias 由 Kotlin 在编译期检查。
 - **可组合查询** — 投影类型可以贯穿派生子查询、标量与谓词子查询、INSERT SELECT、CTAS 和 Union 查询层。
 
 ## 贡献者指引
+
+使用 JDK 21 和仓库内的 Kotlin Toolchain wrapper 构建源码。`scripts/run` 会下载并校验 `libs.versions.toml` 选定的 Kotlin 脚本 SDK；Windows 使用 `scripts\run.cmd`：
+
+```sh
+scripts/run build bootstrap
+scripts/run build build -m kronos-core -p jvm
+scripts/run build test -m kronos-syntax -p jvm
+scripts/run build test -m kronos-compiler-plugin -p jvm
+scripts/run build test -m kronos-core -p jvm
+```
+
+`scripts/build.main.kts` 会从源码构建编译器插件，准备本地 Maven 仓库，再执行指定的 Kotlin Toolchain 命令。构建 Native 时选择目标，例如 `-p iosArm64`。
+
+多模块构建由 `project.yaml` 声明。共享配置放在 `templates/`，本地 Toolchain 插件放在 `plugins/`，仓库命令放在 `scripts/`，编辑器集成测试放在 `kronos-testing/ide/`。各生产模块保留自己的 `module.yaml` 和测试。
+
+安装官方 [Kotlin Toolchain IDE 插件](https://kotlin-toolchain.org/latest/getting-started/ide-setup/) 和 KEFS，再打开仓库中的 `project.yaml`。Toolchain 插件负责导入构建模型，KEFS 负责为编辑器分析加载 Kronos 编译扩展。Bootstrap 会将普通编译器坐标准备到 Maven Local 供导入使用，KEFS 兼容制品保留在 `build/repository/bootstrap`。共享的 `.idea/kotlin-plugins.xml` 已配置本地 bootstrap、Maven Central 和 snapshot 仓库。编辑器验证见 [IDE 集成测试](kronos-testing/ide/README.md)。
 
 AI 编程助手可参考 `.agents/skills/` 下的技能指南获取架构与工作流上下文。
 
@@ -149,26 +162,13 @@ val users = union(currentUsers, archivedUsers)
 | 依赖 | 版本 |
 |------|------|
 | JDK | 8+ |
-| Kotlin | 2.4.0+ |
-| Gradle | Kotlin 2.4.0 支持的版本 |
+| Kotlin | 2.4.21+ |
+| Gradle | Kotlin 2.4.21 支持的版本 |
 | Maven | 3.9+ |
 
-> 请确保 IDE 的 Kotlin 插件支持 Kotlin 2.4.0 或更高版本。
+在 IntelliJ IDEA 中安装由 [Mr3zee](https://github.com/Mr3zee) 开发的 [Kotlin External FIR Support（KEFS）](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support)，并配置 Kronos 编译器插件组。完整步骤见 [编辑器支持](https://kotlinorm.com/#/documentation/zh-CN/resources/kefs)。
 
-## Kotlin 版本兼容性
-
-| Kronos 版本 | 支持的 Kotlin 版本 | 说明 |
-|-------------|--------------------|------|
-| `0.3.1` | `2.4.0+` | H2 和达梦方言、JDBC 连接与行映射，以及 Kotlin `String` 和跨方言 SQL 函数 |
-| `0.3.0` | `2.4.0+` | 支持 Android/JVM SQLite，见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) |
-| `0.2.0` - `0.2.4` | `2.4.0+` | Kotlin 2.4.0 版本线 |
-| `0.1.2` | `2.4.0+` | 修复表结构同步边缘场景并扩充跨数据库集成测试 |
-| `0.1.1` | `2.4.0+` | 补充投影文档、IDEA 插件文档与发版自动化改进 |
-| `0.1.0` | `2.3.0+` | 基于 Kotlin 2.3.0 的正式发布版本 |
-| `0.0.7` | `2.3.0+` | 在 0.0.7 中升级 Gradle 和 Kotlin |
-| `0.0.6` | `2.2.21+` | 添加 `kotlin.time.Instant` 支持 |
-| `0.0.2` - `0.0.5` | `2.2.0+` | 2.2.21 升级前的早期开发版本 |
-| `0.0.1` | `2.1.0+` | 初始公开发布版本线 |
+[版本记录](https://kotlinorm.com/#/documentation/zh-CN/resources/release-notes)
 
 --------
 
@@ -179,12 +179,19 @@ val users = union(currentUsers, archivedUsers)
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1"
+    kotlin("jvm") version "2.4.21"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.4.0"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.3.1")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+    implementation("com.kotlinorm:kronos-core:0.4.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -196,12 +203,19 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.3.1'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.4.0'
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.3.1'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.3.1'
+    implementation 'com.kotlinorm:kronos-core:0.4.0'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.4.0'
     implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
@@ -217,12 +231,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.3.1</version>
+            <version>0.4.0</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.3.1</version>
+            <version>0.4.0</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -236,8 +250,13 @@ dependencies {
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
+                <version>2.4.21</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <args>
+                        <arg>-Xcollection-literals</arg>
+                        <arg>-Xcontext-sensitive-resolution</arg>
+                    </args>
                     <compilerPlugins>
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
@@ -246,7 +265,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.3.1</version>
+                        <version>0.4.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -259,7 +278,11 @@ dependencies {
 
 ### Android/JVM 和 SQLite
 
-`0.3.0` 支持 Android/JVM。接入由 `kronos-core`、Gradle 插件以及围绕 Android `SQLiteDatabase` 实现的 `KronosDataSourceWrapper` 组成。配置和 wrapper 说明见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite)，完整应用见 [Android 示例](https://github.com/Kronos-orm/kronos-example-android)。
+Android/JVM 接入由 `kronos-core`、Gradle 插件以及围绕 Android `SQLiteDatabase` 实现的 `KronosDataSourceWrapper` 组成。配置和 wrapper 说明见 [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite)，完整应用见 [Android 示例](https://github.com/Kronos-orm/kronos-example-android)。
+
+### Kotlin Multiplatform 和 Native SQLite
+
+在 `commonMain` 共享 KPojo 模型与查询，通过 `KronosExecutionWrapper` 接入平台连接。[KMP 指南](https://kotlinorm.com/#/documentation/zh-CN/getting-started/kmp) 覆盖配置与初始化，[Native SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/native-sqlite) 和 [Native 参考应用](https://github.com/Kronos-orm/kronos-example-ios) 提供 Apple、Linux 和 Windows 连接示例。
 
 ## 支持的数据库
 
@@ -501,6 +524,8 @@ instance["fieldName"] = "value"
 | Vert.x | [kronos-example-vertx](https://github.com/Kronos-orm/kronos-example-vertx) |
 | Solon | [kronos-example-solon](https://github.com/Kronos-orm/kronos-example-solon) |
 | Android/JVM + SQLite | [Android SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/android-sqlite) · [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) |
+| iOS + SQLite | [iOS SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/native-sqlite) · [SwiftUI 示例](https://github.com/Kronos-orm/kronos-example-ios#run-the-ios-app) |
+| Kotlin/Native + SQLite | [Native SQLite 指南](https://kotlinorm.com/#/documentation/zh-CN/database/native-sqlite) · [kronos-example-ios](https://github.com/Kronos-orm/kronos-example-ios) |
 
 ## AI 编程助手集成
 

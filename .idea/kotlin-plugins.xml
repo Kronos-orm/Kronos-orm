@@ -1,0 +1,24 @@
+<project version="4">
+  <component name="KotlinPluginsSettings">
+    <option name="repositories">
+      <map>
+        <entry key="Kronos Bootstrap" value="$PROJECT_DIR$/build/repository/bootstrap;PATH" />
+        <entry key="Kronos Maven Central" value="https://repo.maven.apache.org/maven2;URL" />
+        <entry key="Sonatype Snapshots" value="https://central.sonatype.com/repository/maven-snapshots;URL" />
+      </map>
+    </option>
+    <option name="plugins">
+      <map>
+        <entry key="Kronos" value="EXACT;true;false;com.kotlinorm:kronos-compiler-plugin" />
+      </map>
+    </option>
+    <option name="pluginsReplacements">
+      <map />
+    </option>
+    <option name="pluginsRepos">
+      <map>
+        <entry key="Kronos" value="Kronos Bootstrap;Kronos Maven Central;Sonatype Snapshots" />
+      </map>
+    </option>
+  </component>
+</project>

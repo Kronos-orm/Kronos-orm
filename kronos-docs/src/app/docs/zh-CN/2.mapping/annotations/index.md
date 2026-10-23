@@ -339,10 +339,10 @@ data class User(
 > 使用**uuid**作为主键时，请保证`id`列的类型为`String`类型，否则无法正确生成主键。
 
 > **Note**
-> 使用**雪花算法**时，自增字段必须为`Long`类型，否则无法正确生成主键，请您在配置文件中配置`datacenterId`和`workerId`，参考：{{ $.keyword("configuration/global-config", ["主键生成器", "雪花算法"]) }}。
+> 使用**雪花算法**时，自增字段必须为`Long`类型，否则无法正确生成主键，请您在配置文件中配置`datacenterId`和`workerId`，参考：{{ $.keyword("mapping/primary-key", ["主键生成器", "SNOWFLAKE 雪花算法主键"]) }}。
 
 > **Note**
-> 使用**自定义主键**时，请提前设置配置自定义主键生成器`customIdGenerator`(`KIdGenerator<T>`)，参考：{{ $.keyword("configuration/global-config", ["主键生成器", "自定义主键生成器"]) }}。
+> 使用**自定义主键**时，请提前设置配置自定义主键生成器`customIdGenerator`(`KIdGenerator<T>`)，参考：{{ $.keyword("mapping/primary-key", ["主键生成器", "CUSTOM 自定义生成器主键"]) }}。
 
 ## {{ $.annotation("ColumnType") }}列类型及长度
 

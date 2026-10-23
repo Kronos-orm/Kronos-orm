@@ -60,4 +60,8 @@ class SortBoxTest : AbstractKronosJvmBoxSuite("sort") {
      */
     @Test
     fun scalarSubquerySortItemTypeHint() = box("scalarSubquerySortItemTypeHint")
+    @Test
+    fun nestedFunctionReturnsKeepOuterSort() = box("nestedFunctionReturnsKeepOuterSort")
+    @Test
+    fun scopeFunctionTailSelectors() = box("scopeFunctionTailSelectors")
 }

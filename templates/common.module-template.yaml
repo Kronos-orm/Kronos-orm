@@ -19,7 +19,7 @@ settings:
   publishing:
     enabled: true
     group: com.kotlinorm
-    version: 0.4.0-SNAPSHOT
+    version: 0.4.0
     publishSources: true
     checksums: [md5, sha1, sha256, sha512]
     pom:

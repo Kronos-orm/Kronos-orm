@@ -94,7 +94,7 @@ jobs:
       group: ios
       runner: macos-26
       publication-artifact: ci-ios
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: c91f51fd0bd6e1d284a7e53b7507080c1fbfd975
   native-macos:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -108,7 +108,7 @@ jobs:
       group: macos
       runner: macos-26
       publication-artifact: ci-macos
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: c91f51fd0bd6e1d284a7e53b7507080c1fbfd975
   native-tvos:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -122,7 +122,7 @@ jobs:
       group: tvos
       runner: macos-26
       publication-artifact: ci-tvos
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: c91f51fd0bd6e1d284a7e53b7507080c1fbfd975
   native-watchos:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -136,7 +136,7 @@ jobs:
       group: watchos
       runner: macos-26
       publication-artifact: ci-watchos
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: c91f51fd0bd6e1d284a7e53b7507080c1fbfd975
   native-linux:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -150,7 +150,7 @@ jobs:
       group: linux
       runner: ubuntu-24.04
       publication-artifact: ci-linux
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: c91f51fd0bd6e1d284a7e53b7507080c1fbfd975
   native-windows:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -164,7 +164,7 @@ jobs:
       group: windows
       runner: windows-2025
       publication-artifact: ci-windows
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: c91f51fd0bd6e1d284a7e53b7507080c1fbfd975
   native-arm64:
     name: KMP Native (linuxArm64 runtime)
     needs: native-linux

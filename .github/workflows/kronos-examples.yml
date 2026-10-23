@@ -35,24 +35,28 @@ jobs:
       uses: actions/checkout@v6
       with:
         repository: Kronos-orm/kronos-example-ktor
+        ref: 1329736685e5c6d80c9b5604113d5e73ed5f787d
         path: kronos-example-ktor
         persist-credentials: false
     - name: Checkout Spring Boot example
       uses: actions/checkout@v6
       with:
         repository: Kronos-orm/kronos-example-spring-boot
+        ref: ff9d4152c9771de0f072c5517bed97c58c071408
         path: kronos-example-spring-boot
         persist-credentials: false
     - name: Checkout Solon example
       uses: actions/checkout@v6
       with:
         repository: Kronos-orm/kronos-example-solon
+        ref: 4ab30defe177773407ad460cb845886b0da77860
         path: kronos-example-solon
         persist-credentials: false
     - name: Checkout Vert.x example
       uses: actions/checkout@v6
       with:
         repository: Kronos-orm/kronos-example-vertx
+        ref: e7833e03ba5718296207dcf1d4204f1277f6230a
         path: kronos-example-vertx
         persist-credentials: false
     - name: Set up JDK 21

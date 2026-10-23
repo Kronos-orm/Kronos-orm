@@ -65,8 +65,8 @@ class KPojoSmokeBoxTest : AbstractKronosJvmBoxSuite("kpojoSmoke") {
     fun generatedProviderVisibility() = box("generatedProviderVisibility")
 
     /**
-     * Verifies automatic enum metadata discovery across scalar, nullable, collection, nested,
-     * and serialized field types while honoring directional and all-direction ignore rules.
+     * Verifies declaration-owned enum factories alongside scalar, nullable, collection,
+     * nested and serialized field metadata.
      */
     @Test
     fun generatedEnumMetadata() = box("generatedEnumMetadata")

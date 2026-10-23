@@ -47,7 +47,7 @@ class InsertSelectTransformer(
         }
 
         return with(pluginContext) {
-            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock(resultType = expression.type) {
                 val values = analyzeAndBuildInsertSelectValues(irFunction, expression.value, errorReporter)
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
@@ -61,6 +61,7 @@ class InsertSelectTransformer(
                             arguments[1] = value
                         }
                     }
+                    +neutralDslReturn(expression, irFunction.returnType)
                 }
             }
         }

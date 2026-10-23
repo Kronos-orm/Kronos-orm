@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-// Verifies that generated KPojo mapping bodies can write source val properties.
+// JVM_TARGET: 17
+// Verifies that generated KPojo mapping bodies can write source val properties on modern JVM bytecode.
 
 import com.kotlinorm.interfaces.KPojo
 

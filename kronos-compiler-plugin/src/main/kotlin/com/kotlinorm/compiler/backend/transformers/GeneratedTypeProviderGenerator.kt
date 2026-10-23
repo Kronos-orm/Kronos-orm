@@ -17,6 +17,8 @@
 package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.core.buildStaticTypeInfo
+import com.kotlinorm.compiler.core.collectStaticTypeMetadataTypes
 import com.kotlinorm.compiler.core.enumFactorySymbol
 import com.kotlinorm.compiler.core.generatedTypeProviderSymbol
 import com.kotlinorm.compiler.core.generatedTypeRegistrarSymbol
@@ -28,6 +30,7 @@ import com.kotlinorm.compiler.plugin.GeneratedTypeProviderConfiguration
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
 import com.kotlinorm.compiler.utils.ErrorMessages
 import com.kotlinorm.compiler.utils.GeneratedFactoryPackageFqName
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -102,17 +105,24 @@ import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 
+internal data class GeneratedProviderRoots(
+    val kPojoClasses: Collection<IrClass>,
+    val enumClasses: Set<IrClass>,
+    val directQueryTypes: Collection<IrType>
+)
+
 /**
  * Generates one public, no-argument metadata provider for a compiler module.
  *
- * The provider contributes directly callable KPojo factories and enum-name factories keyed
- * by exact `KType` values. Contributions are emitted in stable declaration-name order and
- * contain no reflective construction or enum lookup. Only declarations visible from the
- * generated package are referenced; unsupported KPojo constructors are reported and omitted.
+ * The provider contributes directly callable KPojo factories, enum-name factories, and
+ * compiler-generated static type descriptors. KType-based contributions are emitted in stable
+ * declaration-name order, while static descriptors cover the substituted direct-supertype graph
+ * reachable from locally declared KPojo property types and direct query task targets. Contributions
+ * contain no reflective construction, enum lookup, or runtime supertype traversal.
  *
- * Enum discovery includes concrete enum leaves nested in generic property types. Properties
- * ignored in all mapping directions and cascade-only properties do not contribute enum metadata,
- * while serialized properties may contribute optional metadata for their decoded logical types.
+ * Accessible enum declarations own their factories even before a mapped use appears in another
+ * source file or dependency compilation. Property discovery includes concrete nested enum leaves;
+ * ignored/cascade-only properties do not add requirements, while serialized properties remain optional.
  * Direct non-serialized enum properties and statically typed enum results require metadata and
  * produce a compiler error when the generated package cannot reference the enum declaration.
  */
@@ -122,58 +132,86 @@ internal object GeneratedTypeProviderGenerator {
      *
      * @param pluginContext compiler symbols and IR factory used to construct declarations
      * @param moduleFragment module receiving the generated provider
-     * @param kPojoClasses discovered KPojo declarations, including declarations from dependencies
-     * @param staticallyTypedEnums enum types used directly by generated mapping code
+     * @param roots discovered KPojo, enum, and direct-query metadata roots
      * @param provider validated stable provider identity and fully qualified name
+     * @param useSourceFragments whether to emit one provider fragment per source file
+     * @param directQueryTaskTypeRootsBySource static query result types discovered at each source use site
      * @param errorReporter compiler reporter for constructibility warnings
-     * @return generated provider class, or `null` when the module has no files or already contains it
+     * @return generated provider classes, or an empty list when the module has no contributions
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun generate(
         pluginContext: IrPluginContext,
         moduleFragment: IrModuleFragment,
-        kPojoClasses: Collection<IrClass>,
-        staticallyTypedEnums: Set<IrClass>,
+        roots: GeneratedProviderRoots,
         provider: GeneratedTypeProviderConfiguration,
+        useSourceFragments: Boolean,
+        directQueryTaskTypeRootsBySource: Map<IrFile, Set<IrType>> = emptyMap(),
+        errorReporter: ErrorReporter
+    ): List<IrClass> {
+        val (kPojoClasses, staticallyTypedEnums, directQueryTaskTypeRoots) = roots
+        if (moduleFragment.files.isEmpty()) return emptyList()
+        val moduleContributions = collectContributions(
+            pluginContext, kPojoClasses.filter { it.isDeclaredIn(moduleFragment) },
+            staticallyTypedEnums + moduleFragment.accessibleSourceEnums(), directQueryTaskTypeRoots, errorReporter,
+            ownsEnum = { it.isDeclaredIn(moduleFragment) }
+        )
+        if (!useSourceFragments) {
+            return listOfNotNull(
+                generateProvider(
+                    pluginContext = pluginContext,
+                    moduleFragment = moduleFragment,
+                    provider = provider,
+                    contributions = moduleContributions,
+                    sourceFile = null,
+                    emitEmptyProvider = true,
+                    errorReporter = errorReporter
+                )
+            )
+        }
+
+        // Snapshot real source files before adding generated provider files. A source fragment is
+        // attached to its own file entry so Kotlin's incremental output mapping can replace or
+        // remove exactly that fragment while leaving registrations from unchanged sources intact.
+        val sourceFiles = moduleFragment.files
+            .asSequence()
+            .filterNot { file ->
+                file.packageFqName == GeneratedFactoryPackageFqName ||
+                    file.packageFqName == GeneratedProjectionPackageFqName
+            }
+            .distinctBy { it.fileEntry.name }
+            .toList()
+        val sourceEnums = moduleContributions.enumClasses.toSet()
+        return sourceFiles.mapNotNull { sourceFile ->
+            generateProvider(
+                pluginContext = pluginContext,
+                moduleFragment = moduleFragment,
+                provider = provider.fragmentFor(sourceFile.fileEntry.name),
+                contributions = collectContributions(pluginContext,
+                    kPojoClasses.filter { it.isOwnedBy(sourceFile) },
+                    sourceEnums.filter { it.isOwnedBy(sourceFile) },
+                    directQueryTaskTypeRootsBySource[sourceFile].orEmpty(), errorReporter,
+                    ownsEnum = { it in sourceEnums && it.isOwnedBy(sourceFile) }),
+                sourceFile = sourceFile,
+                emitEmptyProvider = false,
+                errorReporter = errorReporter
+            )
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun generateProvider(
+        pluginContext: IrPluginContext,
+        moduleFragment: IrModuleFragment,
+        provider: GeneratedTypeProviderConfiguration,
+        contributions: ProviderContributions,
+        sourceFile: IrFile?,
+        emitEmptyProvider: Boolean,
         errorReporter: ErrorReporter
     ): IrClass? {
-        if (moduleFragment.files.isEmpty()) return null
+        if (!emitEmptyProvider && contributions.isEmpty()) return null
 
-        val localKPojoClasses = kPojoClasses
-            .filter { it.isDeclaredIn(moduleFragment) }
-            .filter { it.isDirectlyConstructibleByGeneratedProvider() }
-            .filter { it.isAccessibleFromGeneratedProvider(allowLocalClass = true) }
-            .distinctBy { it.fqNameWhenAvailable ?: it.symbol }
-            .sortedBy { it.fqNameWhenAvailable?.asString() ?: it.name.asString() }
-        val requiredEnumClasses = linkedSetOf<IrClass>().apply {
-            addAll(staticallyTypedEnums)
-            localKPojoClasses.forEach { kPojo ->
-                kPojo.properties
-                    .filter { it.requiresScalarEnumMetadata() }
-                    .mapNotNullTo(this) { property -> property.declaredType()?.concreteEnumClassOrNull() }
-            }
-        }
-        val discoveredEnumClasses = linkedSetOf<IrClass>().apply {
-            addAll(requiredEnumClasses)
-            localKPojoClasses.forEach { kPojo ->
-                kPojo.properties
-                    .filter { it.contributesEnumMetadata() }
-                    .forEach { property -> property.declaredType()?.collectConcreteEnumLeaves(this) }
-            }
-        }
-        requiredEnumClasses
-            .filterNot { it.isAccessibleFromGeneratedProvider() }
-            .forEach { enumClass ->
-                errorReporter.reportError(
-                    enumClass,
-                    ErrorMessages.inaccessibleEnumMetadata(enumClass.fqNameWhenAvailable)
-                )
-            }
-        val enumClasses = discoveredEnumClasses
-            .filter { it.isAccessibleFromGeneratedProvider() }
-            .sortedBy { it.fqNameWhenAvailable?.asString() ?: it.name.asString() }
-
-        val file = createProviderFile(moduleFragment)
+        val file = createProviderFile(moduleFragment, sourceFile)
         val providerName = provider.fqName.shortName()
         if (file.declarations.any { (it as? IrClass)?.name == providerName }) return null
 
@@ -192,11 +230,87 @@ internal object GeneratedTypeProviderGenerator {
         file.declarations += providerClass
         providerClass.addNoArgConstructor(pluginContext)
         providerClass.addIdGetter(pluginContext, provider.id)
-        providerClass.addContributeFunction(pluginContext, localKPojoClasses, enumClasses, errorReporter)
+        providerClass.addContributeFunction(
+            pluginContext,
+            contributions.kPojoClasses,
+            contributions.enumClasses,
+            contributions.staticMetadataTypes,
+            errorReporter
+        )
         return providerClass
     }
 
-    private fun createProviderFile(moduleFragment: IrModuleFragment): IrFile {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun collectContributions(
+        pluginContext: IrPluginContext,
+        kPojoClasses: Collection<IrClass>,
+        staticallyTypedEnums: Collection<IrClass>,
+        directQueryTaskTypeRoots: Collection<IrType>,
+        errorReporter: ErrorReporter,
+        ownsEnum: (IrClass) -> Boolean = { true }
+    ): ProviderContributions {
+        val localMetadataKPojoClasses = kPojoClasses
+            .distinctBy { it.fqNameWhenAvailable ?: it.symbol }
+            .sortedBy { it.fqNameWhenAvailable?.asString() ?: it.name.asString() }
+        val localKPojoClasses = localMetadataKPojoClasses
+            .filter { it.isDirectlyConstructibleByGeneratedProvider() }
+            .filter { it.isAccessibleFromGeneratedProvider(allowLocalClass = true) }
+        val requiredEnumClasses = linkedSetOf<IrClass>().apply {
+            addAll(staticallyTypedEnums)
+            localKPojoClasses.forEach { kPojo ->
+                kPojo.properties
+                    .filter { it.requiresScalarEnumMetadata() }
+                    .mapNotNullTo(this) { property -> property.declaredType()?.concreteEnumClassOrNull() }
+            }
+        }
+        val discoveredEnumClasses = linkedSetOf<IrClass>().apply {
+            addAll(requiredEnumClasses)
+            localKPojoClasses.forEach { kPojo ->
+                kPojo.properties
+                    .filter { it.contributesEnumMetadata() }
+                    .forEach { property -> property.declaredType()?.collectConcreteEnumLeaves(this) }
+            }
+        }
+        requiredEnumClasses
+            .filter(ownsEnum)
+            .filterNot { it.isAccessibleFromGeneratedProvider() }
+            .forEach { enumClass ->
+                errorReporter.reportError(
+                    enumClass,
+                    ErrorMessages.inaccessibleEnumMetadata(enumClass.fqNameWhenAvailable)
+                )
+            }
+        val enumClasses = discoveredEnumClasses
+            .filter(ownsEnum)
+            .filter { it.isAccessibleFromGeneratedProvider() }
+            .sortedBy { it.fqNameWhenAvailable?.asString() ?: it.name.asString() }
+        val staticMetadataTypes = with(pluginContext) {
+            collectStaticTypeMetadataTypes(buildList {
+                addAll(directQueryTaskTypeRoots)
+                addAll(localMetadataKPojoClasses.map { it.defaultType })
+                addAll(enumClasses.map { it.defaultType })
+                localMetadataKPojoClasses.forEach { kPojo ->
+                    kPojo.properties.mapNotNullTo(this) { it.declaredType() }
+                }
+            })
+        }
+        return ProviderContributions(localKPojoClasses, enumClasses, staticMetadataTypes)
+    }
+
+    private fun createProviderFile(moduleFragment: IrModuleFragment, sourceFile: IrFile?): IrFile {
+        if (sourceFile != null) {
+            moduleFragment.files
+                .firstOrNull { file ->
+                    file.packageFqName == GeneratedFactoryPackageFqName &&
+                        file.fileEntry.name == sourceFile.fileEntry.name
+                }
+                ?.let { return it }
+            val packageFragment = MutablePackageFragmentDescriptor(
+                sourceFile.moduleDescriptor,
+                GeneratedFactoryPackageFqName
+            )
+            return IrFileImpl(sourceFile.fileEntry, packageFragment, moduleFragment).also { moduleFragment.files += it }
+        }
         moduleFragment.files
             .firstOrNull { it.packageFqName == GeneratedFactoryPackageFqName }
             ?.let { return it }
@@ -204,6 +318,15 @@ internal object GeneratedTypeProviderGenerator {
             ?: error("Kronos generated type provider requires at least one source file")
         val packageFragment = MutablePackageFragmentDescriptor(sourceFile.moduleDescriptor, GeneratedFactoryPackageFqName)
         return IrFileImpl(sourceFile.fileEntry, packageFragment, moduleFragment).also { moduleFragment.files += it }
+    }
+
+    private data class ProviderContributions(
+        val kPojoClasses: List<IrClass>,
+        val enumClasses: List<IrClass>,
+        val staticMetadataTypes: List<IrSimpleType>
+    ) {
+        fun isEmpty(): Boolean =
+            kPojoClasses.isEmpty() && enumClasses.isEmpty() && staticMetadataTypes.isEmpty()
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -240,6 +363,7 @@ internal object GeneratedTypeProviderGenerator {
         pluginContext: IrPluginContext,
         kPojoClasses: List<IrClass>,
         enumClasses: List<IrClass>,
+        staticMetadataTypes: List<IrSimpleType>,
         errorReporter: ErrorReporter
     ) {
         val providerContribute = with(pluginContext) {
@@ -267,6 +391,47 @@ internal object GeneratedTypeProviderGenerator {
             overriddenSymbols = listOf(providerContribute.symbol)
         }
 
+        fillContributeBody(pluginContext, contribute, kPojoClasses, enumClasses, staticMetadataTypes, errorReporter)
+    }
+
+    /** Fills a source-declared Native provider so KLIB metadata owns its callable symbols. */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun fillNativeProvider(
+        context: IrPluginContext,
+        module: IrModuleFragment,
+        providerClass: IrClass,
+        providerId: String,
+        kPojoClasses: Collection<IrClass>,
+        enumClasses: Collection<IrClass>,
+        directQueryTaskTypeRoots: Collection<IrType>,
+        errorReporter: ErrorReporter
+    ) {
+        val idGetter = providerClass.properties.single { it.name.asString() == "id" }.getter
+            ?: error("Native source provider must declare an id getter")
+        idGetter.body = context.irBuiltIns.createIrBuilder(idGetter.symbol).irBlockBody {
+            +irReturn(irString(providerId))
+        }
+        // Dependency KLIB classes may be header-only stubs with no enum entries or callable constructors.
+        // Their producer providers are linked through the explicit dependency graph, including associated main.
+        val contributions = collectContributions(
+            context, kPojoClasses.filter { it.isDeclaredIn(module) }, enumClasses + module.accessibleSourceEnums(),
+            directQueryTaskTypeRoots, errorReporter, ownsEnum = { it.isDeclaredIn(module) }
+        )
+        val contribute = providerClass.declarations.filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrSimpleFunction>()
+            .single { it.name.asString() == "contributeTo" }
+        fillContributeBody(context, contribute, contributions.kPojoClasses, contributions.enumClasses,
+            contributions.staticMetadataTypes, errorReporter)
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun fillContributeBody(
+        pluginContext: IrPluginContext,
+        contribute: org.jetbrains.kotlin.ir.declarations.IrSimpleFunction,
+        kPojoClasses: List<IrClass>,
+        enumClasses: List<IrClass>,
+        staticMetadataTypes: List<IrSimpleType>,
+        errorReporter: ErrorReporter
+    ) {
         val kPojoCandidates = kPojoClasses.mapNotNull { klass ->
             klass.factoryConstructor(errorReporter)?.let { klass to it }
         }
@@ -277,6 +442,9 @@ internal object GeneratedTypeProviderGenerator {
             }
             val registerEnum = with(pluginContext) {
                 generatedTypeRegistrarSymbol.owner.functions.single { it.name.asString() == "registerEnum" }
+            }
+            val registerTypeInfo = with(pluginContext) {
+                generatedTypeRegistrarSymbol.owner.functions.single { it.name.asString() == "registerTypeInfo" }
             }
             kPojoCandidates.forEach { (klass, constructor) ->
                 val ownerId = klass.fqNameWhenAvailable?.asString() ?: klass.name.asString()
@@ -301,6 +469,13 @@ internal object GeneratedTypeProviderGenerator {
                     arguments[3] = buildEnumFactory(pluginContext, contribute, enumClass, entries)
                 }
             }
+            staticMetadataTypes.forEach { type ->
+                val typeInfo = with(pluginContext) { buildStaticTypeInfo(type) } ?: return@forEach
+                +irCall(registerTypeInfo.symbol).apply {
+                    arguments[0] = irGet(registrar)
+                    arguments[1] = typeInfo
+                }
+            }
         }
     }
 
@@ -308,6 +483,7 @@ internal object GeneratedTypeProviderGenerator {
         pluginContext: IrPluginContext,
         values: List<String>
     ): IrExpression = irCall(with(pluginContext) { listOfFunctionSymbol }).apply {
+        type = pluginContext.irBuiltIns.listClass.typeWith(pluginContext.irBuiltIns.stringType)
         typeArguments[0] = pluginContext.irBuiltIns.stringType
         arguments[0] = irVararg(pluginContext.irBuiltIns.stringType, values.map(::irString))
     }
@@ -454,8 +630,28 @@ internal object GeneratedTypeProviderGenerator {
         }
     }
 
+    /** Declaration ownership keeps factories available when only a later use site is recompiled. */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrModuleFragment.accessibleSourceEnums(): List<IrClass> = buildList {
+        fun collect(declaration: IrClass) {
+            if (declaration.kind == ClassKind.ENUM_CLASS && declaration.isAccessibleFromGeneratedProvider()) {
+                add(declaration)
+            }
+            declaration.declarations.filterIsInstance<IrClass>().forEach(::collect)
+        }
+        files.forEach { it.declarations.filterIsInstance<IrClass>().forEach(::collect) }
+    }
+
     private fun IrClass.isDeclaredIn(moduleFragment: IrModuleFragment): Boolean =
         runCatching { file in moduleFragment.files }.getOrDefault(false)
+
+    /**
+     * Associates declarations generated for a source file with that source's provider fragment.
+     * Projection declarations live in a synthetic IR file but deliberately retain the source
+     * file entry, so comparing the entry name keeps their generated factory in the same fragment.
+     */
+    private fun IrClass.isOwnedBy(sourceFile: IrFile): Boolean =
+        runCatching { file.fileEntry.name == sourceFile.fileEntry.name }.getOrDefault(false)
 
     private fun IrClass.isAccessibleFromGeneratedProvider(allowLocalClass: Boolean = false): Boolean {
         var owner: IrDeclarationParent = this

@@ -89,7 +89,7 @@ private class SelectTransformerImpl(
         }
 
         return with(pluginContext) {
-            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock(resultType = expression.type) {
                 val projections = analyzeAndBuildSelectProjections(irFunction, expression.value, errorReporter)
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
@@ -127,6 +127,7 @@ private class SelectTransformerImpl(
                             }
                         }
                     }
+                    +neutralDslReturn(expression, irFunction.returnType)
                 }
             }
         }

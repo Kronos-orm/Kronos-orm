@@ -89,6 +89,7 @@ import org.jetbrains.kotlin.ir.types.isString
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
+import org.jetbrains.kotlin.ir.util.isAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.ClassId
@@ -558,6 +559,7 @@ fun buildFieldFromProperty(
             typeArguments[0] = propertyType
         }
     }
+    val typeInfoExpr = if (irProperty.isDelegated) null else buildStaticTypeInfo(propertyType)
 
     val ignoreExpr: IrExpression = cloneEnumVararg(ignoreAnnotation.arg(0)) ?: builder.irNull()
 
@@ -580,12 +582,13 @@ fun buildFieldFromProperty(
         arguments[12] = defaultValueExpr                       // defaultValue
         arguments[13] = builder.irBoolean(nullable)            // nullable
         arguments[14] = builder.irBoolean(serializable)        // serializable
+        if (typeInfoExpr != null) arguments[16] = typeInfoExpr // typeInfo
     }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrProperty.annotation(fqName: FqName): IrConstructorCall? =
-    annotations.firstOrNull { it.symbol.owner.returnType.classFqName == fqName }
+    annotations.firstOrNull { it.isAnnotation(fqName) }
 
 private fun IrConstructorCall?.arg(index: Int): IrExpression? =
     this?.arguments?.getOrNull(index)

@@ -1,5 +1,6 @@
 | 症状/关键词 | 经验记录 |
 |---|---|
+| logging.enabled；KLoggerType.NONE；custom factory；empty paths；queued log replay | [Shared logging switch and adapter selection](evolution/2026-10-24-logging-global-switch.md) |
 | CI；SDK cache；ImageVersion；duplicate caches；10GB；cache eviction | [Share compatible SDK caches within a storage budget](evolution/2026-10-22-ci-sdk-cache-budget.md) |
 | Windows；SQLite consumer；ProcessBuilder；bash；WSL；no installed distributions；gradlew.bat | [Select the platform Gradle wrapper in external consumers](evolution/2026-10-22-windows-gradle-consumer-wrapper.md) |
 | main.kts；Import；公共脚本变化仍执行旧代码；compiled scripts cache | [Fingerprint imported script contents](evolution/2026-10-22-main-kts-import-cache.md) |

@@ -5,16 +5,18 @@
  * you may not use this file except in compliance with the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm
 
 import com.kotlinorm.adapter.NativeConsoleLoggerAdapter
 import com.kotlinorm.enums.KLoggerType
 
 internal actual fun installPlatformLogger() {
-    if (Kronos.loggerType == KLoggerType.NONE) return
+    if (Kronos.logging.factory != null) return
 
-    Kronos.defaultLogger = { source ->
+    Kronos.logging.installAdapterFactory { source ->
         NativeConsoleLoggerAdapter(source as? String ?: source::class.simpleName ?: "Kronos")
     }
-    Kronos.loggerType = KLoggerType.DEFAULT_LOGGER
+    Kronos.logging.type = KLoggerType.DEFAULT_LOGGER
 }

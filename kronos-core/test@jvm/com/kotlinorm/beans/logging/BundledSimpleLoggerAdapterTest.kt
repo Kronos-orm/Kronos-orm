@@ -12,6 +12,7 @@ import kotlin.test.assertFalse
 
 class BundledSimpleLoggerAdapterTest {
     private val logger = BundledSimpleLoggerAdapter(BundledSimpleLoggerAdapterTest::class.simpleName!!)
+    private val originalPath = Kronos.logging.path
     lateinit var logPath: File
     lateinit var logFile: File
 
@@ -19,13 +20,14 @@ class BundledSimpleLoggerAdapterTest {
     fun createTempDir() {
         logPath = createTempDirectory("bundledSimpleLoggerTest").toFile()
         logFile = File(logPath, logFileNameRule())
-        Kronos.logPath = [
+        Kronos.logging.path = [
             logPath.path
         ]
     }
 
     @AfterTest
     fun deleteTempDir() {
+        Kronos.logging.path = originalPath
         logPath.deleteRecursively()
     }
 
@@ -41,6 +43,32 @@ class BundledSimpleLoggerAdapterTest {
         logPath.deleteRecursively()
     }
 
+
+    @Test
+    fun `global disable and empty paths discard messages before enabling again`() {
+        val originalEnabled = Kronos.logging.enabled
+        try {
+            Kronos.logging.enabled = false
+            logger.info(log { -"globally disabled" })
+            assertFalse(logFile.exists())
+            Kronos.logging.enabled = true
+            Kronos.logging.path = emptyArray()
+            logger.info(log { -"no destinations" })
+            assertFalse(logFile.exists())
+            Kronos.logging.path = arrayOf(logPath.path)
+            logger.info(log { -"retained" })
+            assertLogLineEquals("retained", logFile.readText())
+        } finally {
+            Kronos.logging.enabled = originalEnabled
+        }
+    }
+
+    @Test
+    fun `bundled output includes the original exception stack trace`() {
+        val failure = IllegalStateException("database failure")
+        logger.error(log { -"failed" }, failure)
+        assertLogLineEquals("failed\r\n${failure.stackTraceToString()}\r\n", logFile.readText())
+    }
 
     @Test
     fun testInfo() {

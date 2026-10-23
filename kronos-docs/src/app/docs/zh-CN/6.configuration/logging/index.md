@@ -3,15 +3,15 @@
 
 ## 使用内置日志
 
-Kronos 通过 `Kronos.defaultLogger` 输出 SQL 执行日志。`kronos-core` 已包含内置日志实现，可以输出到控制台、写入文件，或同时输出到两个位置。
+通过 `Kronos.logging` 配置 SQL 执行日志。`kronos-core` 已包含内置日志实现；JVM 实现可以输出到控制台、写入文件，或同时输出到两个位置。
 
 ```kotlin group="Default Logger 1 1" name="console and file" icon="kotlin"
 import com.kotlinorm.Kronos
 import com.kotlinorm.enums.KLoggerType
 
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = ["console", "logs/kronos"]
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = ["console", "logs/kronos"]
 }
 ```
 
@@ -27,12 +27,12 @@ Found rows: 1
 
 ## 写入日志目录
 
-需要让内置日志创建每日文件时，将目录路径加入 `Kronos.logPath`。
+需要让内置日志创建每日文件时，将目录路径加入 `Kronos.logging.path`。
 
 ```kotlin group="Default Logger 2 1" name="file only" icon="kotlin"
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = ["logs/kronos"]
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = ["logs/kronos"]
 }
 ```
 
@@ -42,13 +42,43 @@ with(Kronos) {
 logs/kronos/kronos-log-yyyy-MM-dd.log
 ```
 
-## 关闭内置日志输出
+## 开启或关闭日志
 
-不需要内置 logger 输出到控制台或文件时，将 `Kronos.logPath` 设置为空数组：
+`Kronos.logging.enabled` 是日志输出的总开关，对 JVM 和 Kotlin/Native 上的内置、平台和自定义 logger 都生效。默认值为 `true`，默认输出路径为 `["console"]`。
 
-```kotlin group="Default Logger 3" name="disabled" icon="kotlin"
-Kronos.logPath = []
+```kotlin name="关闭日志" icon="kotlin"
+Kronos.logging.enabled = false
 ```
+
+重新开启时保留原来的日志类型、路径和自定义工厂：
+
+```kotlin name="开启日志" icon="kotlin"
+Kronos.logging.enabled = true
+```
+
+关闭时不会创建日志适配器，也不会执行惰性的日志消息构建。需要按级别过滤时，配置最低级别；最终输出同时遵守适配器自身的级别设置：
+
+```kotlin name="最低日志级别" icon="kotlin"
+import com.kotlinorm.enums.KLogLevel
+
+Kronos.logging.minimumLevel = KLogLevel.WARN
+```
+
+`path` 选择内置日志的输出位置，空数组只停止这些位置的输出，不改变自定义 logger 或日志框架适配器：
+
+```kotlin name="内置日志输出位置" icon="kotlin"
+Kronos.logging.path = []
+```
+
+Kotlin/Native 的内置适配器使用 `console` 输出，并包含异常堆栈；目录输出由 JVM 内置 logger 提供。应用可通过自定义工厂连接平台日志实现：
+
+```kotlin name="自定义日志工厂" icon="kotlin"
+Kronos.logging.factory = { source -> applicationLogger(source) }
+// 恢复使用已安装的平台适配器。
+Kronos.logging.factory = null
+```
+
+`applicationLogger` 是应用提供的函数，返回 `KLogger`。总开关和最低级别同样作用于它返回的 logger。设置工厂会保留 `logging.type`。
 
 ## Android 日志
 
@@ -83,7 +113,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.JDK_LOGGER
+Kronos.logging.type = KLoggerType.JDK_LOGGER
 ```
 
 JDK Logger 会接收同样的 ORM 执行信息。
@@ -114,7 +144,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.COMMONS_LOGGER
+Kronos.logging.type = KLoggerType.COMMONS_LOGGER
 ```
 
 > **Note**
@@ -168,7 +198,7 @@ import com.kotlinorm.KronosLoggerApp
 import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
-Kronos.loggerType = KLoggerType.SLF4J_LOGGER
+Kronos.logging.type = KLoggerType.SLF4J_LOGGER
 ```
 
 ## 使用 SLF4J 和 Log4j2
@@ -228,7 +258,7 @@ dependencies {
 
 ## 探测可用适配器
 
-`detectLoggerImplementation()` 会检查运行时 classpath，并将 `Kronos.defaultLogger` 设置为探测到的适配器。
+`detectLoggerImplementation()` 会检查运行时 classpath，并安装探测到的平台适配器；显式设置的 `Kronos.logging.factory` 会被保留。
 
 ```kotlin group="Detect Logger 1" name="kotlin" icon="kotlin"
 import com.kotlinorm.Kronos
@@ -236,7 +266,7 @@ import com.kotlinorm.KronosLoggerApp
 
 KronosLoggerApp.detectLoggerImplementation()
 
-println(Kronos.loggerType)
+println(Kronos.logging.type)
 ```
 
 在只包含 JDK logger 的标准 JVM 项目中，探测结果为：

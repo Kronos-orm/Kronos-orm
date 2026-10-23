@@ -91,7 +91,7 @@ fun init(path: String) {
             initialDataSource(dataSource)
         )
     ).apply {
-        Kronos.defaultLogger(this).infoIfEnabled {
+        Kronos.logging.logger(this).infoIfEnabled {
             log {
                 +"Reading config file successfully: $path"[green]
             }
@@ -106,7 +106,7 @@ fun readConfig(path: String): Map<String, Any?> {
     ) ?: throw IllegalArgumentException("Config file not found or is empty")
     while (config["extend"] != null) {
         val extendPath = config["extend"] as String
-        Kronos.defaultLogger(extendPath).infoIfEnabled {
+        Kronos.logging.logger(extendPath).infoIfEnabled {
             log {
                 +"Config extension found: $extendPath"[blue, bold]
             }

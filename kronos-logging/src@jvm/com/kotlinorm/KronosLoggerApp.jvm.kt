@@ -5,6 +5,8 @@
  * you may not use this file except in compliance with the License.
  */
 
+@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+
 package com.kotlinorm
 
 import com.kotlinorm.adapter.AndroidUtilLoggerAdapter
@@ -13,13 +15,10 @@ import com.kotlinorm.adapter.JavaUtilLoggerAdapter
 import com.kotlinorm.adapter.Slf4jLoggerAdapter
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.enums.KLoggerType
-import com.kotlinorm.exceptions.KotoNoLoggerException
-import com.kotlinorm.i18n.Noun
 import com.kotlinorm.interfaces.KLogger
 
 internal actual fun installPlatformLogger() {
-    // NONE denotes an explicitly configured factory. Preserve that choice.
-    if (Kronos.loggerType == KLoggerType.NONE) return
+    if (Kronos.logging.factory != null) return
 
     val tag = "com.kotlinorm.core"
     var result: KLogger? = null
@@ -45,20 +44,19 @@ internal actual fun installPlatformLogger() {
     KLoggerType.DEFAULT_LOGGER detect { BundledSimpleLoggerAdapter(tag) }
 
     if (result != null && detectedType != null) {
-        Kronos.defaultLogger = { getKotoLoggerInstance(it) }
-        Kronos.loggerType = detectedType
+        Kronos.logging.installAdapterFactory(::getKotoLoggerInstance)
+        Kronos.logging.type = detectedType
     }
 }
 
 private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
     val tag = loggingClazz as? String ?: loggingClazz::class.simpleName!!
 
-    return when (Kronos.loggerType) {
+    return when (Kronos.logging.type) {
         KLoggerType.ANDROID_LOGGER -> AndroidUtilLoggerAdapter(tag)
         KLoggerType.COMMONS_LOGGER -> ApacheCommonsLoggerAdapter(tag)
         KLoggerType.JDK_LOGGER -> JavaUtilLoggerAdapter(tag)
         KLoggerType.SLF4J_LOGGER -> Slf4jLoggerAdapter(tag)
         KLoggerType.DEFAULT_LOGGER -> BundledSimpleLoggerAdapter(tag)
-        else -> throw KotoNoLoggerException(Noun.noKLoggerMessage)
     }
 }

@@ -16,7 +16,7 @@
 
 package com.kotlinorm.beans.logging
 
-import com.kotlinorm.Kronos.logPath
+import com.kotlinorm.Kronos
 import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.interfaces.PrintCode
@@ -63,7 +63,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     private val current get() = currentDateTime(logDateTimeFormat)
 
     override fun isTraceEnabled(): Boolean {
-        return traceEnabled
+        return Kronos.logging.enabled && Kronos.logging.path.isNotEmpty() && traceEnabled
     }
 
     override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
@@ -74,6 +74,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                 log {
                     -"[$current] [trace] [$tagName] "[blue]
                     -messages
+                    if (e != null) { +""; +e.stackTraceToString() }
                 }
             )
         )
@@ -81,7 +82,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun isDebugEnabled(): Boolean {
-        return debugEnabled
+        return Kronos.logging.enabled && Kronos.logging.path.isNotEmpty() && debugEnabled
     }
 
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
@@ -92,6 +93,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                 log {
                     -"[$current] [debug] [$tagName] "[magenta]
                     -messages
+                    if (e != null) { +""; +e.stackTraceToString() }
                 }
             )
         )
@@ -99,7 +101,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun isInfoEnabled(): Boolean {
-        return infoEnabled
+        return Kronos.logging.enabled && Kronos.logging.path.isNotEmpty() && infoEnabled
     }
 
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
@@ -110,6 +112,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                 log {
                     -"[$current] [info] [$tagName] "[cyan]
                     -messages
+                    if (e != null) { +""; +e.stackTraceToString() }
                 }
             )
         )
@@ -117,7 +120,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun isWarnEnabled(): Boolean {
-        return warnEnabled
+        return Kronos.logging.enabled && Kronos.logging.path.isNotEmpty() && warnEnabled
     }
 
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
@@ -128,6 +131,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                 log {
                     -"[$current] [warn] [$tagName] "[yellow]
                     -messages
+                    if (e != null) { +""; +e.stackTraceToString() }
                 }
             )
         )
@@ -135,7 +139,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     }
 
     override fun isErrorEnabled(): Boolean {
-        return errorEnabled
+        return Kronos.logging.enabled && Kronos.logging.path.isNotEmpty() && errorEnabled
     }
 
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {
@@ -146,6 +150,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                 log {
                     -"[$current] [error] [$tagName] "[red]
                     -messages
+                    if (e != null) { +""; +e.stackTraceToString() }
                 }
             )
         )
@@ -156,13 +161,16 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
      * Executes the log task asynchronously.
      */
     private fun executeLogTask() {
-        if(logPath.isEmpty()) return
+        if (!Kronos.logging.enabled || Kronos.logging.path.isEmpty()) {
+            logTaskList.clear()
+            return
+        }
         if (synchronized.tryLock()) { // 尝试获取锁
             Runnable {
                 try {
                     while (logTaskList.isNotEmpty()) {
                         val logTask = logTaskList.poll()
-                        logPath.forEach { path ->
+                        Kronos.logging.path.forEach { path ->
                             if (path == "console") {
                                 logTask.messages.forEach { message ->
                                     message.print(logTask.level)

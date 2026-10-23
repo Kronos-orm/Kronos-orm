@@ -62,6 +62,7 @@ class KronosResultMappingTest {
     @Test
     fun `oracle number boolean mapping reads numeric value before driver object conversion`() {
         val metaData = mockk<ResultSetMetaData>()
+        every { metaData.columnCount } returns 1
         every { metaData.getColumnType(1) } returns Types.NUMERIC
         every { metaData.getColumnTypeName(1) } returns "NUMBER"
         every { metaData.getColumnLabel(1) } returns "flag_value"
@@ -87,6 +88,32 @@ class KronosResultMappingTest {
 
         assertEquals(listOf(false), values)
         verify(exactly = 0) { resultSet.getObject(1) }
+    }
+
+    @Test
+    fun `explicit KPojo fields retarget Number projection metadata before one JDBC decode`() {
+        val number = com.kotlinorm.utils.StaticTypeInfo(com.kotlinorm.utils.StaticTypeRef("kotlin.Number", true))
+        val sourceField = Field("raw_total", "sourceTotal", kType = typeOf<Number?>(), typeInfo = number)
+        var matches = 0
+        val codec = Kronos.registerValueCodec(valueCodec(supports = { _, context ->
+            matches++
+            assertEquals(typeOf<Int?>(), context.targetType)
+            assertEquals(sourceField, context.field)
+            assertEquals(null, context.targetTypeInfo)
+            false
+        }, convert = { _, _ -> error("Unmatched codec must not run") }))
+        val factory = Kronos.registerKPojoFactory(typeOf<JdbcMappedPojo>(), KPojoFactory { JdbcMappedPojo() })
+        try {
+            val task = KronosAtomicQueryTask("SELECT COUNT(*) AS id", targetType = typeOf<JdbcMappedPojo>(),
+                resultColumns = mapOf("id" to ResultColumnMetadata(typeOf<Number?>(), sourceField)))
+            val resultSet = numberResultSet(BigDecimal("4"), "id")
+            every { resultSet.getObject(1) } returns BigDecimal("4")
+            val result = KronosResultMappers.toList(resultSet, task, genericContext()).single() as JdbcMappedPojo
+            assertEquals(4, result.id)
+            assertEquals(1, matches)
+            verify(exactly = 1) { resultSet.getObject(1) }
+            verify(exactly = 0) { resultSet.getBigDecimal(1) }
+        } finally { codec.close(); factory.close() }
     }
 
     @Test
@@ -465,6 +492,19 @@ class KronosResultMappingTest {
     }
 
     @Test
+    fun `raw Map Any retains its non-null bound while nullable and star preserve SQL NULL`() {
+        listOf(typeOf<Map<String, Any?>>(), typeOf<Map<String, *>>(), typeOf<Map<*, *>>(),
+            typeOf<MutableMap<String?, Int?>>()).forEach { target ->
+            assertEquals(listOf(mapOf("payload" to null)), KronosResultMappers.toList(
+                singleColumnResultSet(listOf(null), "payload"), target, genericContext()))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            KronosResultMappers.toList(singleColumnResultSet(listOf(null), "payload"),
+                typeOf<Map<String, Any>>(), genericContext())
+        }
+    }
+
+    @Test
     fun `fixed and reordered Map subtypes are rejected before reading rows`() {
         val targetTypes = listOf(
             typeOf<JdbcStringMap>(),
@@ -479,7 +519,7 @@ class KronosResultMappingTest {
             }
 
             assertEquals(
-                "Unsupported Map result type $targetType: JDBC row mapping returns LinkedHashMap " +
+                "Unsupported Map result type $targetType: row mapping returns LinkedHashMap " +
                     "and supports only direct Map or MutableMap declarations",
                 exception.message
             )
@@ -499,7 +539,7 @@ class KronosResultMappingTest {
 
         assertEquals(
             "Unsupported Map key type ${typeOf<Int>()} in $targetType: " +
-                "JDBC row labels require String, String?, or *",
+                "row labels require String, String?, or *",
             exception.message
         )
         verify(exactly = 0) { resultSet.next() }
@@ -922,7 +962,7 @@ class KronosResultMappingTest {
             ) { row ->
                 failedRow = row
                 row.get<String>("marker")
-                throw IllegalStateException("mapper failure")
+                error("mapper failure")
             }
         }
         assertEquals("mapper failure", mapperFailure.message)

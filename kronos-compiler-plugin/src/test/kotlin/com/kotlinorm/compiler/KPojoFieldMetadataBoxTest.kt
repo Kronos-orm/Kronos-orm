@@ -72,4 +72,10 @@ class KPojoFieldMetadataBoxTest : AbstractKronosJvmBoxSuite("kpojoFieldMetadata"
      */
     @Test
     fun inferredColumnTypeMatrix() = box("inferredColumnTypeMatrix")
+
+    /**
+     * Verifies compiler-generated static type descriptors on KPojo fields and providers.
+     */
+    @Test
+    fun staticTypeMetadata() = box("staticTypeMetadata")
 }

@@ -18,7 +18,10 @@ package com.kotlinorm.compiler
 
 import com.kotlinorm.compiler.plugin.KronosCompilerPluginRegistrar
 import com.kotlinorm.compiler.plugin.GeneratedProviderFqNameKey
+import com.kotlinorm.compiler.plugin.GeneratedProviderFragmentsKey
 import com.kotlinorm.compiler.plugin.GeneratedProviderIdKey
+import com.kotlinorm.compiler.plugin.NativeProviderEntryFqNameKey
+import com.kotlinorm.compiler.plugin.NativeProviderIdKey
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -29,14 +32,17 @@ import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
 import org.jetbrains.kotlin.test.directives.JvmEnvironmentConfigurationDirectives
 import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives
 import org.jetbrains.kotlin.test.model.DependencyKind
+import org.jetbrains.kotlin.test.model.ArtifactKinds
+import org.jetbrains.kotlin.test.model.JvmClassFileArtifact
 import org.jetbrains.kotlin.test.model.TestModule
 import org.jetbrains.kotlin.test.runners.AbstractFirLightTreeDiagnosticsTest
-import org.jetbrains.kotlin.test.runners.codegen.AbstractFirBlackBoxCodegenTestBase
+import org.jetbrains.kotlin.test.runners.codegen.AbstractJvmBlackBoxCodegenTestBase
 import org.jetbrains.kotlin.test.services.EnvironmentBasedStandardLibrariesPathProvider
 import org.jetbrains.kotlin.test.services.EnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.KotlinStandardLibrariesPathProvider
 import org.jetbrains.kotlin.test.services.RuntimeClasspathProvider
 import org.jetbrains.kotlin.test.services.TestServices
+import org.jetbrains.kotlin.test.services.artifactsProvider
 import org.jetbrains.kotlin.test.services.getOrCreateTempDirectory
 import org.opentest4j.AssertionFailedError
 import java.io.File
@@ -50,11 +56,23 @@ import java.security.MessageDigest
  * resolution, FIR-to-IR conversion, backend code generation, IR verification, and
  * execution of `box(): String` from files under `kronos-compiler-plugin/testData/box`.
  */
-abstract class AbstractKronosJvmBoxTest : AbstractFirBlackBoxCodegenTestBase(FirParser.LightTree) {
+abstract class AbstractKronosJvmBoxTest(
+    parser: FirParser = FirParser.LightTree,
+) : AbstractJvmBlackBoxCodegenTestBase(parser) {
+    init {
+        KronosCompilerTestEnvironment.prepare()
+    }
+
+    /** Exercises the Native explicit-entry backend policy through the official IR verifier. */
+    protected open val nativeMetadataEntry: String? = null
+
+    protected open val sourceProviderFragments: Boolean = false
+
     /**
      * Uses the Kotlin test framework's environment-provided stdlib locations.
      */
     override fun createKotlinStandardLibrariesPathProvider(): KotlinStandardLibrariesPathProvider {
+        KronosCompilerTestEnvironment.prepare()
         return EnvironmentBasedStandardLibrariesPathProvider
     }
 
@@ -71,14 +89,14 @@ abstract class AbstractKronosJvmBoxTest : AbstractFirBlackBoxCodegenTestBase(Fir
             LanguageSettingsDirectives.LANGUAGE with "+CollectionLiterals"
         }
 
-        useConfigurators(::KronosCompilerPluginConfigurator)
-        useCustomRuntimeClasspathProviders(::KronosRuntimeClasspathProvider)
+        useConfigurators({ services -> KronosCompilerPluginConfigurator(services, nativeMetadataEntry, sourceProviderFragments) })
+        useCustomRuntimeClasspathProviders({ services ->
+            KronosRuntimeClasspathProvider(services, nativeMetadataEntry == null, sourceProviderFragments)
+        })
     }
 
     protected val testDataDir: String
-        get() = requireNotNull(System.getProperty("kronos.compiler.plugin.projectDir")) {
-            "Missing kronos.compiler.plugin.projectDir"
-        } + "/testData"
+        get() = File(KronosCompilerTestEnvironment.projectDir, "testData").absolutePath
 }
 
 /**
@@ -89,8 +107,9 @@ abstract class AbstractKronosJvmBoxTest : AbstractFirBlackBoxCodegenTestBase(Fir
  * compile and execute its `box()` function.
  */
 abstract class AbstractKronosJvmBoxSuite(
-    private val directory: String
-) : AbstractKronosJvmBoxTest() {
+    private val directory: String,
+    parser: FirParser = FirParser.LightTree,
+) : AbstractKronosJvmBoxTest(parser) {
     /**
      * Runs one `.kt` file from this suite's `testData/box` directory.
      */
@@ -103,10 +122,15 @@ abstract class AbstractKronosJvmBoxSuite(
  * Base class for Kronos official FIR diagnostics tests.
  */
 abstract class AbstractKronosJvmDiagnosticsTest : AbstractFirLightTreeDiagnosticsTest() {
+    init {
+        KronosCompilerTestEnvironment.prepare()
+    }
+
     /**
      * Uses the Kotlin test framework's environment-provided stdlib locations.
      */
     override fun createKotlinStandardLibrariesPathProvider(): KotlinStandardLibrariesPathProvider {
+        KronosCompilerTestEnvironment.prepare()
         return EnvironmentBasedStandardLibrariesPathProvider
     }
 
@@ -125,9 +149,7 @@ abstract class AbstractKronosJvmDiagnosticsTest : AbstractFirLightTreeDiagnostic
     }
 
     protected val testDataDir: String
-        get() = requireNotNull(System.getProperty("kronos.compiler.plugin.projectDir")) {
-            "Missing kronos.compiler.plugin.projectDir"
-        } + "/testData"
+        get() = File(KronosCompilerTestEnvironment.projectDir, "testData").absolutePath
 }
 
 /**
@@ -152,9 +174,7 @@ abstract class AbstractKronosJvmDiagnosticsSuite(
     private fun writeDiagnosticsActual(name: String, error: AssertionFailedError) {
         if (!error.isActualDefined) return
         val actual = error.actual.stringRepresentation ?: return
-        val projectDir = requireNotNull(System.getProperty("kronos.compiler.plugin.projectDir")) {
-            "Missing kronos.compiler.plugin.projectDir"
-        }
+        val projectDir = KronosCompilerTestEnvironment.projectDir
         val actualFile = File(projectDir, "build/tmp/kronos-diagnostics-actual/$directory/$name.kt")
         actualFile.parentFile.mkdirs()
         actualFile.writeText(actual)
@@ -162,7 +182,11 @@ abstract class AbstractKronosJvmDiagnosticsSuite(
 }
 
 @OptIn(ExperimentalCompilerApi::class)
-private class KronosCompilerPluginConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+private class KronosCompilerPluginConfigurator(
+    testServices: TestServices,
+    private val nativeEntry: String? = null,
+    private val sourceFragments: Boolean = false
+) : EnvironmentConfigurator(testServices) {
     private val registrar = KronosCompilerPluginRegistrar()
 
     /**
@@ -171,8 +195,14 @@ private class KronosCompilerPluginConfigurator(testServices: TestServices) : Env
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
         configuration.addJvmClasspathRoots(kronosCompilerTestClasspath)
         val identity = testGeneratedTypeProviderIdentity("kronos-test:${module.name}")
-        configuration.put(GeneratedProviderIdKey, identity.id)
-        configuration.put(GeneratedProviderFqNameKey, identity.fqName)
+        if (nativeEntry != null) {
+            configuration.put(NativeProviderIdKey, identity.id)
+            configuration.put(NativeProviderEntryFqNameKey, nativeEntry)
+        } else {
+            configuration.put(GeneratedProviderIdKey, identity.id)
+            configuration.put(GeneratedProviderFqNameKey, identity.fqName)
+            configuration.put(GeneratedProviderFragmentsKey, sourceFragments)
+        }
     }
 
     /**
@@ -203,11 +233,16 @@ private fun testGeneratedTypeProviderIdentity(moduleCoordinate: String): TestGen
     )
 }
 
-private class KronosRuntimeClasspathProvider(testServices: TestServices) : RuntimeClasspathProvider(testServices) {
+private class KronosRuntimeClasspathProvider(
+    testServices: TestServices,
+    private val includeGeneratedServices: Boolean = true,
+    private val sourceFragments: Boolean = false
+) : RuntimeClasspathProvider(testServices) {
     /**
      * Provides runtime artifacts needed when the generated `box()` method is executed.
      */
     override fun runtimeClassPaths(module: TestModule): List<File> {
+        if (!includeGeneratedServices) return kronosCompilerTestClasspath
         val providerResources = buildList {
             val visited = mutableSetOf<TestModule>()
 
@@ -230,7 +265,18 @@ private class KronosRuntimeClasspathProvider(testServices: TestServices) : Runti
         val resourceRoot = testServices.getOrCreateTempDirectory("kronos-provider-$identityHash")
         val serviceFile = File(resourceRoot, GeneratedTypeProviderServicePath)
         serviceFile.parentFile.mkdirs()
-        serviceFile.writeText("${identity.fqName}\n")
+        val providers = if (sourceFragments) {
+            // The JVM backend's file identities can differ from frontend in-memory paths, and
+            // files without contributions emit no fragment. Advertise the actual module output.
+            val artifact = testServices.artifactsProvider.getArtifact(module, ArtifactKinds.Jvm) as JvmClassFileArtifact
+            val providerName = Regex("${Regex.escape(identity.fqName)}_[0-9a-f]{16}")
+            artifact.classFileFactory.asList().mapNotNull { output ->
+                output.relativePath.takeIf { it.endsWith(".class") }
+                    ?.removeSuffix(".class")?.replace('/', '.')
+                    ?.takeIf(providerName::matches)
+            }.sorted()
+        } else listOf(identity.fqName)
+        serviceFile.writeText(providers.joinToString(separator = "\n", postfix = "\n"))
         return resourceRoot
     }
 }
@@ -238,12 +284,5 @@ private class KronosRuntimeClasspathProvider(testServices: TestServices) : Runti
 private const val GeneratedTypeProviderServicePath =
     "META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
 
-private val kronosCompilerTestClasspath: List<File> by lazy {
-    val classpath = System.getProperty("kronos.compiler.test.classpath")
-        ?: error("Missing kronos.compiler.test.classpath system property")
-
-    classpath
-        .split(File.pathSeparator)
-        .filter(String::isNotBlank)
-        .map(::File)
-}
+private val kronosCompilerTestClasspath: List<File>
+    get() = KronosCompilerTestEnvironment.classpath

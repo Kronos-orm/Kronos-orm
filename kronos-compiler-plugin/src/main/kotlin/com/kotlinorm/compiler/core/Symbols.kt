@@ -32,6 +32,8 @@ import com.kotlinorm.compiler.utils.KCascadeClassId
 import com.kotlinorm.compiler.utils.KCascadeFqName
 import com.kotlinorm.compiler.utils.KColumnTypeClassId
 import com.kotlinorm.compiler.utils.KColumnTypeFqName
+import com.kotlinorm.compiler.utils.KronosAtomicQueryTaskClassId
+import com.kotlinorm.compiler.utils.KronosAtomicQueryTaskFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
 import com.kotlinorm.compiler.utils.KPojoFactoryFqName
 import com.kotlinorm.compiler.utils.KPojoFqName
@@ -61,6 +63,18 @@ import com.kotlinorm.compiler.utils.SqlOrderingClassId
 import com.kotlinorm.compiler.utils.SqlOrderingItemClassId
 import com.kotlinorm.compiler.utils.SourceIdentityScopeClassId
 import com.kotlinorm.compiler.utils.SourceIdentityScopeFqName
+import com.kotlinorm.compiler.utils.StaticContainerKindClassId
+import com.kotlinorm.compiler.utils.StaticContainerKindFqName
+import com.kotlinorm.compiler.utils.StaticTypeArgumentClassId
+import com.kotlinorm.compiler.utils.StaticTypeArgumentFqName
+import com.kotlinorm.compiler.utils.StaticTypeInfoClassId
+import com.kotlinorm.compiler.utils.StaticTypeInfoFqName
+import com.kotlinorm.compiler.utils.StaticTypeMetadataRegistryClassId
+import com.kotlinorm.compiler.utils.StaticTypeMetadataRegistryFqName
+import com.kotlinorm.compiler.utils.StaticTypeRefClassId
+import com.kotlinorm.compiler.utils.StaticTypeRefFqName
+import com.kotlinorm.compiler.utils.StaticTypeVarianceClassId
+import com.kotlinorm.compiler.utils.StaticTypeVarianceFqName
 import com.kotlinorm.compiler.utils.SqlWindowClassId
 import com.kotlinorm.compiler.utils.SyntaxSqlExprColumnClassId
 import com.kotlinorm.compiler.utils.SyntaxSqlExprColumnFqName
@@ -129,6 +143,16 @@ context(context: IrPluginContext)
 val kPojoClassSymbol: IrClassSymbol
     get() = requiredClass(KPojoClassId, "KPojo interface not found: ${KPojoFqName.asString()}")
 
+/**
+ * Query-task implementation symbol used for direct compiler-generated metadata injection.
+ */
+context(context: IrPluginContext)
+val kronosAtomicQueryTaskClassSymbol: IrClassSymbol
+    get() = requiredClass(
+        KronosAtomicQueryTaskClassId,
+        "KronosAtomicQueryTask class not found: ${KronosAtomicQueryTaskFqName.asString()}"
+    )
+
 context(context: IrPluginContext)
 val kSelectableClassSymbol: IrClassSymbol
     get() = requiredClass(KSelectableClassId, "KSelectable class not found: ${KSelectableFqName.asString()}")
@@ -182,6 +206,74 @@ val fieldClassSymbol: IrClassSymbol
 context(context: IrPluginContext)
 val fieldConstructorSymbol: IrConstructorSymbol
     get() = fieldClassSymbol.requiredConstructor("Field constructor not found")
+
+/**
+ * Static type metadata symbols emitted into generated Field construction.
+ */
+context(context: IrPluginContext)
+val staticTypeInfoClassSymbol: IrClassSymbol
+    get() = requiredClass(
+        StaticTypeInfoClassId,
+        "StaticTypeInfo class not found: ${StaticTypeInfoFqName.asString()}"
+    )
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val staticTypeInfoConstructorSymbol: IrConstructorSymbol
+    get() = staticTypeInfoClassSymbol.requiredConstructor("StaticTypeInfo constructor not found")
+
+context(context: IrPluginContext)
+val staticTypeRefClassSymbol: IrClassSymbol
+    get() = requiredClass(
+        StaticTypeRefClassId,
+        "StaticTypeRef class not found: ${StaticTypeRefFqName.asString()}"
+    )
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val staticTypeRefConstructorSymbol: IrConstructorSymbol
+    get() = staticTypeRefClassSymbol.requiredConstructor("StaticTypeRef constructor not found")
+
+context(context: IrPluginContext)
+val staticTypeArgumentClassSymbol: IrClassSymbol
+    get() = requiredClass(
+        StaticTypeArgumentClassId,
+        "StaticTypeArgument class not found: ${StaticTypeArgumentFqName.asString()}"
+    )
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val staticTypeArgumentConstructorSymbol: IrConstructorSymbol
+    get() = staticTypeArgumentClassSymbol.requiredConstructor("StaticTypeArgument constructor not found")
+
+context(context: IrPluginContext)
+val staticTypeVarianceSymbol: IrClassSymbol
+    get() = requiredClass(
+        StaticTypeVarianceClassId,
+        "StaticTypeVariance enum not found: ${StaticTypeVarianceFqName.asString()}"
+    )
+
+context(context: IrPluginContext)
+val staticContainerKindSymbol: IrClassSymbol
+    get() = requiredClass(
+        StaticContainerKindClassId,
+        "StaticContainerKind enum not found: ${StaticContainerKindFqName.asString()}"
+    )
+
+context(context: IrPluginContext)
+val staticTypeMetadataRegistryClassSymbol: IrClassSymbol
+    get() = requiredClass(
+        StaticTypeMetadataRegistryClassId,
+        "StaticTypeMetadataRegistry class not found: ${StaticTypeMetadataRegistryFqName.asString()}"
+    )
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val registerGeneratedTypeMetadataSymbol: IrSimpleFunctionSymbol
+    get() = staticTypeMetadataRegistryClassSymbol.requiredFunction(
+        "registerGeneratedTypeMetadata",
+        "StaticTypeMetadataRegistry.registerGeneratedTypeMetadata method not found"
+    )
 
 context(context: IrPluginContext)
 val sourceIdentityScopeSymbol: IrClassSymbol

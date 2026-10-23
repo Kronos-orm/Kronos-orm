@@ -22,6 +22,10 @@ import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
 import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.KtSourceElement
+import org.jetbrains.kotlin.KtFakeSourceElementKind
+import org.jetbrains.kotlin.KtPsiSourceElement
+import org.jetbrains.kotlin.KtRealPsiSourceElement
+import org.jetbrains.kotlin.fakeElement
 import org.jetbrains.kotlin.descriptors.EffectiveVisibility
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
@@ -50,8 +54,14 @@ import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.MemberGenerationContext
 import org.jetbrains.kotlin.fir.references.builder.buildPropertyFromParameterResolvedNamedReference
 import org.jetbrains.kotlin.fir.scopes.FirKotlinScopeProvider
+import org.jetbrains.kotlin.fir.renderer.ConeTypeRendererForReadability
+import org.jetbrains.kotlin.fir.renderer.ConeFullyQualifiedIdRenderer
+import org.jetbrains.kotlin.psi.KtPsiFactory
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
+import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagWithFixedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
@@ -69,7 +79,6 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.types.ConstantValueKind
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Generates FIR declarations for compiler-created select projection classes.
@@ -175,15 +184,6 @@ class KronosProjectionDeclarationGenerationExtension(
         }
 
         /**
-         * Drops generated member cache when a projection model is refined before
-         * member lookup, for example after a scalar subquery alias type becomes known.
-         */
-        fun invalidateMemberCache(model: KronosProjectionModel) {
-            projectionMemberCache.remove(model.symbol)
-            projectionMemberCache.remove(model.contextSymbol)
-        }
-
-        /**
          * Builds the synthetic projection class and attaches generated projection fields directly to it.
          */
         fun buildProjectionClass(
@@ -220,11 +220,12 @@ class KronosProjectionDeclarationGenerationExtension(
             session: FirSession,
             classSymbol: FirRegularClassSymbol,
             model: KronosProjectionModel
-        ): KronosProjectionGeneratedMembers = projectionMemberCache.computeIfAbsent(classSymbol) {
+        ): KronosProjectionGeneratedMembers = KronosProjectionRegistry.memberCache(session).computeIfAbsent(classSymbol) {
             val primaryConstructor = buildProjectionPrimaryConstructor(session, classSymbol, model)
+            val sources = model.generatedMemberSources(classSymbol.classId)
             val properties = model.fieldsFor(classSymbol.classId).map { field ->
                 val parameter = primaryConstructor.valueParameters.single { it.name == field.name }
-                buildProjectionProperty(session, classSymbol, field.name, field.type, parameter)
+                buildProjectionProperty(session, classSymbol, field.name, field.type, parameter, sources[field.name])
             }
             KronosProjectionGeneratedMembers(primaryConstructor, properties)
         }
@@ -245,7 +246,7 @@ class KronosProjectionDeclarationGenerationExtension(
             isLocal = false
             returnTypeRef = buildResolvedTypeRef {
                 coneType = ConeClassLikeTypeImpl(
-                    classSymbol.toLookupTag(),
+                    ConeClassLikeLookupTagWithFixedSymbol(classSymbol.classId, classSymbol),
                     ConeTypeProjection.EMPTY_ARRAY,
                     false,
                     ConeAttributes.Empty
@@ -253,10 +254,12 @@ class KronosProjectionDeclarationGenerationExtension(
             }
             symbol = FirConstructorSymbol(classSymbol.classId)
             valueParameters += model.fieldsFor(classSymbol.classId).map { field ->
-                buildProjectionConstructorParameter(session, symbol, field, model.generatedMemberSource(field))
+                buildProjectionConstructorParameter(
+                    session, symbol, field, model.generatedMemberAnchor(field, classSymbol.classId)
+                )
             }
         }.apply {
-            containingClassForStaticMemberAttr = classSymbol.toLookupTag()
+            containingClassForStaticMemberAttr = ConeClassLikeLookupTagWithFixedSymbol(classSymbol.classId, classSymbol)
         }
 
         /**
@@ -296,15 +299,16 @@ class KronosProjectionDeclarationGenerationExtension(
             name: Name,
             type: ConeKotlinType,
             constructorParameter: FirValueParameter?,
+            declarationSource: KtSourceElement?,
         ) = buildProperty {
-            source = constructorParameter?.source
+            source = declarationSource
             resolvePhase = FirResolvePhase.BODY_RESOLVE
             moduleData = session.moduleData
             origin = projectionOriginForIde()
             this.isLocal = false
             status = projectionStatus()
             this.dispatchReceiverType = ConeClassLikeTypeImpl(
-                classSymbol.toLookupTag(),
+                ConeClassLikeLookupTagWithFixedSymbol(classSymbol.classId, classSymbol),
                 ConeTypeProjection.EMPTY_ARRAY,
                 false,
                 ConeAttributes.Empty
@@ -364,11 +368,6 @@ data class KronosProjectionGeneratedMembers(
  */
 object KronosProjectionGeneratedDeclarationKey : GeneratedDeclarationKey()
 
-/**
- * Caches generated constructor/property FIR per projection class symbol within the compiler session.
- */
-private val projectionMemberCache = ConcurrentHashMap<FirRegularClassSymbol, KronosProjectionGeneratedMembers>()
-
 private fun KronosProjectionModel.fieldsFor(classId: ClassId): List<KronosProjectionField> =
     if (classId == contextClassId) contextFields else fields
 
@@ -379,15 +378,49 @@ private fun KronosProjectionModel.symbolFor(classId: ClassId): FirRegularClassSy
     if (classId == contextClassId) contextSymbol else symbol
 
 private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement? =
-    if (KronosProjectionIdeBridge.isIdeActive()) {
-        sourceDeclaration
-    } else {
-        sourceDeclaration
-    }
+    sourceDeclaration.fakeElement(KtFakeSourceElementKind.PluginGenerated.Custom(classId))
 
-private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement? =
-    if (KronosProjectionIdeBridge.isIdeActive()) {
-        field.source ?: anchor
-    } else {
-        field.source ?: anchor
+/** Supplies stock editor navigation and documentation with a readable generated declaration. */
+private fun KronosProjectionModel.generatedMemberSources(ownerClassId: ClassId): Map<Name, KtSourceElement?> {
+    val fields = fieldsFor(ownerClassId)
+    val original = anchor as? KtPsiSourceElement
+    if (original == null) return fields.associate { field ->
+        field.name to generatedMemberAnchor(field, ownerClassId)
     }
+    val text = buildString {
+        appendLine("package ${ownerClassId.packageFqName.asString()}")
+        appendLine("class ${nameFor(ownerClassId).asString()} {")
+        fields.forEach { field ->
+            appendLine("    var `${field.name.asString()}`: ${field.type.declarationTypeText()}")
+            appendLine("        get() = error(\"Compiler-generated projection\")")
+            appendLine("        set(value) {}")
+        }
+        appendLine("}")
+    }
+    val file = original.declarationPsiFactory().createPhysicalFile("${nameFor(ownerClassId).asString()}.kt", text)
+    return (file.declarations.single() as KtClass).getProperties().associate { property ->
+        property.nameAsName!! to property.declarationSource()
+    }
+}
+
+private fun KronosProjectionModel.generatedMemberAnchor(
+    field: KronosProjectionField,
+    ownerClassId: ClassId,
+): KtSourceElement? =
+    (field.source ?: anchor).fakeElement(KtFakeSourceElementKind.PluginGenerated.Custom(ownerClassId to field.name))
+
+private fun ConeKotlinType.declarationTypeText(): String = StringBuilder().also { result ->
+    ConeTypeRendererForReadability(result, idRendererCreator = ::ConeFullyQualifiedIdRenderer).render(this)
+}.toString()
+
+// The embeddable compiler relocates IntelliJ classes; the IDE compiler keeps their original names.
+// Resolve these PSI-typed entry points from the active compiler instead of linking either ABI.
+private fun KtPsiSourceElement.declarationPsiFactory(): KtPsiFactory {
+    val psi = KtPsiSourceElement::class.java.getMethod("getPsi").invoke(this)
+    val factory = KtPsiFactory::class.java.methods.single { it.name == "contextual" && it.parameterCount == 1 }
+    return factory.invoke(null, psi) as KtPsiFactory
+}
+
+private fun KtProperty.declarationSource(): KtSourceElement =
+    KtRealPsiSourceElement::class.java.constructors.single { it.parameterCount == 1 }
+        .newInstance(this) as KtSourceElement

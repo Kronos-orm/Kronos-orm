@@ -34,6 +34,9 @@ class KPojoDiagnosticsTest : AbstractKronosJvmDiagnosticsSuite("kpojo") {
     @Test
     fun inaccessibleEnumMetadata() = diagnostics("inaccessibleEnumMetadata")
 
+    @Test
+    fun ignoredAllTargetsDoNotRequireEnumMetadata() = diagnostics("ignoredAllTargetsDoNotRequireEnumMetadata")
+
     /**
      * Verifies factory-eligible KPojo declarations hidden from the generated provider fail in FIR.
      */

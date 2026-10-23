@@ -1,4 +1,4 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE", "TooManyFunctions")
+@file:Suppress("TooManyFunctions")
 
 /**
  * Copyright 2022-2026 kronos-orm
@@ -38,6 +38,9 @@ import com.kotlinorm.compiler.utils.isJoinSourceClassId
 import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.originalForSubstitutionOverrideAttr
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
+import org.jetbrains.kotlin.fir.declarations.builder.buildNamedFunctionCopy
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.extensions.FirExtensionApiInternals
 import org.jetbrains.kotlin.fir.extensions.FirFunctionCallRefinementExtension
@@ -49,6 +52,7 @@ import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
 import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
 import org.jetbrains.kotlin.fir.expressions.FirThisReceiverExpression
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
+import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
 import org.jetbrains.kotlin.fir.resolve.calls.candidate.CallInfo
@@ -177,12 +181,27 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Keeps the original FIR call body. This extension only refines return types.
+     * Preserves the refined signature for IDE analysis while allowing FIR-to-IR
+     * conversion to unwrap the call to the declaration that owns its generic parameters.
      */
     override fun transform(
         call: FirFunctionCall,
         originalSymbol: FirNamedFunctionSymbol
     ): FirFunctionCall {
+        val reference = call.calleeReference as? FirResolvedNamedReference ?: return call
+        val refined = reference.resolvedSymbol as? FirNamedFunctionSymbol ?: return call
+        val signature = buildNamedFunctionCopy(refined.fir) {
+            origin = FirDeclarationOrigin.SubstitutionOverride.CallSite
+            symbol = FirNamedFunctionSymbol(originalSymbol.callableId)
+        }.apply {
+            originalForSubstitutionOverrideAttr = originalSymbol.fir
+        }
+        call.replaceCalleeReference(buildResolvedNamedReference {
+            source = reference.source
+            name = reference.name
+            resolvedSymbol = signature.symbol
+            resolvedSymbolOrigin = reference.resolvedSymbolOrigin
+        })
         return call
     }
 

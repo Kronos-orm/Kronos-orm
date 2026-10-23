@@ -258,4 +258,6 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     @Test
     fun projectionCapturedValueTypes() = box("projectionCapturedValueTypes")
 
+    @Test
+    fun crossFileProjectionAccessorBeforeSelect() = box("crossFileProjectionAccessorBeforeSelect")
 }

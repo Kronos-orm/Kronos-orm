@@ -20,10 +20,19 @@ import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.backend.transformers.KronosProjectionIrTransformer
 import com.kotlinorm.compiler.backend.transformers.KronosParserTransformer
 import com.kotlinorm.compiler.backend.transformers.GeneratedTypeProviderGenerator
-import com.kotlinorm.compiler.plugin.GeneratedTypeProviderConfiguration
+import com.kotlinorm.compiler.backend.transformers.GeneratedProviderRoots
+import com.kotlinorm.compiler.backend.transformers.NativeGeneratedTypeMetadataEntryGenerator
+import com.kotlinorm.compiler.plugin.GeneratedTypeProviderMode
+import com.kotlinorm.compiler.utils.KPojoClassId
+import com.kotlinorm.compiler.utils.KTableForConditionClassId
+import com.kotlinorm.compiler.utils.KTableForInsertSelectClassId
+import com.kotlinorm.compiler.utils.KTableForReferenceClassId
+import com.kotlinorm.compiler.utils.KTableForSelectClassId
+import com.kotlinorm.compiler.utils.KTableForSetClassId
+import com.kotlinorm.compiler.utils.KTableForSortClassId
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 
 /**
@@ -32,30 +41,80 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
  * This is the main entry point for IR transformations
  */
 internal class KronosIrGenerationExtension(
-    private val messageCollector: MessageCollector,
-    private val generatedTypeProvider: GeneratedTypeProviderConfiguration?
+    private val configuration: CompilerConfiguration,
+    private val generatedTypeProvider: GeneratedTypeProviderMode
 ) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         println("[Kronos] Kronos compiler plugin K2 initialized")
 
-        val errorReporter = ErrorReporter(messageCollector)
-        val provider = requireNotNull(generatedTypeProvider) {
-            "Kronos generated type provider options were not supplied by the build plugin"
+        // A project can apply the Gradle plugin to a Native compilation before the
+        // staged common runtime exposes the KPojo and DSL contracts on that classpath.
+        // There is no Kronos source to transform in that case; a complete Native
+        // consumer runtime still resolves this symbol and follows the normal path.
+        if (!pluginContext.hasKronosRuntime()) return
+
+        val provider = when (generatedTypeProvider) {
+            is GeneratedTypeProviderMode.Enabled -> generatedTypeProvider
+            is GeneratedTypeProviderMode.Native -> null
+            GeneratedTypeProviderMode.Disabled -> null
+            GeneratedTypeProviderMode.Missing -> error(
+                "Missing compiler option 'generated-provider-id'. " +
+                    "JVM and Android compilations must configure a generated type provider."
+            )
         }
+        val errorReporter = ErrorReporter(configuration)
 
         // Apply transformations
-        val transformer = KronosParserTransformer(pluginContext, messageCollector)
+        val transformer = KronosParserTransformer(pluginContext, configuration)
         moduleFragment.transform(transformer, null)
-        val projectionTransformer = KronosProjectionIrTransformer(pluginContext, errorReporter)
-        moduleFragment.transform(projectionTransformer, null)
-        GeneratedTypeProviderGenerator.generate(
+        val projectionTransformer = KronosProjectionIrTransformer(
             pluginContext,
-            moduleFragment,
-            transformer.kPojoClasses + projectionTransformer.projectionClasses,
-            transformer.enumClasses,
-            provider,
-            errorReporter
+            errorReporter,
+            (generatedTypeProvider as? GeneratedTypeProviderMode.Native)
+                ?.entryFqName?.asString()?.substringAfterLast('.')?.plus("ProjectionMetadataAnchor")
         )
+        moduleFragment.transform(projectionTransformer, null)
+        provider?.let {
+            GeneratedTypeProviderGenerator.generate(
+                pluginContext,
+                moduleFragment,
+                GeneratedProviderRoots(
+                    transformer.kPojoClasses + projectionTransformer.projectionClasses,
+                    transformer.enumClasses,
+                    transformer.directQueryTaskTypeRoots
+                ),
+                it.configuration,
+                it.useSourceFragments,
+                transformer.directQueryTaskTypeRootsByFile,
+                errorReporter
+            )
+        }
+        if (generatedTypeProvider is GeneratedTypeProviderMode.Native) {
+            NativeGeneratedTypeMetadataEntryGenerator.generate(
+                pluginContext = pluginContext,
+                moduleFragment = moduleFragment,
+                entryFqName = generatedTypeProvider.entryFqName,
+                providerId = generatedTypeProvider.id,
+                kPojoClasses = transformer.kPojoClasses + projectionTransformer.projectionClasses,
+                enumClasses = transformer.enumClasses,
+                directQueryTaskTypeRoots = transformer.directQueryTaskTypeRoots,
+                errorReporter = errorReporter
+            )
+        }
     }
 }
+
+private val kronosRuntimeClassIds = listOf(
+    KPojoClassId,
+    KTableForSelectClassId,
+    KTableForInsertSelectClassId,
+    KTableForSetClassId,
+    KTableForConditionClassId,
+    KTableForSortClassId,
+    KTableForReferenceClassId
+)
+
+@Suppress("DEPRECATION")
+private fun IrPluginContext.hasKronosRuntime(): Boolean =
+    kronosRuntimeClassIds.all { referenceClass(it) != null }

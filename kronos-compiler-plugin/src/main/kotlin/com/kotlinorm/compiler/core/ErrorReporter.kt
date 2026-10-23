@@ -19,6 +19,14 @@ package com.kotlinorm.compiler.core
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
+import org.jetbrains.kotlin.cli.report
+import org.jetbrains.kotlin.cli.reportInfo
+import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactoryToRendererMap
+import org.jetbrains.kotlin.diagnostics.KtSourcelessDiagnosticFactory
+import org.jetbrains.kotlin.diagnostics.Severity
+import org.jetbrains.kotlin.diagnostics.rendering.BaseSourcelessDiagnosticRendererFactory
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrFileEntry
 import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
@@ -32,11 +40,20 @@ import org.jetbrains.kotlin.ir.util.dumpKotlinLike
  * Reports compilation errors/warnings in standard compiler error format:
  *   file:line:col: error: message
  *
- * @property messageCollector The Kotlin compiler's message collector
+ * @property report Reports through the compiler configuration or an injected test collector.
  */
 class ErrorReporter(
-    private val messageCollector: MessageCollector
+    private val report: (CompilerMessageSeverity, String, CompilerMessageSourceLocation?) -> Unit
 ) {
+    constructor(messageCollector: MessageCollector) : this(messageCollector::report)
+
+    constructor(configuration: CompilerConfiguration) : this({ severity, message, location ->
+        when (severity) {
+            CompilerMessageSeverity.ERROR -> configuration.report(KronosIrDiagnostics.ERROR, message, location)
+            CompilerMessageSeverity.WARNING -> configuration.report(KronosIrDiagnostics.WARNING, message, location)
+            else -> configuration.reportInfo(message, location)
+        }
+    })
     var currentFileEntry: IrFileEntry? = null
 
     companion object {
@@ -98,7 +115,7 @@ class ErrorReporter(
                 append("\n  Fix: $suggestion")
             }
         }
-        messageCollector.report(
+        report(
             CompilerMessageSeverity.ERROR,
             fullMessage,
             locationOf(element)
@@ -127,7 +144,7 @@ class ErrorReporter(
                 append("\n  Fix: $suggestion")
             }
         }
-        messageCollector.report(
+        report(
             CompilerMessageSeverity.ERROR,
             fullMessage,
             locationOf(element)
@@ -144,7 +161,7 @@ class ErrorReporter(
         element: IrElement,
         message: String
     ) {
-        messageCollector.report(
+        report(
             CompilerMessageSeverity.WARNING,
             "[Kronos] $message",
             locationOf(element)
@@ -157,10 +174,20 @@ class ErrorReporter(
      * @param message Information message
      */
     fun reportInfo(message: String) {
-        messageCollector.report(
+        report(
             CompilerMessageSeverity.INFO,
             "[Kronos] $message",
             null
         )
+    }
+}
+
+private object KronosIrDiagnostics : BaseSourcelessDiagnosticRendererFactory() {
+    val ERROR = KtSourcelessDiagnosticFactory("KRONOS_IR_ERROR", Severity.ERROR, this)
+    val WARNING = KtSourcelessDiagnosticFactory("KRONOS_IR_WARNING", Severity.WARNING, this)
+
+    override val MAP by KtDiagnosticFactoryToRendererMap("Kronos IR") { map ->
+        map.put(ERROR, MESSAGE_PLACEHOLDER)
+        map.put(WARNING, MESSAGE_PLACEHOLDER)
     }
 }

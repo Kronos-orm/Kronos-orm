@@ -17,8 +17,10 @@
 package com.kotlinorm.compiler.fir
 
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.FirSessionComponent
+import org.jetbrains.kotlin.fir.SessionConfiguration
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
-import org.jetbrains.kotlin.fir.moduleData
+import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
@@ -31,20 +33,15 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object KronosProjectionRegistry {
     private val sessionLock = Any()
-    private val projectionsBySession = WeakHashMap<FirSession, ConcurrentHashMap<ClassId, KronosProjectionModel>>()
-    private val declarationGeneratorsBySession = WeakHashMap<FirSession, WeakReference<FirDeclarationGenerationExtension>>()
-    private val ideGenerationTokensBySession = WeakHashMap<FirSession, String>()
+    private val statesBySession = WeakHashMap<FirSession, WeakReference<KronosProjectionSessionState>>()
 
     /**
      * Registers a projection model produced while refining a select call.
      */
     fun register(session: FirSession, model: KronosProjectionModel) {
-        val models = synchronized(sessionLock) {
-            projectionsBySession.getOrPut(session) { ConcurrentHashMap() }
-        }
+        val models = requireNotNull(state(session)).models
         models[model.classId] = model
         models[model.contextClassId] = model
-        publishIdeSnapshot(session, models)
     }
 
     /**
@@ -57,7 +54,8 @@ object KronosProjectionRegistry {
         occurrence: ProjectionAliasOccurrence,
         type: ConeKotlinType
     ) {
-        val models = synchronized(sessionLock) { projectionsBySession[session] } ?: return
+        val state = state(session) ?: return
+        val models = state.models
         val aliasName = Name.identifier(alias)
         val updated = models.values.distinctBy { it.classId }.mapNotNull { model ->
             val fields = model.fields.refineAlias(aliasName, occurrence, type)
@@ -71,10 +69,8 @@ object KronosProjectionRegistry {
         updated.forEach { model ->
             models[model.classId] = model
             models[model.contextClassId] = model
-            KronosProjectionDeclarationGenerationExtension.invalidateMemberCache(model)
-        }
-        if (updated.isNotEmpty()) {
-            publishIdeSnapshot(session, models)
+            state.members.remove(model.symbol)
+            state.members.remove(model.contextSymbol)
         }
     }
 
@@ -82,41 +78,33 @@ object KronosProjectionRegistry {
      * Looks up a projection model by its generated class id.
      */
     fun find(session: FirSession, classId: ClassId): KronosProjectionModel? =
-        synchronized(sessionLock) { projectionsBySession[session] }?.get(classId)
+        state(session)?.models?.get(classId)
 
     /**
      * Looks up a projection model after FIR session information is no longer available.
      */
     fun findAny(classId: ClassId): KronosProjectionModel? =
         synchronized(sessionLock) {
-            projectionsBySession.values.asSequence().mapNotNull { it[classId] }.firstOrNull()
+            statesBySession.values.asSequence().mapNotNull { it.get()?.models?.get(classId) }.firstOrNull()
         }
 
     /**
      * Returns all generated top-level projection class ids known to this compilation.
      */
     fun allTopLevelClassIds(session: FirSession): Set<ClassId> =
-        synchronized(sessionLock) { projectionsBySession[session] }?.keys?.toSet().orEmpty()
-
-    /**
-     * Returns a best-effort snapshot of all known projection models. IDEA integration
-     * uses this to provide generated source backing for FIR synthetic projection classes.
-     */
-    fun allModelsSnapshot(): List<KronosProjectionModel> =
-        synchronized(sessionLock) {
-            projectionsBySession.values
-                .flatMap { it.values }
-                .distinctBy { it.classId }
-        }
+        state(session)?.models?.keys?.toSet().orEmpty()
 
     /**
      * Stores the FIR declaration generator registered for the current session.
      */
+    @OptIn(SessionConfiguration::class)
     fun registerDeclarationGenerator(session: FirSession, generator: FirDeclarationGenerationExtension) {
-        val generationToken = KronosProjectionIdeBridge.beginModuleSession(session.ideModuleName())
         synchronized(sessionLock) {
-            declarationGeneratorsBySession[session] = WeakReference(generator)
-            ideGenerationTokensBySession[session] = generationToken
+            val state = statesBySession[session]?.get() ?: KronosProjectionSessionState().also {
+                session.register(KronosProjectionSessionState::class, it)
+                statesBySession[session] = WeakReference(it)
+            }
+            state.generator = generator
         }
     }
 
@@ -124,22 +112,22 @@ object KronosProjectionRegistry {
      * Returns the FIR declaration generator registered for the current session.
      */
     fun declarationGenerator(session: FirSession): FirDeclarationGenerationExtension? =
-        synchronized(sessionLock) { declarationGeneratorsBySession[session]?.get() }
+        state(session)?.generator
 
-    private fun publishIdeSnapshot(
-        session: FirSession,
-        models: Map<ClassId, KronosProjectionModel>
-    ) {
-        val snapshot = models.values
-            .distinctBy { it.classId }
-            .sortedBy { it.classId.asFqNameString() }
-        val generationToken = synchronized(sessionLock) { ideGenerationTokensBySession[session] } ?: return
-        KronosProjectionIdeBridge.publishModule(session.ideModuleName(), generationToken, snapshot)
-    }
+    internal fun memberCache(session: FirSession): ConcurrentHashMap<FirRegularClassSymbol, KronosProjectionGeneratedMembers> =
+        requireNotNull(state(session)).members
+
+    private fun state(session: FirSession): KronosProjectionSessionState? =
+        synchronized(sessionLock) { statesBySession[session]?.get() }
+
 }
 
-private fun FirSession.ideModuleName(): String =
-    moduleData.stableModuleName ?: moduleData.name.asString()
+/** The session owns all FIR graphs; the backend lookup index must not keep retired sessions alive. */
+private class KronosProjectionSessionState : FirSessionComponent {
+    val models = ConcurrentHashMap<ClassId, KronosProjectionModel>()
+    val members = ConcurrentHashMap<FirRegularClassSymbol, KronosProjectionGeneratedMembers>()
+    var generator: FirDeclarationGenerationExtension? = null
+}
 
 private fun List<KronosProjectionField>.refineAlias(
     alias: Name,

@@ -26,6 +26,10 @@ import org.junit.jupiter.api.Test
  * structures after FIR resolution and IR rewriting.
  */
 class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
+    @Test
+    fun transformedConditionsReturnWithoutReevaluatingCapturedValues() =
+        box("transformedConditionsReturnWithoutReevaluatingCapturedValues")
+
     /**
      * Verifies comparison operators are transformed into the expected syntax expressions.
      */

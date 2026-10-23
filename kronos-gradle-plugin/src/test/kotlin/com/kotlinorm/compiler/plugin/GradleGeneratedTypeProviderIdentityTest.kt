@@ -38,7 +38,18 @@ class GradleGeneratedTypeProviderIdentityTest {
 
         assertEquals(identity.id, identity.compilerOptions[GENERATED_PROVIDER_ID_OPTION_NAME])
         assertEquals(identity.fqName, identity.compilerOptions[GENERATED_PROVIDER_FQ_NAME_OPTION_NAME])
+        assertEquals("true", identity.compilerOptions[GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME])
         assertEquals("${identity.fqName}\n", identity.serviceContent)
+        assertEquals(
+            "com.kotlinorm.generated.native.KronosGeneratedTypeMetadata_" +
+                identity.fqName.substringAfterLast('_'),
+            identity.nativeEntryFqName
+        )
+        assertEquals(identity.id, identity.nativeCompilerOptions[NATIVE_PROVIDER_ID_OPTION_NAME])
+        assertEquals(
+            identity.nativeEntryFqName,
+            identity.nativeCompilerOptions[NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME]
+        )
     }
 
     @Test

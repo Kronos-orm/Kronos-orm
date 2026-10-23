@@ -28,9 +28,12 @@ import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.isUnit
 
 /**
  * Condition Transformer
@@ -63,10 +66,16 @@ class ConditionTransformer(
         if (!shouldProcessReturn(expression)) {
             return super.visitReturn(expression)
         }
+        // Ordinary afterFilter callbacks can end with side effects or an empty condition.
+        // Unit-adapted Boolean predicates already have their Boolean tail restored by the parser.
+        val value = expression.value
+        if (value.type.isUnit() || value is IrConst && value.kind == IrConstKind.Null) {
+            return super.visitReturn(expression)
+        }
 
         return try {
             with(pluginContext) {
-                DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock(resultType = expression.type) {
                     val inner = analyzeAndBuildSqlExpr(irFunction, expression.value, errorReporter)
                     val receiver = irFunction.parameters.extensionReceiver
 
@@ -75,8 +84,12 @@ class ConditionTransformer(
                             dispatchReceiver = irGet(receiver)
                             arguments[1] = inner
                         }
+                        // The SQL expression owns condition evaluation. Return a neutral value
+                        // without evaluating the user's Kotlin comparison a second time.
+                        +neutralDslReturn(expression, irFunction.returnType)
+                    } else {
+                        +expression
                     }
-                    // Condition transformer does NOT preserve the original return
                 }
             }
         } catch (e: RuntimeException) {

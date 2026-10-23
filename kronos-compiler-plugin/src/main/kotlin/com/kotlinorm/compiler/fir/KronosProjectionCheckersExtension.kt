@@ -414,7 +414,7 @@ private object KronosSelectProjectionChecker : FirFunctionCallChecker(MppChecker
             is FirCollectionLiteral -> statement.argumentList.arguments.any { it.containsPlainAggregateCall() }
             is FirVarargArgumentsExpression -> statement.arguments.any { it.containsPlainAggregateCall() }
             is FirFunctionCall -> {
-                val functionName = statement.calleeReference.name.asString()
+                val functionName = statement.calleeReference.name.asString().lowercase()
                 functionName in PlainAggregateFunctionNames ||
                     statement.receiverCandidates().any { it.containsPlainAggregateCall() } ||
                     statement.argumentList.arguments.any { it.containsPlainAggregateCall() }

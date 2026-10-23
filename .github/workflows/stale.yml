@@ -82,5 +82,4 @@ jobs:
         close-pr-label: "closed/stale-pr"
         
         # 可视化统计
-        log-level: debug    # 调试时查看详细日志
         operations-per-run: 100  # 单次运行处理的最大数量

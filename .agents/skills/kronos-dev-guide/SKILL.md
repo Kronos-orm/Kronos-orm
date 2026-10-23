@@ -17,20 +17,9 @@ description: >
 
 Kotlin compiler-plugin-powered ORM. Zero reflection, AST-based SQL generation, multi-database.
 
-## Evolution Memory Protocol
+## Local Troubleshooting Notes
 
-For every error, failure, or unexpected behavior, consult `Evolution.index.md` first before attempting a fix. The index is the highest-priority troubleshooting memory and keeps the context cost low. Do not browse the full evolution history by default; open only the specific `evolution/*.md` file linked by the index.
-
-Priority order for error handling:
-
-1. Read `Evolution.index.md` and look for a matching symptom, module, command, or error message.
-2. If the index matches, read only the linked `evolution/*.md` entry file.
-3. Reuse any documented solution or prevention rule that applies.
-4. If no matching index record exists, continue to the relevant reference file below or search code/tests normally without opening the full evolution log.
-5. After a successful build or verified fix, create one reusable, confirmed pitfall file under `evolution/`, then add one concise row to `Evolution.index.md`.
-6. Periodically remove, archive, or rewrite obsolete evolution records when the guidance is no longer true.
-
-Use this protocol to preserve discovered project pitfalls and avoid repeating the same mistakes.
+If this skill directory contains a developer-local `Evolution.index.md`, consult matching entries when diagnosing recurring failures. Keep confirmed, reusable findings in local `evolution/` files; both paths are Git-ignored and optional. Initialize personal notes from the [empty index template](assets/troubleshooting-index.template.md) and [record example](assets/troubleshooting-record.example.md).
 
 ## Architecture at a Glance
 
@@ -53,26 +42,36 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
 
 | Module | Role | Key Entry Points |
 |--------|------|-----------------|
-| `kronos-core` | Contracts, AST, SQL rendering, ORM ops, strategies, DSL beans | `Kronos.kt`, `ast/`, `database/`, `orm/`, `beans/dsl/` |
-| `kronos-compiler-plugin` | K2 IR transformations | `KronosParserTransformer`, `KronosIrClassTransformer` |
-| `kronos-gradle-plugin` | Gradle compiler integration and generated-provider resources for JVM/Android variants | `KronosGradlePlugin.kt`, `GenerateKronosGeneratedTypeService.kt` |
+| `kronos-core` | Shared ORM runtime, models, execution contracts, strategies and codecs | `src/`, `Kronos.kt`, `database/`, `orm/`, `wrappers/KronosExecutionWrapper.kt` |
+| `kronos-syntax` | Multiplatform SQL AST and dialect renderers | `src/`, `statement/`, `render/` |
+| `kronos-compiler-plugin` | K2 FIR diagnostics and projections, IR transformations | `KronosFirExtensionRegistrar`, `KronosParserTransformer`, `KronosIrClassTransformer` |
+| `kronos-gradle-plugin` | Gradle compiler integration, JVM provider resources and Native metadata manifests | `KronosGradlePlugin.kt`, `GenerateKronosGeneratedTypeService.kt` |
 | `kronos-maven-plugin` | Maven build integration | `KronosMavenPlugin.kt` |
 | `kronos-logging` | Pluggable logging (SLF4J/JUL/Commons/Android) | `KronosLoggerApp.kt` |
 | `kronos-jdbc-wrapper` | Default JDBC DataSource wrapper | `KronosJdbcWrapper.kt` |
 | `kronos-codegen` | DB schema → KPojo Kotlin files | `ConfigReader.kt`, `TemplateConfig.kt` |
 | `kronos-testing` | Integration tests (real and in-process DBs) | MySQL/Postgres/SQLite/H2/Oracle/MSSQL/DM8 tests |
-| `kronos-idea-plugin` | IntelliJ plugin UI, Code Generator, Templates, and projection completion | `plugin.xml`, `KronosProjectionCompletionContributor`, `MainPanel` |
+| `kronos-testing/ide` | Real IDEA and KEFS integration tests, compiler compatibility artifact staging | `KefsProjectionFixtureTest`, `scripts/ide.main.kts` |
 | `kronos-docs` | Documentation website (Angular/ng-doc) | `pnpm install && ng build` |
-| `build-logic` | Convention plugins (publishing, dokka) | `publishing.gradle.kts`, `dokka-convention.gradle.kts` |
+| `templates` | Shared Kotlin Toolchain configuration | `common.module-template.yaml`, `kronos-runtime.module-template.yaml` |
+| `plugins/kronos-native` | Local Toolchain plugin for Native metadata and publication | `module.yaml`, `plugin.yaml`, `src/`, `test/` |
+| `scripts/quality.main.kts` | JOIN generation, coverage and API documentation | Official Kover and Dokka CLIs |
+
+## Multiplatform Source Sets
+
+`kronos-core/src/` contains models, annotations, ORM operations, table statements, generated type registries, codecs and the execution wrapper. `src@jvm/` contains Java/JDBC temporal conversion, platform implementations and JVM compatibility code. Native implementations live in `src@native/`, `src@apple/`, `src@linux/` and `src@mingwX64/`. Shared tests live in `test/`; platform tests use `test@jvm/` and `test@native/`. JVM-only modules retain the Maven-like `src/main/kotlin` and `src/test/kotlin` layout. Production core sources do not import `kotlin.reflect.full` or `kotlin.reflect.jvm`; JVM reflection helpers are test dependencies.
+
+Use `initializeKronosMetadata()` from the final application/framework module. The compiler rewrites Native calls to the application aggregate; the Gradle plugin exports dependency manifests and source-visible provider declarations. Do not call hash-named aggregate internals or freeze a partially populated graph. Platform driver adapters implement `KronosExecutionDataSource`; `KronosExecutionWrapper` bridges the contract to shared ORM tasks. SQLite driver implementations belong to the reference applications.
 
 ## Testing Frameworks At A Glance
 
-Kronos currently uses two active kinds of tests. Pick the narrowest one that proves the behavior:
+Pick the narrowest test infrastructure that proves the behavior:
 
 | Test kind | Location | Use for | Do not use for |
 |-----------|----------|---------|----------------|
-| Ordinary unit tests | `*/src/test/kotlin` | Pure functions, AST rendering, utility classes, core runtime behavior that does not need a fresh compiler pipeline | Compiler-plugin generated declarations or IR rewrites |
+| Ordinary unit tests | MPP `test/` and `test@platform/`; JVM-only `src/test/kotlin` | Pure functions, AST rendering, utility classes, core runtime behavior that does not need a fresh compiler pipeline | Compiler-plugin generated declarations or IR rewrites |
 | Official compiler tests | `kronos-compiler-plugin/testData` plus runners in `src/test/kotlin/com/kotlinorm/compiler` | KPojo generated bodies, DSL lambda transformations, FIR diagnostics, IR verifier regressions, compiler-plugin behavior through Kotlin's real FIR/IR pipeline | Broad smoke tests, pure utilities, external database integration |
+| IDE integration tests | `kronos-testing/ide/src/test` | Actual KEFS loading, inferred types, stock Kotlin completion, syntax highlighting and diagnostics | Source-string checks in place of editor behavior |
 
 Assertion rule: positive tests must assert the complete expected value, for example with `assertEquals(expectedSql, actualSql)`. Do not use `contains` for positive SQL, code, or text checks. Substring assertions are only acceptable for negative checks, such as proving forbidden text is absent with `assertFalse(actual.contains(forbidden))`.
 
@@ -86,101 +85,31 @@ When adding or migrating compiler-plugin tests:
 4. If a removed kctfork behavior is rediscovered as uncovered, add a precise official `testData` file that asserts the same compiler-plugin contract and important values.
 5. Keep pure utility coverage as ordinary unit tests; do not force utility behavior through compiler testData.
 
-## Coverage Workflow
+## Build And Test Commands
 
-Use Kover from the module being evaluated. For compiler-plugin coverage:
-
-```powershell
-.\gradlew.bat :kronos-compiler-plugin:koverLog --no-daemon --console=plain
-```
-
-Generate inspectable reports when deciding what to test next:
-
-```powershell
-.\gradlew.bat :kronos-compiler-plugin:cleanTest :kronos-compiler-plugin:koverXmlReport :kronos-compiler-plugin:koverHtmlReport --no-daemon --console=plain
-```
-
-Open the HTML report at:
-
-```text
-kronos-compiler-plugin/build/reports/kover/html/index.html
-```
-
-Use the XML report for quick class-level analysis:
-
-```text
-kronos-compiler-plugin/build/reports/kover/report.xml
-```
-
-`koverLog` prints line coverage only. To get branch coverage, generate `koverXmlReport` and parse the report-level `BRANCH` counter from `report.xml`.
-
-PowerShell:
-
-```powershell
-$text = Get-Content 'kronos-compiler-plugin/build/reports/kover/report.xml' -Raw
-$counters = [regex]::Matches($text, '<counter type="([^"]+)" missed="(\d+)" covered="(\d+)"/>')
-foreach ($type in @('LINE','BRANCH','INSTRUCTION','METHOD')) {
-    $m = $counters | Where-Object { $_.Groups[1].Value -eq $type } | Select-Object -Last 1
-    if ($m) {
-        $missed = [int]$m.Groups[2].Value
-        $covered = [int]$m.Groups[3].Value
-        $total = $missed + $covered
-        $pct = [math]::Round(100 * $covered / $total, 4)
-        "$type missed=$missed covered=$covered total=$total pct=$pct%"
-    }
-}
-```
-
-bash/zsh:
+Use JDK 21 and the checked-in Kotlin Toolchain wrapper through the Kotlin script entry point. `scripts/run` downloads and verifies the catalogued official Kotlin SDK; Windows uses `scripts\run.cmd`:
 
 ```bash
-python - <<'PY'
-import re
-from pathlib import Path
-
-text = Path("kronos-compiler-plugin/build/reports/kover/report.xml").read_text()
-counters = re.findall(r'<counter type="([^"]+)" missed="(\d+)" covered="(\d+)"/>', text)
-for kind in ("LINE", "BRANCH", "INSTRUCTION", "METHOD"):
-    matches = [(int(missed), int(covered)) for typ, missed, covered in counters if typ == kind]
-    if matches:
-        missed, covered = matches[-1]
-        total = missed + covered
-        pct = round(100 * covered / total, 4)
-        print(f"{kind} missed={missed} covered={covered} total={total} pct={pct}%")
-PY
+scripts/run build bootstrap
+scripts/run build build -m kronos-core -p jvm
+scripts/run build test -m kronos-core -p jvm
+scripts/run build test -m kronos-compiler-plugin -p jvm --include-classes='*KPojoGeneratedBodiesBoxTest'
+scripts/run build test -m kronos-core -p macosX64
 ```
 
-fish:
+Repeat `--include-classes` for multiple class globs. Use one module and platform before broadening the run. The bootstrap publishes the source-built compiler to `build/repository/bootstrap`, then stages its KEFS compatibility coordinate without changing the JAR. Root configuration lives in `project.yaml`, module configuration in `module.yaml`, and dependencies in `libs.versions.toml`.
 
-```fish
-python -c 'import re; from pathlib import Path
-text = Path("kronos-compiler-plugin/build/reports/kover/report.xml").read_text()
-counters = re.findall(r"<counter type=\"([^\"]+)\" missed=\"(\d+)\" covered=\"(\d+)\"/>", text)
-for kind in ("LINE", "BRANCH", "INSTRUCTION", "METHOD"):
-    matches = [(int(missed), int(covered)) for typ, missed, covered in counters if typ == kind]
-    if matches:
-        missed, covered = matches[-1]
-        total = missed + covered
-        pct = round(100 * covered / total, 4)
-        print(f"{kind} missed={missed} covered={covered} total={total} pct={pct}%")'
+For source development, install the official Kotlin Toolchain IDE plugin and KEFS by Mr3zee. Open the directory containing `project.yaml` and use the shared `.idea/kotlin-plugins.xml`. The standalone editor fixture commands are documented in `kronos-testing/ide/README.md`.
+
+## Coverage Workflow
+
+```bash
+scripts/run quality coverage --module kronos-compiler-plugin
+scripts/run quality coverage --baseline-dir .coverage-baseline
+scripts/run quality compare --baseline-dir .coverage-baseline
 ```
 
-Example output:
-
-```text
-LINE missed=492 covered=1811 total=2303 pct=78.6366%
-BRANCH missed=764 covered=822 total=1586 pct=51.8285%
-```
-
-Coverage interpretation rules:
-
-- Treat coverage as a guide to missing test surfaces, not proof that behavior is equivalent.
-- Prioritize high-missed-line compiler behavior such as `ConditionAnalysis` and `FieldAnalysis` before low-risk option parsing or dump paths.
-- Track branch coverage separately from line coverage. Compiler DSL analyzers can keep line coverage acceptable while branch coverage drops sharply.
-- Prefer official `testData` for generated code and DSL transformer coverage.
-- Prefer ordinary unit tests for pure utilities such as error messages, caches, type mapping, and string/path helpers.
-- Re-run `koverLog` after restoring or deleting tests; stale `.ic` execution data can make comparisons misleading, so use `cleanTest` before serious comparisons.
-- If coverage drops after removing a test framework, inspect the HTML/XML report before re-adding tests. Restore pure UTs directly; migrate compiler behavior to official testData.
+The coverage command runs instrumented JVM tests and writes `<module>/build/reports/kover/report.xml`, `html/index.html` and `summary.json`. Omitting `--module` covers core, syntax, compiler-plugin and codegen. The comparison writes `coverage/comparison.json` and `coverage/comparison.md`, and fails when the baseline policy is violated. Use these reports to identify meaningful missing behavior before adding tests.
 
 ## Reference Files
 
@@ -188,9 +117,6 @@ Read these for deep implementation details:
 
 | File | When to Read |
 |------|-------------|
-| `Evolution.index.md` | Required first read before fixing any error; maps symptoms and keywords to targeted `evolution/*.md` entries |
-| `Evolution.md` | Short protocol stub; do not use it as a full history store |
-| `evolution/*.md` | One file per historical pitfall; open only the indexed matching file |
 | `references/compiler-plugin.md` | Modifying compiler plugin, adding/changing IR transforms, debugging IR output. Before compiler plugin architecture, FIR/frontend, IR/backend, diagnostics, or compiler-test work, use `.agents/skills/kronos-dev-kcp` first. |
 | `references/ast-and-rendering.md` | Working with AST nodes, SQL rendering, adding/modifying database dialects, functions system |
 | `references/orm-and-dsl.md` | ORM clause classes, DSL beans, plugin/hook system, task execution, transactions, value transformers |

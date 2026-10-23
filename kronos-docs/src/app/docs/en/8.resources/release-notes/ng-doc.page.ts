@@ -3,7 +3,7 @@ import ResourcesCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * @status:primary 0.3.1
+ * @status:primary 0.4.0
  */
 const ChangeLogPage: NgDocPage = {
     title: `Release Notes`,

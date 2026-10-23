@@ -29,7 +29,7 @@ graph LR
 
 # Why Kronos?
 
-* Utilizes the **entire ecosystem and resources** of the JVM platform, such as **database drivers and logging frameworks**, with potential future support for Kotlin Multiplatform.
+* Shares models and queries across **JVM, Android and Kotlin/Native**, including iOS SQLite applications. See {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }} for setup and {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }} for the iOS example.
 * **Powered by Kotlin compiler plugins and coroutines**, with **NO reflection** used, Kronos delivers unmatched **high-performance** database operations.
 * Supports most **mainstream databases** and allows **freely adding database extensions through plugins**.
 * **Concise and expressive writing, supporting Kotlin native syntax** `==`, `>`, `<`, `in`, etc., instead of .eq, .gt, .lt, etc.

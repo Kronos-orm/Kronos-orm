@@ -63,7 +63,7 @@ The Employee rows are returned.
 The company property is not loaded by cascade select for this query.
 ```
 
-For all `IgnoreAction` values, see {{ $.keyword("mapping/annotations", ["annotation configuration", "Ignore fields"]) }}.
+For all `IgnoreAction` values, see {{ $.keyword("mapping/annotations", ["annotation configuration", "@Ignore Ignore Fields"]) }}.
 
 ## Cascading queries
 

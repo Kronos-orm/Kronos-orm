@@ -11,13 +11,13 @@ Configure the standard `google()`, `mavenCentral()`, and `gradlePluginPortal()` 
 ```kotlin name="build.gradle.kts" icon="gradlekts"
 plugins {
     id("com.android.application") version "8.13.2" apply false
-    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.21" apply false
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}" apply false
 }
 ```
 
 > **Note**
-> These snippets use Android Gradle Plugin `8.13.2` and Kotlin `2.4.0`. The reference application uses `minSdk 26` and JDK 17.
+> These snippets use Android Gradle Plugin `8.13.2` and Kotlin `2.4.21`. The reference application uses `minSdk 26` and JDK 17.
 
 Apply the plugin to every Android application or library module that declares a {{ $.code("KPojo") }}.
 
@@ -26,6 +26,12 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.kotlinorm.kronos-gradle-plugin")
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {

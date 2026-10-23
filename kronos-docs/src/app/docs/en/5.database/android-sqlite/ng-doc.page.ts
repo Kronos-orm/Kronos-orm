@@ -5,7 +5,7 @@ const AndroidSqlitePage: NgDocPage = {
     title: 'Android SQLite',
     mdFile: './index.md',
     category: DatabaseCategory,
-    order: 9,
+    order: 10,
     route: 'android-sqlite'
 };
 

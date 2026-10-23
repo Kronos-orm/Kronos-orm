@@ -1,21 +1,23 @@
 # Module kronos-core
 
-Core module of the Kronos ORM framework. Zero runtime dependencies.
+Multiplatform ORM runtime for JVM, Android and Kotlin/Native. Provides the shared query DSL, entity metadata, SQL planning and database execution contracts.
 
 ## What's Inside
 
-- **Syntax-based SQL generation** — Kronos DSL lowers SQL expressions toward `kronos-syntax` trees while legacy AST adapters are being retired
+- **SQL generation** — Kronos DSL builds SQL syntax trees rendered by `kronos-syntax`
 - **ORM operations** — `select/`, `insert/`, `update/`, `delete/`, `upsert/`, `join/`, `union/`, `cascade/`, `ddl/`, `pagination/`
 - **DSL beans** — `Field`, `Criteria`, `KronosFunctionExpr`, `KTableForCondition/Select/Set/Sort/Reference`
-- **Database dialects** — MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, DM8 (extensible via `RegisteredDBTypeManager`)
-- **Interfaces** — `KPojo`, `KronosDataSourceWrapper`, `KLogger`, `KronosNamingStrategy`
+- **Database dialects** — MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, DM8 (extensible via `SqlManager.registerDatabase`)
+- **Interfaces** — `KPojo`, `KronosDataSourceWrapper`, `KronosExecutionDataSource`, `KLogger`, `KronosNamingStrategy`
 - **Annotations** — `@Table`, `@PrimaryKey`, `@Column`, `@ColumnType`, `@CreateTime`, `@UpdateTime`, `@LogicDelete`, `@Version`, `@Cascade`, `@TableIndex`, `@Serialize`, `@KronosFunction`, etc.
 - **Built-in strategies** — primary key generation, logical deletion, optimistic lock, timestamps, naming
-- **Functions system** — `FunctionHandler` DSL extensions lowered to syntax expressions, with optional `FunctionManager` renderers during migration
+- **Functions system** — `FunctionHandler` DSL extensions and dialect-specific SQL rendering
 - **Task system** — `KronosQueryTask`, `KronosActionTask`, `KronosAtomicBatchTask`, `TransactionScope`
 - **Plugins** — `DataGuardPlugin` prevents full-table UPDATE/DELETE
 - **Global config** — `Kronos.kt` singleton
 
 ## Dependencies
 
-Zero runtime dependencies. Compiler plugin is only used for tests via `kotlinCompilerPluginClasspathTest`.
+Exports `kronos-syntax` and uses Kotlinx DateTime for JVM and Native time handling. Database drivers and connection adapters are selected by the application: use `kronos-jdbc-wrapper` for JDBC or implement `KronosExecutionDataSource` and wrap it with `KronosExecutionWrapper`.
+
+The Kronos compiler plugin generates entity methods, typed projections and metadata during compilation. Native applications initialize generated metadata with `initializeKronosMetadata()` in the final application or framework module.

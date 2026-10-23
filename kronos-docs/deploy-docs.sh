@@ -10,7 +10,7 @@ DOCS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$DOCS_ROOT/.." && pwd)"
 SITE_DIR="$DOCS_ROOT/dist/site"
 DOKKA_OUT="$REPO_ROOT/docs"
-GRADLE_PLUGIN_DOKKA_OUT="$REPO_ROOT/kronos-gradle-plugin/build/dokka/html"
+GRADLE_PLUGIN_DOKKA_OUT="$DOKKA_OUT/kronos-gradle-plugin"
 MIN_JAVA_MAJOR="${DOCS_MIN_JAVA_MAJOR:-17}"
 BOOTSTRAP_JDK_FEATURE="${DOCS_BOOTSTRAP_JDK_FEATURE:-21}"
 BOOTSTRAP_JDK_DIR="${DOCS_BOOTSTRAP_JDK_DIR:-$DOCS_ROOT/.cache/temurin-jdk-$BOOTSTRAP_JDK_FEATURE}"
@@ -82,8 +82,7 @@ ensure_java() {
 ensure_java
 
 echo "▸ Building Dokka API docs..."
-"$REPO_ROOT/gradlew" -p "$REPO_ROOT" :dokkaGenerateAll --no-daemon -q
-"$REPO_ROOT/gradlew" -p "$REPO_ROOT/kronos-gradle-plugin" :dokkaGenerate --no-daemon -q
+"$REPO_ROOT/scripts/run" quality dokka
 
 if [ ! -d "$DOKKA_OUT" ]; then
   echo "✗ Dokka output not found at $DOKKA_OUT"
@@ -100,10 +99,10 @@ cd "$DOCS_ROOT"
 
 if [ ! -d "node_modules" ]; then
   echo "  Installing dependencies..."
-  pnpm install
+  corepack pnpm install --frozen-lockfile
 fi
 
-pnpm build
+corepack pnpm build
 
 ANGULAR_OUT="$DOCS_ROOT/docs"
 if [ ! -d "$ANGULAR_OUT" ]; then
@@ -112,22 +111,7 @@ if [ ! -d "$ANGULAR_OUT" ]; then
 fi
 
 echo "▸ Merging outputs into $SITE_DIR ..."
-rm -rf "$SITE_DIR"
-mkdir -p "$SITE_DIR"
-
-cp -R "$ANGULAR_OUT"/. "$SITE_DIR"/
-
-mkdir -p "$SITE_DIR/api"
-for module_dir in "$DOKKA_OUT"/*/; do
-  module_name="$(basename "$module_dir")"
-  cp -R "$module_dir" "$SITE_DIR/api/$module_name"
-done
-cp -R "$GRADLE_PLUGIN_DOKKA_OUT" "$SITE_DIR/api/kronos-gradle-plugin"
-
-cat > "$SITE_DIR/_redirects" <<'EOF'
-/api/*  /api/:splat  200
-/*      /index.html  200
-EOF
+node "$DOCS_ROOT/scripts/merge-site.mjs" "$ANGULAR_OUT" "$DOKKA_OUT" "$GRADLE_PLUGIN_DOKKA_OUT" "$SITE_DIR"
 
 echo "▸ Site structure:"
 echo "  $SITE_DIR/"

@@ -1,5 +1,7 @@
 # Kronos ORM 注解参考
 
+KPojo 模型与这些注解可以放在 `commonMain`。共享属性使用 Kotlin 基础类型、枚举、`ByteArray`、`kotlin.time.Instant` 或通过 ValueCodec 处理的序列化类型；Java 时间、`BigDecimal` 与 JDBC 类型放在 JVM source set。每个模型模块应用 Kronos 编译插件，在最终应用启动时调用 `initializeKronosMetadata()`。
+
 ## @Table
 
 指定实体类对应的数据库表名。不使用此注解时，表名由 `tableNamingStrategy` 自动转换。

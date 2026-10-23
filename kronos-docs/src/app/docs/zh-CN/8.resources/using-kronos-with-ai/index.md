@@ -60,7 +60,7 @@ Claude 使用 {{ $.code(".claude/skills") }} 作为 {{ $.code("<skill-dir>") }}�
 
 ```text group="Prompt 1" name="project setup"
 使用 Kronos ORM skill。为这个 JVM Kotlin Gradle 项目添加 Kronos。
-使用 Kotlin 2.4.0、com.kotlinorm.kronos-gradle-plugin、kronos-core
+使用 Kotlin 2.4.21、com.kotlinorm.kronos-gradle-plugin、kronos-core
 和 kronos-jdbc-wrapper。使用 KronosJdbcWrapper 配置 Kronos.dataSource。
 全局设置使用 Kronos object 的直接属性赋值。
 ```
@@ -69,8 +69,14 @@ Claude 使用 {{ $.code(".claude/skills") }} 作为 {{ $.code("<skill-dir>") }}�
 
 ```kotlin group="Prompt 2" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {

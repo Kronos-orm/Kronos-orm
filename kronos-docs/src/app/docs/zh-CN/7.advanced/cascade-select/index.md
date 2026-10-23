@@ -64,7 +64,7 @@ Employee().select().toList()
 本次级联查询不会加载 company 属性。
 ```
 
-全部 `IgnoreAction` 取值见 {{ $.keyword("mapping/annotations", ["注解配置", "忽略字段"]) }}。
+全部 `IgnoreAction` 取值见 {{ $.keyword("mapping/annotations", ["注解配置", "@Ignore 忽略字段"]) }}。
 
 ## 级联查询
 

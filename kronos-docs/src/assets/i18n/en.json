@@ -63,7 +63,7 @@
   "FEATURE_BLOG_CONTENT_1": "Kronos' current kotlin multi-platform support and our kotlin multi-platform development and release plans.",
   "FEATURE_BLOG_TITLE_2": "Code Generation Framework",
   "FEATURE_BLOG_CONTENT_2": "Kronos code generation reads database tables and generates Kotlin ORM classes from simple configuration.",
-  "IDE_PLUGIN": "IDE Plugin",
+  "KEFS_EDITOR_SUPPORT": "KEFS editor support",
   "HIGHLIGHT_TITLE": "Why Kronos",
   "HIGHLIGHT_SUBTITLE": "A modern ORM framework built for Kotlin",
   "HL_ZERO_REFLECT_TITLE": "Zero Runtime Reflection",

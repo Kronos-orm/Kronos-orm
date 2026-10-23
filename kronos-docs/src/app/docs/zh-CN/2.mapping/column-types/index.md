@@ -56,6 +56,7 @@ MySQL 会将这些列渲染为：
 | `java.time.LocalTime`、`kotlinx.datetime.LocalTime` | `TIME` |
 | `java.time.LocalDateTime`、`kotlinx.datetime.LocalDateTime` | `DATETIME` |
 | `java.sql.Timestamp` | `TIMESTAMP` |
+| `kotlin.time.Instant`、`kotlinx.datetime.Instant` | `TIMESTAMP` |
 | `kotlin.ByteArray` | `BLOB` |
 | 标量 enum | `VARCHAR` |
 | `@Serialize` 属性 | `VARCHAR`，除非由 `@ColumnType` 覆盖 |

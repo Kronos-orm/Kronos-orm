@@ -71,11 +71,11 @@
 先让 AI 运行最小有效命令；触及的模块需要更宽验证时，再扩大范围。
 
 ```bash group="Validate" name="compiler plugin" icon="terminal"
-./gradlew :kronos-compiler-plugin:test
+scripts/run build test -m kronos-compiler-plugin -p jvm
 ```
 
 ```bash group="Validate" name="core" icon="terminal"
-./gradlew :kronos-core:test
+scripts/run build test -m kronos-core -p jvm
 ```
 
 ```bash group="Validate" name="docs" icon="terminal"

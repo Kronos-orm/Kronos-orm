@@ -209,7 +209,7 @@ private fun obtainConnection(): Pair<Connection, Boolean> {
 
 ## kronos-gradle-plugin
 
-Wires the compiler plugin into Gradle Kotlin compilation and attaches generated-provider service resources for JVM source sets and Android application/library variants. **Included build** (not a regular subproject).
+Wires the compiler plugin into Gradle Kotlin compilation and attaches generated-provider service resources for JVM source sets and Android application/library variants. Kotlin Toolchain builds and publishes this JVM library.
 
 ### KronosGradlePlugin
 ```kotlin
@@ -225,35 +225,28 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
 }
 ```
 
-Registered as `com.kotlinorm.kronos-gradle-plugin` in `gradlePlugin {}` block.
+Registered as `com.kotlinorm.kronos-gradle-plugin` by the descriptor under `src/main/resources/META-INF/gradle-plugins/`.
 
 `GenerateKronosGeneratedTypeService` writes the provider descriptor after compilation only when the generated provider class exists. Android variants add the output to merged Java resources and merge duplicate provider descriptors. `kronos-core` packages a consumer R8 rule that preserves generated provider classes in minified Android artifacts.
 
 ### Version Sync
-Version in two places (must stay in sync):
-1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version`
-2. `kronos-gradle-plugin/.../KronosGradlePlugin.kt` → `version`
-
-`bump-version.sh` updates both.
+The catalog's `kronos-compiler-plugin` version, common Toolchain publication template and compiler version properties agree. `scripts/version.main.kts` updates all three. `KronosGradlePlugin` reads the packaged resource at runtime.
 
 ### Build
-- Plugins: `java-gradle-plugin`, `kronos.publishing`
-- Dependency: `kotlin-gradle-plugin-api` only
-- Included via `settings.gradle.kts`: `includeBuild("kronos-gradle-plugin")`
+- Model: `kronos-gradle-plugin/module.yaml`, `product: jvm/lib`.
+- Build resources: checked-in Gradle descriptor and compiler version properties under `src/main/resources/`.
+- Gradle API is compile-only; Kotlin Gradle plugin dependencies retain Gradle's variant selection in published consumers.
+- `scripts/run build test -m kronos-gradle-plugin -p jvm` runs the provider and Gradle API unit tests. Android, Spring Boot, Ktor and Vert.x examples verify Gradle consumption of staged publications; Solon and Spring Boot Maven examples verify Maven integration.
 
 ---
 
 ## kronos-maven-plugin
 
-Maven counterpart to the Gradle plugin.
+Maven integration through `KotlinMavenPluginExtension`, registered as the Plexus component
+`kronos-maven-plugin` in `META-INF/plexus/components.xml`.
 
-```kotlin
-class KronosMavenPlugin : KotlinMavenPluginExtension {
-    override fun isApplicable(project, execution) = true
-    override fun getCompilerPluginId() = "com.kotlinorm.kronos-maven-plugin"
-    override fun getPluginOptions(project, execution) = emptyList<PluginOption>()
-}
-```
-
-- Dependencies: `api(project(":kronos-compiler-plugin"))`, `kotlin-maven-plugin`, `maven-core`
-- Copies `META-INF/services` from kronos-compiler-plugin so Maven discovers the `ComponentRegistrar`
+- The published POM exports `kronos-compiler-plugin`; Kotlin Maven and Maven Core APIs are runtime dependencies.
+- Static `META-INF/services` descriptors expose `KronosCompilerPluginRegistrar` and `KronosCommandLineProcessor` from the compiler dependency.
+- `getPluginOptions` derives `maven:<groupId>:<artifactId>:<executionId>` (falling back to the goal for an empty execution ID), hashes it, and supplies `generated-provider-id` and `generated-provider-fq-name` to `kronos-compiler-plugin`.
+- The extension writes the matching `GeneratedTypeProvider` service entry into the main or test compilation output; source-free compilations remove a stale entry. Explicit compile and test executions use separate execution IDs.
+- Kotlin Maven configuration enables `-Xcollection-literals` for collection-literal DSL expressions and `-Xcontext-sensitive-resolution` for contextual enum references. `kronos-maven-plugin/README.md` contains the complete plugin configuration.

@@ -1,4 +1,5 @@
-import {Component, Inject,} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, DestroyRef, Inject, inject} from '@angular/core';
 import {SharedModule} from "../../shared.module";
 import {NG_DOC_CONTEXT} from "@ng-doc/app/tokens";
 import {NgDocContext, NgDocNavigation} from "@ng-doc/app";
@@ -48,7 +49,7 @@ const docSortFn = (a: NgDocNavigation, b: NgDocNavigation) => (a.order ?? 0) - (
 export class KronosNgDocSidebarComponent {
     constructor(@Inject(NG_DOC_CONTEXT) private context: NgDocContext, private _app: AppService, private router: Router) {
         this.router.events
-            .pipe(filter(event => event instanceof NavigationEnd))
+            .pipe(filter(event => event instanceof NavigationEnd), takeUntilDestroyed(inject(DestroyRef)))
             .subscribe(() => this.updateMenuState());
         this.updateMenuState();
     }
@@ -56,14 +57,13 @@ export class KronosNgDocSidebarComponent {
     items: MenuItem[] = [];
 
     updateMenuState() {
-        const routeLanguage = this.router.url.split("/")[2];
-        const language = routeLanguage === "en" || routeLanguage === "zh-CN" ? routeLanguage : this._app.language;
-        this.items = this.context.navigation.sort(docSortFn)
+        const language = this._app.language;
+        this.items = [...this.context.navigation].sort(docSortFn)
             .filter(item => item.route.startsWith(`/documentation/${language}/`))
             .map((item, index) => {
             return {
                 label: item.title,
-                items: item.children?.sort(docSortFn).map(child => {
+                items: item.children?.slice().sort(docSortFn).map(child => {
                     return {
                         label: child.title,
                         metadata: child.metadata,
@@ -83,7 +83,7 @@ export class KronosNgDocSidebarComponent {
         const matchesRouterUrl = (item: MenuItem) => {
             if (item.routerLink) {
                 if (item.routerLinkActiveOptions?.exact === true) {
-                    return item.routerLink[0] === this.router.url;
+                    return item.routerLink[0] === this.router.url.split(/[?#]/, 1)[0];
                 } else {
                     return this.router.url.startsWith(item.routerLink[0]);
                 }

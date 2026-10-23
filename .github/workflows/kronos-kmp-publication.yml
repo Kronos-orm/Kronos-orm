@@ -1,0 +1,86 @@
+name: Kronos publication producer
+on:
+  workflow_call:
+    inputs:
+      phase:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  produce:
+    name: ${{ inputs.phase }} candidate and shared suites
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: ${{ startsWith(inputs.runner, 'macos') && '/Applications/Xcode_26.4.app/Contents/Developer' || '' }}
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '21'
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: publication-${{ inputs.phase }}
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      if: inputs.phase != 'jvm'
+      with:
+        name: ${{ inputs.phase == 'metadata' && 'ci-jvm' || 'ci-metadata' }}
+        path: build/ci-input
+    - name: Select the verified compiler candidate
+      if: inputs.phase != 'jvm'
+      run: |
+        repository="$GITHUB_WORKSPACE/build/ci-input"
+        if [ "$RUNNER_OS" = Windows ]; then repository=$(cygpath -m "$repository"); fi
+        echo "KRONOS_COMPILER_REPOSITORY=$repository" >> "$GITHUB_ENV"
+    - name: Produce JVM publications and compiler integrations once
+      if: inputs.phase == 'jvm'
+      run: scripts/run release jvm-stage --repository build/ci-output
+    - name: Test Native publication build logic
+      if: inputs.phase == 'jvm'
+      env:
+        KRONOS_COMPILER_REPOSITORY: ${{ github.workspace }}/build/ci-output
+      run: scripts/run build test -m kronos-native -p jvm
+    - name: Verify release recovery contracts against a local Central server
+      if: inputs.phase == 'jvm'
+      env:
+        MAVEN_CENTRAL_USERNAME: local-contract
+        MAVEN_CENTRAL_PASSWORD: local-contract
+      run: scripts/run .github/scripts/test-release-publication.main.kts
+    - name: Produce authoritative metadata from the complete project
+      if: inputs.phase == 'metadata'
+      run: scripts/run release metadata-stage --seed build/ci-input --repository build/ci-output
+    - name: Build platform publications and execute shared Native suites
+      if: inputs.phase != 'jvm' && inputs.phase != 'metadata'
+      run: scripts/run release shard-stage --seed build/ci-input --group '${{ inputs.phase }}' --repository build/ci-output
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ci-${{ inputs.phase }}
+        path: build/ci-output
+        retention-days: 3
+        if-no-files-found: error
+        overwrite: true
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: inputs.phase == 'linux'
+      with:
+        name: kmp-linux-arm64-test-binaries
+        path: build/reports/native/linuxArm64/*.kexe
+        retention-days: 3
+        if-no-files-found: error
+        overwrite: true
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always() && inputs.phase != 'metadata'
+      with:
+        name: kmp-${{ inputs.phase }}-shared-reports
+        path: build/reports/**
+        if-no-files-found: error
+        overwrite: true

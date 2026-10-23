@@ -1,0 +1,83 @@
+// Observe external consumer task inputs after execution, including cache hits.
+// This init hook is not a Gradle project and does not resolve unused configurations.
+import groovy.json.JsonOutput
+import java.security.MessageDigest
+
+String evidence = System.getProperty('kronos.consumer.evidence')
+if (!evidence) throw new GradleException('Missing kronos.consumer.evidence output')
+File destination = new File(evidence)
+destination.parentFile.mkdirs()
+def hashes = [:]
+def repositoryIdentity = { String canonicalPath, char separator = File.separatorChar ->
+    def parts = canonicalPath.replace(separator, '/' as char).split('/') as List
+    int groupIndex = parts.indexOf('com.kotlinorm')
+    if (groupIndex >= 0 && parts.size() > groupIndex + 2) {
+        return [group: 'com.kotlinorm', name: parts[groupIndex + 1], version: parts[groupIndex + 2]]
+    }
+    Integer match = (0..<Math.max(0, parts.size() - 3)).find { parts[it] == 'com' && parts[it + 1] == 'kotlinorm' }
+    return match == null ? null : [group: 'com.kotlinorm', name: parts[match + 2], version: parts[match + 3]]
+}
+// Cross-host identity contracts run before observing the consumer. Avoid escaped
+// separator strings so Windows and Unix use the same character-based parser.
+def windowsSeparator = (char) 92
+def windowsGradle = ['C:', 'Users', 'Runner Name', '.gradle', 'caches', 'modules-2', 'files-2.1', 'com.kotlinorm', 'kronos-core-jvm', '0.4.0', 'hash', 'core.jar'].join(windowsSeparator.toString())
+def windowsMaven = ['C:', 'Users', 'Runner Name', '.m2', 'repository', 'com', 'kotlinorm', 'kronos-core-macosarm64', '0.4.0', 'core.klib'].join(windowsSeparator.toString())
+assert repositoryIdentity(windowsGradle, windowsSeparator) == [group: 'com.kotlinorm', name: 'kronos-core-jvm', version: '0.4.0']
+assert repositoryIdentity(windowsMaven, windowsSeparator) == [group: 'com.kotlinorm', name: 'kronos-core-macosarm64', version: '0.4.0']
+assert repositoryIdentity('/home/user/.m2/repository/com/kotlinorm/kronos-syntax-jvm/0.4.0/syntax.jar', '/' as char) == [group: 'com.kotlinorm', name: 'kronos-syntax-jvm', version: '0.4.0']
+assert repositoryIdentity('/home/user/project/build/example.jar', '/' as char) == null
+
+def record = { File file, String context, explicitId = null ->
+    if (!file.isFile() || !(file.name.endsWith('.jar') || file.name.endsWith('.klib'))) return
+    def id = explicitId ?: repositoryIdentity(file.canonicalPath)
+    if (id == null || id.group != 'com.kotlinorm') return
+    String key = file.canonicalPath + ':' + file.length() + ':' + file.lastModified()
+    String digest = hashes[key]
+    if (digest == null) {
+        def hash = MessageDigest.getInstance('SHA-256')
+        file.withInputStream { input ->
+            byte[] buffer = new byte[65536]
+            int count
+            while ((count = input.read(buffer)) != -1) hash.update(buffer, 0, count)
+        }
+        digest = hash.digest().encodeHex().toString(); hashes[key] = digest
+    }
+    destination.append(JsonOutput.toJson([group: id.group, artifact: id.name, version: id.version,
+        filename: file.name, sha256: digest, path: file.canonicalPath, configuration: context]) + '\n', 'UTF-8')
+}
+// Plugin classpaths are actually loaded during project configuration. Observing only
+// buildscript configurations cannot materialize unused Native target configurations.
+gradle.beforeProject { project -> project.buildscript.configurations.configureEach { configuration ->
+    configuration.incoming.afterResolve {
+        configuration.incoming.artifacts.artifacts.each { artifact ->
+            def id = artifact.id.componentIdentifier
+            if (id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+                record(artifact.file, "${project.path}:${configuration.name}", [group: id.group, name: id.module, version: id.version])
+            }
+        }
+    }
+} }
+gradle.projectsEvaluated {
+    def requested = gradle.startParameter.taskNames.findAll { it.tokenize(':').last() != 'kronosRecordConsumedArtifacts' }
+    def ordered = requested.collectMany { name ->
+        // Keep task references as paths: looking them up here can realize another
+        // project's Native compilation outside its configuration lock. Gradle
+        // resolves ordering references while constructing the execution graph.
+        if (name.contains(':')) return [name.startsWith(':') ? name : ':' + name]
+        return gradle.rootProject.allprojects.findAll { it.tasks.names.contains(name) }.collect { project ->
+            (project.path == ':' ? '' : project.path) + ':' + name
+        }
+    }
+    if (ordered.isEmpty()) throw new GradleException('No consumer tasks were selected for artifact evidence')
+    def recorder = gradle.rootProject.tasks.register('kronosRecordConsumedArtifacts') {
+        mustRunAfter(ordered)
+        outputs.file(destination)
+        outputs.upToDateWhen { false }
+        doLast {
+            gradle.taskGraph.allTasks.findAll { it.path != path }.each { consumed ->
+                consumed.inputs.files.files.each { file -> record(file, consumed.path) }
+            }
+            if (!destination.isFile() || destination.length() == 0) throw new GradleException('No actual Kronos consumer artifacts were observed')
+        }
+    }
+}

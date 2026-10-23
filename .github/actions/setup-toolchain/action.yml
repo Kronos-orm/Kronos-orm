@@ -1,0 +1,61 @@
+name: Cache Kotlin Toolchain dependencies
+description: Isolate SDK and dependency downloads from source-built candidates and reports.
+inputs:
+  lane:
+    description: Job purpose, mapped to shared compatible dependency caches.
+    default: common
+runs:
+  using: composite
+  steps:
+    - name: Select stable dependency cache locations
+      shell: bash
+      env:
+        KRONOS_CACHE_LANE: ${{ inputs.lane }}
+      run: |
+        cache_root="$RUNNER_TEMP/kronos-cache"
+        action_root="$GITHUB_ACTION_PATH"
+        if [ "$RUNNER_OS" = Windows ]; then
+          cache_root=$(cygpath -m "$cache_root")
+          action_root=$(cygpath -m "$action_root")
+        fi
+        echo "KOTLIN_CLI_BOOTSTRAP_CACHE_DIR=$cache_root/cli" >> "$GITHUB_ENV"
+        echo "KOTLIN_SHARED_CACHE_DIR=$cache_root/shared" >> "$GITHUB_ENV"
+        echo "KRONOS_SCRIPT_CACHE=$cache_root/scripts" >> "$GITHUB_ENV"
+        echo "KRONOS_CI_CACHE_ROOT=$cache_root" >> "$GITHUB_ENV"
+        case "$KRONOS_CACHE_LANE" in
+          publication-ios|publication-macos|publication-tvos|publication-watchos|publication-linux|publication-windows) family=native ;;
+          sqlite-*|android-*|arm-runtime|unit-receipts|publication-assembly|gate|server-examples) family=scripts ;;
+          *) family=jvm ;;
+        esac
+        echo "KRONOS_CI_CACHE_FAMILY=$family" >> "$GITHUB_ENV"
+        # JVM downloads are portable; compiled scripts separately include JAVA_HOME.
+        # Native downloads stay isolated by the actual host image.
+        cache_image=portable
+        if [ "$family" = native ]; then cache_image=${ImageVersion:-unknown}; fi
+        echo "KRONOS_CI_IMAGE=$cache_image" >> "$GITHUB_ENV"
+        echo "KRONOS_CI_HOST_IMAGE=${ImageVersion:-unknown}" >> "$GITHUB_ENV"
+        kotlin_version=$(sed -n 's/^kotlin = "\([^"]*\)"$/\1/p' "$action_root/../../../libs.versions.toml")
+        test -n "$kotlin_version"
+        echo "KRONOS_CI_KOTLIN_VERSION=$kotlin_version" >> "$GITHUB_ENV"
+        xcode_key=$(printf '%s' "${DEVELOPER_DIR:-none}" | tr '/ ' '__')
+        echo "KRONOS_CI_NATIVE_SDK=$kotlin_version-$xcode_key" >> "$GITHUB_ENV"
+    - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: |
+          ${{ env.KRONOS_CI_CACHE_ROOT }}/cli
+          ${{ env.KRONOS_CI_CACHE_ROOT }}/shared
+          ${{ env.KRONOS_CI_CACHE_ROOT }}/scripts
+          ~/.m2/repository/org
+          ~/.m2/repository/com/fasterxml
+          ~/.cache/main.kts.compiled.cache
+        key: kotlin-deps-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.KRONOS_CI_IMAGE }}-${{ env.KRONOS_CI_CACHE_FAMILY }}-${{ hashFiles('**/libs.versions.toml', '**/project.yaml', '**/module.yaml', '**/*.module-template.yaml', '**/kotlin', '**/scripts/*.main.kts') }}
+        restore-keys: |
+          kotlin-deps-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.KRONOS_CI_IMAGE }}-${{ env.KRONOS_CI_CACHE_FAMILY }}-
+    - name: Cache the published consumer's Native SDK and external toolchains
+      if: startsWith(inputs.lane, 'sqlite-')
+      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: |
+          ~/.konan/dependencies
+          ~/.konan/kotlin-native-prebuilt-*-${{ env.KRONOS_CI_KOTLIN_VERSION }}
+        key: native-sdk-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.KRONOS_CI_HOST_IMAGE }}-${{ env.KRONOS_CI_NATIVE_SDK }}

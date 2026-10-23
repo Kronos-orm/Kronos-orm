@@ -328,9 +328,12 @@ val publicationGroups = linkedMapOf(
     "linux" to listOf("linuxX64", "linuxArm64"),
     "windows" to listOf("mingwX64"),
 )
+val nativeConsumerTargets = publicationGroups.map { (group, targets) ->
+    "sqlite-$group" to if (group == "macos") targets.filter { it.startsWith("macos") } else targets
+}.toMap() + ("sqlite-macos-intel" to listOf("macosX64"))
+val requiredConsumers = nativeConsumerTargets.mapValues { "native" } + mapOf(
+    "server" to "jvm", "ide" to "jvm", "android-build" to "jvm", "android-api-26" to "apk", "android-api-35" to "apk")
 val kmpModules = listOf("kronos-syntax", "kronos-core", "kronos-logging")
-fun sourceRevision(): String = System.getenv("GITHUB_SHA") ?: System.getenv("KRONOS_SOURCE_SHA")
-    ?: run(listOf("git", "rev-parse", "HEAD"), capture = true).output.trim()
 fun candidateManifest(repository: Path, group: String) {
     repository.resolve("ci-candidate.json").json(linkedMapOf(
         "sha" to sourceRevision(), "versions" to versions(), "toolchain" to digest(repositoryRoot.resolve("kotlin")), "group" to group,
@@ -348,38 +351,82 @@ fun readCandidate(repository: Path, group: String? = null, payloadsOnly: Boolean
     val actual = tree(repository).filter { it.isRegularFile() && it.name != "ci-candidate.json" }
         .map { repository.relativize(it).toString().replace('\\', '/') }.toSet()
     require(payloadsOnly || actual == model["files"].fieldNames().asSequence().toSet()) { "Candidate inventory changed" }
-    for ((name, hash) in model["files"].fields().asSequence().filter { !payloadsOnly || it.key.endsWith(".jar") || it.key.endsWith(".klib") || it.key.endsWith(".apk") }) {
+    for ((name, hash) in model["files"].properties().asSequence().filter { !payloadsOnly || it.key.endsWith(".jar") || it.key.endsWith(".klib") || it.key.endsWith(".apk") }) {
         val file = repository.resolve(name).normalize()
         require(file.startsWith(repository.normalize()) && digest(file) == hash.asText()) { "Candidate digest mismatch: $name" }
     }
     return model
 }
-fun consumerReceipt(repository: Path, output: Path, name: String, family: String) {
+fun validateConsumedPayloads(files: Set<String>, family: String, consumer: String) {
+    require(family in setOf("jvm", "native", "apk")) { "Unexpected consumer artifact family" }
+    if (family == "apk") {
+        require(files.containsAll(setOf("app.apk", "test.apk"))) { "Both installed application and instrumentation APKs are required" }
+        return
+    }
+    val targets = if (family == "jvm") setOf("jvm") else
+        (nativeConsumerTargets[consumer] ?: publicationGroups.values.flatten()).map { it.lowercase() }.toSet()
+    fun consumedTargets(module: String): Set<String> = files.mapNotNull { path ->
+        val parts = path.split('/')
+        val artifact = parts.getOrNull(2).orEmpty()
+        val extension = if (family == "jvm") ".jar" else ".klib"
+        if (parts.take(2) != listOf("com", "kotlinorm") || !path.endsWith(extension)) null
+        else targets.firstOrNull { artifact == "$module-$it" }
+    }.toSet()
+    require((consumedTargets("kronos-core") intersect consumedTargets("kronos-syntax")).isNotEmpty()) {
+        "Consumer lacks actual core and syntax payloads for the same $family target: $consumer"
+    }
+}
+
+fun consumerReceipt(repository: Path, output: Path, name: String, family: String, evidence: Path = Path.of(requireNotNull(System.getenv("KRONOS_CONSUMER_EVIDENCE_DIR")) { "Missing actual consumer resolution evidence" })) {
     require(family in listOf("jvm", "native", "apk"))
     val model = readCandidate(repository, payloadsOnly = true)
-    val files = model["files"].fields().asSequence().filter { (path, _) ->
-        val artifact = path.split('/').getOrNull(2)
+    val candidates = model["files"].properties().asSequence().filter { (path, _) ->
         (path.endsWith(".jar") || path.endsWith(".klib") || path.endsWith(".apk")) &&
-            !path.endsWith("-sources.jar") && !path.endsWith("-javadoc.jar") &&
-            (family != "jvm" || artifact !in kmpModules)
+            !path.endsWith("-sources.jar") && !path.endsWith("-javadoc.jar")
     }.associate { it.key to it.value.asText() }
-    require(files.isNotEmpty())
-    output.json(mapOf("sha" to sourceRevision(), "consumer" to name, "family" to family, "files" to files))
+    val logs = tree(evidence).filter { it.name.endsWith(".jsonl") }
+    require(logs.isNotEmpty()) { "No actual resolution records in $evidence" }
+    val observed = logs.flatMap { log -> log.text().lineSequence().filter { it.isNotBlank() }.map { line ->
+        val entry = jsonMapper.readTree(line)
+        mapOf("path" to entry["path"].asText(), "sha256" to entry["sha256"].asText(),
+            "coordinate" to listOf("group", "artifact", "version").joinToString(":") { entry.path(it).asText() },
+            "configuration" to entry["configuration"].asText())
+    }.toList() }
+    require(observed.isNotEmpty()) { "No consumed artifacts were observed: $name" }
+    val files = linkedMapOf<String, String>()
+    val resolved = observed.distinct().map { entry ->
+        val path = Path.of(entry.getValue("path"))
+        require(path.isRegularFile()) { "Consumed artifact is missing: $path" }
+        val hash = digest(path)
+        require(entry["sha256"] == null || entry["sha256"] == hash) { "Consumed artifact changed after resolution: $path" }
+        val coordinate = entry.getValue("coordinate").split(':')
+        val matches = candidates.filter { (name, expected) -> expected == hash &&
+            (coordinate.all { it.isEmpty() } || name.startsWith("${coordinate[0].replace('.', '/')}/${coordinate[1]}/${coordinate[2]}/")) }
+        require(matches.isNotEmpty()) { "Resolved Kronos artifact differs from this run's candidate: $path" }
+        matches.forEach { (key, value) -> files[key] = value }
+        entry + mapOf("sha256" to hash, "candidatePaths" to matches.keys.joinToString(","))
+    }
+    validateConsumedPayloads(files.keys, family, name)
+    output.json(mapOf("sha" to sourceRevision(), "consumer" to name, "family" to family, "files" to files, "resolved" to resolved))
 }
 fun verifyConsumers(repository: Path, apkManifest: Path, receipts: Path) {
     val final = jsonMapper.readTree(repository.toFile())
     val apk = jsonMapper.readTree(apkManifest.toFile())
     require(final["sha"].asText() == sourceRevision() && apk["sha"] == final["sha"])
-    val expected = setOf("sqlite-ios", "sqlite-macos", "sqlite-tvos", "sqlite-watchos", "sqlite-linux", "sqlite-windows", "server", "ide", "android-build", "android-api-26", "android-api-35")
+    val expected = requiredConsumers
     val seen = mutableSetOf<String>()
     for (file in tree(receipts).filter { it.extension == "json" }) {
         val receipt = jsonMapper.readTree(file.toFile())
         require(receipt["sha"] == final["sha"] && seen.add(receipt["consumer"].asText())) { "Mixed or duplicate consumer receipt" }
+        require(expected[receipt["consumer"].asText()] == receipt["family"].asText()) { "Wrong artifact family for consumer" }
         val reference = if (receipt["family"].asText() == "apk") apk else final
-        require(receipt["files"].size() > 0)
-        for ((name, hash) in receipt["files"].fields().asSequence()) require(reference["files"][name] == hash) { "Consumer bytes differ from final candidate: $name" }
+        require(receipt["files"].size() > 0 && receipt.path("resolved").size() > 0) { "Missing actual consumed artifact evidence" }
+        for ((name, hash) in receipt["files"].properties().asSequence()) require(reference["files"][name] == hash) { "Consumer bytes differ from final candidate: $name" }
+        validateConsumedPayloads(receipt["files"].fieldNames().asSequence().toSet(), receipt["family"].asText(), receipt["consumer"].asText())
+        val hashes = receipt["files"].properties().map { it.value.asText() }.toSet()
+        require(receipt["resolved"].all { it.path("sha256").asText() in hashes }) { "Resolved artifacts are absent from the candidate receipt" }
     }
-    require(seen == expected) { "Missing consumer evidence: ${expected - seen}; unexpected: ${seen - expected}" }
+    require(seen == expected.keys) { "Missing consumer evidence: ${expected.keys - seen}; unexpected: ${seen - expected.keys}" }
 }
 fun refreshModuleFiles(repository: Path) {
     for (path in tree(repository).filter { it.extension == "module" }) {
@@ -530,7 +577,7 @@ fun assembleShards(repository: Path, metadata: Path, inputs: List<Path>) {
     for ((group, input) in groups) {
         // Metadata/JVM bytes must match the authoritative candidate even if descriptors add variants.
         val model = readCandidate(metadata)
-        for ((name, hash) in model["files"].fields().asSequence()) if (name.endsWith(".jar") || name.endsWith(".klib")) {
+        for ((name, hash) in model["files"].properties().asSequence()) if (name.endsWith(".jar") || name.endsWith(".klib")) {
             require(digest(input.resolve(name)) == hash.asText()) { "Shard changed a base artifact: $name" }
         }
         appendGroup(repository, input, group)
@@ -629,8 +676,25 @@ fun post(url: String, body: ByteArray, headers: Map<String, String>, timeout: Lo
 
 fun encoded(value: String) = URLEncoder.encode(value, Charsets.UTF_8)
 
-fun publishRelease(output: Path) {
-    require(!versions().getValue("version").endsWith("-SNAPSHOT")) {
+fun releasePayloadFingerprint(output: Path): String = ZipFile(output.toFile()).use { archive ->
+    val payloads = archive.entries().asSequence().filter { !it.isDirectory &&
+        it.name.substringAfterLast('.') !in checksumAlgorithms + "asc" }.sortedBy { it.name }.map { entry ->
+        entry.name + ":" + java.security.MessageDigest.getInstance("SHA-256").digest(archive.getInputStream(entry).use { it.readBytes() })
+            .joinToString("") { "%02x".format(it) }
+    }.toList()
+    java.security.MessageDigest.getInstance("SHA-256").digest(payloads.joinToString("\n").toByteArray()).joinToString("") { "%02x".format(it) }
+}
+
+fun publishRelease(
+    output: Path,
+    checkpoint: Path,
+    endpoint: String = "https://central.sonatype.com/api/v1/publisher",
+    pause: () -> Unit = { Thread.sleep(15000) },
+    publicRepository: String = "https://repo.maven.apache.org/maven2",
+    attempts: Int = 120,
+    version: String = versions().getValue("version")
+) {
+    require(!version.endsWith("-SNAPSHOT")) {
         "Use publish-snapshot for a SNAPSHOT version"
     }
     ZipFile(output.toFile()).use { archive ->
@@ -645,39 +709,67 @@ fun publishRelease(output: Path) {
             "Maven Central requires a complete signed release bundle"
         }
     }
+    val fingerprint = releasePayloadFingerprint(output)
     val token = credentials()
-    val boundary = "kronos-${UUID.randomUUID()}"
-    val body =
-        "--$boundary\r\nContent-Disposition: form-data; name=\"bundle\"; filename=\"${output.name}\"\r\nContent-Type: application/octet-stream\r\n\r\n"
-            .toByteArray() + output.readBytes() + "\r\n--$boundary--\r\n".toByteArray()
-    val deployment =
-        post(
-                "https://central.sonatype.com/api/v1/publisher/upload?name=${encoded("Kronos " + versions().getValue("version"))}&publishingType=AUTOMATIC",
-                body,
-                mapOf(
-                    "Authorization" to "Bearer $token",
-                    "Content-Type" to "multipart/form-data; boundary=$boundary",
-                ),
-                600,
-            )
-            .trim()
-    println("Kronos Central deployment: $deployment")
-    repeat(120) {
-        val status =
-            jsonMapper.readTree(
-                post(
-                    "https://central.sonatype.com/api/v1/publisher/status?id=${encoded(deployment)}",
-                    ByteArray(0),
-                    mapOf("Authorization" to "Bearer $token"),
-                )
-            )
-        val state = status["deploymentState"].asText()
-        println("Kronos Central: $state")
-        if (state == "PUBLISHED") return
-        require(state != "FAILED") { "Central validation failed: ${status["errors"]}" }
-        Thread.sleep(15000)
+    val headers = mapOf("Authorization" to "Bearer $token")
+    var saved = if (checkpoint.isRegularFile()) jsonMapper.readTree(checkpoint.toFile()) else null
+    if (saved != null) require(saved["version"].asText() == version && saved["source"].asText() == sourceRevision() &&
+        saved["payloadSha256"].asText() == fingerprint) { "Central checkpoint belongs to different source bytes; refusing to publish or skip" }
+    fun record(deployment: String?, state: String) {
+        checkpoint.parent.createDirectories()
+        val temporary = checkpoint.resolveSibling(checkpoint.fileName.toString() + ".tmp")
+        temporary.json(mapOf("version" to version, "source" to sourceRevision(), "payloadSha256" to fingerprint,
+            "deploymentId" to deployment, "state" to state))
+        Files.move(temporary, checkpoint, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
     }
-    error("Central deployment did not reach PUBLISHED: $deployment")
+    val deployment = if (saved != null) {
+        require(saved.path("deploymentId").isTextual && saved["deploymentId"].asText().isNotBlank()) {
+            "Previous upload outcome is unknown; recover its deployment ID from Central before retrying, instead of uploading duplicate coordinates"
+        }
+        saved["deploymentId"].asText()
+    } else {
+        val boundary = "kronos-${UUID.randomUUID()}"
+        val body = "--$boundary\r\nContent-Disposition: form-data; name=\"bundle\"; filename=\"${output.name}\"\r\nContent-Type: application/octet-stream\r\n\r\n".toByteArray() +
+            output.readBytes() + "\r\n--$boundary--\r\n".toByteArray()
+        record(null, "UPLOAD_OUTCOME_UNKNOWN")
+        post("$endpoint/upload?name=${encoded("Kronos " + version)}&publishingType=AUTOMATIC", body,
+            headers + ("Content-Type" to "multipart/form-data; boundary=$boundary"), 600).trim()
+    }
+    require(deployment.matches(Regex("[A-Za-z0-9-]+"))) { "Unexpected Central deployment identifier" }
+    // Persist the real deployment ID before polling; the workflow retains it even on failure.
+    record(deployment, saved?.get("state")?.asText() ?: "UPLOADED")
+    println("Kronos Central deployment: $deployment")
+    repeat(attempts) {
+        val status = jsonMapper.readTree(post("$endpoint/status?id=${encoded(deployment)}", ByteArray(0), headers))
+        val state = status["deploymentState"].asText()
+        record(deployment, state)
+        println("Kronos Central: $state")
+        if (state == "PUBLISHED") {
+            val visible = ZipFile(output.toFile()).use { archive ->
+                val purls = archive.entries().asSequence().filter { it.name.endsWith(".pom") }.map { entry ->
+                    val parts = entry.name.split('/')
+                    "pkg:maven/" + parts.dropLast(3).joinToString(".") + "/" + parts[parts.size - 3] + "@" + parts[parts.size - 2]
+                }.toSet()
+                require(purls.isNotEmpty() && status.path("purls").map { it.asText() }.toSet().containsAll(purls)) {
+                    "Published deployment does not contain every expected release coordinate"
+                }
+                val probes = listOf("com/kotlinorm/kronos-core/$version/kronos-core-$version.pom",
+                    "com/kotlinorm/kronos-compiler-plugin/$version/kronos-compiler-plugin-$version.jar")
+                    .mapNotNull { archive.getEntry(it) }
+                require(probes.isNotEmpty()) { "No release visibility probes in bundle" }
+                probes.all { entry ->
+                    val response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create("$publicRepository/${entry.name}"))
+                        .timeout(Duration.ofSeconds(60)).GET().build(), HttpResponse.BodyHandlers.ofByteArray())
+                    response.statusCode() == 200 && archive.getInputStream(entry).use { it.readBytes() }.contentEquals(response.body())
+                }
+            }
+            if (visible) return
+            println("Kronos Central: waiting for the published version to become visible with matching bytes")
+        }
+        require(state != "FAILED") { "Central validation failed: ${status["errors"]}" }
+        pause()
+    }
+    error("Central deployment did not reach PUBLISHED: $deployment; resume using $checkpoint")
 }
 
 data class Attachment(val path: Path, val type: String, val classifier: String)
@@ -781,11 +873,11 @@ fun publishSnapshots(
 cli {
     if (args.isEmpty() || args[0] in setOf("-h", "--help"))
         println(
-            "Usage: scripts/run release stage|jvm-stage|metadata-stage|shard-stage|assemble|check-candidate|stamp|verify|bundle|publish|publish-snapshot [--repository PATH] [--output ZIP] [--sign]"
+            "Usage: scripts/run release stage|jvm-stage|metadata-stage|shard-stage|assemble|check-candidate|stamp|receipt|verify-consumers|verify|bundle|publish|publish-snapshot [--repository PATH] [--output ZIP] [--checkpoint JSON] [--sign]"
         )
     else {
         val options = Options(args, setOf("--sign"))
-        options.validate(setOf("--repository", "--output", "--seed", "--group", "--input", "--family"))
+        options.validate(setOf("--repository", "--output", "--seed", "--group", "--input", "--family", "--checkpoint"))
         require(options.positional.size == 1) { "Expected one release command" }
         val repository =
             Path.of(
@@ -817,7 +909,7 @@ cli {
             "verify-consumers" -> verifyConsumers(repository, Path.of(requireNotNull(options.one("--seed"))), Path.of(requireNotNull(options.one("--input"))))
             "verify" -> verify(repository)
             "bundle" -> bundle(repository, output, options.has("--sign"))
-            "publish" -> publishRelease(output)
+            "publish" -> publishRelease(output, Path.of(options.one("--checkpoint", repositoryRoot.resolve("build/release/checkpoint/deployment.json").toString())!!))
             "publish-snapshot" -> publishSnapshots(repository)
             else -> error("Unknown release command")
         }

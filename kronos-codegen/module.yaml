@@ -1,0 +1,17 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: Database schema driven Kotlin entity generation.
+
+dependencies:
+  - //kronos-core
+  - //kronos-syntax
+  - $libs.jackson.dataformat.toml
+
+test-dependencies:
+  - //kronos-jdbc-wrapper
+  - $libs.dbcp2
+  - $libs.driver.jdbc.mysql

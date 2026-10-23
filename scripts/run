@@ -1,0 +1,54 @@
+#!/bin/sh
+# Bootstrap the catalogued official Kotlin script runner; business logic lives in main.kts.
+set -eu
+script_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        exec powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$script_root/scripts/run.ps1")" "$@"
+        ;;
+esac
+script_version=$(sed -n 's/^kotlin = "\([^"]*\)"$/\1/p' "$script_root/libs.versions.toml")
+script_jackson=$(sed -n 's/^jackson = "\([^"]*\)"$/\1/p' "$script_root/libs.versions.toml")
+[ -n "$script_version" ] && [ -n "$script_jackson" ]
+script_cache=${KRONOS_SCRIPT_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/kronos-scripts}
+script_sdk="$script_cache/kotlin-$script_version"
+if [ ! -x "$script_sdk/kotlinc/bin/kotlin" ]; then
+    mkdir -p "$script_cache"
+    script_tmp=$(mktemp -d "$script_cache/bootstrap.XXXXXXXX")
+    trap 'rm -rf "$script_tmp"' EXIT HUP INT TERM
+    script_url="https://github.com/JetBrains/kotlin/releases/download/v$script_version/kotlin-compiler-$script_version.zip"
+    curl -fsSL --retry 3 "$script_url" -o "$script_tmp/compiler.zip"
+    curl -fsSL --retry 3 "$script_url.sha256" -o "$script_tmp/compiler.sha256"
+    script_expected=$(cat "$script_tmp/compiler.sha256")
+    if command -v sha256sum >/dev/null 2>&1; then
+        script_actual=$(sha256sum "$script_tmp/compiler.zip" | cut -d ' ' -f 1)
+    else
+        script_actual=$(shasum -a 256 "$script_tmp/compiler.zip" | cut -d ' ' -f 1)
+    fi
+    [ "$script_expected" = "$script_actual" ] || { echo 'Kotlin script SDK checksum mismatch' >&2; exit 1; }
+    unzip -q "$script_tmp/compiler.zip" -d "$script_tmp/sdk"
+    mv "$script_tmp/sdk" "$script_sdk"
+    rm -rf "$script_tmp"
+    trap - EXIT HUP INT TERM
+fi
+mkdir -p "$script_root/build/scripts"
+script_deps="$script_root/build/scripts/dependencies.main.kts"
+script_dependency="@file:DependsOn(\"com.fasterxml.jackson.dataformat:jackson-dataformat-toml:$script_jackson\")"
+if [ ! -f "$script_deps" ] || [ "$(cat "$script_deps")" != "$script_dependency" ]; then
+    printf '%s\n' "$script_dependency" > "$script_deps"
+fi
+[ "$#" -gt 0 ] || { echo 'Usage: scripts/run <name.main.kts> [arguments]' >&2; exit 1; }
+script_entry=$1
+shift
+case "$script_entry" in *.main.kts) ;; *) script_entry="$script_entry.main.kts" ;; esac
+case "$script_entry" in /*) ;; *) if [ -f "$script_root/$script_entry" ]; then script_entry="$script_root/$script_entry"; else script_entry="$script_root/scripts/$script_entry"; fi ;; esac
+export KRONOS_ROOT="$script_root"
+export KRONOS_SCRIPT_RUNNER="$script_root/scripts/run"
+# main.kts caches the entry script without hashing imported scripts. Include the
+# complete shared script sources so changes to common.main.kts cannot reuse stale code.
+script_fingerprint=$(
+    { cat "$script_root"/scripts/*.main.kts; printf '%s' "$script_dependency${JAVA_HOME:-}"; } |
+        shasum -a 256 | cut -d ' ' -f 1
+)
+export KOTLIN_MAIN_KTS_COMPILED_SCRIPTS_CACHE_DIR="$script_cache/compiled/$script_version/$script_fingerprint"
+exec "$script_sdk/kotlinc/bin/kotlin" "$script_entry" "$@"

@@ -1,0 +1,12 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: Maven compiler plugin integration for Kronos ORM.
+
+dependencies:
+  - //kronos-compiler-plugin: exported
+  - $libs.kotlin.maven.plugin
+  - $libs.maven.core

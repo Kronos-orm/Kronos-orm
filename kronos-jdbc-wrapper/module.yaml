@@ -1,0 +1,15 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: JDBC database connection and result mapping for Kronos ORM.
+
+dependencies:
+  - //kronos-core: compile-only
+
+test-dependencies:
+  - //kronos-core
+  - $libs.mockk
+  - $libs.kotlin.reflect

@@ -1,0 +1,47 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+  - //templates/kronos-runtime.module-template.yaml
+
+description: Database integration tests for Kronos ORM.
+
+dependencies:
+  - //kronos-core
+
+test-dependencies:
+  - //kronos-core
+  - //kronos-syntax
+  - //kronos-codegen
+  - //kronos-logging
+  - //kronos-jdbc-wrapper
+  - $libs.ktx.serialization.core
+  - $libs.ktx.serialization.json
+  - $libs.dbcp2
+  - $libs.driver.jdbc.mysql
+  - $libs.driver.jdbc.sqlite
+  - $libs.driver.jdbc.h2
+  - $libs.driver.jdbc.mssql
+  - $libs.driver.jdbc.postgresql
+  - $libs.driver.jdbc.oracle
+  - $libs.driver.jdbc.dameng
+plugins:
+  kronos-native:
+    enabled: true
+    jvmResourceFragment: ''
+    jvmSourceSetPrefix: ''
+
+settings:
+  publishing:
+    enabled: false
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: $libs.kronos.compiler.plugin
+        options:
+          module-coordinate: com.kotlinorm:kronos-testing
+
+test-settings:
+  kotlin:
+    serialization: enabled

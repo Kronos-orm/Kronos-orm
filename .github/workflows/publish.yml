@@ -7,6 +7,8 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
+  checks: read
 
 concurrency:
   group: kronos-central-publication
@@ -20,8 +22,48 @@ jobs:
       issues: write
       pull-requests: write
 
+  codacy:
+    name: Verify Codacy on the publication commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    permissions:
+      checks: read
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const deadline = Date.now() + 45 * 60 * 1000;
+            const publication = await github.rest.repos.getCommit({...context.repo, ref: context.sha});
+            let reviewedRef;
+            const associated = await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, {
+              ...context.repo, commit_sha: context.sha, per_page: 100,
+            });
+            for (const pr of associated.filter(pr => pr.merged_at && pr.merge_commit_sha === context.sha && pr.base.ref === 'main')) {
+              const reviewed = await github.rest.repos.getCommit({...context.repo, ref: pr.head.sha});
+              if (reviewed.data.commit.tree.sha === publication.data.commit.tree.sha) reviewedRef = pr.head.sha;
+            }
+            while (Date.now() < deadline) {
+              async function codacy(ref) {
+                const checks = await github.paginate(github.rest.checks.listForRef, {...context.repo, ref, per_page: 100});
+                return checks.find(item => item.app?.slug === 'codacy-production' && item.name === 'Codacy Static Code Analysis');
+              }
+              const direct = await codacy(context.sha);
+              // A merged PR's approved result is reusable only for exactly the same Git tree.
+              // Direct main pushes with different bytes must obtain their own Codacy result.
+              const check = direct || (reviewedRef ? await codacy(reviewedRef) : undefined);
+              if (check?.status === 'completed') {
+                if (check.conclusion !== 'success') throw new Error(`Codacy rejected publication bytes: ${check.conclusion}`);
+                core.info(`Codacy approved the exact publication tree ${publication.data.commit.tree.sha}`);
+                return;
+              }
+              await new Promise(resolve => setTimeout(resolve, 30000));
+            }
+            throw new Error(`Codacy did not approve publication commit ${context.sha} or its identical reviewed tree`);
+
   publish:
-    needs: kmp-verification
+    needs: [kmp-verification, codacy]
     name: Publish verified Toolchain artifacts
     runs-on: macos-26
     timeout-minutes: 120
@@ -33,7 +75,7 @@ jobs:
         with:
           java-version: '25'
           distribution: temurin
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: kmp-publication-repository
           path: build/release/repository
@@ -57,12 +99,30 @@ jobs:
         run: |
           if ! command -v gpg; then brew install gnupg; fi
           scripts/run release bundle --repository build/release/repository --output dist/release/central-bundle.zip --sign
+      - name: Restore the Central deployment checkpoint from a previous attempt
+        if: steps.detect.outputs.mode == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          artifact_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[] | select(.name == "central-deployment-state" and .expired == false) | .id')
+          if [ -n "$artifact_id" ]; then
+            gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name central-deployment-state --dir build/release/checkpoint
+          fi
       - name: Publish the signed release to Maven Central
         if: steps.detect.outputs.mode == 'release'
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: scripts/run release publish --output dist/release/central-bundle.zip
+      - name: Retain the real Central deployment state for safe retries
+        if: always() && steps.detect.outputs.mode == 'release'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: central-deployment-state
+          path: build/release/checkpoint/deployment.json
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 90
       - name: Publish timestamped snapshots
         if: steps.detect.outputs.mode == 'snapshot'
         env:
@@ -102,9 +162,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_VERSION="${{ steps.detect.outputs.current }}"
-          if [ -z "$RELEASE_VERSION" ]; then
-            RELEASE_VERSION="${{ steps.detect.outputs.current }}"
-          fi
+          run_snapshot_checks() {
+            # GITHUB_TOKEN-created PR events require approval; dispatch only the full CI workflow.
+            gh workflow run kronos-kmp-testing.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH_NAME"
+          }
 
           if [[ ! "$RELEASE_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             echo "Cannot calculate next SNAPSHOT from release version: $RELEASE_VERSION" >&2
@@ -124,6 +185,7 @@ jobs:
 
           if [ -n "$EXISTING_PR_URL" ]; then
             echo "Next SNAPSHOT PR already exists: $EXISTING_PR_URL"
+            run_snapshot_checks
             exit 0
           fi
 
@@ -135,6 +197,7 @@ jobs:
               --head "$BRANCH_NAME" \
               --title "chore(version): start $NEXT_SNAPSHOT" \
               --body "Start the next development cycle after publishing $RELEASE_VERSION by bumping release configuration to $NEXT_SNAPSHOT."
+            run_snapshot_checks
             exit 0
           fi
 
@@ -158,3 +221,4 @@ jobs:
             --head "$BRANCH_NAME" \
             --title "chore(version): start $NEXT_SNAPSHOT" \
             --body "Start the next development cycle after publishing $RELEASE_VERSION by bumping release configuration to $NEXT_SNAPSHOT."
+          run_snapshot_checks

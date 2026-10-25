@@ -28,7 +28,7 @@ jobs:
       uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       with:
         repository: Kronos-orm/kronos-example-android
-        ref: 0b54500e5afd8008b917b359db7b6c9dacb6d22e
+        ref: 680c490ea08f9d0a9b07d732ff372b9b87cc654b
         path: kronos-example-android
         persist-credentials: false
     - name: Set up JDK 21 for Kronos publication

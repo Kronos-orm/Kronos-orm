@@ -96,7 +96,7 @@ jobs:
       group: ios
       runner: macos-26
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   native-macos:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -110,7 +110,7 @@ jobs:
       group: macos
       runner: macos-26
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   sqlite-macos-intel:
     needs: publication
     uses: ./.github/workflows/kronos-native-sqlite-example.yml
@@ -121,7 +121,7 @@ jobs:
       consumer-id: sqlite-macos-intel
       shared-suites: true
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   native-tvos:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -135,7 +135,7 @@ jobs:
       group: tvos
       runner: macos-26
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   native-watchos:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -149,7 +149,7 @@ jobs:
       group: watchos
       runner: macos-26
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   native-linux:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -163,7 +163,7 @@ jobs:
       group: linux
       runner: ubuntu-24.04
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   native-windows:
     needs: metadata
     uses: ./.github/workflows/kronos-kmp-publication.yml
@@ -177,7 +177,7 @@ jobs:
       group: windows
       runner: windows-2025
       publication-artifact: kmp-publication-repository
-      example-ref: 6c7636af6f160ddfaa8959c076460d3fac5b6943
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
   native-arm64:
     name: KMP Native (linuxArm64 runtime)
     needs: native-linux

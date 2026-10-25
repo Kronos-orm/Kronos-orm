@@ -9,6 +9,10 @@
 
 ### 0.4.0
 
+- 修复 SLF4J 适配器的运行时 API 类名，通过真实 SLF4J 与 Logback 验证日志级别、消息、异常以及总开关。
+
+- 统一日志配置为 `Kronos.logging`，通过 `enabled = false` 关闭所有 Kronos 日志，保留默认 `["console"]` 输出；移除 `KLoggerType.NONE`，并增加共享的最低级别过滤（[#292](https://github.com/Kronos-orm/Kronos-orm/issues/292)）。
+
 - 通过 Kotlin Multiplatform `commonMain` 共享 KPojo 模型、SQL 构建、查询、写操作、表操作和 ValueCodec，发布 JVM 及 Apple、Linux、Windows 的 Kotlin/Native 构件。
 - 通过 `KronosExecutionDataSource` 和 `KronosExecutionWrapper` 接入平台数据库驱动。补充 [KMP 配置](/documentation/zh-CN/getting-started/kmp) 与 [Native SQLite](/documentation/zh-CN/database/native-sqlite) 指南，与 Android/JVM SQLite 指南共同覆盖平台接入。
 - 跨 Native 模块依赖生成并聚合 KPojo 工厂和枚举元数据，通过 `initializeKronosMetadata()` 初始化最终应用的元数据图。
@@ -16,6 +20,8 @@
 - 增加 JVM、Android/JVM、Apple、Linux 和 Windows 的 GitHub Actions 门禁，运行参考应用中的真实 SQLite 连接与 ORM 操作。
 
 #### 升级说明
+
+- 将 `Kronos.logPath`、`Kronos.loggerType` 和 `Kronos.defaultLogger` 分别改为 `Kronos.logging.path`、`Kronos.logging.type` 和 `Kronos.logging.factory`；关闭日志使用 `Kronos.logging.enabled = false`。
 
 - 将 Kronos 库、编译插件和 Gradle 插件统一升级到 `0.4.0`，并使用 Kotlin `2.4.21`。
 - 共享时区配置使用 IANA 标识符，例如 `Kronos.timeZone = "Asia/Shanghai"`。JVM 代码已有 `java.time.ZoneId` 值时，将其 `.id` 字符串赋给该配置。

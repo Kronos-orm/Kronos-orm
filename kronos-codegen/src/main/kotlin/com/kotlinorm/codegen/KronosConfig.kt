@@ -46,7 +46,7 @@ class KronosConfig(
                     }
                     writeText(it.str)
                 }
-                Kronos.defaultLogger(this).infoIfEnabled {
+                Kronos.logging.logger(this).infoIfEnabled {
                     log {
                         +"File generated successfully: ${it.outputPath}"[green]
                     }

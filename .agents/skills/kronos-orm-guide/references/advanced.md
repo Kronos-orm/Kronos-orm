@@ -689,9 +689,12 @@ typed Map 查询只接受直接 `Map`/`MutableMap` 声明（顶层可空也支�
 默认使用 `kronos-core` 的内置日志：
 
 ```kotlin
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = listOf("console", "logs/kronos")
+Kronos.logging.enabled = false // 关闭全部 Kronos 日志
+Kronos.logging.enabled = true // 保留原配置后重新开启
+
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = arrayOf("console", "logs/kronos")
 }
 ```
 
@@ -716,7 +719,7 @@ dependencies {
 ```kotlin
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.JDK_LOGGER
+Kronos.logging.type = KLoggerType.JDK_LOGGER
 ```
 
 ---

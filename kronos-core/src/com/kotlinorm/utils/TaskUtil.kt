@@ -19,7 +19,7 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.Kronos.defaultLogger
+import com.kotlinorm.Kronos.logging
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.ActionEvent
@@ -125,7 +125,7 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
             }
         }
     }
-    defaultLogger(Kronos).infoIfEnabled {
+    logging.logger(Kronos).infoIfEnabled {
         if (task is KronosAtomicBatchTask) {
             log {
                 -"Executing ["[green]

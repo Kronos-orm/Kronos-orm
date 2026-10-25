@@ -313,17 +313,20 @@ JSON 对象和集合使用 {{ $.annotation("Serialize") }}，配置方式见 {{ 
 
 ## 日志输出路径及开关
 
-用于设置全局默认条件下的日志输出位置。
+通过 `Kronos.logging` 统一配置日志开关、内置输出位置和适配器类型。
 
 **参数**：
-{{$.params([['logPath', '日志输出路径', 'Array<String>', '["console"]']])}}
+{{$.params([['logging.enabled', '日志总开关', 'Boolean', 'true'], ['logging.path', '内置日志输出路径', 'Array<String>', '["console"]'], ['logging.type', '日志适配器类型', 'KLoggerType', 'DEFAULT_LOGGER']])}}
 
-设置 `logPath` 后，Kronos 会向控制台和指定路径输出日志。输出位置和 logger 适配器见 {{ $.keyword("configuration/logging", ["Kronos-logging"]) }}。
+设置 `logging.path` 后，Kronos 会向控制台和指定路径输出日志。输出位置和 logger 适配器见 {{ $.keyword("configuration/logging", ["Kronos-logging"]) }}。
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
 import com.kotlinorm.Kronos
 
-Kronos.logPath = ["console", "/var/log/kronos"]
+Kronos.logging.enabled = false
+// 重新开启时保留原配置。
+Kronos.logging.enabled = true
+Kronos.logging.path = ["console", "/var/log/kronos"]
 ```
 
 ## Map 值转换

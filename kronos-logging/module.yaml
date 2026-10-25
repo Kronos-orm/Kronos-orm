@@ -27,6 +27,8 @@ dependencies:
 
 test-dependencies@jvm:
   - $libs.kotlin.reflect
+  - $libs.slf4j.api
+  - $libs.logback.classic
 
 plugins:
   kronos-native:

@@ -31,8 +31,6 @@ enum class KLoggerType {
 
     SLF4J_LOGGER,
 
-    DEFAULT_LOGGER,
-
-    NONE;
+    DEFAULT_LOGGER;
 
 }

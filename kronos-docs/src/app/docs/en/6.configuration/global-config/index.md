@@ -313,14 +313,17 @@ Use {{ $.annotation("Serialize") }} with {{ $.keyword("mapping/serialization", [
 Used to set the path and switch for log output under global default conditions.
 
 **Parameters**:
-{{$.params([['logPath', 'Log Output Path', 'Array<String>', '["console"]']])}}
+{{$.params([['logging.enabled', 'Global logging switch', 'Boolean', 'true'], ['logging.path', 'Bundled output destinations', 'Array<String>', '["console"]'], ['logging.type', 'Logger adapter', 'KLoggerType', 'DEFAULT_LOGGER']])}}
 
-Write logs to the console and a file path by setting `logPath`. The {{ $.keyword("configuration/logging", ["Kronos-logging"]) }} page covers output destinations and logger adapters.
+Write logs to the console and a file path by setting `logging.path`. The {{ $.keyword("configuration/logging", ["Kronos-logging"]) }} page covers output destinations and logger adapters.
 
 ```kotlin group="Logging 1" name="console and file" icon="kotlin"
 import com.kotlinorm.Kronos
 
-Kronos.logPath = ["console", "/var/log/kronos"]
+Kronos.logging.enabled = false
+// Re-enable output with the existing configuration.
+Kronos.logging.enabled = true
+Kronos.logging.path = ["console", "/var/log/kronos"]
 ```
 
 ## Map value conversion

@@ -229,7 +229,7 @@ object CascadeSelectClause {
         if (propField == null) {
             val key = "${parentFirst::class.simpleName}.$prop"
             if (cascadeFieldNotFoundWarned.add(key)) {
-                Kronos.defaultLogger("CascadeSelectClause").warnIfEnabled {
+                Kronos.logging.logger("CascadeSelectClause").warnIfEnabled {
                     log {
                         +"Cascade field '$prop' not found in ${parentFirst::class.simpleName}, skipping cascade query. Consider disabling cascade for this query."
                     }

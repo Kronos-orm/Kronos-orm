@@ -20,10 +20,9 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.beans.config.NoneNamingStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.logging.platformDefaultLogger
+import com.kotlinorm.beans.logging.KronosLoggingConfig
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.task.TransactionScope
-import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -31,7 +30,6 @@ import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.ValueCodec
 import com.kotlinorm.interfaces.ValueCodecRegistration
-import com.kotlinorm.types.KLoggerFactory
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.KPojoFactory
 import com.kotlinorm.utils.KPojoFactoryRegistration
@@ -77,20 +75,8 @@ object Kronos {
      */
     fun createKPojo(type: KType): KPojo = createRegisteredKPojo(type)
 
-    // 默认日志适配器
-    var defaultLogger: KLoggerFactory = ::platformDefaultLogger
-        set(value) {
-            field = value
-            // An explicit factory is a complete logger configuration. Keep
-            // platform detection from replacing it on a later startup call.
-            loggerType = KLoggerType.NONE
-        }
-
-    // 日志类型
-    var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
-
-    // 日志路径
-    var logPath = ["console"]
+    /** Global logging controls shared by JVM and Native adapters. */
+    val logging = KronosLoggingConfig()
 
     // 数据源
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }

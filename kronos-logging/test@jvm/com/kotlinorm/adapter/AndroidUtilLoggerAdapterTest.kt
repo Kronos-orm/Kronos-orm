@@ -57,43 +57,42 @@ class AndroidUtilLoggerAdapterTest {
 
     @Test
     fun `detecting logging installs the Android adapter`() {
-        val originalLoggerType = Kronos.loggerType
-        val originalLoggerFactory = Kronos.defaultLogger
+        val originalLoggerType = Kronos.logging.type
+        val originalLoggerFactory = Kronos.logging.factory
 
         try {
             KronosLoggerApp.detectLoggerImplementation()
-            val detectedLogger = Kronos.defaultLogger("KronosDetected")
+            val detectedLogger = Kronos.logging.logger("KronosDetected")
 
-            assertEquals(KLoggerType.ANDROID_LOGGER, Kronos.loggerType)
-            assertTrue(detectedLogger is AndroidUtilLoggerAdapter)
+            assertEquals(KLoggerType.ANDROID_LOGGER, Kronos.logging.type)
 
             detectedLogger.info(arrayOf(KLogMessage("detected Android logger")))
             assertEquals("i", Log.lastMethod)
             assertEquals("KronosDetected", Log.lastTag)
             assertEquals("detected Android logger", Log.lastMessage)
         } finally {
-            Kronos.defaultLogger = originalLoggerFactory
-            Kronos.loggerType = originalLoggerType
+            Kronos.logging.factory = originalLoggerFactory
+            Kronos.logging.type = originalLoggerType
         }
     }
 
     @Test
     fun `logger detection preserves an explicitly configured factory`() {
-        val originalLoggerType = Kronos.loggerType
-        val originalLoggerFactory = Kronos.defaultLogger
+        val originalLoggerType = Kronos.logging.type
+        val originalLoggerFactory = Kronos.logging.factory
         val customLogger = DisabledLogger()
         val customFactory = { _: Any -> customLogger }
 
         try {
-            Kronos.defaultLogger = customFactory
+            Kronos.logging.factory = customFactory
 
             KronosLoggerApp.detectLoggerImplementation()
 
-            assertTrue(Kronos.defaultLogger === customFactory)
-            assertEquals(KLoggerType.NONE, Kronos.loggerType)
+            assertTrue(Kronos.logging.factory === customFactory)
+            assertEquals(originalLoggerType, Kronos.logging.type)
         } finally {
-            Kronos.defaultLogger = originalLoggerFactory
-            Kronos.loggerType = originalLoggerType
+            Kronos.logging.factory = originalLoggerFactory
+            Kronos.logging.type = originalLoggerType
         }
     }
 

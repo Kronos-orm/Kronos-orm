@@ -124,7 +124,7 @@ updateTimeStrategy = "updateTime"
 
 ## kronos-logging
 
-Pluggable logging with auto-detection. Zero hard dependencies on logging frameworks.
+Multiplatform logging with shared `Kronos.logging.enabled`, `path`, `type`, `minimumLevel` and optional `factory` configuration. The global switch and level filtering guard every ORM logging call before adapter creation and lazy message building. Custom factories do not change the selected adapter type. JVM adapters discover optional logging frameworks; Native provides console output with exception stack traces.
 
 ### Detection Order
 ```

@@ -27,7 +27,7 @@ import java.lang.reflect.Method
 class Slf4jLoggerAdapter(loggerName: String) : KLogger {
     // Access SLF4J API by reflection, because we haven't required it in module-info.java.
     private val loggerFactoryClass = Class.forName("org.slf4j.LoggerFactory")
-    private val logClass = Class.forName("org.slf4j.KLogger")
+    private val logClass = Class.forName("org.slf4j.Logger")
     private val methodCache = mutableMapOf<String, Method>()
     private val getLoggerMethod = { name: String ->
         methodCache[name] ?: logClass.getMethod(name, String::class.java, Throwable::class.java)

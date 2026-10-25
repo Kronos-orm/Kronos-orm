@@ -413,7 +413,7 @@ Kronos.registerValueCodec(
 配置优先级：
 
 - 必须：`Kronos.dataSource = { wrapper }`，没有显式 wrapper 的 `execute()`、`toList()`、`first()` 等终端方法会读取它。
-- 常用：`tableNamingStrategy`、`fieldNamingStrategy`、`defaultDateFormat`、`timeZone`、`logPath`。
+- 常用：`tableNamingStrategy`、`fieldNamingStrategy`、`defaultDateFormat`、`timeZone`、`logging.path`。
 - 按业务启用：`createTimeStrategy`、`updateTimeStrategy`、`logicDeleteStrategy`、`optimisticLockStrategy`、`strictSetValue`；自定义转换通过 `Kronos.registerValueCodec` 注册。
 
 ```kotlin
@@ -448,15 +448,15 @@ with(Kronos) {
 
 ## 日志配置
 
-内置日志由 `kronos-core` 提供，默认输出到控制台。需要同时输出控制台和日志目录时，配置 `Kronos.logPath`：
+通过 `Kronos.logging.enabled = false` 关闭全部 Kronos 日志，重新设为 `true` 时保留类型、路径和自定义工厂。`enabled` 默认为 `true`，`path` 默认为 `["console"]`。通过 `Kronos.logging.minimumLevel` 设置最低日志级别。内置日志由 `kronos-core` 提供，默认输出到控制台。需要同时输出控制台和日志目录时，配置 `Kronos.logging.path`：
 
 ```kotlin
 import com.kotlinorm.Kronos
 import com.kotlinorm.enums.KLoggerType
 
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = listOf("console", "logs/kronos")
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = arrayOf("console", "logs/kronos")
 }
 ```
 
@@ -485,7 +485,7 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.JDK_LOGGER
+Kronos.logging.type = KLoggerType.JDK_LOGGER
 ```
 
 使用 Apache Commons Logging 时，应用还需要加入对应 API：
@@ -500,7 +500,7 @@ dependencies {
 ```kotlin
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.COMMONS_LOGGER
+Kronos.logging.type = KLoggerType.COMMONS_LOGGER
 ```
 
 ---

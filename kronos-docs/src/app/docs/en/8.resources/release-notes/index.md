@@ -9,6 +9,10 @@
 
 ### 0.4.0
 
+- Fix the SLF4J adapter API class name and verify levels, messages, exceptions and the global switch against the real SLF4J facade and Logback backend.
+
+- Consolidate logging under `Kronos.logging`: disable every Kronos logger with `enabled = false`, retain the default `["console"]` destination, remove `KLoggerType.NONE`, and add shared minimum-level filtering ([#292](https://github.com/Kronos-orm/Kronos-orm/issues/292)).
+
 - Share KPojo models, SQL construction, queries, mutations, table operations and value codecs through Kotlin Multiplatform `commonMain`. Publish JVM and Kotlin/Native variants for Apple, Linux and Windows targets.
 - Connect platform database drivers through `KronosExecutionDataSource` and `KronosExecutionWrapper`. Add the [KMP setup](/documentation/en/getting-started/kmp) and [Native SQLite](/documentation/en/database/native-sqlite) guides alongside the Android/JVM SQLite guide.
 - Generate and aggregate KPojo factories and enum metadata across Native module dependencies. Initialize the final application metadata graph with `initializeKronosMetadata()`.
@@ -16,6 +20,8 @@
 - Add GitHub Actions gates for JVM, Android/JVM, Apple, Linux and Windows, including real SQLite execution in the reference applications.
 
 #### Upgrade notes
+
+- Replace `Kronos.logPath`, `Kronos.loggerType` and `Kronos.defaultLogger` with `Kronos.logging.path`, `Kronos.logging.type` and `Kronos.logging.factory`. Disable logging with `Kronos.logging.enabled = false`.
 
 - Update Kronos libraries and compiler/Gradle plugins together to `0.4.0`, and use Kotlin `2.4.21`.
 - Set the shared time zone with an IANA identifier, for example `Kronos.timeZone = "Asia/Shanghai"`. For a JVM `java.time.ZoneId` value, assign its `.id` string.

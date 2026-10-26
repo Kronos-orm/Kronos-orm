@@ -8,14 +8,14 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0")
-        classpath("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0")
+        classpath("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.12.0")
+        classpath("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.12.0")
     }
     configurations.classpath {
         resolutionStrategy {
             force(
-                "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0",
-                "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0",
+                "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.12.0",
+                "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.12.0",
             )
         }
     }

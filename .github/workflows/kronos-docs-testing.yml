@@ -22,15 +22,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10.30.2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 

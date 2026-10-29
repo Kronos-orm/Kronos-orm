@@ -312,6 +312,48 @@ jobs:
     uses: ./.github/workflows/kronos-examples.yml
     with:
       publication-artifact: ci-metadata
+  toolchain-example:
+    name: Documented Toolchain JVM and Native consumer
+    needs: publication
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '21'
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: toolchain-example
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: kmp-publication-repository
+        path: build/toolchain-example-publications
+    - name: Verify the physical Native host and Xcode
+      run: |
+        test "$RUNNER_ARCH" = ARM64
+        test "$(uname -m)" = arm64
+        xcodebuild -version
+        xcode_major=$(xcodebuild -version | sed -n 's/^Xcode \([0-9]*\).*/\1/p')
+        test -n "$xcode_major" && test "$xcode_major" -ge 16
+    - name: Run the documented applications and main/test metadata consumers
+      run: |
+        scripts/run .github/scripts/run-toolchain-example.main.kts \
+          --repository "$GITHUB_WORKSPACE/build/toolchain-example-publications" \
+          --workspace "$RUNNER_TEMP/kronos-toolchain-example" \
+          --reports "$GITHUB_WORKSPACE/build/reports/toolchain-example"
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always()
+      with:
+        name: toolchain-example-reports
+        path: build/reports/toolchain-example
+        if-no-files-found: error
+        overwrite: true
   ide-support:
     needs: jvm-candidate
     uses: ./.github/workflows/kronos-ide-support.yml
@@ -668,6 +710,7 @@ jobs:
     - publication
     - android
     - examples
+    - toolchain-example
     - ide-support
     - unit-receipts
     - coverage-suites

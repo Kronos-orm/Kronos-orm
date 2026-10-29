@@ -1,0 +1,334 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosExecutionWrapperKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.wrappers</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosExecutionWrapperKt (com.kotlinorm.wrappers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosExecutionWrapperKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.7%
+  </span>
+  <span class="absValue">
+    (26/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.6%
+  </span>
+  <span class="absValue">
+    (206/209)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.wrappers
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicBatchTask
+&nbsp;import com.kotlinorm.beans.task.ResultColumnMetadata
+&nbsp;import com.kotlinorm.beans.task.TransactionScope
+&nbsp;import com.kotlinorm.beans.task.executionTransactionScope
+&nbsp;import com.kotlinorm.enums.TransactionIsolation
+&nbsp;import com.kotlinorm.interfaces.KronosExecutionDataSource
+&nbsp;import com.kotlinorm.interfaces.KronosRowMappingDataSourceWrapper
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosResultColumnMetadata
+&nbsp;import com.kotlinorm.interfaces.KAtomicQueryTask
+&nbsp;import com.kotlinorm.interfaces.KAtomicActionTask
+&nbsp;import com.kotlinorm.interfaces.KronosQueryExecutionPlan
+&nbsp;import com.kotlinorm.interfaces.KronosPhysicalRow
+&nbsp;import com.kotlinorm.interfaces.KronosPhysicalValue
+&nbsp;import com.kotlinorm.interfaces.KronosExecutionFirstResult
+&nbsp;import com.kotlinorm.interfaces.KronosActionExecutionPlan
+&nbsp;import com.kotlinorm.interfaces.KronosGeneratedKeyRequest
+&nbsp;import com.kotlinorm.interfaces.KronosBatchExecutionPlan
+&nbsp;import com.kotlinorm.interfaces.KronosTransactionOptions
+&nbsp;import com.kotlinorm.interfaces.KronosRow
+&nbsp;import com.kotlinorm.interfaces.KronosRowFirstResult
+&nbsp;import com.kotlinorm.utils.hasRegisteredKPojoFactory
+&nbsp;import com.kotlinorm.utils.createKPojo
+&nbsp;import com.kotlinorm.utils.decodeDatabaseValue
+&nbsp;import com.kotlinorm.utils.isKPojoType
+&nbsp;import com.kotlinorm.utils.resolveRuntimeMetadata
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/** Adapts the shared ORM planner to an application-owned physical execution adapter. */
+&nbsp;class KronosExecutionWrapper(val execution: KronosExecutionDataSource) : KronosRowMappingDataSourceWrapper {
+&nbsp;    override val url: String get() = execution.identity.url ?: execution.identity.databaseName
+&nbsp;    override val userName: String get() = execution.identity.userName.orEmpty()
+&nbsp;    override val dbType get() = execution.identity.dbType
+&nbsp;    override val capturesGeneratedKeysAtomically: Boolean get() = true
+&nbsp;
+&nbsp;    override fun toList(task: KAtomicQueryTask): List&lt;Any?&gt; {
+&nbsp;        val mapper = ResultMapper(task)
+&nbsp;        return execution.toList(task.executionPlan(), mapper::map)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun first(task: KAtomicQueryTask): Any? {
+&nbsp;        val mapper = ResultMapper(task)
+&nbsp;        return when (val result = execution.first(task.executionPlan(), mapper::map)) {
+&nbsp;            KronosExecutionFirstResult.Empty -&gt; null
+&nbsp;            is KronosExecutionFirstResult.Present -&gt; result.value
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun &lt;T&gt; toList(task: KAtomicQueryTask, mapper: (KronosRow) -&gt; T): List&lt;T&gt; =
+&nbsp;        execution.toList(task.executionPlan()) { physical -&gt; mapRow(physical, task, mapper) }
+&nbsp;
+&nbsp;    override fun &lt;T&gt; first(task: KAtomicQueryTask, mapper: (KronosRow) -&gt; T): KronosRowFirstResult&lt;T&gt; =
+&nbsp;        when (val first = execution.first(task.executionPlan()) { physical -&gt; mapRow(physical, task, mapper) }) {
+&nbsp;            KronosExecutionFirstResult.Empty -&gt; KronosRowFirstResult.Empty
+&nbsp;            is KronosExecutionFirstResult.Present -&gt; KronosRowFirstResult.Present(first.value)
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun &lt;T&gt; mapRow(physical: KronosPhysicalRow, task: KAtomicQueryTask, mapper: (KronosRow) -&gt; T): T {
+&nbsp;        var active = true
+&nbsp;        val rawValues = mutableMapOf&lt;Int, Any?&gt;()
+&nbsp;        val decodedValues = mutableMapOf&lt;Pair&lt;Int, KType&gt;, Any?&gt;()
+&nbsp;        val row = object : KronosRow() {
+&nbsp;            override val rowNumber: Int get() { check(active); physical.requireActive(); return physical.rowNumber }
+&nbsp;            override fun get(position: Int, targetType: KType): Any? {
+&nbsp;                check(active) { &quot;KronosRow is only valid while its mapper is running&quot; }
+&nbsp;                physical.requireColumnPosition(position)
+&nbsp;                val key = position to targetType
+&nbsp;                if (decodedValues.containsKey(key)) return decodedValues[key]
+&nbsp;                val label = physical.columnLabel(position)
+&nbsp;                val column = resultColumnForType(targetType, task.resultColumns.column(label), label)
+&nbsp;                val raw = if (rawValues.containsKey(position)) rawValues[position] else {
+&nbsp;                    physical.get(position).runtimeValue().also { rawValues[position] = it }
+&nbsp;                }
+&nbsp;                val value = if (column == null) raw else decodeDatabaseValue(raw, column, sqlDialect, label)
+&nbsp;                return requireResultValueType(value, targetType, label).also { decodedValues[key] = it }
+&nbsp;            }
+&nbsp;            override fun get(label: String, targetType: KType): Any? = get(physical.columnPosition(label), targetType)
+&nbsp;        }
+&nbsp;        return try { mapper(row) } finally { active = false }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun update(task: KAtomicActionTask): Int {
+&nbsp;        val parsed = task.parsed()
+&nbsp;        val names = parsed.jdbcParamList.indices.map { &quot;__kronos_p$it&quot; }
+&nbsp;        val result = execution.execute(KronosActionExecutionPlan(
+&nbsp;            parsed.jdbcSql, names.zip(parsed.jdbcParamList.toList()).toMap(), task.operationType,
+&nbsp;            task.generatedKeyField?.let { KronosGeneratedKeyRequest(it.columnName) }, names
+&nbsp;        ))
+&nbsp;        task.generatedKeys.clear()
+&nbsp;        task.generatedKeys.addAll(result.generatedKeys)
+&nbsp;        task.lastInsertId = result.lastInsertId
+&nbsp;        return result.affectedRows
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
+&nbsp;        val parsed = task.parsedSqlArr()
+&nbsp;        if (parsed.isEmpty()) return intArrayOf()
+&nbsp;        val sql = parsed.first().jdbcSql
+&nbsp;        val names = parsed.first().jdbcParamList.indices.map { &quot;__kronos_p$it&quot; }
+&nbsp;        require(parsed.all { it.jdbcSql == sql &amp;&amp; it.jdbcParamList.size == names.size }) {
+&nbsp;            &quot;Batch entries must have the same expanded SQL and binding shape&quot;
+&nbsp;        }
+&nbsp;        val results = execution.executeBatch(KronosBatchExecutionPlan(
+&nbsp;            sql, parsed.map { names.zip(it.jdbcParamList.toList()).toMap() }, task.operationType,
+&nbsp;            task.generatedKeyField?.let { KronosGeneratedKeyRequest(it.columnName) }, names
+&nbsp;        ))
+&nbsp;        check(results.size == parsed.size) { &quot;Execution adapter returned an incomplete batch result&quot; }
+&nbsp;        task.generatedKeys.clear()
+&nbsp;        results.forEach { task.generatedKeys.addAll(it.generatedKeys) }
+&nbsp;        task.lastInsertId = results.firstNotNullOfOrNull { it.lastInsertId }
+&nbsp;        return results.map { it.affectedRows }.toIntArray()
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -&gt; Any?): Any? {
+&nbsp;        require(isolation == null) { &quot;Execution adapters do not expose JDBC isolation levels&quot; }
+&nbsp;        return execution.transact(KronosTransactionOptions(timeoutSeconds = timeout)) {
+&nbsp;            executionTransactionScope(this).block()
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KAtomicQueryTask.executionPlan(): KronosQueryExecutionPlan {
+&nbsp;        val parsed = parsed()
+&nbsp;        val names = parsed.jdbcParamList.indices.map { &quot;__kronos_p$it&quot; }
+&nbsp;        return KronosQueryExecutionPlan(parsed.jdbcSql,
+&nbsp;            names.zip(parsed.jdbcParamList.toList()).toMap(), operationType, targetTypeInfo,
+&nbsp;            resultColumns.mapValues { (_, column) -&gt; KronosResultColumnMetadata(
+&nbsp;                column.typeInfo, column.storage, column.field?.name, column.columnLabel
+&nbsp;            ) }, names)
+&nbsp;    }
+&nbsp;
+&nbsp;    private inner class ResultMapper(private val task: KAtomicQueryTask) {
+&nbsp;        private val instances = com.kotlinorm.utils.IdentityHashMap&lt;KPojo, Unit&gt;()
+&nbsp;        private val mapShape = task.targetType.mapResultShapeOrNull(task.targetTypeInfo)
+&nbsp;        fun map(row: KronosPhysicalRow): Any? {
+&nbsp;            row.requireActive()
+&nbsp;            val target = task.targetType
+&nbsp;            if (mapShape != null) {
+&nbsp;                return mapColumns(row) { label, position -&gt;
+&nbsp;                    mapShape.value(read(row, position, mapShape.column(label, task.resultColumns.column(label))), label)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            if (task.targetTypeInfo?.isKPojo == true || target.isKPojoType() || hasRegisteredKPojoFactory(target)) {
+&nbsp;                val pojo = createKPojo(target)
+&nbsp;                check(!instances.containsKey(pojo)) { &quot;KPojo factory reused an instance across result rows&quot; }
+&nbsp;                instances[pojo] = Unit
+&nbsp;                val fields = pojo.resolveRuntimeMetadata().allColumns
+&nbsp;                val values = mapColumns(row) { label, position -&gt;
+&nbsp;                    val declared = task.resultColumns.column(label)
+&nbsp;                    val field = fields.resultField(label, declared?.field?.name)
+&nbsp;                    val column = declared?.let { metadata -&gt; field?.kType?.let { metadata.withTargetType(it, field.typeInfo) } ?: metadata }
+&nbsp;                        ?: field?.kType?.let {
+&nbsp;                        ResultColumnMetadata(it, field, columnLabel = label)
+&nbsp;                    }
+&nbsp;                    read(row, position, column)
+&nbsp;                }
+&nbsp;                val byProperty = values.mapKeys { (label, _) -&gt;
+&nbsp;                    val declaredName = task.resultColumns.column(label)?.field?.name
+&nbsp;                    fields.resultField(label, declaredName)?.name ?: label
+&nbsp;                }
+&nbsp;                return pojo.fromMapData&lt;KPojo&gt;(byProperty)
+&nbsp;            }
+&nbsp;            require(row.columnCount &gt; 0) { &quot;Scalar result has no columns&quot; }
+&nbsp;            val label = row.columnLabel(1)
+&nbsp;            val column = task.resultColumns.column(label) ?: task.resultColumns.values.singleOrNull()
+&nbsp;            val metadata = resultColumnForType(target, column, label, task.targetTypeInfo)
+&nbsp;            return requireResultValueType(read(row, 1, metadata), target, label)
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun read(row: KronosPhysicalRow, position: Int, column: ResultColumnMetadata?): Any? {
+&nbsp;            val value = row.get(position).runtimeValue()
+&nbsp;            return if (column == null) value else decodeDatabaseValue(value, column, sqlDialect, row.columnLabel(position))
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun Map&lt;String, ResultColumnMetadata&gt;.column(label: String): ResultColumnMetadata? =
+<b class="fc">&nbsp;    this[label] ?: entries.filter { it.key.equals(label, ignoreCase = true) }.singleOrNull()?.value</b>
+&nbsp;
+&nbsp;private inline fun mapColumns(row: KronosPhysicalRow, read: (String, Int) -&gt; Any?): Map&lt;String, Any?&gt; {
+<b class="fc">&nbsp;    val result = linkedMapOf&lt;String, Any?&gt;()</b>
+<b class="pc">&nbsp;    for (position in 1..row.columnCount) {</b>
+<b class="fc">&nbsp;        val label = row.columnLabel(position)</b>
+<b class="fc">&nbsp;        require(label !in result) { &quot;Ambiguous row column label &#39;$label&#39;; use a physical row mapper&quot; }</b>
+<b class="fc">&nbsp;        result[label] = read(label, position)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private fun KronosPhysicalValue.runtimeValue(): Any? = when (this) {</b>
+<b class="fc">&nbsp;    KronosPhysicalValue.Null -&gt; null</b>
+<b class="fc">&nbsp;    is KronosPhysicalValue.Integer -&gt; value</b>
+<b class="fc">&nbsp;    is KronosPhysicalValue.Real -&gt; value</b>
+<b class="fc">&nbsp;    is KronosPhysicalValue.Text -&gt; value</b>
+<b class="fc">&nbsp;    is KronosPhysicalValue.Blob -&gt; bytes</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun List&lt;com.kotlinorm.beans.dsl.Field&gt;.resultField(label: String, declaredName: String?): com.kotlinorm.beans.dsl.Field? {
+<b class="fc">&nbsp;    firstOrNull { it.name == label || it.columnName == label }?.let { return it }</b>
+<b class="pc">&nbsp;    val matches = filter { it.name.equals(label, ignoreCase = true) || it.columnName.equals(label, ignoreCase = true) }</b>
+<b class="pc">&nbsp;    require(matches.size &lt; 2) { &quot;Ambiguous result field &#39;$label&#39;&quot; }</b>
+<b class="fc">&nbsp;    return matches.singleOrNull() ?: firstOrNull { it.name == declaredName }</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

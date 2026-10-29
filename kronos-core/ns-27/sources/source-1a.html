@@ -1,0 +1,156 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PlatformThreadLocal_jvmKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: PlatformThreadLocal_jvmKt (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PlatformThreadLocal_jvmKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (42/42)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import kotlin.reflect.KClass
+&nbsp;import kotlin.jvm.javaObjectType
+&nbsp;
+&nbsp;internal actual class PlatformThreadLocal&lt;T&gt; actual constructor(initial: () -&gt; T) {
+&nbsp;    private val local = ThreadLocal.withInitial(initial)
+&nbsp;    actual fun get(): T = local.get()
+&nbsp;    actual fun set(value: T) = local.set(value)
+&nbsp;    actual fun remove() = local.remove()
+&nbsp;}
+&nbsp;internal actual fun platformIsKPojoClass(declaration: KClass&lt;*&gt;): Boolean =
+<b class="fc">&nbsp;    com.kotlinorm.interfaces.KPojo::class.java.isAssignableFrom(declaration.java)</b>
+<b class="fc">&nbsp;internal actual fun platformIsEnumClass(declaration: KClass&lt;*&gt;): Boolean = declaration.java.isEnum</b>
+&nbsp;internal actual fun platformClassAssignable(source: KClass&lt;*&gt;, target: KClass&lt;*&gt;): Boolean =
+<b class="fc">&nbsp;    target.javaObjectType.isAssignableFrom(source.javaObjectType)</b>
+&nbsp;internal actual fun platformIsCollectionClass(declaration: KClass&lt;*&gt;): Boolean =
+<b class="fc">&nbsp;    declaration.java.isArray || Iterable::class.java.isAssignableFrom(declaration.java)</b>
+&nbsp;
+<b class="fc">&nbsp;internal actual fun registerPlatformGeneratedType(type: kotlin.reflect.KType, isKPojo: Boolean, isEnum: Boolean) = Unit</b>
+&nbsp;
+<b class="fc">&nbsp;internal actual fun platformValidateKPojoFactoryType(type: kotlin.reflect.KType) { type.normalizedKPojoType() }</b>
+&nbsp;
+<b class="fc">&nbsp;internal actual fun platformNamingLowercase(value: String): String = value.lowercase(java.util.Locale.getDefault())</b>
+&nbsp;
+<b class="fc">&nbsp;internal actual fun platformIdentityHashCode(value: Any): Int = System.identityHashCode(value)</b>
+&nbsp;
+<b class="fc">&nbsp;internal actual fun platformIsUnavailableTypeMetadata(failure: Error): Boolean = failure is LinkageError</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

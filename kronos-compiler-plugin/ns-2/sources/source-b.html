@@ -1,0 +1,390 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > NativeGeneratedTypeMetadataEntryGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.backend.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: NativeGeneratedTypeMetadataEntryGenerator (com.kotlinorm.compiler.backend.transformers)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">NativeGeneratedTypeMetadataEntryGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.3%
+  </span>
+  <span class="absValue">
+    (22/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.9%
+  </span>
+  <span class="absValue">
+    (46/47)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.1%
+  </span>
+  <span class="absValue">
+    (465/494)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">NativeGeneratedTypeMetadataEntryGenerator$addTargetDependencyEntries$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">NativeGeneratedTypeMetadataEntryGenerator$addTargetDependencyEntries$lambda$4$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">NativeGeneratedTypeMetadataEntryGenerator$bindApplicationInitialization$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">NativeGeneratedTypeMetadataEntryGenerator$bindApplicationInitialization$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (68/68)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">NativeGeneratedTypeMetadataEntryGenerator$generate$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">NativeGeneratedTypeMetadataEntryGenerator$generate$$inlined$filterIsInstance$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    45.5%
+  </span>
+  <span class="absValue">
+    (5/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.5%
+  </span>
+  <span class="absValue">
+    (26/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.1%
+  </span>
+  <span class="absValue">
+    (53/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.8%
+  </span>
+  <span class="absValue">
+    (533/562)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.backend.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.name.CallableId
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
+&nbsp;import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;
+&nbsp;/**
+&nbsp; * Fills a common-source Native registration skeleton with compiler-owned type
+&nbsp; * descriptors. The skeleton is source-visible to downstream KMP modules, so
+&nbsp; * an application can call it explicitly and retain the generated graph at link
+&nbsp; * time without ServiceLoader or resource discovery.
+&nbsp; */
+&nbsp;internal object NativeGeneratedTypeMetadataEntryGenerator {
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun generate(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        moduleFragment: IrModuleFragment,
+&nbsp;        entryFqName: FqName,
+&nbsp;        providerId: String,
+<b class="nc">&nbsp;        dependencyEntries: List&lt;FqName&gt; = emptyList(),</b>
+&nbsp;        kPojoClasses: Collection&lt;IrClass&gt;,
+&nbsp;        enumClasses: Collection&lt;IrClass&gt;,
+&nbsp;        directQueryTaskTypeRoots: Collection&lt;IrType&gt;,
+&nbsp;        errorReporter: ErrorReporter
+&nbsp;    ) {
+<b class="fc">&nbsp;        val roots = buildList {</b>
+<b class="fc">&nbsp;            addAll(directQueryTaskTypeRoots)</b>
+<b class="fc">&nbsp;            addAll(kPojoClasses.map { it.symbol.defaultType })</b>
+<b class="fc">&nbsp;            addAll(enumClasses.map { it.symbol.defaultType })</b>
+<b class="fc">&nbsp;            kPojoClasses.forEach { kPojo -&gt;</b>
+<b class="fc">&nbsp;                kPojo.properties.mapNotNullTo(this) { property -&gt;</b>
+<b class="pc">&nbsp;                    property.getter?.returnType ?: property.backingField?.type</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        val entry = moduleFragment.files</b>
+<b class="fc">&nbsp;            .asSequence()</b>
+<b class="fc">&nbsp;            .flatMap { it.declarations.asSequence() }</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;IrFunction&gt;()</b>
+<b class="fc">&nbsp;            .firstOrNull { it.fqNameWhenAvailable == entryFqName }</b>
+<b class="fc">&nbsp;        if (entry == null) {</b>
+<b class="fc">&nbsp;            check(roots.isEmpty()) {</b>
+<b class="fc">&nbsp;                &quot;Native generated metadata entry &#39;$entryFqName&#39; was not found. &quot; +</b>
+<b class="fc">&nbsp;                    &quot;The Gradle plugin must add its common-source skeleton to the compilation.&quot;</b>
+&nbsp;            }
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val providerName = FqName(entryFqName.asString() + &quot;Provider&quot;)</b>
+<b class="fc">&nbsp;        val provider = moduleFragment.files.asSequence().flatMap { it.declarations.asSequence() }</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;IrClass&gt;().singleOrNull { it.fqNameWhenAvailable == providerName }</b>
+<b class="fc">&nbsp;            ?: error(&quot;Native source provider &#39;$providerName&#39; was not found; regenerate its Gradle source entry.&quot;)</b>
+<b class="fc">&nbsp;        GeneratedTypeProviderGenerator.fillNativeProvider(</b>
+<b class="fc">&nbsp;            pluginContext, moduleFragment, provider, providerId, kPojoClasses, enumClasses, directQueryTaskTypeRoots, errorReporter</b>
+&nbsp;        )
+<b class="fc">&nbsp;        addTargetDependencyEntries(pluginContext, moduleFragment, entryFqName, dependencyEntries)</b>
+<b class="fc">&nbsp;        bindApplicationInitialization(pluginContext, moduleFragment, entryFqName)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Target-only dependencies cannot be referenced from common metadata source. Link them in target IR. */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun addTargetDependencyEntries(
+&nbsp;        context: IrPluginContext,
+&nbsp;        module: IrModuleFragment,
+&nbsp;        entryFqName: FqName,
+&nbsp;        dependencyEntries: List&lt;FqName&gt;
+&nbsp;    ) {
+<b class="fc">&nbsp;        if (dependencyEntries.isEmpty()) return</b>
+<b class="fc">&nbsp;        val aggregateName = FqName(entryFqName.asString() + &quot;Dependencies&quot;)</b>
+<b class="fc">&nbsp;        val aggregate = module.files.asSequence().flatMap { it.declarations.asSequence() }</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;IrFunction&gt;().singleOrNull { it.fqNameWhenAvailable == aggregateName }</b>
+<b class="fc">&nbsp;            ?: error(&quot;Missing generated Native dependency entry &#39;$aggregateName&#39;&quot;)</b>
+<b class="pc">&nbsp;        val body = aggregate.body as? IrBlockBody ?: error(&quot;Native aggregate &#39;$aggregateName&#39; has no source body&quot;)</b>
+<b class="fc">&nbsp;        val existing = body.statements.filterIsInstance&lt;IrCall&gt;().mapNotNull { it.symbol.owner.fqNameWhenAvailable }.toSet()</b>
+<b class="fc">&nbsp;        val builder = DeclarationIrBuilder(context, aggregate.symbol)</b>
+<b class="fc">&nbsp;        val calls = dependencyEntries.distinct().filter { it != aggregateName &amp;&amp; it !in existing }.map { entry -&gt;</b>
+<b class="pc">&nbsp;            val symbol = module.files.asSequence().flatMap { it.declarations.asSequence() }</b>
+<b class="fc">&nbsp;                .filterIsInstance&lt;IrFunction&gt;().singleOrNull { it.fqNameWhenAvailable == entry }?.symbol</b>
+<b class="fc">&nbsp;                ?: context.finderForBuiltins().findFunctions(CallableId(entry.parent(), entry.shortName()))</b>
+<b class="pc">&nbsp;                    .singleOrNull { it.owner.parameters.size == 1 }</b>
+<b class="fc">&nbsp;                ?: error(&quot;Native dependency metadata entry &#39;$entry&#39; was not found in this target compilation&quot;)</b>
+<b class="fc">&nbsp;            builder.irCall(symbol).apply { arguments[0] = builder.irGet(aggregate.parameters.single()) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        body.statements.addAll(0, calls)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    private fun bindApplicationInitialization(
+&nbsp;        context: IrPluginContext,
+&nbsp;        module: IrModuleFragment,
+&nbsp;        entryFqName: FqName
+&nbsp;    ) {
+<b class="fc">&nbsp;        val aggregateName = FqName(entryFqName.asString() + &quot;Dependencies&quot;)</b>
+<b class="fc">&nbsp;        val aggregate = module.files.asSequence().flatMap { it.declarations.asSequence() }</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;IrFunction&gt;().firstOrNull { it.fqNameWhenAvailable == aggregateName }</b>
+<b class="fc">&nbsp;        module.transformChildrenVoid(object : IrElementTransformerVoid() {</b>
+&nbsp;            override fun visitCall(expression: IrCall): IrExpression {
+<b class="fc">&nbsp;                val call = super.visitCall(expression) as IrCall</b>
+<b class="fc">&nbsp;                if (call.symbol.owner.fqNameWhenAvailable != InitializeMetadataFqName) return call</b>
+<b class="fc">&nbsp;                val target = checkNotNull(aggregate) {</b>
+<b class="fc">&nbsp;                    &quot;Missing generated Native dependency entry &#39;$aggregateName&#39;; apply the Kronos Gradle plugin.&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return DeclarationIrBuilder(context, target.symbol, call.startOffset, call.endOffset)</b>
+<b class="fc">&nbsp;                    .irCall(target.symbol)</b>
+&nbsp;            }
+&nbsp;        })
+&nbsp;    }
+&nbsp;
+&nbsp;}
+&nbsp;
+&nbsp;private val InitializeMetadataFqName = FqName(&quot;com.kotlinorm.utils.initializeKronosMetadata&quot;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 11:00</div>
+</div>
+</body>
+</html>

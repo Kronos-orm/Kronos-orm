@@ -1,0 +1,288 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > StaticTypeArgument</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: StaticTypeArgument (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StaticTypeArgument</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (58/58)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;/**
+&nbsp; * Variance attached to a generated type argument or declared type parameter.
+&nbsp; */
+&nbsp;enum class StaticTypeVariance {
+&nbsp;    INVARIANT,
+&nbsp;    IN,
+&nbsp;    OUT,
+&nbsp;    STAR
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Explicit container classification used when runtime inheritance is unavailable.
+&nbsp; */
+&nbsp;enum class StaticContainerKind {
+&nbsp;    NONE,
+&nbsp;    ITERABLE,
+&nbsp;    ARRAY,
+&nbsp;    PRIMITIVE_ARRAY,
+&nbsp;    MAP
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * One generated type argument. A star projection deliberately carries no type.
+&nbsp; */
+&nbsp;data class StaticTypeArgument(
+<b class="fc">&nbsp;    val variance: StaticTypeVariance,</b>
+<b class="fc">&nbsp;    val type: StaticTypeRef? = null</b>
+&nbsp;) {
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        if (variance == StaticTypeVariance.STAR) {</b>
+<b class="fc">&nbsp;            require(type == null) { &quot;A STAR type argument must not contain a type.&quot; }</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            require(type != null) { &quot;A $variance type argument must contain a type.&quot; }</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Platform-neutral reference to a compiler-generated stable type key.
+&nbsp; */
+&nbsp;data class StaticTypeRef(
+&nbsp;    val key: String,
+&nbsp;    val nullable: Boolean,
+&nbsp;    val arguments: List&lt;StaticTypeArgument&gt; = emptyList()
+&nbsp;) {
+&nbsp;    init {
+&nbsp;        require(key.isNotBlank()) { &quot;Static type keys must not be blank.&quot; }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Returns this complete type reference with only its outer nullability removed.
+&nbsp; *
+&nbsp; * Nested argument nullability remains part of the reference. Generated metadata
+&nbsp; * registries use this form for lookups whose contract treats `T` and `T?` as
+&nbsp; * the same declaration while retaining every other structural distinction.
+&nbsp; */
+&nbsp;fun StaticTypeRef.withoutTopLevelNullability(): StaticTypeRef =
+&nbsp;    if (nullable) copy(nullable = false) else this
+&nbsp;
+&nbsp;/**
+&nbsp; * Generated metadata for one concrete type declaration.
+&nbsp; *
+&nbsp; * Direct supertypes are already substituted for [type]. [containerKind] and
+&nbsp; * [elementType] describe iterable and array shape without runtime inheritance;
+&nbsp; * map keys and values remain in [StaticTypeRef.arguments]. [declarationVariances]
+&nbsp; * records the classifier&#39;s declaration-site generic variance separately from
+&nbsp; * argument use-site projections.
+&nbsp; */
+&nbsp;data class StaticTypeInfo(
+&nbsp;    val type: StaticTypeRef,
+&nbsp;    val directSupertypes: List&lt;StaticTypeRef&gt; = emptyList(),
+&nbsp;    val containerKind: StaticContainerKind = StaticContainerKind.NONE,
+&nbsp;    val elementType: StaticTypeRef? = null,
+&nbsp;    val isKPojo: Boolean = false,
+&nbsp;    val enumKey: String? = null,
+&nbsp;    val declarationVariances: List&lt;StaticTypeVariance&gt; = emptyList()
+&nbsp;) {
+&nbsp;    init {
+&nbsp;        require(containerKind != StaticContainerKind.NONE || elementType == null) {
+&nbsp;            &quot;A non-container type must not declare an element type.&quot;
+&nbsp;        }
+&nbsp;        require(containerKind != StaticContainerKind.PRIMITIVE_ARRAY || elementType != null) {
+&nbsp;            &quot;A primitive array type must declare its element type.&quot;
+&nbsp;        }
+&nbsp;        require(containerKind != StaticContainerKind.MAP || elementType == null) {
+&nbsp;            &quot;A map type must describe keys and values through type arguments.&quot;
+&nbsp;        }
+&nbsp;        require(enumKey == null || enumKey.isNotBlank()) {
+&nbsp;            &quot;An enum metadata key must not be blank.&quot;
+&nbsp;        }
+&nbsp;        require(declarationVariances.none { it == StaticTypeVariance.STAR }) {
+&nbsp;            &quot;Declaration-site variance cannot be STAR.&quot;
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Produces a deterministic structural signature without consulting platform reflection.
+&nbsp; */
+&nbsp;fun StaticTypeRef.structuralSignature(): String = buildString {
+&nbsp;    append(key.length)
+&nbsp;    append(&#39;:&#39;)
+&nbsp;    append(key)
+&nbsp;    append(if (nullable) &#39;?&#39; else &#39;!&#39;)
+&nbsp;    append(&#39;&lt;&#39;)
+&nbsp;    arguments.forEachIndexed { index, argument -&gt;
+&nbsp;        if (index &gt; 0) append(&#39;,&#39;)
+&nbsp;        append(argument.structuralSignature())
+&nbsp;    }
+&nbsp;    append(&#39;&gt;&#39;)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Produces a deterministic signature for all generated metadata retained by this descriptor.
+&nbsp; */
+&nbsp;fun StaticTypeInfo.structuralSignature(): String = buildString {
+&nbsp;    append(&quot;type=&quot;)
+&nbsp;    append(type.structuralSignature())
+&nbsp;    append(&quot;|supertypes=&quot;)
+&nbsp;    directSupertypes.forEachIndexed { index, supertype -&gt;
+&nbsp;        if (index &gt; 0) append(&#39;,&#39;)
+&nbsp;        append(supertype.structuralSignature())
+&nbsp;    }
+&nbsp;    append(&quot;|container=&quot;)
+&nbsp;    append(containerKind.name)
+&nbsp;    append(&quot;|element=&quot;)
+&nbsp;    append(elementType?.structuralSignature() ?: &quot;-&quot;)
+&nbsp;    append(&quot;|kPojo=&quot;)
+&nbsp;    append(isKPojo)
+&nbsp;    append(&quot;|enum=&quot;)
+&nbsp;    append(enumKey?.let { &quot;${it.length}:$it&quot; } ?: &quot;-&quot;)
+&nbsp;    append(&quot;|declarationVariances=&quot;)
+&nbsp;    declarationVariances.joinTo(this, separator = &quot;,&quot;) { it.name }
+&nbsp;}
+&nbsp;
+&nbsp;private fun StaticTypeArgument.structuralSignature(): String = when (variance) {
+&nbsp;    StaticTypeVariance.STAR -&gt; &quot;*&quot;
+&nbsp;    StaticTypeVariance.INVARIANT -&gt; &quot;=${requireNotNull(type).structuralSignature()}&quot;
+&nbsp;    StaticTypeVariance.IN -&gt; &quot;-${requireNotNull(type).structuralSignature()}&quot;
+&nbsp;    StaticTypeVariance.OUT -&gt; &quot;+${requireNotNull(type).structuralSignature()}&quot;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

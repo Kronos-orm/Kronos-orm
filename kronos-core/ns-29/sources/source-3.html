@@ -1,0 +1,137 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > MapResultShape</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.wrappers</a>
+</div>
+
+<h1>Coverage Summary for Class: MapResultShape (com.kotlinorm.wrappers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">MapResultShape</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (20/20)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.wrappers
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.InternalKronosApi
+&nbsp;import com.kotlinorm.beans.task.ResultColumnMetadata
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/** One declaration policy for JDBC and platform execution Map results. */
+<b class="fc">&nbsp;@InternalKronosApi</b>
+<b class="fc">&nbsp;class MapResultShape internal constructor(val valueType: KType?) {</b>
+&nbsp;    fun column(label: String, declared: ResultColumnMetadata?): ResultColumnMetadata? =
+<b class="fc">&nbsp;        resultColumnForType(valueType, declared, label)</b>
+&nbsp;
+<b class="fc">&nbsp;    fun value(value: Any?, label: String): Any? = requireResultValueType(value, valueType, label)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

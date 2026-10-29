@@ -1,0 +1,519 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosProjectionNavigationSourceKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.fir.ide</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosProjectionNavigationSourceKt (com.kotlinorm.compiler.fir.ide)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosProjectionNavigationSourceKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (93/93)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.fir.ide
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.KtPsiSourceElement
+&nbsp;import org.jetbrains.kotlin.psi.KtFile
+&nbsp;import org.jetbrains.kotlin.psi.KtPsiFactory
+&nbsp;import java.lang.reflect.InvocationTargetException
+&nbsp;import java.lang.reflect.Method
+&nbsp;import java.lang.reflect.Proxy
+&nbsp;import java.lang.ref.WeakReference
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates readable navigation declarations in either compiler host. CLI compilers only need PSI.
+&nbsp; * IDE hosts also need a project-scoped content extension and a module update before a new file
+&nbsp; * can be analyzed. All host ABI access lives here because the embeddable compiler relocates
+&nbsp; * IntelliJ types, while the IDE compiler uses their original names.
+&nbsp; */
+&nbsp;internal fun KtPsiSourceElement.generatedNavigationFile(name: String, text: String, context: Boolean): KtFile {
+<b class="fc">&nbsp;    val original = KtPsiSourceElement::class.java.getMethod(&quot;getPsi&quot;).callHost(this)!!</b>
+<b class="fc">&nbsp;    val host = NavigationHost.instance ?: return createNavigationFile(original, name, text)</b>
+<b class="fc">&nbsp;    return host.file(original, name, text, context)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun createNavigationFile(original: Any, name: String, text: String): KtFile {
+<b class="fc">&nbsp;    val factory = KtPsiFactory::class.java.methods.single { it.name == &quot;contextual&quot; &amp;&amp; it.parameterCount == 1 }</b>
+<b class="fc">&nbsp;        .callHost(null, original) as KtPsiFactory</b>
+<b class="fc">&nbsp;    return factory.createPhysicalFile(name, text)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Optional IDE integration, never initialized when the Analysis API is absent. */
+&nbsp;private class NavigationHost(private val loader: ClassLoader) {
+&nbsp;    private val psiElement = type(&quot;com.intellij.psi.PsiElement&quot;)
+&nbsp;    private val psiFile = type(&quot;com.intellij.psi.PsiFile&quot;)
+&nbsp;    private val projectType = type(&quot;com.intellij.openapi.project.Project&quot;)
+&nbsp;    private val applicationType = type(&quot;com.intellij.openapi.application.Application&quot;)
+&nbsp;    private val disposableType = type(&quot;com.intellij.openapi.Disposable&quot;)
+&nbsp;    private val scopeType = type(&quot;com.intellij.psi.search.GlobalSearchScope&quot;)
+&nbsp;    private val generatedScopeType = type(&quot;org.jetbrains.kotlin.analysis.api.impl.base.projectStructure.KaBaseResolveExtensionGeneratedFilesScope&quot;)
+&nbsp;    private val resolutionScopeType = type(&quot;org.jetbrains.kotlin.analysis.api.platform.projectStructure.KaResolutionScope&quot;)
+&nbsp;    private val providerType = type(STRUCTURE_PROVIDER)
+&nbsp;    private val provider = providerType.getField(&quot;Companion&quot;).get(null)
+&nbsp;    private val danglingType = type(&quot;org.jetbrains.kotlin.analysis.api.projectStructure.KaDanglingFileModule&quot;)
+&nbsp;    private val refinerType = type(&quot;org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinContentScopeRefiner&quot;)
+&nbsp;    private val association = type(&quot;org.jetbrains.kotlin.analysis.api.platform.projectStructure.UtilsKt&quot;)
+&nbsp;        .methods.single { it.name == &quot;setResolveExtensionFileModule&quot; &amp;&amp; it.parameterCount == 2 }
+&nbsp;    private val application = type(&quot;com.intellij.openapi.application.ApplicationManager&quot;)
+&nbsp;        .getMethod(&quot;getApplication&quot;).callHost(null)!!
+&nbsp;    private val projects = mutableMapOf&lt;Any, ProjectSources&gt;()
+&nbsp;
+&nbsp;    fun file(original: Any, name: String, text: String, context: Boolean): KtFile {
+&nbsp;        val project = psiElement.getMethod(&quot;getProject&quot;).callHost(original)!!
+&nbsp;        val moduleContext = sourceModule(original, project)
+&nbsp;        val origin = sourceOrigin(original)
+&nbsp;        val offset = psiElement.getMethod(&quot;getTextOffset&quot;).callHost(original) as Int
+&nbsp;        val file = psiElement.getMethod(&quot;getContainingFile&quot;).callHost(original)!!
+&nbsp;        val copied = moduleContext.dangling || file !== origin.file || !origin.physical
+&nbsp;        val state = synchronized(projects) { projects.getOrPut(project) { ProjectSources(project) } }
+&nbsp;        return state.file(origin, SourceSlot(offset, context), name, text, original, moduleContext.module, copied)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun sourceOrigin(original: Any): SourceOrigin {
+&nbsp;        var file = psiElement.getMethod(&quot;getContainingFile&quot;).callHost(original)!!
+&nbsp;        val visited = java.util.Collections.newSetFromMap(java.util.IdentityHashMap&lt;Any, Boolean&gt;())
+&nbsp;        while (visited.add(file)) {
+&nbsp;            val copy = psiFile.getMethod(&quot;getOriginalFile&quot;).callHost(file)!!
+&nbsp;            if (copy !== file &amp;&amp; copy !in visited) { file = copy; continue }
+&nbsp;            val origin = type(&quot;org.jetbrains.kotlin.analysis.api.projectStructure.DanglingFilesKt&quot;)
+&nbsp;                .getMethod(&quot;getCopyOrigin&quot;, psiFile).callHost(null, file)
+&nbsp;            if (origin != null &amp;&amp; origin !in visited) { file = origin; continue }
+&nbsp;            if (KtFile::class.java.isInstance(file) &amp;&amp; psiFile.getMethod(&quot;getVirtualFile&quot;).callHost(file) == null) {
+&nbsp;                val context = type(&quot;org.jetbrains.kotlin.psi.KtPsiFactoryKt&quot;)
+&nbsp;                    .getMethod(&quot;getAnalysisContext&quot;, KtFile::class.java).callHost(null, file)
+&nbsp;                val contextFile = context?.let { psiElement.getMethod(&quot;getContainingFile&quot;).callHost(it) }
+&nbsp;                if (contextFile != null &amp;&amp; contextFile !in visited) { file = contextFile; continue }
+&nbsp;            }
+&nbsp;            break
+&nbsp;        }
+&nbsp;        val provider = psiFile.getMethod(&quot;getViewProvider&quot;).callHost(file)!!
+&nbsp;        val virtualFile = psiFile.getMethod(&quot;getVirtualFile&quot;).callHost(file)
+&nbsp;            ?: type(&quot;com.intellij.psi.FileViewProvider&quot;).getMethod(&quot;getVirtualFile&quot;).callHost(provider)!!
+&nbsp;        val physical = psiElement.getMethod(&quot;isPhysical&quot;).callHost(file) == true &amp;&amp;
+&nbsp;            psiFile.getMethod(&quot;getVirtualFile&quot;).callHost(file) != null
+&nbsp;        return SourceOrigin(virtualFile, file, sourceStamp(file), physical)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun sourceStamp(file: Any): Long = psiFile.getMethod(&quot;getModificationStamp&quot;).callHost(file) as Long
+&nbsp;    private fun sourceValid(file: Any): Boolean = psiElement.getMethod(&quot;isValid&quot;).callHost(file) as Boolean
+&nbsp;
+&nbsp;    private fun sourceModule(original: Any, project: Any): ModuleContext {
+&nbsp;        var module = provider.javaClass.methods.single { it.name == &quot;getModule&quot; &amp;&amp; it.parameterCount == 3 }
+&nbsp;            .callHost(provider, project, original, null)!!
+&nbsp;        val dangling = danglingType.isInstance(module)
+&nbsp;        while (danglingType.isInstance(module)) {
+&nbsp;            module = danglingType.getMethod(&quot;getContextModule&quot;).callHost(module)!!
+&nbsp;        }
+&nbsp;        return ModuleContext(module, dangling)
+&nbsp;    }
+&nbsp;
+&nbsp;    private inner class ProjectSources(private val project: Any) {
+&nbsp;        private val origins = linkedMapOf&lt;Any, SourceGeneration&gt;()
+&nbsp;        private val pendingModules = linkedMapOf&lt;Any, Long&gt;()
+&nbsp;        private var revision = 0L
+&nbsp;        private var queued = false
+&nbsp;        private var registered = false
+&nbsp;        private var disposed = false
+&nbsp;        private var publicationModules = emptySet&lt;Any&gt;()
+&nbsp;        private var publicationFailure: Throwable? = null
+&nbsp;        private val disposable = hostProxy(disposableType, &quot;Kronos navigation source lifetime&quot;) { method, _ -&gt;
+&nbsp;            check(method == &quot;dispose&quot;)
+&nbsp;            synchronized(this) {
+&nbsp;                disposed = true
+&nbsp;                origins.values.forEach(::releaseGeneration)
+&nbsp;                origins.clear()
+&nbsp;                pendingModules.clear()
+&nbsp;            }
+&nbsp;            synchronized(projects) { projects.remove(project) }
+&nbsp;            null
+&nbsp;        }
+&nbsp;
+&nbsp;        init {
+&nbsp;            type(&quot;com.intellij.openapi.util.Disposer&quot;).getMethod(&quot;register&quot;, disposableType, disposableType)
+&nbsp;                .callHost(null, project, disposable)
+&nbsp;            // Each host owns its files even when an earlier KEFS loader already
+&nbsp;            // installed the dynamic scope. Scope membership never replaces lifetime hooks.
+&nbsp;            registerSourceChanges()
+&nbsp;            registerModuleChanges()
+&nbsp;        }
+&nbsp;
+&nbsp;        fun file(origin: SourceOrigin, slot: SourceSlot, name: String, text: String, original: Any,
+&nbsp;                 module: Any, copied: Boolean): KtFile {
+&nbsp;            val result: KtFile
+&nbsp;            val needsUpdate: Boolean
+&nbsp;            synchronized(this) {
+&nbsp;                if (disposed) cancelAnalysis()
+&nbsp;                publicationFailure?.let { throw it }
+&nbsp;                pruneChangedOrigins()
+&nbsp;                val generation = if (origin.physical) origins.getOrPut(origin.key) {
+&nbsp;                    SourceGeneration(origin, module)
+&nbsp;                } else null
+&nbsp;                generation?.module = module
+&nbsp;                result = if (copied) {
+&nbsp;                    // Preview/completion views belong to the current FIR session. Project state
+&nbsp;                    // only holds weak references for invalidation, never the copied source PSI.
+&nbsp;                    createNavigationFile(original, name, text).also { generated -&gt;
+&nbsp;                        generation?.copies?.apply { removeIf { it.get() == null }; add(WeakReference(generated)) }
+&nbsp;                    }
+&nbsp;                } else {
+&nbsp;                    val current = requireNotNull(generation)
+&nbsp;                    val previous = current.files[slot]
+&nbsp;                    if (previous != null &amp;&amp; previous.name == name &amp;&amp; previous.text == text) previous.file else {
+&nbsp;                        previous?.let { clearAssociation(it.file) }
+&nbsp;                        createNavigationFile(original, name, text).also {
+&nbsp;                            current.files[slot] = SourceFile(it, name, text)
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                val virtualFile = KtFile::class.java.getMethod(&quot;getVirtualFile&quot;).callHost(result)!!
+&nbsp;                association.callHost(null, virtualFile, module)
+&nbsp;                val companion = resolutionScopeType.getField(&quot;Companion&quot;).get(null)
+&nbsp;                val scope = companion.javaClass.methods.single { it.name == &quot;forModule&quot; &amp;&amp; it.parameterCount == 1 }
+&nbsp;                    .callHost(companion, module)!!
+&nbsp;                needsUpdate = scopeType.getMethod(&quot;contains&quot;, type(&quot;com.intellij.openapi.vfs.VirtualFile&quot;))
+&nbsp;                    .callHost(scope, virtualFile) != true
+&nbsp;                if (needsUpdate) pendingModules[module] = ++revision
+&nbsp;                queueUpdate()
+&nbsp;            }
+&nbsp;            // Only the first project extension registration needs a new module scope. Once the
+&nbsp;            // dynamic scope is present, all newly tagged files are immediately analyzable.
+&nbsp;            if (needsUpdate) cancelAnalysis()
+&nbsp;            return result
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun queueUpdate() {
+&nbsp;            if (queued || disposed || pendingModules.isEmpty() || publicationFailure != null) return
+&nbsp;            queued = true
+&nbsp;            applicationType.getMethod(&quot;invokeLater&quot;, Runnable::class.java).callHost(application, Runnable {
+&nbsp;                applicationType.getMethod(&quot;runWriteAction&quot;, Runnable::class.java)
+&nbsp;                    .callHost(application, Runnable { publish() })
+&nbsp;            })
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun publish() {
+&nbsp;            val snapshot = synchronized(this) {
+&nbsp;                if (disposed || projectType.getMethod(&quot;isDisposed&quot;).callHost(project) == true) {
+&nbsp;                    queued = false
+&nbsp;                    return
+&nbsp;                }
+&nbsp;                try {
+&nbsp;                    if (!registered) register()
+&nbsp;                    pruneChangedOrigins()
+&nbsp;                    Publication(revision, pendingModules.keys.toList()).also { publicationModules = it.modules.toSet() }
+&nbsp;                } catch (failure: Throwable) {
+&nbsp;                    if (!isControlFlow(failure)) publicationFailure = failure
+&nbsp;                    queued = false
+&nbsp;                    throw failure
+&nbsp;                }
+&nbsp;            }
+&nbsp;            try {
+&nbsp;                val kind = type(&quot;org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModuleStateModificationKind&quot;)
+&nbsp;                    .getField(&quot;UPDATE&quot;).get(null)
+&nbsp;                val update = type(&quot;org.jetbrains.kotlin.analysis.api.platform.modification.UtilsKt&quot;)
+&nbsp;                    .methods.single { it.name == &quot;publishModuleStateModificationEvent&quot; &amp;&amp; it.parameterCount == 2 }
+&nbsp;                snapshot.modules.forEach { update.callHost(null, it, kind) }
+&nbsp;                synchronized(this) {
+&nbsp;                    pendingModules.entries.removeIf { it.value &lt;= snapshot.revision }
+&nbsp;                }
+&nbsp;            } catch (failure: Throwable) {
+&nbsp;                synchronized(this) { if (!isControlFlow(failure)) publicationFailure = failure }
+&nbsp;                throw failure
+&nbsp;            } finally {
+&nbsp;                synchronized(this) {
+&nbsp;                    publicationModules = emptySet()
+&nbsp;                    queued = false
+&nbsp;                    queueUpdate()
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun register() {
+&nbsp;            val refiner = hostProxy(refinerType, &quot;Kronos generated navigation sources&quot;) { method, arguments -&gt;
+&nbsp;                when (method) {
+&nbsp;                    &quot;getEnlargementScopes&quot; -&gt; enlargementScopes(arguments!![0])
+&nbsp;                    &quot;getRestrictionScopes&quot; -&gt; emptyList&lt;Any&gt;()
+&nbsp;                    else -&gt; error(&quot;Unsupported content scope method: $method&quot;)
+&nbsp;                }
+&nbsp;            }
+&nbsp;            val companion = refinerType.getField(&quot;Companion&quot;).get(null)
+&nbsp;            val pointName = companion.javaClass.getMethod(&quot;getEP_NAME&quot;).callHost(companion)!!
+&nbsp;            val point = type(&quot;com.intellij.openapi.extensions.ExtensionPointName&quot;)
+&nbsp;                .methods.single { it.name == &quot;getPoint&quot; &amp;&amp; it.parameterCount == 1 }.callHost(pointName, project)!!
+&nbsp;            type(&quot;com.intellij.openapi.extensions.ExtensionPoint&quot;).getMethod(&quot;registerExtension&quot;, Any::class.java, disposableType)
+&nbsp;                .callHost(point, refiner, disposable)
+&nbsp;            registered = true
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun registerSourceChanges() {
+&nbsp;            val listenerType = type(&quot;com.intellij.psi.PsiTreeChangeListener&quot;)
+&nbsp;            val listener = hostProxy(listenerType, &quot;Kronos navigation source changes&quot;) { method, _ -&gt;
+&nbsp;                if (!method.startsWith(&quot;before&quot;)) synchronized(this) { pruneChangedOrigins(); queueUpdate() }
+&nbsp;                null
+&nbsp;            }
+&nbsp;            val managerType = type(&quot;com.intellij.psi.PsiManager&quot;)
+&nbsp;            val manager = managerType.getMethod(&quot;getInstance&quot;, projectType).callHost(null, project)
+&nbsp;            managerType.getMethod(&quot;addPsiTreeChangeListener&quot;, listenerType, disposableType)
+&nbsp;                .callHost(manager, listener, disposable)
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun registerModuleChanges() {
+&nbsp;            val eventType = type(&quot;org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModificationEvent&quot;)
+&nbsp;            val companion = eventType.getField(&quot;Companion&quot;).get(null)
+&nbsp;            val topic = companion.javaClass.getMethod(&quot;getTOPIC&quot;).callHost(companion)!!
+&nbsp;            val listenerType = type(&quot;org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModificationEventListener&quot;)
+&nbsp;            val listener = hostProxy(listenerType, &quot;Kronos navigation module changes&quot;) { _, arguments -&gt;
+&nbsp;                val event = arguments!![0]
+&nbsp;                val stateType = type(&quot;org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModuleStateModificationEvent&quot;)
+&nbsp;                var releasedSources = false
+&nbsp;                synchronized(this) {
+&nbsp;                    if (stateType.isInstance(event)) {
+&nbsp;                        val module = stateType.getMethod(&quot;getModule&quot;).callHost(event)!!
+&nbsp;                        if (module !in publicationModules) {
+&nbsp;                            origins.entries.removeIf {
+&nbsp;                                (it.value.module == module).also { remove -&gt; if (remove) {
+&nbsp;                                    releasedSources = hasSources(it.value) || releasedSources
+&nbsp;                                    releaseGeneration(it.value)
+&nbsp;                                } }
+&nbsp;                            }
+&nbsp;                            pendingModules.remove(module)
+&nbsp;                        }
+&nbsp;                    } else if (event.javaClass.simpleName in setOf(&quot;KotlinGlobalModuleStateModificationEvent&quot;,
+&nbsp;                            &quot;KotlinGlobalSourceModuleStateModificationEvent&quot;)) {
+&nbsp;                        releasedSources = origins.values.any(::hasSources)
+&nbsp;                        origins.values.forEach(::releaseGeneration)
+&nbsp;                        origins.clear()
+&nbsp;                        pendingModules.clear()
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                if (releasedSources) {
+&nbsp;                    // Module events invalidate FIR sessions, while stock Kotlin PSI
+&nbsp;                    // references also cache their resolved navigation targets separately.
+&nbsp;                    // Notify that public cache outside our catalog lock after removing files.
+&nbsp;                    val managerType = type(&quot;com.intellij.psi.PsiManager&quot;)
+&nbsp;                    val manager = managerType.getMethod(&quot;getInstance&quot;, projectType).callHost(null, project)
+&nbsp;                    managerType.getMethod(&quot;dropResolveCaches&quot;).callHost(manager)
+&nbsp;                }
+&nbsp;                null
+&nbsp;            }
+&nbsp;            val bus = type(&quot;org.jetbrains.kotlin.analysis.api.platform.KotlinMessageBusProviderKt&quot;)
+&nbsp;                .getMethod(&quot;getAnalysisMessageBus&quot;, projectType).callHost(null, project)!!
+&nbsp;            val connection = type(&quot;com.intellij.util.messages.MessageBus&quot;).getMethod(&quot;connect&quot;, disposableType)
+&nbsp;                .callHost(bus, disposable)!!
+&nbsp;            type(&quot;com.intellij.util.messages.MessageBusConnection&quot;)
+&nbsp;                .getMethod(&quot;subscribe&quot;, type(&quot;com.intellij.util.messages.Topic&quot;), Any::class.java)
+&nbsp;                .callHost(connection, topic, listener)
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun pruneChangedOrigins() {
+&nbsp;            val iterator = origins.values.iterator()
+&nbsp;            while (iterator.hasNext()) {
+&nbsp;                val generation = iterator.next()
+&nbsp;                val origin = generation.origin
+&nbsp;                if (!sourceValid(origin.file) || sourceStamp(origin.file) != origin.stamp) {
+&nbsp;                    iterator.remove()
+&nbsp;                    releaseGeneration(generation)
+&nbsp;                    pendingModules[generation.module] = ++revision
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun releaseGeneration(generation: SourceGeneration) {
+&nbsp;            generation.files.values.forEach { clearAssociation(it.file) }
+&nbsp;            generation.copies.forEach { it.get()?.let(::clearAssociation) }
+&nbsp;            generation.files.clear()
+&nbsp;            generation.copies.clear()
+&nbsp;        }
+&nbsp;
+&nbsp;        private fun hasSources(generation: SourceGeneration): Boolean =
+&nbsp;            generation.files.isNotEmpty() || generation.copies.any { it.get() != null }
+&nbsp;
+&nbsp;        private fun enlargementScopes(module: Any): List&lt;Any&gt; =
+&nbsp;            listOf(generatedScopeType.getConstructor(List::class.java).newInstance(listOf(module)))
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun clearAssociation(file: KtFile) {
+&nbsp;        association.callHost(null, KtFile::class.java.getMethod(&quot;getVirtualFile&quot;).callHost(file), null)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun hostProxy(type: Class&lt;*&gt;, label: String, action: (String, Array&lt;out Any&gt;?) -&gt; Any?): Any =
+&nbsp;        Proxy.newProxyInstance(loader, arrayOf(type)) { proxy, method, arguments -&gt;
+&nbsp;            when (method.name) {
+&nbsp;                &quot;equals&quot; -&gt; proxy === arguments?.get(0)
+&nbsp;                &quot;hashCode&quot; -&gt; System.identityHashCode(proxy)
+&nbsp;                &quot;toString&quot; -&gt; label
+&nbsp;                else -&gt; action(method.name, arguments)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun type(name: String): Class&lt;*&gt; = loader.loadClass(name)
+&nbsp;
+&nbsp;    private fun isControlFlow(failure: Throwable): Boolean =
+&nbsp;        type(&quot;com.intellij.openapi.diagnostic.ControlFlowException&quot;).isInstance(failure)
+&nbsp;
+&nbsp;    private fun cancelAnalysis(): Nothing = throw type(&quot;com.intellij.openapi.progress.ProcessCanceledException&quot;)
+&nbsp;        .getConstructor().newInstance() as Throwable
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        private const val STRUCTURE_PROVIDER =
+&nbsp;            &quot;org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider&quot;
+&nbsp;
+&nbsp;        val instance: NavigationHost? by lazy {
+&nbsp;            val loader = KtPsiFactory::class.java.classLoader
+&nbsp;            try {
+&nbsp;                loader.loadClass(STRUCTURE_PROVIDER)
+&nbsp;            } catch (_: ClassNotFoundException) {
+&nbsp;                return@lazy null
+&nbsp;            }
+&nbsp;            NavigationHost(loader)
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private data class ModuleContext(val module: Any, val dangling: Boolean)
+&nbsp;private data class SourceOrigin(val key: Any, val file: Any, val stamp: Long, val physical: Boolean)
+&nbsp;private data class SourceSlot(val offset: Int, val context: Boolean)
+&nbsp;private class SourceGeneration(val origin: SourceOrigin, var module: Any) {
+&nbsp;    val files = linkedMapOf&lt;SourceSlot, SourceFile&gt;()
+&nbsp;    val copies = mutableListOf&lt;WeakReference&lt;KtFile&gt;&gt;()
+&nbsp;}
+&nbsp;private data class SourceFile(val file: KtFile, val name: String, val text: String)
+&nbsp;private data class Publication(val revision: Long, val modules: List&lt;Any&gt;)
+&nbsp;
+&nbsp;/** In particular, preserve the IDE&#39;s cancellation exception instead of wrapping control flow. */
+&nbsp;private fun Method.callHost(receiver: Any?, vararg arguments: Any?): Any? = try {
+<b class="fc">&nbsp;    invoke(receiver, *arguments)</b>
+&nbsp;} catch (failure: InvocationTargetException) {
+<b class="fc">&nbsp;    throw failure.targetException</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 11:00</div>
+</div>
+</body>
+</html>

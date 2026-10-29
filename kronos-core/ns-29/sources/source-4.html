@@ -1,0 +1,187 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ResultMappingPolicyKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.wrappers</a>
+</div>
+
+<h1>Coverage Summary for Class: ResultMappingPolicyKt (com.kotlinorm.wrappers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ResultMappingPolicyKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (45/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96%
+  </span>
+  <span class="absValue">
+    (24/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95%
+  </span>
+  <span class="absValue">
+    (302/318)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
+&nbsp;
+&nbsp;package com.kotlinorm.wrappers
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.InternalKronosApi
+&nbsp;import com.kotlinorm.beans.task.ResultColumnMetadata
+&nbsp;import com.kotlinorm.utils.StaticContainerKind
+&nbsp;import com.kotlinorm.utils.StaticTypeInfo
+&nbsp;import com.kotlinorm.utils.platformClassAssignable
+&nbsp;import com.kotlinorm.utils.codec.accepts
+&nbsp;import kotlin.reflect.KClass
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;/** Only direct Map/MutableMap declarations can describe the rows we materialize. */
+&nbsp;@InternalKronosApi
+<b class="nc">&nbsp;fun KType.mapResultShapeOrNull(typeInfo: StaticTypeInfo? = null): MapResultShape? {</b>
+<b class="pc">&nbsp;    val declaration = classifier as? KClass&lt;*&gt; ?: return null</b>
+<b class="fc">&nbsp;    val direct = declaration == Map::class || declaration == MutableMap::class</b>
+<b class="fc">&nbsp;    if (!direct) {</b>
+<b class="pc">&nbsp;        val mapSubtype = declaration == HashMap::class || declaration == LinkedHashMap::class ||</b>
+<b class="pc">&nbsp;            platformClassAssignable(declaration, Map::class) || typeInfo?.containerKind == StaticContainerKind.MAP</b>
+<b class="fc">&nbsp;        require(!mapSubtype) {</b>
+<b class="fc">&nbsp;            &quot;Unsupported Map result type $this: row mapping returns LinkedHashMap &quot; +</b>
+<b class="fc">&nbsp;                &quot;and supports only direct Map or MutableMap declarations&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+<b class="pc">&nbsp;    require(arguments.size == 2) { &quot;Map result type must retain both key and value arguments: $this&quot; }</b>
+<b class="fc">&nbsp;    val key = arguments[0].type</b>
+<b class="fc">&nbsp;    require(key == null || (key.classifier == String::class &amp;&amp; key.arguments.isEmpty())) {</b>
+<b class="fc">&nbsp;        &quot;Unsupported Map key type $key in $this: row labels require String, String?, or *&quot;</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return MapResultShape(arguments[1].type)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Replacing a logical target also replaces its descriptor; source-field storage and format policies stay intact. */
+&nbsp;@InternalKronosApi
+<b class="fc">&nbsp;fun ResultColumnMetadata.withTargetType(target: KType, targetTypeInfo: StaticTypeInfo? = null): ResultColumnMetadata =</b>
+<b class="fc">&nbsp;    copy(type = target, typeInfo = targetTypeInfo ?: typeInfo.takeIf { type == target })</b>
+&nbsp;
+&nbsp;/** Any/star preserves planned logical metadata; explicit types replace stale descriptors. */
+&nbsp;@InternalKronosApi
+<b class="fc">&nbsp;fun resultColumnForType(target: KType?, declared: ResultColumnMetadata?, label: String, targetTypeInfo: StaticTypeInfo? = null): ResultColumnMetadata? {</b>
+<b class="fc">&nbsp;    if (target == null || target.isAnyResultType()) return declared?.copy(columnLabel = label)</b>
+<b class="pc">&nbsp;    return declared?.withTargetType(target, targetTypeInfo)?.copy(columnLabel = label)</b>
+<b class="fc">&nbsp;        ?: ResultColumnMetadata(target, columnLabel = label, typeInfo = targetTypeInfo)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Validate broad/raw bounds too: Any disallows NULL, while Any? and * preserve it. */
+&nbsp;@InternalKronosApi
+&nbsp;fun requireResultValueType(value: Any?, target: KType?, label: String): Any? {
+<b class="fc">&nbsp;    require(target == null || if (value == null) target.isMarkedNullable else target.accepts(value)) {</b>
+<b class="fc">&nbsp;        &quot;Result column &#39;$label&#39; is not assignable to $target&quot;</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
+&nbsp;
+&nbsp;@InternalKronosApi
+<b class="fc">&nbsp;fun KType.isAnyResultType(): Boolean = classifier == Any::class &amp;&amp; arguments.isEmpty()</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

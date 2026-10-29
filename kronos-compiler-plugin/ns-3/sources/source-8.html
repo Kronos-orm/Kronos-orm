@@ -1,0 +1,352 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ErrorReporter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.core</a>
+</div>
+
+<h1>Coverage Summary for Class: ErrorReporter (com.kotlinorm.compiler.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ErrorReporter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.6%
+  </span>
+  <span class="absValue">
+    (57/59)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.5%
+  </span>
+  <span class="absValue">
+    (302/313)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ErrorReporter$Companion</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">ErrorReporter$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.6%
+  </span>
+  <span class="absValue">
+    (57/59)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.5%
+  </span>
+  <span class="absValue">
+    (302/313)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.core
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
+&nbsp;import org.jetbrains.kotlin.cli.report
+&nbsp;import org.jetbrains.kotlin.cli.reportInfo
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfiguration
+&nbsp;import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactoryToRendererMap
+&nbsp;import org.jetbrains.kotlin.diagnostics.KtSourcelessDiagnosticFactory
+&nbsp;import org.jetbrains.kotlin.diagnostics.Severity
+&nbsp;import org.jetbrains.kotlin.diagnostics.rendering.BaseSourcelessDiagnosticRendererFactory
+&nbsp;import org.jetbrains.kotlin.ir.IrElement
+&nbsp;import org.jetbrains.kotlin.ir.IrFileEntry
+&nbsp;import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
+&nbsp;import org.jetbrains.kotlin.ir.util.CustomKotlinLikeDumpStrategy
+&nbsp;import org.jetbrains.kotlin.ir.util.KotlinLikeDumpOptions
+&nbsp;import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+&nbsp;
+&nbsp;/**
+&nbsp; * Unified error reporting utility for the Kronos compiler plugin
+&nbsp; *
+&nbsp; * Reports compilation errors/warnings in standard compiler error format:
+&nbsp; *   file:line:col: error: message
+&nbsp; *
+&nbsp; * @property report Reports through the compiler configuration or an injected test collector.
+&nbsp; */
+<b class="fc">&nbsp;class ErrorReporter(</b>
+<b class="fc">&nbsp;    private val report: (CompilerMessageSeverity, String, CompilerMessageSourceLocation?) -&gt; Unit</b>
+&nbsp;) {
+<b class="fc">&nbsp;    constructor(messageCollector: MessageCollector) : this(messageCollector::report)</b>
+&nbsp;
+<b class="fc">&nbsp;    constructor(configuration: CompilerConfiguration) : this({ severity, message, location -&gt;</b>
+<b class="pc">&nbsp;        when (severity) {</b>
+<b class="nc">&nbsp;            CompilerMessageSeverity.ERROR -&gt; configuration.report(KronosIrDiagnostics.ERROR, message, location)</b>
+<b class="fc">&nbsp;            CompilerMessageSeverity.WARNING -&gt; configuration.report(KronosIrDiagnostics.WARNING, message, location)</b>
+<b class="nc">&nbsp;            else -&gt; configuration.reportInfo(message, location)</b>
+&nbsp;        }
+&nbsp;    })
+<b class="fc">&nbsp;    var currentFileEntry: IrFileEntry? = null</b>
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /** Concise dump options for error messages — no file info, compact bodies */
+<b class="fc">&nbsp;        private val errorDumpOptions = KotlinLikeDumpOptions(</b>
+<b class="fc">&nbsp;            CustomKotlinLikeDumpStrategy.Default,</b>
+<b class="fc">&nbsp;            printRegionsPerFile = false,</b>
+<b class="fc">&nbsp;            printFileName = false,</b>
+<b class="fc">&nbsp;            printFilePath = false,</b>
+<b class="fc">&nbsp;            useNamedArguments = false,</b>
+<b class="fc">&nbsp;            bodyPrintingStrategy = BodyPrintingStrategy.NO_BODIES,</b>
+<b class="fc">&nbsp;            printMemberDeclarations = false,</b>
+<b class="fc">&nbsp;            printUnitReturnType = false,</b>
+<b class="fc">&nbsp;            stableOrder = false</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Extracts source location from an IR element using the current file entry.
+&nbsp;     */
+&nbsp;    private fun locationOf(element: IrElement): CompilerMessageLocation? {
+<b class="fc">&nbsp;        val entry = currentFileEntry ?: return null</b>
+<b class="fc">&nbsp;        val offset = element.startOffset</b>
+<b class="fc">&nbsp;        if (offset &lt; 0) return null</b>
+&nbsp;        return try {
+<b class="fc">&nbsp;            val line = entry.getLineNumber(offset) + 1</b>
+<b class="fc">&nbsp;            val col = entry.getColumnNumber(offset) + 1</b>
+<b class="fc">&nbsp;            CompilerMessageLocation.create(entry.name, line, col, null)</b>
+&nbsp;        } catch (_: Exception) {
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Compact IR dump for error context */
+&nbsp;    private fun dumpElement(element: IrElement): String {
+&nbsp;        return try {
+<b class="fc">&nbsp;            element.dumpKotlinLike(errorDumpOptions).lines().take(5).joinToString(&quot;\n&quot;)</b>
+&nbsp;        } catch (e: RuntimeException) {
+<b class="fc">&nbsp;            &quot;&lt;IR dump failed: ${e.message}&gt;&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reports an error
+&nbsp;     *
+&nbsp;     * @param element IR element (used for source location)
+&nbsp;     * @param message Error message
+&nbsp;     * @param suggestion Optional fix suggestion
+&nbsp;     */
+&nbsp;    fun reportError(
+&nbsp;        element: IrElement,
+&nbsp;        message: String,
+<b class="fc">&nbsp;        suggestion: String? = null</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        val fullMessage = buildString {</b>
+<b class="fc">&nbsp;            append(&quot;[Kronos] $message&quot;)</b>
+<b class="fc">&nbsp;            append(&quot;\n  IR: ${dumpElement(element)}&quot;)</b>
+<b class="fc">&nbsp;            if (suggestion != null) {</b>
+<b class="fc">&nbsp;                append(&quot;\n  Fix: $suggestion&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        report(</b>
+<b class="fc">&nbsp;            CompilerMessageSeverity.ERROR,</b>
+<b class="fc">&nbsp;            fullMessage,</b>
+<b class="fc">&nbsp;            locationOf(element)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reports an error with exception details
+&nbsp;     *
+&nbsp;     * @param element IR element (used for source location)
+&nbsp;     * @param message Error message
+&nbsp;     * @param e The exception that occurred
+&nbsp;     * @param suggestion Optional fix suggestion
+&nbsp;     */
+&nbsp;    fun reportError(
+&nbsp;        element: IrElement,
+&nbsp;        message: String,
+&nbsp;        e: Exception,
+<b class="fc">&nbsp;        suggestion: String? = null</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        val fullMessage = buildString {</b>
+<b class="fc">&nbsp;            append(&quot;[Kronos] $message&quot;)</b>
+<b class="fc">&nbsp;            append(&quot;\n  Exception: ${e::class.simpleName}: ${e.message}&quot;)</b>
+<b class="fc">&nbsp;            append(&quot;\n  IR: ${dumpElement(element)}&quot;)</b>
+<b class="fc">&nbsp;            if (suggestion != null) {</b>
+<b class="fc">&nbsp;                append(&quot;\n  Fix: $suggestion&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        report(</b>
+<b class="fc">&nbsp;            CompilerMessageSeverity.ERROR,</b>
+<b class="fc">&nbsp;            fullMessage,</b>
+<b class="fc">&nbsp;            locationOf(element)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reports a warning
+&nbsp;     *
+&nbsp;     * @param element IR element (used for source location)
+&nbsp;     * @param message Warning message
+&nbsp;     */
+&nbsp;    fun reportWarning(
+&nbsp;        element: IrElement,
+&nbsp;        message: String
+&nbsp;    ) {
+<b class="fc">&nbsp;        report(</b>
+<b class="fc">&nbsp;            CompilerMessageSeverity.WARNING,</b>
+<b class="fc">&nbsp;            &quot;[Kronos] $message&quot;,</b>
+<b class="fc">&nbsp;            locationOf(element)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reports an informational message
+&nbsp;     *
+&nbsp;     * @param message Information message
+&nbsp;     */
+&nbsp;    fun reportInfo(message: String) {
+<b class="fc">&nbsp;        report(</b>
+<b class="fc">&nbsp;            CompilerMessageSeverity.INFO,</b>
+<b class="fc">&nbsp;            &quot;[Kronos] $message&quot;,</b>
+<b class="fc">&nbsp;            null</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private object KronosIrDiagnostics : BaseSourcelessDiagnosticRendererFactory() {
+&nbsp;    val ERROR = KtSourcelessDiagnosticFactory(&quot;KRONOS_IR_ERROR&quot;, Severity.ERROR, this)
+&nbsp;    val WARNING = KtSourcelessDiagnosticFactory(&quot;KRONOS_IR_WARNING&quot;, Severity.WARNING, this)
+&nbsp;
+&nbsp;    override val MAP by KtDiagnosticFactoryToRendererMap(&quot;Kronos IR&quot;) { map -&gt;
+&nbsp;        map.put(ERROR, MESSAGE_PLACEHOLDER)
+&nbsp;        map.put(WARNING, MESSAGE_PLACEHOLDER)
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 11:00</div>
+</div>
+</body>
+</html>

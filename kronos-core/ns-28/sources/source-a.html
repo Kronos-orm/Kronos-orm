@@ -1,0 +1,224 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PreparedValueKind</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils.codec</a>
+</div>
+
+<h1>Coverage Summary for Class: PreparedValueKind (com.kotlinorm.utils.codec)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PreparedValueKind</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.utils.codec
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.ValueCodecOrigin
+&nbsp;import com.kotlinorm.enums.ValueStorage
+&nbsp;import com.kotlinorm.utils.StaticTypeInfo
+&nbsp;import com.kotlinorm.syntax.render.SqlDialect
+&nbsp;import kotlin.reflect.KType
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Marks whether a caller supplied a final database value or a temporal value
+&nbsp; * that still needs one registry encoding pass.
+&nbsp; */
+&nbsp;internal enum class PreparedValueKind {
+&nbsp;    /**
+&nbsp;     * The value is already JDBC-bindable and must bypass every codec.
+&nbsp;     */
+<b class="fc">&nbsp;    READY_DATABASE_VALUE,</b>
+&nbsp;    /**
+&nbsp;     * The value came from a time strategy and must enter temporal conversion once.
+&nbsp;     */
+<b class="fc">&nbsp;    STRATEGY_TEMPORAL</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Carries an explicitly prepared source value across SQL rendering boundaries.
+&nbsp; *
+&nbsp; * @property value source value, including SQL `NULL`
+&nbsp; * @property sourceType complete declared source type when the caller knows it
+&nbsp; * @property dateFormat explicit text format, which takes precedence over field and global formats
+&nbsp; * @property kind whether conversion is complete or still requires temporal encoding
+&nbsp; * @property sourceTypeInfo compiler-generated static metadata for [sourceType], when available
+&nbsp; */
+&nbsp;internal data class PreparedValue(
+&nbsp;    val value: Any?,
+&nbsp;    val sourceType: KType?,
+&nbsp;    val dateFormat: String? = null,
+&nbsp;    val kind: PreparedValueKind,
+&nbsp;    val sourceTypeInfo: StaticTypeInfo? = null
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Complete internal request carried from a safe mapping boundary to the registry.
+&nbsp; *
+&nbsp; * [targetType] always describes the logical Kotlin field/result type. A JDBC
+&nbsp; * [physicalTargetType] may constrain ENCODE output but never replaces that
+&nbsp; * logical type in public codec matching. [storage] is derived from [field] when
+&nbsp; * one is present and conflicting explicit metadata is rejected immediately.
+&nbsp; *
+&nbsp; * @property value raw input value before any semantic conversion
+&nbsp; * @property direction ENCODE for parameters/delegate writes, DECODE for safe Map/JDBC/delegate reads
+&nbsp; * @property origin the boundary creating this request
+&nbsp; * @property targetType complete logical Kotlin target type, including generic arguments and nullability
+&nbsp; * @property sourceType complete declared source type when known
+&nbsp; * @property field optional mapped field metadata such as serialization and date format
+&nbsp; * @property storage storage protocol gate; serialized requests never fall through to built-in scalar codecs
+&nbsp; * @property physicalTargetType optional JDBC binding type used only to validate/shape encoded results
+&nbsp; * @property dialect optional SQL dialect included in temporal behavior and error context
+&nbsp; * @property dateFormat explicit caller format before field/global fallback
+&nbsp; * @property effectiveDateFormat resolved explicit, field or global date format in priority order
+&nbsp; * @property timeZone zone used for instant/local temporal conversion
+&nbsp; * @property strict whether implicit basic/temporal DECODE coercion is disabled
+&nbsp; * @property batchIndex source index included in conversion failures
+&nbsp; * @property valueName parameter or result label included in conversion failures
+&nbsp; * @property targetTypeInfo compiler-generated metadata for [targetType], when available
+&nbsp; * @property sourceTypeInfo compiler-generated metadata for [sourceType], when available
+&nbsp; * @property physicalTargetTypeInfo compiler-generated metadata for [physicalTargetType], when available
+&nbsp; */
+&nbsp;internal data class ValueConversionRequest(
+&nbsp;    val value: Any?,
+&nbsp;    val direction: ValueCodecDirection,
+&nbsp;    val origin: ValueCodecOrigin,
+&nbsp;    val targetType: KType,
+&nbsp;    val sourceType: KType? = null,
+&nbsp;    val field: Field? = null,
+&nbsp;    val storage: ValueStorage = if (field?.serializable == true) ValueStorage.SERIALIZED else ValueStorage.NONE,
+&nbsp;    val physicalTargetType: KType? = null,
+&nbsp;    val dialect: SqlDialect? = null,
+&nbsp;    val dateFormat: String? = null,
+&nbsp;    val timeZone: String? = Kronos.timeZone,
+&nbsp;    val strict: Boolean = Kronos.strictSetValue,
+&nbsp;    val batchIndex: Int? = null,
+&nbsp;    val valueName: String? = null,
+&nbsp;    val targetTypeInfo: StaticTypeInfo? = field?.typeInfo,
+&nbsp;    val sourceTypeInfo: StaticTypeInfo? = null,
+&nbsp;    val physicalTargetTypeInfo: StaticTypeInfo? = null
+&nbsp;) {
+&nbsp;    val effectiveDateFormat: String
+&nbsp;        get() = dateFormat ?: this.field?.dateFormat ?: Kronos.defaultDateFormat
+&nbsp;
+&nbsp;    init {
+&nbsp;        if (field != null) {
+&nbsp;            val fieldStorage = if (field.serializable) ValueStorage.SERIALIZED else ValueStorage.NONE
+&nbsp;            require(storage == fieldStorage) {
+&nbsp;                &quot;Value storage $storage conflicts with field &#39;${field.name}&#39; storage $fieldStorage&quot;
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal expect fun Any.isTemporalRuntimeValue(): Boolean
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

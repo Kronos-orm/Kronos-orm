@@ -1,0 +1,233 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PortableTemporalValueCodecKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils.codec</a>
+</div>
+
+<h1>Coverage Summary for Class: PortableTemporalValueCodecKt (com.kotlinorm.utils.codec)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PortableTemporalValueCodecKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.8%
+  </span>
+  <span class="absValue">
+    (11/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.7%
+  </span>
+  <span class="absValue">
+    (59/61)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.utils.codec
+&nbsp;
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.interfaces.KronosPhysicalValue
+&nbsp;import com.kotlinorm.interfaces.StaticValueCodecContext
+&nbsp;import com.kotlinorm.interfaces.ValueCodecContext
+&nbsp;import com.kotlinorm.interfaces.decodePlatformTemporal
+&nbsp;import com.kotlinorm.interfaces.encodePlatformTemporal
+&nbsp;import com.kotlinorm.interfaces.toLogicalScalar
+&nbsp;import com.kotlinorm.utils.GeneratedTypeMetadataSnapshot
+&nbsp;import com.kotlinorm.utils.StaticTypeRef
+&nbsp;import kotlin.time.Instant
+&nbsp;import kotlinx.datetime.LocalDate
+&nbsp;import kotlinx.datetime.LocalDateTime
+&nbsp;import kotlinx.datetime.LocalTime
+&nbsp;import kotlinx.datetime.TimeZone
+&nbsp;import kotlinx.datetime.atTime
+&nbsp;import kotlinx.datetime.toInstant
+&nbsp;import kotlinx.datetime.toLocalDateTime
+&nbsp;
+&nbsp;/** Shared temporal policy; Java/JDBC representations are handled by the JVM adapter. */
+&nbsp;internal object PortableTemporalValueCodec : RegistryCodec {
+&nbsp;    override val description = &quot;portable temporal ValueCodec&quot;
+&nbsp;
+&nbsp;    override fun supports(value: Any, request: ValueConversionRequest, context: ValueCodecContext): Boolean {
+&nbsp;        val target = request.effectiveTargetType()
+&nbsp;        if (request.direction == ValueCodecDirection.ENCODE &amp;&amp; request.targetType.classifier !in portableTemporalClasses &amp;&amp;
+&nbsp;            request.targetType.classifier !in setOf(String::class, Long::class, Any::class)) return false
+&nbsp;        val portableInput = value.isPortableTemporalRuntimeValue()
+&nbsp;        val portableTarget = target.classifier in portableTemporalClasses
+&nbsp;        if (request.direction == ValueCodecDirection.DECODE &amp;&amp; request.strict &amp;&amp; !target.accepts(value)) return false
+&nbsp;        if (request.direction == ValueCodecDirection.DECODE &amp;&amp; target.accepts(value)) return false
+&nbsp;        return when {
+&nbsp;            portableTarget -&gt; portableInput || value is String || value.isPortableEpochNumber()
+&nbsp;            portableInput -&gt; target.classifier == String::class || target.classifier == Long::class ||
+&nbsp;                (request.direction == ValueCodecDirection.ENCODE &amp;&amp; target.classifier == Any::class)
+&nbsp;            else -&gt; false
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun convert(value: Any, request: ValueConversionRequest, context: ValueCodecContext,
+&nbsp;        generatedTypes: GeneratedTypeMetadataSnapshot?): Any {
+&nbsp;        val logical = if (request.direction == ValueCodecDirection.ENCODE &amp;&amp; request.targetType.accepts(value)) value else {
+&nbsp;            val target = if (request.direction == ValueCodecDirection.ENCODE) request.targetType else request.effectiveTargetType()
+&nbsp;            val static = request.staticContext(context)
+&nbsp;            convertLogical(value, if (target.classifier == String::class) {
+&nbsp;                static.copy(dateFormat = request.effectiveDateFormat)
+&nbsp;            } else static)
+&nbsp;        }
+&nbsp;        if (request.direction == ValueCodecDirection.DECODE) return logical
+&nbsp;        val physical = request.physicalTargetType
+&nbsp;        if ((physical?.classifier ?: request.targetType.classifier) == Long::class &amp;&amp; logical.isPortableTemporalRuntimeValue()) {
+&nbsp;            val instant = convertTemporalObject(logical, request.staticContext(context)
+&nbsp;                .copy(targetType = StaticTypeRef(&quot;kotlin.time.Instant&quot;, false))) as Instant
+&nbsp;            return instant.toEpochMilliseconds()
+&nbsp;        }
+&nbsp;        val format = if (physical?.classifier == String::class || request.targetType.classifier == String::class) {
+&nbsp;            request.effectiveDateFormat
+&nbsp;        } else request.dateFormat
+&nbsp;        return encodePlatformTemporal(logical, request.staticContext(context).copy(dateFormat = format))
+&nbsp;            ?.let { encoded -&gt; (encoded as KronosPhysicalValue.Text).value } ?: logical
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun convertLogical(value: Any, context: StaticValueCodecContext): Any = when {
+&nbsp;        context.targetType.key == &quot;kotlin.Long&quot; &amp;&amp; value is Instant -&gt; value.toEpochMilliseconds()
+&nbsp;        context.targetType.key == &quot;kotlin.String&quot; -&gt; encodePlatformTemporal(value, context)
+&nbsp;            ?.let { (it as KronosPhysicalValue.Text).value } ?: value.toString()
+&nbsp;        value.isPortableEpochNumber() -&gt; {
+&nbsp;            val instant = (if (value is Byte || value is Short) (value as Number).toLong() else value)
+&nbsp;                .toLogicalScalar(context.copy(targetType = StaticTypeRef(&quot;kotlin.time.Instant&quot;, false)))
+&nbsp;            convertTemporalObject(instant, context)
+&nbsp;        }
+&nbsp;        value.isPortableTemporalRuntimeValue() -&gt; convertTemporalObject(value, context)
+&nbsp;        else -&gt; decodePlatformTemporal(KronosPhysicalValue.Text(value.toString()), context)
+&nbsp;            ?: throw IllegalArgumentException(&quot;Unsupported portable temporal conversion to ${context.targetType.key}&quot;)
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Logical objects never pass through a physical text pattern. Missing time/date use the JVM&#39;s fixed anchors. */
+&nbsp;    internal fun convertTemporalObject(value: Any, context: StaticValueCodecContext): Any {
+&nbsp;        val zone = context.timeZone?.let(TimeZone::of) ?: TimeZone.currentSystemDefault()
+&nbsp;        val local = when (value) {
+&nbsp;            is Instant -&gt; value.toLocalDateTime(zone)
+&nbsp;            is LocalDateTime -&gt; value
+&nbsp;            is LocalDate -&gt; value.atTime(0, 0)
+&nbsp;            is LocalTime -&gt; LocalDate.fromEpochDays(0).atTime(value)
+&nbsp;            else -&gt; error(&quot;Not a portable temporal object&quot;)
+&nbsp;        }
+&nbsp;        return when (context.targetType.key.removeSuffix(&quot;?&quot;)) {
+&nbsp;            &quot;kotlin.time.Instant&quot;, &quot;kotlinx.datetime.Instant&quot; -&gt; if (value is Instant) value else local.toInstant(zone)
+&nbsp;            &quot;kotlinx.datetime.LocalDateTime&quot; -&gt; local
+&nbsp;            &quot;kotlinx.datetime.LocalDate&quot; -&gt; local.date
+&nbsp;            &quot;kotlinx.datetime.LocalTime&quot; -&gt; local.time
+&nbsp;            &quot;kotlin.Long&quot; -&gt; (if (value is Instant) value else local.toInstant(zone)).toEpochMilliseconds()
+&nbsp;            else -&gt; throw IllegalArgumentException(&quot;Unsupported temporal target ${context.targetType.key}&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;internal val portableTemporalClasses = setOf(Instant::class, LocalDate::class, LocalDateTime::class, LocalTime::class)</b>
+&nbsp;
+<b class="fc">&nbsp;internal fun Any.isPortableTemporalRuntimeValue(): Boolean = this is Instant || this is LocalDate ||</b>
+<b class="fc">&nbsp;    this is LocalDateTime || this is LocalTime</b>
+&nbsp;
+<b class="pc">&nbsp;private fun Any.isPortableEpochNumber(): Boolean = this is Byte || this is Short || this is Int ||</b>
+<b class="pc">&nbsp;    this is Long || this is Float || this is Double</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

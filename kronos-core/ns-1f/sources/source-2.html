@@ -1,0 +1,218 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CursorKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.pagination</a>
+</div>
+
+<h1>Coverage Summary for Class: CursorKt (com.kotlinorm.orm.pagination)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CursorKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.5%
+  </span>
+  <span class="absValue">
+    (63/66)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (51/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.4%
+  </span>
+  <span class="absValue">
+    (506/509)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.orm.pagination
+&nbsp;import kotlin.jvm.JvmInline
+&nbsp;import kotlin.time.ExperimentalTime
+&nbsp;
+&nbsp;@JvmInline
+&nbsp;value class Cursor(val value: String)
+&nbsp;
+&nbsp;internal data class CursorSpec(
+&nbsp;    val cursor: Cursor?,
+&nbsp;    val pageSize: Int,
+&nbsp;    val values: Map&lt;String, Any?&gt; = cursor?.decodeCursorValues().orEmpty()
+&nbsp;)
+&nbsp;
+&nbsp;internal fun Map&lt;String, Any?&gt;.toCursor(): Cursor {
+<b class="fc">&nbsp;    val body = entries.joinToString(&quot;\n&quot;) { (name, value) -&gt;</b>
+<b class="fc">&nbsp;        &quot;${escape(name)}=${encodeValue(value)}&quot;</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return Cursor(kotlin.io.encoding.Base64.UrlSafe.withPadding(kotlin.io.encoding.Base64.PaddingOption.ABSENT).encode(body.encodeToByteArray()))</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun Cursor.decodeCursorValues(): Map&lt;String, Any?&gt; {
+<b class="fc">&nbsp;    val body = kotlin.io.encoding.Base64.UrlSafe.withPadding(kotlin.io.encoding.Base64.PaddingOption.ABSENT_OPTIONAL).decode(value).decodeToString()</b>
+<b class="fc">&nbsp;    if (body.isBlank()) return emptyMap()</b>
+<b class="fc">&nbsp;    return body.lineSequence().associate { line -&gt;</b>
+<b class="fc">&nbsp;        val index = line.indexOf(&#39;=&#39;)</b>
+<b class="fc">&nbsp;        require(index &gt; 0) { &quot;Invalid cursor token.&quot; }</b>
+<b class="fc">&nbsp;        unescape(line.substring(0, index)) to decodeValue(line.substring(index + 1))</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(ExperimentalTime::class)
+<b class="fc">&nbsp;private fun encodeValue(value: Any?): String = when (value) {</b>
+<b class="fc">&nbsp;    null -&gt; &quot;n:&quot;</b>
+<b class="fc">&nbsp;    is Int -&gt; &quot;i:$value&quot;</b>
+<b class="fc">&nbsp;    is Long -&gt; &quot;l:$value&quot;</b>
+<b class="fc">&nbsp;    is Short -&gt; &quot;h:$value&quot;</b>
+<b class="fc">&nbsp;    is Byte -&gt; &quot;y:$value&quot;</b>
+<b class="fc">&nbsp;    is Float -&gt; &quot;f:$value&quot;</b>
+<b class="fc">&nbsp;    is Double -&gt; &quot;d:$value&quot;</b>
+<b class="fc">&nbsp;    is Boolean -&gt; &quot;b:$value&quot;</b>
+<b class="fc">&nbsp;    is kotlin.time.Instant -&gt; &quot;kotlinInstant:$value&quot;</b>
+<b class="fc">&nbsp;    else -&gt; platformEncodeCursorValue(value) ?: &quot;s:${escape(value.toString())}&quot;</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(ExperimentalTime::class)
+&nbsp;private fun decodeValue(encoded: String): Any? {
+<b class="fc">&nbsp;    val type = encoded.substringBefore(&#39;:&#39;)</b>
+<b class="fc">&nbsp;    val raw = encoded.substringAfter(&#39;:&#39;, &quot;&quot;)</b>
+<b class="fc">&nbsp;    return when (type) {</b>
+<b class="fc">&nbsp;        &quot;n&quot; -&gt; null</b>
+<b class="fc">&nbsp;        &quot;i&quot; -&gt; raw.toInt()</b>
+<b class="fc">&nbsp;        &quot;l&quot; -&gt; raw.toLong()</b>
+<b class="fc">&nbsp;        &quot;h&quot; -&gt; raw.toShort()</b>
+<b class="fc">&nbsp;        &quot;y&quot; -&gt; raw.toByte()</b>
+<b class="fc">&nbsp;        &quot;f&quot; -&gt; raw.toFloat()</b>
+<b class="fc">&nbsp;        &quot;d&quot; -&gt; raw.toDouble()</b>
+<b class="fc">&nbsp;        &quot;b&quot; -&gt; raw.toBooleanStrict()</b>
+<b class="fc">&nbsp;        &quot;kotlinInstant&quot; -&gt; kotlin.time.Instant.parse(raw)</b>
+<b class="fc">&nbsp;        &quot;s&quot; -&gt; unescape(raw)</b>
+<b class="fc">&nbsp;        else -&gt; platformDecodeCursorValue(type, raw)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private fun escape(value: String): String = buildString {</b>
+<b class="fc">&nbsp;    value.encodeToByteArray().forEach { byte -&gt;</b>
+<b class="fc">&nbsp;        val code = byte.toInt() and UNSIGNED_BYTE_MASK</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            code == &#39; &#39;.code -&gt; append(&#39;+&#39;)</b>
+<b class="pc">&nbsp;            code in &#39;0&#39;.code..&#39;9&#39;.code || code in &#39;A&#39;.code..&#39;Z&#39;.code || code in &#39;a&#39;.code..&#39;z&#39;.code || code.toChar() in &quot;-_.*&quot; -&gt; append(code.toChar())</b>
+<b class="fc">&nbsp;            else -&gt; { append(&#39;%&#39;); append(code.toString(HEX_RADIX).uppercase().padStart(2, &#39;0&#39;)) }</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;}</b>
+&nbsp;private fun unescape(value: String): String {
+<b class="fc">&nbsp;    val bytes = mutableListOf&lt;Byte&gt;()</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="fc">&nbsp;    while (index &lt; value.length) {</b>
+<b class="fc">&nbsp;        when (val char = value[index++]) {</b>
+<b class="fc">&nbsp;            &#39;+&#39; -&gt; bytes += &#39; &#39;.code.toByte()</b>
+<b class="pc">&nbsp;            &#39;%&#39; -&gt; { require(index + 2 &lt;= value.length) { &quot;Invalid cursor escape&quot; }; bytes += value.substring(index, index + 2).toInt(HEX_RADIX).toByte(); index += 2 }</b>
+<b class="fc">&nbsp;            else -&gt; bytes += char.code.toByte()</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return bytes.toByteArray().decodeToString()</b>
+&nbsp;}
+&nbsp;internal expect fun platformEncodeCursorValue(value: Any): String?
+&nbsp;internal expect fun platformDecodeCursorValue(type: String, raw: String): Any
+&nbsp;
+&nbsp;private const val UNSIGNED_BYTE_MASK = 0xff
+&nbsp;private const val HEX_RADIX = 16
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

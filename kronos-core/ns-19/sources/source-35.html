@@ -1,0 +1,618 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > StaticValueCodecRegistration</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: StaticValueCodecRegistration (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">StaticValueCodecRegistration</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.ValueCodecDirection
+&nbsp;import com.kotlinorm.enums.ValueCodecOrigin
+&nbsp;import com.kotlinorm.enums.ValueStorage
+&nbsp;import com.kotlinorm.utils.StaticTypeInfo
+&nbsp;import com.kotlinorm.utils.StaticTypeMetadataLock
+&nbsp;import com.kotlinorm.utils.StaticTypeRef
+&nbsp;import com.kotlinorm.utils.structuralSignature
+&nbsp;import com.kotlinorm.utils.withoutTopLevelNullability
+&nbsp;import kotlin.time.Instant
+&nbsp;import kotlin.coroutines.cancellation.CancellationException
+&nbsp;
+&nbsp;/** Storage representation used for enum values at the physical boundary. */
+&nbsp;enum class StaticEnumStorage {
+&nbsp;    NAME,
+&nbsp;    ORDINAL
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Platform-neutral information supplied to a [StaticValueCodec].
+&nbsp; *
+&nbsp; * Type information is compiler-generated and represented by [StaticTypeRef]
+&nbsp; * and [StaticTypeInfo]. JVM code may attach an internal compatibility context,
+&nbsp; * but common codecs never require `KType` or platform reflection.
+&nbsp; */
+&nbsp;data class StaticValueCodecContext(
+&nbsp;    val direction: ValueCodecDirection,
+&nbsp;    val origin: ValueCodecOrigin,
+&nbsp;    val sourceType: StaticTypeRef? = null,
+&nbsp;    val targetType: StaticTypeRef,
+&nbsp;    val field: ValueCodecField? = null,
+&nbsp;    val storage: ValueStorage = if (field?.serializable == true) ValueStorage.SERIALIZED else ValueStorage.NONE,
+&nbsp;    val sourceTypeInfo: StaticTypeInfo? = null,
+&nbsp;    val targetTypeInfo: StaticTypeInfo? = field?.typeInfo,
+&nbsp;    val enumStorage: StaticEnumStorage = field.enumStorage(),
+&nbsp;    /** IANA zone id used by automatic instant/local temporal conversion. */
+&nbsp;    val timeZone: String? = Kronos.timeZone,
+&nbsp;    /** Explicit text pattern; fields and the global default supply the fallback. */
+&nbsp;    val dateFormat: String? = null
+&nbsp;) {
+&nbsp;    internal var platformContext: Any? = null
+&nbsp;
+&nbsp;    init {
+&nbsp;        if (field != null) {
+&nbsp;            val fieldStorage = if (field.serializable) ValueStorage.SERIALIZED else ValueStorage.NONE
+&nbsp;            require(storage == fieldStorage) {
+&nbsp;                &quot;Value storage $storage conflicts with field &#39;${field.name}&#39; storage $fieldStorage&quot;
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * A non-reflective user conversion extension shared by common, Native and JVM
+&nbsp; * runtime paths. Values are non-null when [supports] and [convert] are called.
+&nbsp; */
+&nbsp;interface StaticValueCodec {
+&nbsp;    /** Text used in conversion failures. */
+&nbsp;    val description: String
+&nbsp;        get() = &quot;user StaticValueCodec&quot;
+&nbsp;
+&nbsp;    fun supports(value: Any, context: StaticValueCodecContext): Boolean
+&nbsp;
+&nbsp;    fun convert(value: Any, context: StaticValueCodecContext): Any?
+&nbsp;}
+&nbsp;
+&nbsp;/** Idempotent handle for one common codec or enum-decoder registration. */
+&nbsp;interface StaticValueCodecRegistration {
+&nbsp;    fun close()
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler- or application-supplied enum decoder for a concrete static type.
+&nbsp; * The entry list is declaration ordered and is used for ordinal validation.
+&nbsp; */
+&nbsp;interface StaticEnumValueCodec {
+&nbsp;    val type: StaticTypeRef
+&nbsp;    val entryNames: List&lt;String&gt;
+&nbsp;
+&nbsp;    fun decode(name: String): Enum&lt;*&gt;?
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Error raised by the common physical-value conversion boundary.
+&nbsp; */
+&nbsp;class StaticValueCodecException(
+&nbsp;    val direction: ValueCodecDirection,
+&nbsp;    val origin: ValueCodecOrigin,
+&nbsp;    val targetType: StaticTypeRef,
+&nbsp;    val fieldName: String?,
+&nbsp;    val columnName: String?,
+&nbsp;    val detail: String,
+&nbsp;    cause: Throwable? = null
+&nbsp;) : IllegalArgumentException(
+&nbsp;    buildString {
+&nbsp;        append(&quot;Value codec failed for &quot;)
+&nbsp;        append(direction)
+&nbsp;        append(&#39;/&#39;)
+&nbsp;        append(origin)
+&nbsp;        fieldName?.let { append(&quot; field &#39;&quot;).append(it).append(&#39;\&#39;&#39;) }
+&nbsp;        columnName?.let { append(&quot; column &#39;&quot;).append(it).append(&#39;\&#39;&#39;) }
+&nbsp;        append(&quot; -&gt; &quot;)
+&nbsp;        append(targetType.structuralSignature())
+&nbsp;        append(&quot;: &quot;)
+&nbsp;        append(detail)
+&nbsp;    },
+&nbsp;    cause
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * The single registration ledger for descriptor-based user codecs.
+&nbsp; *
+&nbsp; * Native callers use [register], [encode], and [decode] directly. The JVM
+&nbsp; * `Kronos.registerValueCodec` entry adapts its KType-based codec into this
+&nbsp; * ledger, so later registrations have one shared priority order on every
+&nbsp; * platform. Java temporal and JDBC conversions deliberately remain outside
+&nbsp; * this common boundary.
+&nbsp; */
+&nbsp;object KronosValueCodecs {
+&nbsp;    private data class CodecEntry(val id: Long, val codec: StaticValueCodec)
+&nbsp;    private data class EnumEntry(val id: Long, val codec: StaticEnumValueCodec)
+&nbsp;
+&nbsp;    private val lock = StaticTypeMetadataLock()
+&nbsp;    private var nextId = 0L
+&nbsp;    private val codecs = mutableListOf&lt;CodecEntry&gt;()
+&nbsp;    private val enumCodecs = mutableListOf&lt;EnumEntry&gt;()
+&nbsp;
+&nbsp;    /** Registers a user codec at the highest current priority. */
+&nbsp;    fun register(codec: StaticValueCodec): StaticValueCodecRegistration = lock.withLock {
+&nbsp;        val entry = CodecEntry(nextRegistrationId(), codec)
+&nbsp;        codecs.add(0, entry)
+&nbsp;        closingRegistration { codecs.removeAll { it.id == entry.id } }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Registers an enum decoder at the highest current priority for its type.
+&nbsp;     * A decoder is explicit because a [StaticTypeInfo] identifies an enum but
+&nbsp;     * cannot construct one on Native by itself.
+&nbsp;     */
+&nbsp;    fun registerEnum(codec: StaticEnumValueCodec): StaticValueCodecRegistration = lock.withLock {
+&nbsp;        require(codec.entryNames.isNotEmpty()) { &quot;Enum codec entries must not be empty&quot; }
+&nbsp;        require(codec.entryNames.distinct().size == codec.entryNames.size) {
+&nbsp;            &quot;Enum codec entries must be unique&quot;
+&nbsp;        }
+&nbsp;        val entry = EnumEntry(nextRegistrationId(), codec)
+&nbsp;        enumCodecs.add(0, entry)
+&nbsp;        closingRegistration { enumCodecs.removeAll { it.id == entry.id } }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Encodes one logical value to a physical database value.
+&nbsp;     */
+&nbsp;    fun encode(value: Any?, context: StaticValueCodecContext): KronosPhysicalValue =
+&nbsp;        encode(value, context, dispatchUserCodecs = true)
+&nbsp;
+&nbsp;    /** Physical shaping after the facade has already selected (or declined) user codecs. */
+&nbsp;    internal fun encodeBuiltIn(value: Any?, context: StaticValueCodecContext): KronosPhysicalValue =
+&nbsp;        encode(value, context, dispatchUserCodecs = false)
+&nbsp;
+&nbsp;    private fun encode(value: Any?, context: StaticValueCodecContext, dispatchUserCodecs: Boolean): KronosPhysicalValue {
+&nbsp;        require(context.direction == ValueCodecDirection.ENCODE) {
+&nbsp;            &quot;StaticValueCodecContext.direction must be ENCODE&quot;
+&nbsp;        }
+&nbsp;        if (value == null) {
+&nbsp;            requireNullable(context)
+&nbsp;            return KronosPhysicalValue.Null
+&nbsp;        }
+&nbsp;
+&nbsp;        val codec = if (dispatchUserCodecs) findMatchingCodec(value, context) else null
+&nbsp;        if (codec != null) {
+&nbsp;            val converted = codec.convertSafely(value, context)
+&nbsp;            if (context.storage == ValueStorage.SERIALIZED &amp;&amp; converted != null &amp;&amp; converted !is String) {
+&nbsp;                throw context.failure(&quot;SERIALIZED encode must produce kotlin.String&quot;)
+&nbsp;            }
+&nbsp;            return converted.toPhysical(context)
+&nbsp;        }
+&nbsp;        if (context.storage == ValueStorage.SERIALIZED) {
+&nbsp;            throw context.failure(&quot;no registered codec matched SERIALIZED storage&quot;)
+&nbsp;        }
+&nbsp;        return value.toPhysical(context)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Decodes one physical database value to its logical scalar or registered
+&nbsp;     * enum/serialized representation.
+&nbsp;     */
+&nbsp;    fun decode(value: KronosPhysicalValue, context: StaticValueCodecContext): Any? = decode(value, context, null)
+&nbsp;
+&nbsp;    internal fun decode(value: KronosPhysicalValue, context: StaticValueCodecContext, fallbackEnum: StaticEnumValueCodec?, allowBuiltInCoercion: Boolean = true, dispatchUserCodecs: Boolean = true): Any? {
+&nbsp;        require(context.direction == ValueCodecDirection.DECODE) {
+&nbsp;            &quot;StaticValueCodecContext.direction must be DECODE&quot;
+&nbsp;        }
+&nbsp;        if (value == KronosPhysicalValue.Null) {
+&nbsp;            requireNullable(context)
+&nbsp;            return null
+&nbsp;        }
+&nbsp;        val raw = value.rawValue()
+&nbsp;        val codec = if (dispatchUserCodecs) findMatchingCodec(raw, context) else null
+&nbsp;        if (codec != null) {
+&nbsp;            val converted = codec.convertSafely(raw, context)
+&nbsp;            requireNonNullResult(converted, context)
+&nbsp;            return converted
+&nbsp;        }
+&nbsp;        if (context.storage == ValueStorage.SERIALIZED) {
+&nbsp;            throw context.failure(&quot;no registered codec matched SERIALIZED storage&quot;)
+&nbsp;        }
+&nbsp;
+&nbsp;        (enumCodec(context) ?: fallbackEnum)?.let { codec -&gt;
+&nbsp;            return decodeEnum(raw, codec, context)
+&nbsp;        }
+&nbsp;        if (context.targetTypeInfo?.enumKey != null) throw context.failure(&quot;missing generated enum metadata&quot;)
+&nbsp;        if (!allowBuiltInCoercion) throw context.failure(&quot;strict decode requires an assignable value or numeric normalization&quot;)
+&nbsp;        decodePlatformTemporal(value, context)?.let { return it }
+&nbsp;        return raw.toLogicalScalar(context)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * JVM&#39;s legacy registry uses this selection result before its JVM-only
+&nbsp;     * temporal and JDBC built-ins. It intentionally does not apply scalars.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;TooGenericExceptionCaught&quot;) // User callbacks may throw; preserve cancellation and fatal errors.
+&nbsp;    internal fun findMatchingCodec(value: Any, context: StaticValueCodecContext): StaticValueCodec? {
+&nbsp;        val snapshot = lock.withLock { codecs.toList() }
+&nbsp;        for (entry in snapshot) {
+&nbsp;            val supported = try {
+&nbsp;                entry.codec.supports(value, context)
+&nbsp;            } catch (cause: StaticValueCodecException) {
+&nbsp;                throw cause
+&nbsp;            } catch (cause: CancellationException) {
+&nbsp;                throw cause
+&nbsp;            } catch (cause: Error) {
+&nbsp;                throw cause
+&nbsp;            } catch (cause: Throwable) {
+&nbsp;                throw context.failure(&quot;${entry.codec.description} failed in supports&quot;, cause)
+&nbsp;            }
+&nbsp;            if (supported) {
+&nbsp;                return entry.codec
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return null
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun enumCodec(context: StaticValueCodecContext): StaticEnumValueCodec? {
+&nbsp;        if (context.targetTypeInfo?.enumKey == null) return null
+&nbsp;        val target = context.targetType.withoutTopLevelNullability()
+&nbsp;        return lock.withLock {
+&nbsp;            enumCodecs.firstOrNull {
+&nbsp;                it.codec.type.withoutTopLevelNullability() == target
+&nbsp;            }?.codec
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun nextRegistrationId(): Long {
+&nbsp;        check(nextId != Long.MAX_VALUE) { &quot;Static value codec registration ids are exhausted&quot; }
+&nbsp;        nextId += 1
+&nbsp;        return nextId
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun closingRegistration(remove: () -&gt; Unit): StaticValueCodecRegistration =
+&nbsp;        object : StaticValueCodecRegistration {
+&nbsp;            private var closed = false
+&nbsp;
+&nbsp;            override fun close() {
+&nbsp;                lock.withLock {
+&nbsp;                    if (!closed) {
+&nbsp;                        closed = true
+&nbsp;                        remove()
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;}
+&nbsp;
+&nbsp;/** Creates one descriptor-based codec from matching and conversion functions. */
+&nbsp;fun staticValueCodec(
+&nbsp;    supports: (value: Any, context: StaticValueCodecContext) -&gt; Boolean,
+&nbsp;    convert: (value: Any, context: StaticValueCodecContext) -&gt; Any?
+&nbsp;): StaticValueCodec = object : StaticValueCodec {
+&nbsp;    override fun supports(value: Any, context: StaticValueCodecContext): Boolean = supports(value, context)
+&nbsp;
+&nbsp;    override fun convert(value: Any, context: StaticValueCodecContext): Any? = convert(value, context)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a codec for fields stored as serialized TEXT. The encode callback
+&nbsp; * always produces one text value; decode is considered only for physical TEXT.
+&nbsp; */
+&nbsp;fun serializedTextValueCodec(
+&nbsp;    encode: (value: Any, type: StaticTypeRef) -&gt; String,
+&nbsp;    decode: (text: String, type: StaticTypeRef) -&gt; Any?
+&nbsp;): StaticValueCodec = staticValueCodec(
+&nbsp;    supports = { value, context -&gt;
+&nbsp;        context.storage == ValueStorage.SERIALIZED &amp;&amp; when (context.direction) {
+&nbsp;            ValueCodecDirection.ENCODE -&gt; true
+&nbsp;            ValueCodecDirection.DECODE -&gt; value is String &amp;&amp; context.origin != ValueCodecOrigin.PARAMETER
+&nbsp;        }
+&nbsp;    },
+&nbsp;    convert = { value, context -&gt;
+&nbsp;        when (context.direction) {
+&nbsp;            ValueCodecDirection.ENCODE -&gt; encode(value, context.targetType)
+&nbsp;            ValueCodecDirection.DECODE -&gt; decode(value as String, context.targetType)
+&nbsp;        }
+&nbsp;    }
+&nbsp;)
+&nbsp;
+&nbsp;private fun ValueCodecField?.enumStorage(): StaticEnumStorage = when (this?.type) {
+&nbsp;    KColumnType.TINYINT,
+&nbsp;    KColumnType.SMALLINT,
+&nbsp;    KColumnType.INT,
+&nbsp;    KColumnType.MEDIUMINT,
+&nbsp;    KColumnType.SERIAL,
+&nbsp;    KColumnType.BIGINT -&gt; StaticEnumStorage.ORDINAL
+&nbsp;
+&nbsp;    else -&gt; StaticEnumStorage.NAME
+&nbsp;}
+&nbsp;
+&nbsp;private fun KronosPhysicalValue.rawValue(): Any = when (this) {
+&nbsp;    is KronosPhysicalValue.Integer -&gt; value
+&nbsp;    is KronosPhysicalValue.Real -&gt; value
+&nbsp;    is KronosPhysicalValue.Text -&gt; value
+&nbsp;    is KronosPhysicalValue.Blob -&gt; bytes
+&nbsp;    KronosPhysicalValue.Null -&gt; error(&quot;NULL is handled before raw conversion&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any?.toPhysical(context: StaticValueCodecContext): KronosPhysicalValue = when (this) {
+&nbsp;    null -&gt; {
+&nbsp;        requireNullable(context)
+&nbsp;        KronosPhysicalValue.Null
+&nbsp;    }
+&nbsp;    is KronosPhysicalValue -&gt; this
+&nbsp;    is Boolean -&gt; KronosPhysicalValue.Integer(if (this) 1 else 0)
+&nbsp;    is Byte -&gt; KronosPhysicalValue.Integer(toLong())
+&nbsp;    is Short -&gt; KronosPhysicalValue.Integer(toLong())
+&nbsp;    is Int -&gt; KronosPhysicalValue.Integer(toLong())
+&nbsp;    is Long -&gt; KronosPhysicalValue.Integer(this)
+&nbsp;    is Float -&gt; KronosPhysicalValue.Real(toDouble())
+&nbsp;    is Double -&gt; KronosPhysicalValue.Real(this)
+&nbsp;    is Char -&gt; KronosPhysicalValue.Text(toString())
+&nbsp;    is String -&gt; KronosPhysicalValue.Text(this)
+&nbsp;    is ByteArray -&gt; KronosPhysicalValue.Blob(this)
+&nbsp;    is Instant -&gt; encodePlatformTemporal(this, context) ?: KronosPhysicalValue.Text(toString())
+&nbsp;    is Enum&lt;*&gt; -&gt; when (context.enumStorage) {
+&nbsp;        StaticEnumStorage.NAME -&gt; KronosPhysicalValue.Text(name)
+&nbsp;        StaticEnumStorage.ORDINAL -&gt; KronosPhysicalValue.Integer(ordinal.toLong())
+&nbsp;    }
+&nbsp;    else -&gt; encodePlatformTemporal(this, context)
+&nbsp;        ?: throw context.failure(&quot;unsupported scalar ${this::class}&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;/** EXACT is the physical/static contract; COERCING preserves facade lenient truncation and first-character semantics. */
+&nbsp;internal enum class ScalarCoercionMode { EXACT, COERCING }
+&nbsp;
+&nbsp;internal fun Any.toLogicalScalar(context: StaticValueCodecContext, mode: ScalarCoercionMode = ScalarCoercionMode.EXACT): Any = when (
+&nbsp;    context.targetType.withoutTopLevelNullability().key
+&nbsp;) {
+&nbsp;    &quot;kotlin.Boolean&quot; -&gt; toBooleanScalar(context, mode)
+&nbsp;    &quot;kotlin.Byte&quot; -&gt; scalarNumberInput(mode).toLongScalar(context, mode).toByteChecked(context)
+&nbsp;    &quot;kotlin.Short&quot; -&gt; scalarNumberInput(mode).toLongScalar(context, mode).toShortChecked(context)
+&nbsp;    &quot;kotlin.Int&quot; -&gt; scalarNumberInput(mode).toLongScalar(context, mode).toIntChecked(context)
+&nbsp;    &quot;kotlin.Long&quot; -&gt; scalarNumberInput(mode).toLongScalar(context, mode)
+&nbsp;    &quot;kotlin.Float&quot; -&gt; scalarNumberInput(mode).toDoubleScalar(context).toFloatChecked(context)
+&nbsp;    &quot;kotlin.Double&quot; -&gt; scalarNumberInput(mode).toDoubleScalar(context)
+&nbsp;    &quot;kotlin.Char&quot; -&gt; toCharScalar(context, mode)
+&nbsp;    &quot;kotlin.String&quot; -&gt; toString()
+&nbsp;    &quot;kotlin.ByteArray&quot; -&gt; this as? ByteArray
+&nbsp;        ?: throw context.failure(&quot;BYTE_ARRAY decoding requires BLOB storage&quot;)
+&nbsp;    &quot;kotlin.time.Instant&quot; -&gt; toKotlinInstant(context)
+&nbsp;    else -&gt; throw context.failure(&quot;no scalar codec for ${context.targetType.key}&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun decodeEnum(
+&nbsp;    value: Any,
+&nbsp;    codec: StaticEnumValueCodec,
+&nbsp;    context: StaticValueCodecContext
+&nbsp;): Enum&lt;*&gt; {
+&nbsp;    val name = when (context.enumStorage) {
+&nbsp;        StaticEnumStorage.NAME -&gt; value as? String
+&nbsp;            ?: throw context.failure(&quot;enum name decoding requires TEXT storage&quot;)
+&nbsp;        StaticEnumStorage.ORDINAL -&gt; {
+&nbsp;            val ordinal = value.toLongScalar(context).toIntChecked(context)
+&nbsp;            codec.entryNames.getOrNull(ordinal)
+&nbsp;                ?: throw context.failure(&quot;invalid enum ordinal $ordinal&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;    return codec.decode(name)
+&nbsp;        ?.takeIf { it.name == name }
+&nbsp;        ?: throw context.failure(&quot;unknown enum name &#39;$name&#39;&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any.toBooleanScalar(context: StaticValueCodecContext, mode: ScalarCoercionMode): Boolean = when (this) {
+&nbsp;    is Boolean -&gt; this
+&nbsp;    is Number -&gt; toDouble() != 0.0
+&nbsp;    is String -&gt; when (trim()) {
+&nbsp;        &quot;1&quot; -&gt; true
+&nbsp;        &quot;0&quot;, &quot;&quot; -&gt; false
+&nbsp;        &quot;true&quot;, &quot;TRUE&quot; -&gt; true
+&nbsp;        &quot;false&quot;, &quot;FALSE&quot; -&gt; false
+&nbsp;        else -&gt; if (mode == ScalarCoercionMode.COERCING) trim().equals(&quot;true&quot;, ignoreCase = true)
+&nbsp;            else throw context.failure(&quot;cannot decode &#39;$this&#39; as kotlin.Boolean&quot;)
+&nbsp;    }
+&nbsp;    else -&gt; throw context.failure(&quot;cannot decode $this as kotlin.Boolean&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any.toLongScalar(context: StaticValueCodecContext, mode: ScalarCoercionMode = ScalarCoercionMode.EXACT): Long = when (this) {
+&nbsp;    is Byte -&gt; toLong()
+&nbsp;    is Short -&gt; toLong()
+&nbsp;    is Int -&gt; toLong()
+&nbsp;    is Long -&gt; this
+&nbsp;    is Float -&gt; toDouble().toLongExact(context, mode)
+&nbsp;    is Double -&gt; toLongExact(context, mode)
+&nbsp;    is String -&gt; toLongOrNull() ?: throw context.failure(&quot;cannot decode &#39;$this&#39; as kotlin.Long&quot;)
+&nbsp;    else -&gt; throw context.failure(&quot;cannot decode $this as kotlin.Long&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any.toDoubleScalar(context: StaticValueCodecContext): Double = when (this) {
+&nbsp;    is Number -&gt; toDouble()
+&nbsp;    is String -&gt; (toDoubleOrNull() ?: throw context.failure(&quot;cannot decode &#39;$this&#39; as kotlin.Double&quot;)).also {
+&nbsp;        if (!it.isFinite() &amp;&amp; trim() !in setOf(&quot;NaN&quot;, &quot;Infinity&quot;, &quot;+Infinity&quot;, &quot;-Infinity&quot;)) {
+&nbsp;            throw context.failure(&quot;&#39;$this&#39; is outside kotlin.Double range&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;    else -&gt; throw context.failure(&quot;cannot decode $this as kotlin.Double&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any.toCharScalar(context: StaticValueCodecContext, mode: ScalarCoercionMode): Char = when (this) {
+&nbsp;    is Char -&gt; this
+&nbsp;    is String -&gt; (if (mode == ScalarCoercionMode.COERCING) firstOrNull() else singleOrNull())
+&nbsp;        ?: throw context.failure(&quot;cannot decode &#39;$this&#39; as kotlin.Char&quot;)
+&nbsp;    is Boolean -&gt; if (mode == ScalarCoercionMode.COERCING) toString().first()
+&nbsp;        else throw context.failure(&quot;cannot decode $this as kotlin.Char&quot;)
+&nbsp;    else -&gt; toLongScalar(context, mode).let {
+&nbsp;        if (it !in Char.MIN_VALUE.code.toLong()..Char.MAX_VALUE.code.toLong()) throw context.failure(&quot;$it is outside kotlin.Char range&quot;)
+&nbsp;        it.toInt().toChar()
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any.toKotlinInstant(context: StaticValueCodecContext): Instant = when (this) {
+&nbsp;    is Long -&gt; Instant.fromEpochMilliseconds(this)
+&nbsp;    is Int -&gt; Instant.fromEpochMilliseconds(toLong())
+&nbsp;    is Double -&gt; Instant.fromEpochMilliseconds(toLongExact(context))
+&nbsp;    is Float -&gt; Instant.fromEpochMilliseconds(toDouble().toLongExact(context))
+&nbsp;    is String -&gt; try {
+&nbsp;        decodePlatformTemporal(KronosPhysicalValue.Text(this), context) as? Instant
+&nbsp;            ?: throw context.failure(&quot;cannot decode &#39;$this&#39; as kotlin.time.Instant&quot;)
+&nbsp;    } catch (cause: IllegalArgumentException) {
+&nbsp;        throw context.failure(&quot;cannot decode &#39;$this&#39; as kotlin.time.Instant&quot;, cause).also {
+&nbsp;            it.addSuppressed(cause)
+&nbsp;        }
+&nbsp;    }
+&nbsp;    else -&gt; throw context.failure(&quot;cannot decode $this as kotlin.time.Instant&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Double.toLongExact(context: StaticValueCodecContext, mode: ScalarCoercionMode = ScalarCoercionMode.EXACT): Long {
+&nbsp;    if (!isFinite() || this &lt; Long.MIN_VALUE.toDouble() || this &gt;= Long.MAX_VALUE.toDouble() || (mode == ScalarCoercionMode.EXACT &amp;&amp; toLong().toDouble() != this)) {
+&nbsp;        throw context.failure(&quot;cannot decode $this as an integral value&quot;)
+&nbsp;    }
+&nbsp;    return toLong()
+&nbsp;}
+&nbsp;
+&nbsp;private fun Any.scalarNumberInput(mode: ScalarCoercionMode): Any =
+&nbsp;    when {
+&nbsp;        this is Boolean &amp;&amp; mode == ScalarCoercionMode.COERCING -&gt; if (this) 1L else 0L
+&nbsp;        this is Char &amp;&amp; mode == ScalarCoercionMode.COERCING -&gt; toString()
+&nbsp;        else -&gt; this
+&nbsp;    }
+&nbsp;
+&nbsp;private fun Double.toFloatChecked(context: StaticValueCodecContext): Float = toFloat().also {
+&nbsp;    if (isFinite() &amp;&amp; !it.isFinite()) throw context.failure(&quot;$this is outside kotlin.Float range&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun Long.toByteChecked(context: StaticValueCodecContext): Byte {
+&nbsp;    if (this !in Byte.MIN_VALUE.toLong()..Byte.MAX_VALUE.toLong()) {
+&nbsp;        throw context.failure(&quot;$this is outside kotlin.Byte range&quot;)
+&nbsp;    }
+&nbsp;    return toByte()
+&nbsp;}
+&nbsp;
+&nbsp;private fun Long.toShortChecked(context: StaticValueCodecContext): Short {
+&nbsp;    if (this !in Short.MIN_VALUE.toLong()..Short.MAX_VALUE.toLong()) {
+&nbsp;        throw context.failure(&quot;$this is outside kotlin.Short range&quot;)
+&nbsp;    }
+&nbsp;    return toShort()
+&nbsp;}
+&nbsp;
+&nbsp;private fun Long.toIntChecked(context: StaticValueCodecContext): Int {
+&nbsp;    if (this !in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()) {
+&nbsp;        throw context.failure(&quot;$this is outside kotlin.Int range&quot;)
+&nbsp;    }
+&nbsp;    return toInt()
+&nbsp;}
+&nbsp;
+&nbsp;private fun requireNullable(context: StaticValueCodecContext) {
+&nbsp;    if (!context.targetType.nullable) {
+&nbsp;        throw context.failure(&quot;conversion produced null for a non-null target&quot;)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun requireNonNullResult(value: Any?, context: StaticValueCodecContext) {
+&nbsp;    if (value == null) requireNullable(context)
+&nbsp;}
+&nbsp;
+&nbsp;@Suppress(&quot;TooGenericExceptionCaught&quot;) // Wrap user failures with mapping context, keeping cancellation/errors intact.
+&nbsp;private fun StaticValueCodec.convertSafely(value: Any, context: StaticValueCodecContext): Any? = try {
+&nbsp;    convert(value, context)
+&nbsp;} catch (cause: StaticValueCodecException) {
+&nbsp;    throw cause
+&nbsp;} catch (cause: CancellationException) {
+&nbsp;    throw cause
+&nbsp;} catch (cause: Error) {
+&nbsp;    throw cause
+&nbsp;} catch (cause: Throwable) {
+&nbsp;    throw context.failure(&quot;$description failed in convert&quot;, cause)
+&nbsp;}
+&nbsp;
+&nbsp;private fun StaticValueCodecContext.failure(
+&nbsp;    detail: String,
+&nbsp;    cause: Throwable? = null
+&nbsp;): StaticValueCodecException = StaticValueCodecException(
+&nbsp;    direction,
+&nbsp;    origin,
+&nbsp;    targetType,
+&nbsp;    field?.name,
+&nbsp;    field?.columnName,
+&nbsp;    detail,
+&nbsp;    cause
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

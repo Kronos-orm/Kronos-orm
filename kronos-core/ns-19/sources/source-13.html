@@ -1,0 +1,311 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosResultColumnMetadata</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosResultColumnMetadata (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosResultColumnMetadata</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (28/28)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.ValueStorage
+&nbsp;import com.kotlinorm.utils.StaticTypeInfo
+&nbsp;
+&nbsp;/**
+&nbsp; * Platform-neutral database identity supplied by an execution adapter.
+&nbsp; *
+&nbsp; * [databaseName] is the adapter&#39;s native name (for example a file path or an
+&nbsp; * in-memory database name). It is deliberately not derived from a JDBC URL.
+&nbsp; * JVM adapters may retain [url] and [userName] for compatibility diagnostics;
+&nbsp; * Native adapters can leave them `null`.
+&nbsp; */
+&nbsp;data class KronosDatabaseIdentity(
+&nbsp;    val dbType: DBType,
+&nbsp;    val databaseName: String,
+&nbsp;    val driverName: String = &quot;&quot;,
+&nbsp;    val url: String? = null,
+&nbsp;    val userName: String? = null
+&nbsp;)
+&nbsp;
+&nbsp;/** Transaction modes understood by platform database adapters. */
+&nbsp;enum class KronosTransactionMode {
+&nbsp;    /** Let the adapter use its default transaction mode. */
+&nbsp;    DEFAULT,
+&nbsp;    /** SQLite deferred transaction mode. */
+&nbsp;    DEFERRED,
+&nbsp;    /** SQLite immediate transaction mode. */
+&nbsp;    IMMEDIATE,
+&nbsp;    /** SQLite exclusive transaction mode. */
+&nbsp;    EXCLUSIVE
+&nbsp;}
+&nbsp;
+&nbsp;/** Platform-neutral transaction options. */
+&nbsp;data class KronosTransactionOptions(
+&nbsp;    val mode: KronosTransactionMode = KronosTransactionMode.DEFAULT,
+&nbsp;    val timeoutSeconds: Int? = null
+&nbsp;) {
+&nbsp;    init {
+&nbsp;        require(timeoutSeconds == null || timeoutSeconds &gt;= 0) {
+&nbsp;            &quot;Transaction timeout must be non-negative.&quot;
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Opaque savepoint handle owned by one transaction scope. */
+&nbsp;interface KronosSavepointToken
+&nbsp;
+&nbsp;/**
+&nbsp; * Savepoint operations exposed to a transaction callback.
+&nbsp; *
+&nbsp; * The token type intentionally carries no driver-specific state. A wrapper
+&nbsp; * validates ownership and lifecycle before applying an operation.
+&nbsp; */
+&nbsp;interface KronosTransactionScope {
+&nbsp;    fun savepoint(name: String? = null): KronosSavepointToken
+&nbsp;
+&nbsp;    fun rollbackToSavepoint(savepoint: KronosSavepointToken)
+&nbsp;
+&nbsp;    fun releaseSavepoint(savepoint: KronosSavepointToken)
+&nbsp;}
+&nbsp;
+&nbsp;/** Static mapping metadata supplied by a planner to a row mapper. */
+&nbsp;data class KronosResultColumnMetadata(
+<b class="fc">&nbsp;    val typeInfo: StaticTypeInfo? = null,</b>
+<b class="fc">&nbsp;    val storage: ValueStorage = ValueStorage.NONE,</b>
+<b class="fc">&nbsp;    val fieldName: String? = null,</b>
+<b class="fc">&nbsp;    val columnLabel: String? = null</b>
+&nbsp;)
+&nbsp;
+&nbsp;/** Common portion shared by query, action and batch execution plans. */
+&nbsp;interface KronosExecutionPlan {
+&nbsp;    val sql: String
+&nbsp;    val parameters: Map&lt;String, Any?&gt;
+&nbsp;    val operationType: KOperationType
+&nbsp;
+&nbsp;    /** Parameter names in positional binding order, when already materialized. */
+&nbsp;    val parameterOrder: List&lt;String&gt;
+&nbsp;        get() = emptyList()
+&nbsp;}
+&nbsp;
+&nbsp;/** Common query plan consumed by a platform execution adapter. */
+&nbsp;data class KronosQueryExecutionPlan(
+&nbsp;    override val sql: String,
+&nbsp;    override val parameters: Map&lt;String, Any?&gt; = emptyMap(),
+&nbsp;    override val operationType: KOperationType = KOperationType.SELECT,
+&nbsp;    val targetType: StaticTypeInfo? = null,
+&nbsp;    val resultColumns: Map&lt;String, KronosResultColumnMetadata&gt; = emptyMap(),
+&nbsp;    override val parameterOrder: List&lt;String&gt; = emptyList()
+&nbsp;) : KronosExecutionPlan
+&nbsp;
+&nbsp;/**
+&nbsp; * Request for one atomic generated-key capture at the adapter boundary.
+&nbsp; *
+&nbsp; * @property fieldName physical database column name, including an explicit column mapping
+&nbsp; */
+&nbsp;data class KronosGeneratedKeyRequest(
+&nbsp;    val fieldName: String,
+&nbsp;    val capture: Boolean = true
+&nbsp;) {
+&nbsp;    init {
+&nbsp;        require(fieldName.isNotBlank()) { &quot;Generated key field name must not be blank.&quot; }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Common single-statement mutation plan. */
+&nbsp;data class KronosActionExecutionPlan(
+&nbsp;    override val sql: String,
+&nbsp;    override val parameters: Map&lt;String, Any?&gt; = emptyMap(),
+&nbsp;    override val operationType: KOperationType = KOperationType.UPDATE,
+&nbsp;    val generatedKey: KronosGeneratedKeyRequest? = null,
+&nbsp;    override val parameterOrder: List&lt;String&gt; = emptyList()
+&nbsp;) : KronosExecutionPlan
+&nbsp;
+&nbsp;/** Common batch mutation plan. */
+&nbsp;data class KronosBatchExecutionPlan(
+&nbsp;    override val sql: String,
+&nbsp;    val entries: List&lt;Map&lt;String, Any?&gt;&gt; = emptyList(),
+&nbsp;    override val operationType: KOperationType = KOperationType.UPDATE,
+&nbsp;    val generatedKey: KronosGeneratedKeyRequest? = null,
+&nbsp;    override val parameterOrder: List&lt;String&gt; = emptyList()
+&nbsp;) : KronosExecutionPlan {
+&nbsp;    override val parameters: Map&lt;String, Any?&gt;
+&nbsp;        get() = entries.firstOrNull() ?: emptyMap()
+&nbsp;}
+&nbsp;
+&nbsp;/** Result of one mutation, including keys captured by the same adapter operation. */
+&nbsp;data class KronosExecutionResult(
+&nbsp;    val affectedRows: Int = 0,
+&nbsp;    val generatedKeys: List&lt;Any?&gt; = emptyList(),
+&nbsp;    val lastInsertId: Long? = null
+&nbsp;)
+&nbsp;
+&nbsp;/** Presence-aware first-row result for mappers whose result itself may be `null`. */
+&nbsp;sealed interface KronosExecutionFirstResult&lt;out T&gt; {
+&nbsp;    data object Empty : KronosExecutionFirstResult&lt;Nothing&gt;
+&nbsp;
+&nbsp;    data class Present&lt;T&gt;(val value: T) : KronosExecutionFirstResult&lt;T&gt;
+&nbsp;}
+&nbsp;
+&nbsp;/** Mapper used while the platform cursor owns the live physical row. */
+&nbsp;typealias KronosPhysicalRowMapper&lt;T&gt; = (KronosPhysicalRow) -&gt; T
+&nbsp;
+&nbsp;/**
+&nbsp; * Common execution boundary implemented by an application-owned platform adapter.
+&nbsp; *
+&nbsp; * Query row mappers run while the adapter&#39;s cursor is active. Mutation methods
+&nbsp; * return generated keys captured inside the same statement/connection boundary;
+&nbsp; * callers must not emulate that contract with a second query.
+&nbsp; */
+&nbsp;interface KronosExecutionDataSource {
+&nbsp;    val identity: KronosDatabaseIdentity
+&nbsp;
+&nbsp;    fun &lt;T&gt; toList(
+&nbsp;        plan: KronosQueryExecutionPlan,
+&nbsp;        mapper: KronosPhysicalRowMapper&lt;T&gt;
+&nbsp;    ): List&lt;T&gt;
+&nbsp;
+&nbsp;    fun &lt;T&gt; first(
+&nbsp;        plan: KronosQueryExecutionPlan,
+&nbsp;        mapper: KronosPhysicalRowMapper&lt;T&gt;
+&nbsp;    ): KronosExecutionFirstResult&lt;T&gt;
+&nbsp;
+&nbsp;    fun execute(plan: KronosActionExecutionPlan): KronosExecutionResult
+&nbsp;
+&nbsp;    fun executeBatch(plan: KronosBatchExecutionPlan): List&lt;KronosExecutionResult&gt;
+&nbsp;
+&nbsp;    fun &lt;T&gt; transact(
+&nbsp;        options: KronosTransactionOptions = KronosTransactionOptions(),
+&nbsp;        block: KronosTransactionScope.() -&gt; T
+&nbsp;    ): T
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

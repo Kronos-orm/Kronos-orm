@@ -1,0 +1,234 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosLoggingConfig</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.logging</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosLoggingConfig (com.kotlinorm.beans.logging)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosLoggingConfig</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (25/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (225/225)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.logging
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.InternalKronosApi
+&nbsp;import com.kotlinorm.enums.KLogLevel
+&nbsp;import com.kotlinorm.enums.KLoggerType
+&nbsp;import com.kotlinorm.interfaces.KLogger
+&nbsp;import com.kotlinorm.types.KLoggerFactory
+&nbsp;import com.kotlinorm.utils.RuntimeReentrantLock
+&nbsp;
+&nbsp;/** Shared logging controls for every Kronos logger, including custom factories. */
+<b class="fc">&nbsp;class KronosLoggingConfig {</b>
+<b class="fc">&nbsp;    private val lock = RuntimeReentrantLock()</b>
+<b class="fc">&nbsp;    private var outputEnabled = true</b>
+<b class="fc">&nbsp;    private var destinations = arrayOf(&quot;console&quot;)</b>
+<b class="fc">&nbsp;    private var adapterType = KLoggerType.DEFAULT_LOGGER</b>
+<b class="fc">&nbsp;    private var level = KLogLevel.TRACE</b>
+&nbsp;    private var customFactory: KLoggerFactory? = null
+&nbsp;    /** Disabling output preserves the selected adapter, destinations and factory. */
+&nbsp;    var enabled: Boolean
+<b class="fc">&nbsp;        get() = lock.withLock { outputEnabled }</b>
+<b class="fc">&nbsp;        set(value) { lock.withLock { outputEnabled = value } }</b>
+&nbsp;
+&nbsp;    /** Bundled destinations copied on assignment/read; `console` selects standard output. */
+&nbsp;    var path: Array&lt;String&gt;
+<b class="fc">&nbsp;        get() = lock.withLock { destinations.copyOf() }</b>
+<b class="fc">&nbsp;        set(value) { lock.withLock { destinations = value.copyOf() } }</b>
+&nbsp;
+&nbsp;    /** Adapter selection used by kronos-logging after installing its platform integration. */
+&nbsp;    var type: KLoggerType
+<b class="fc">&nbsp;        get() = lock.withLock { adapterType }</b>
+<b class="fc">&nbsp;        set(value) { lock.withLock { adapterType = value } }</b>
+&nbsp;
+&nbsp;    /** Messages must also pass the adapter&#39;s own level checks. */
+&nbsp;    var minimumLevel: KLogLevel
+<b class="fc">&nbsp;        get() = lock.withLock { level }</b>
+<b class="fc">&nbsp;        set(value) { lock.withLock { level = value } }</b>
+&nbsp;
+&nbsp;    /** Optional custom adapter factory. Set to null to use the selected platform adapter. */
+&nbsp;    var factory: KLoggerFactory?
+<b class="fc">&nbsp;        get() = lock.withLock { customFactory }</b>
+<b class="fc">&nbsp;        set(value) { lock.withLock { customFactory = value } }</b>
+&nbsp;
+<b class="fc">&nbsp;    private var platformFactory: KLoggerFactory = { source -&gt;</b>
+<b class="fc">&nbsp;        check(type == KLoggerType.DEFAULT_LOGGER) {</b>
+<b class="fc">&nbsp;            &quot;Logging adapter $type is not installed. Initialize kronos-logging or configure logging.factory.&quot;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        platformDefaultLogger(source)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns a logger that observes current controls even after it has been retained. */
+<b class="fc">&nbsp;    fun logger(source: Any): KLogger = ConfiguredLogger(this, source)</b>
+&nbsp;
+&nbsp;    /** Used by the platform integration without changing the user&#39;s custom factory. */
+&nbsp;    @InternalKronosApi
+&nbsp;    fun installAdapterFactory(adapterFactory: KLoggerFactory) {
+<b class="fc">&nbsp;        lock.withLock { platformFactory = adapterFactory }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    internal fun accepts(level: KLogLevel): Boolean = lock.withLock { outputEnabled &amp;&amp; level &gt;= this.level }</b>
+&nbsp;
+&nbsp;    internal fun resolve(source: Any): KLogger {
+<b class="fc">&nbsp;        val selected = lock.withLock { customFactory ?: platformFactory }</b>
+&nbsp;        // User factories may configure logging or wait for work on another thread.
+<b class="fc">&nbsp;        return selected(source)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private class ConfiguredLogger(private val config: KronosLoggingConfig, private val source: Any) : KLogger {
+&nbsp;    private fun accepted(level: KLogLevel, check: KLogger.() -&gt; Boolean): KLogger? {
+&nbsp;        if (!config.accepts(level)) return null
+&nbsp;        return config.resolve(source).takeIf(check)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun isTraceEnabled() = accepted(KLogLevel.TRACE, KLogger::isTraceEnabled) != null
+&nbsp;    override fun isDebugEnabled() = accepted(KLogLevel.DEBUG, KLogger::isDebugEnabled) != null
+&nbsp;    override fun isInfoEnabled() = accepted(KLogLevel.INFO, KLogger::isInfoEnabled) != null
+&nbsp;    override fun isWarnEnabled() = accepted(KLogLevel.WARN, KLogger::isWarnEnabled) != null
+&nbsp;    override fun isErrorEnabled() = accepted(KLogLevel.ERROR, KLogger::isErrorEnabled) != null
+&nbsp;
+&nbsp;    override fun trace(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+&nbsp;        accepted(KLogLevel.TRACE, KLogger::isTraceEnabled)?.trace(messages, e)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun debug(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+&nbsp;        accepted(KLogLevel.DEBUG, KLogger::isDebugEnabled)?.debug(messages, e)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun info(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+&nbsp;        accepted(KLogLevel.INFO, KLogger::isInfoEnabled)?.info(messages, e)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun warn(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+&nbsp;        accepted(KLogLevel.WARN, KLogger::isWarnEnabled)?.warn(messages, e)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun error(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+&nbsp;        accepted(KLogLevel.ERROR, KLogger::isErrorEnabled)?.error(messages, e)
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

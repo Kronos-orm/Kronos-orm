@@ -1,0 +1,421 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > StaticContainerShape</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.core</a>
+</div>
+
+<h1>Coverage Summary for Class: StaticContainerShape (com.kotlinorm.compiler.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StaticContainerShape</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.core
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.irListOf
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.descriptors.ClassKind
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBoolean
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrTypeParameter
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrTypeParametersContainer
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.AbstractIrTypeSubstitutor
+&nbsp;import org.jetbrains.kotlin.ir.types.IrSimpleType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrStarProjection
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeArgument
+&nbsp;import org.jetbrains.kotlin.ir.types.IrTypeProjection
+&nbsp;import org.jetbrains.kotlin.ir.types.SimpleTypeNullability
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.ir.util.superTypes
+&nbsp;import org.jetbrains.kotlin.types.Variance
+&nbsp;
+&nbsp;private const val ARRAY_TYPE_KEY = &quot;kotlin.Array&quot;
+&nbsp;private const val ITERABLE_TYPE_KEY = &quot;kotlin.collections.Iterable&quot;
+&nbsp;private const val MAP_TYPE_KEY = &quot;kotlin.collections.Map&quot;
+&nbsp;private const val TYPE_INFO_ELEMENT_TYPE_INDEX = 3
+&nbsp;private const val TYPE_INFO_KPOJO_INDEX = 4
+&nbsp;private const val TYPE_INFO_ENUM_KEY_INDEX = 5
+&nbsp;private const val TYPE_INFO_VARIANCES_INDEX = 6
+&nbsp;
+&nbsp;private data class StaticContainerShape(
+<b class="fc">&nbsp;    val entryName: String,</b>
+<b class="fc">&nbsp;    val elementType: IrType? = null</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Builds the common static type descriptor emitted with every generated property Field.
+&nbsp; *
+&nbsp; * Keys are literals derived from compiler declarations only. No runtime class, Java type,
+&nbsp; * or KType rendering is used in generated metadata.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun buildStaticTypeInfo(type: IrType): IrExpression? {
+&nbsp;    val simpleType = type as? IrSimpleType ?: return null
+&nbsp;    val typeRef = buildStaticTypeRef(simpleType) ?: return null
+&nbsp;    val directSupertypes = simpleType.substitutedDirectSupertypes().map {
+&nbsp;        buildStaticTypeRef(it) ?: return null
+&nbsp;    }
+&nbsp;    val shape = simpleType.staticContainerShape()
+&nbsp;    val elementType = shape.elementType?.let { buildStaticTypeRef(it) }
+&nbsp;    val enumKey = simpleType.classOrNull
+&nbsp;        ?.owner
+&nbsp;        ?.takeIf { it.kind == ClassKind.ENUM_CLASS }
+&nbsp;        ?.staticClassifierKey()
+&nbsp;    val declarationVariances = simpleType.classOrNull
+&nbsp;        ?.owner
+&nbsp;        ?.typeParameters
+&nbsp;        ?.map { builder.staticVariance(it.variance) }
+&nbsp;        .orEmpty()
+&nbsp;
+&nbsp;    return builder.irCall(staticTypeInfoConstructorSymbol).apply {
+&nbsp;        arguments[0] = typeRef
+&nbsp;        arguments[1] = irListOf(staticTypeRefClassSymbol.defaultType, directSupertypes)
+&nbsp;        arguments[2] = builder.staticEnumValue(staticContainerKindSymbol, shape.entryName)
+&nbsp;        arguments[TYPE_INFO_ELEMENT_TYPE_INDEX] = elementType ?: builder.irNull()
+&nbsp;        arguments[TYPE_INFO_KPOJO_INDEX] = builder.irBoolean(simpleType.isKPojoType())
+&nbsp;        arguments[TYPE_INFO_ENUM_KEY_INDEX] = enumKey?.let(builder::irString) ?: builder.irNull()
+&nbsp;        arguments[TYPE_INFO_VARIANCES_INDEX] = irListOf(staticTypeVarianceSymbol.defaultType, declarationVariances)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Collects the complete, statically describable type graph reachable from [roots].
+&nbsp; *
+&nbsp; * Every edge uses the source type&#39;s substituted direct supertypes. Types without a
+&nbsp; * stable compiler declaration key are intentionally omitted instead of embedding
+&nbsp; * source offsets or runtime-derived identities in generated code.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun collectStaticTypeMetadataTypes(roots: Iterable&lt;IrType&gt;): List&lt;IrSimpleType&gt; {
+&nbsp;    val collected = linkedMapOf&lt;String, IrSimpleType&gt;()
+&nbsp;
+&nbsp;    fun collect(type: IrType) {
+&nbsp;        val simpleType = type as? IrSimpleType ?: return
+&nbsp;        val signature = simpleType.staticReferenceSignature(normalizeRootNullability = true) ?: return
+&nbsp;        if (collected.putIfAbsent(signature, simpleType) != null) return
+&nbsp;
+&nbsp;        simpleType.arguments.forEach { argument -&gt;
+&nbsp;            (argument as? IrTypeProjection)?.type?.let(::collect)
+&nbsp;        }
+&nbsp;        simpleType.substitutedDirectSupertypes().forEach(::collect)
+&nbsp;    }
+&nbsp;
+&nbsp;    roots.forEach(::collect)
+&nbsp;    return collected.entries.sortedBy { it.key }.map { it.value }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;private fun buildStaticTypeRef(type: IrType): IrExpression? {
+&nbsp;    val simpleType = type as? IrSimpleType ?: return null
+&nbsp;    val key = simpleType.staticClassifierKey() ?: return null
+&nbsp;    val typeArguments = simpleType.arguments.map { argument -&gt;
+&nbsp;        buildStaticTypeArgument(argument) ?: return null
+&nbsp;    }
+&nbsp;
+&nbsp;    return builder.irCall(staticTypeRefConstructorSymbol).apply {
+&nbsp;        this.arguments[0] = builder.irString(key)
+&nbsp;        this.arguments[1] = builder.irBoolean(simpleType.nullability == SimpleTypeNullability.MARKED_NULLABLE)
+&nbsp;        this.arguments[2] = irListOf(staticTypeArgumentClassSymbol.defaultType, typeArguments)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;private fun buildStaticTypeArgument(argument: IrTypeArgument): IrExpression? {
+&nbsp;    val entryName: String
+&nbsp;    val typeRef: IrExpression?
+&nbsp;    when (argument) {
+&nbsp;        is IrStarProjection -&gt; {
+&nbsp;            entryName = &quot;STAR&quot;
+&nbsp;            typeRef = null
+&nbsp;        }
+&nbsp;
+&nbsp;        is IrTypeProjection -&gt; {
+&nbsp;            entryName = when (argument.variance) {
+&nbsp;                Variance.INVARIANT -&gt; &quot;INVARIANT&quot;
+&nbsp;                Variance.IN_VARIANCE -&gt; &quot;IN&quot;
+&nbsp;                Variance.OUT_VARIANCE -&gt; &quot;OUT&quot;
+&nbsp;            }
+&nbsp;            typeRef = buildStaticTypeRef(argument.type) ?: return null
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    return builder.irCall(staticTypeArgumentConstructorSymbol).apply {
+&nbsp;        arguments[0] = builder.staticEnumValue(staticTypeVarianceSymbol, entryName)
+&nbsp;        if (typeRef != null) arguments[1] = typeRef
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrSimpleType.substitutedDirectSupertypes(): List&lt;IrType&gt; {
+&nbsp;    val substitutor = AbstractIrTypeSubstitutor.forType(this)
+&nbsp;    return classifier.superTypes().map(substitutor::substitute)
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrSimpleType.staticContainerShape(): StaticContainerShape {
+&nbsp;    val classSymbol = classOrNull
+&nbsp;    val primitiveElement = classSymbol?.let { symbol -&gt;
+&nbsp;        context.irBuiltIns.primitiveArrayElementTypes[symbol]
+&nbsp;            ?: context.irBuiltIns.unsignedArraysElementTypes[symbol]
+&nbsp;    }
+&nbsp;    if (primitiveElement != null) {
+&nbsp;        return StaticContainerShape(&quot;PRIMITIVE_ARRAY&quot;, primitiveElement)
+&nbsp;    }
+&nbsp;    if (classSymbol?.owner?.fqNameWhenAvailable?.asString() == ARRAY_TYPE_KEY) {
+&nbsp;        return StaticContainerShape(&quot;ARRAY&quot;, typeArgumentOrNull(0))
+&nbsp;    }
+&nbsp;
+&nbsp;    findSubstitutedSupertype(MAP_TYPE_KEY)?.let {
+&nbsp;        return StaticContainerShape(&quot;MAP&quot;)
+&nbsp;    }
+&nbsp;    findSubstitutedSupertype(ITERABLE_TYPE_KEY)?.let { iterableType -&gt;
+&nbsp;        return StaticContainerShape(&quot;ITERABLE&quot;, iterableType.typeArgumentOrNull(0))
+&nbsp;    }
+&nbsp;    return StaticContainerShape(&quot;NONE&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;private fun IrSimpleType.typeArgumentOrNull(index: Int): IrType? =
+&nbsp;    (arguments.getOrNull(index) as? IrTypeProjection)?.type
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrSimpleType.findSubstitutedSupertype(targetKey: String): IrSimpleType? {
+&nbsp;    val visited = mutableSetOf&lt;IrClassSymbol&gt;()
+&nbsp;
+&nbsp;    fun visit(current: IrSimpleType): IrSimpleType? {
+&nbsp;        val classSymbol = current.classOrNull ?: return null
+&nbsp;        if (classSymbol.owner.fqNameWhenAvailable?.asString() == targetKey) return current
+&nbsp;        if (!visited.add(classSymbol)) return null
+&nbsp;
+&nbsp;        val substitutor = AbstractIrTypeSubstitutor.forType(current)
+&nbsp;        return classSymbol.superTypes()
+&nbsp;            .asSequence()
+&nbsp;            .mapNotNull { substitutor.substitute(it) as? IrSimpleType }
+&nbsp;            .mapNotNull(::visit)
+&nbsp;            .firstOrNull()
+&nbsp;    }
+&nbsp;
+&nbsp;    return visit(this)
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrSimpleType.staticClassifierKey(): String? = when (val classifier = classifier) {
+&nbsp;    is IrClassSymbol -&gt; classifier.owner.staticClassifierKey()
+&nbsp;    is IrTypeParameterSymbol -&gt; classifier.owner.staticTypeParameterKey()
+&nbsp;    else -&gt; null
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrClass.staticClassifierKey(): String? = fqNameWhenAvailable?.asString()
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrTypeParameter.staticTypeParameterKey(): String? {
+&nbsp;    val owner = parent
+&nbsp;    val ownerKey = when (owner) {
+&nbsp;        is IrClass -&gt; owner.fqNameWhenAvailable?.asString()
+&nbsp;        is IrFunction -&gt; owner.fqNameWhenAvailable?.asString()
+&nbsp;        else -&gt; null
+&nbsp;    } ?: return null
+&nbsp;    val index = (owner as? IrTypeParametersContainer)?.typeParameters?.indexOf(this) ?: return null
+&nbsp;    return &quot;type-parameter:$ownerKey:${name.asString()}:$index&quot;
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrSimpleType.staticReferenceSignature(normalizeRootNullability: Boolean = false): String? {
+&nbsp;    val key = staticClassifierKey() ?: return null
+&nbsp;    return buildString {
+&nbsp;        append(key.length)
+&nbsp;        append(&#39;:&#39;)
+&nbsp;        append(key)
+&nbsp;        append(
+&nbsp;            if (!normalizeRootNullability &amp;&amp; nullability == SimpleTypeNullability.MARKED_NULLABLE) &#39;?&#39; else &#39;!&#39;
+&nbsp;        )
+&nbsp;        append(&#39;&lt;&#39;)
+&nbsp;        this@staticReferenceSignature.arguments.forEachIndexed { index, argument -&gt;
+&nbsp;            if (index &gt; 0) append(&#39;,&#39;)
+&nbsp;            when (argument) {
+&nbsp;                is IrStarProjection -&gt; append(&#39;*&#39;)
+&nbsp;                is IrTypeProjection -&gt; {
+&nbsp;                    append(
+&nbsp;                        when (argument.variance) {
+&nbsp;                            Variance.INVARIANT -&gt; &#39;=&#39;
+&nbsp;                            Variance.IN_VARIANCE -&gt; &#39;-&#39;
+&nbsp;                            Variance.OUT_VARIANCE -&gt; &#39;+&#39;
+&nbsp;                        }
+&nbsp;                    )
+&nbsp;                    val nestedSignature = (argument.type as? IrSimpleType)
+&nbsp;                        ?.staticReferenceSignature()
+&nbsp;                        ?: return null
+&nbsp;                    append(nestedSignature)
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        append(&#39;&gt;&#39;)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrBuilderWithScope.staticVariance(variance: Variance): IrExpression =
+&nbsp;    staticEnumValue(
+&nbsp;        staticTypeVarianceSymbol,
+&nbsp;        when (variance) {
+&nbsp;            Variance.INVARIANT -&gt; &quot;INVARIANT&quot;
+&nbsp;            Variance.IN_VARIANCE -&gt; &quot;IN&quot;
+&nbsp;            Variance.OUT_VARIANCE -&gt; &quot;OUT&quot;
+&nbsp;        }
+&nbsp;    )
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private fun IrBuilderWithScope.staticEnumValue(
+&nbsp;    enumClass: IrClassSymbol,
+&nbsp;    entryName: String
+&nbsp;): IrExpression {
+&nbsp;    val entry = enumClass.owner.declarations
+&nbsp;        .filterIsInstance&lt;org.jetbrains.kotlin.ir.declarations.IrEnumEntry&gt;()
+&nbsp;        .single { it.name.asString() == entryName }
+&nbsp;    return IrGetEnumValueImpl(startOffset, endOffset, enumClass.defaultType, entry.symbol)
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 11:00</div>
+</div>
+</body>
+</html>

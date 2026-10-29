@@ -1,0 +1,243 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-syntax Coverage Report > SqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-syntax<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.syntax.render</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlRenderer (com.kotlinorm.syntax.render)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlRenderer</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/*
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.syntax.render
+&nbsp;
+&nbsp;import com.kotlinorm.syntax.expr.SqlExpr
+&nbsp;import com.kotlinorm.syntax.expr.SqlParameter
+&nbsp;import com.kotlinorm.syntax.inspect.SqlParameterCollector
+&nbsp;import com.kotlinorm.syntax.inspect.SqlNodeRewriter
+&nbsp;import com.kotlinorm.syntax.statement.SqlDdlStatement
+&nbsp;import com.kotlinorm.syntax.statement.SqlQuery
+&nbsp;import com.kotlinorm.syntax.statement.SqlStatement
+&nbsp;import com.kotlinorm.syntax.table.SqlTable
+&nbsp;import com.kotlinorm.syntax.validate.SqlValidationDiagnostic
+&nbsp;
+&nbsp;interface SqlRenderer {
+&nbsp;    fun renderStatement(statement: SqlStatement): String
+&nbsp;    fun renderQuery(query: SqlQuery): String
+&nbsp;    fun renderExpr(expr: SqlExpr): String
+&nbsp;    fun renderPredicate(expr: SqlExpr): String
+&nbsp;    fun renderTable(table: SqlTable): String
+&nbsp;}
+&nbsp;
+&nbsp;interface SqlPrinter : SqlRenderer
+&nbsp;
+&nbsp;fun sqlRenderer(dialect: SqlDialect = SqlDialect.Standard): SqlRenderer = when (dialect.family) {
+&nbsp;    SqlDialectFamily.Standard -&gt; StandardSqlRenderer(dialect)
+&nbsp;    SqlDialectFamily.MySql -&gt; MysqlSqlRenderer(standardEscapeStrings = dialect.standardEscapeStrings)
+&nbsp;    SqlDialectFamily.PostgreSql -&gt; PostgresqlSqlRenderer()
+&nbsp;    SqlDialectFamily.SQLite -&gt; SqliteSqlRenderer()
+&nbsp;    SqlDialectFamily.H2 -&gt; H2SqlRenderer()
+&nbsp;    SqlDialectFamily.Oracle -&gt; OracleSqlRenderer()
+&nbsp;    SqlDialectFamily.SqlServer -&gt; SqlServerSqlRenderer()
+&nbsp;}
+&nbsp;
+&nbsp;fun SqlStatement.toSql(dialect: SqlDialect = SqlDialect.Standard): String =
+&nbsp;    sqlRenderer(dialect).renderStatement(this)
+&nbsp;
+&nbsp;fun SqlStatement.toSql(context: SqlRenderContext): String =
+&nbsp;    toRenderedSql(context).sql
+&nbsp;
+&nbsp;fun SqlStatement.toRenderedSql(context: SqlRenderContext = SqlRenderContext()): RenderedSql {
+&nbsp;    val lowered = context.lowerer.lowerStatement(this, context.dialect)
+&nbsp;    val plan = context.planner.plan(lowered, context.dialect)
+&nbsp;    val diagnostics = plan.diagnostics + plan.statements.flatMap { context.validator.validate(it, context.dialect) }
+&nbsp;    throwOnDialectErrors(context, diagnostics)
+&nbsp;    if (plan.statements.size != 1) {
+&nbsp;        throw MultiStatementSqlPlanException(plan.statements.size)
+&nbsp;    }
+&nbsp;    val statement = plan.statements.single().prepareForRendering(context)
+&nbsp;    return renderedSql(
+&nbsp;        sql = sqlRenderer(context.dialect).renderStatement(statement),
+&nbsp;        context = context,
+&nbsp;        astParameterNames = SqlParameterCollector.collectNamedParameters(statement),
+&nbsp;        listParameterOccurrences = SqlParameterCollector.collectListExpansionOccurrences(statement)
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;private fun SqlStatement.prepareForRendering(context: SqlRenderContext): SqlStatement {
+&nbsp;    if (context.dialect.family != SqlDialectFamily.Oracle || this !is SqlDdlStatement.CreateTableAsSelect) {
+&nbsp;        return this
+&nbsp;    }
+&nbsp;    val inliner = object : SqlNodeRewriter {
+&nbsp;        override fun rewriteExpr(expr: SqlExpr): SqlExpr {
+&nbsp;            val parameter = expr as? SqlExpr.Parameter ?: return super.rewriteExpr(expr)
+&nbsp;            val name = (parameter.parameter as? SqlParameter.Named)?.name ?: return parameter
+&nbsp;            require(context.parameterValues.containsKey(name)) {
+&nbsp;                &quot;Oracle CREATE TABLE AS SELECT parameter &#39;$name&#39; must be bound before rendering.&quot;
+&nbsp;            }
+&nbsp;            require(!parameter.expandAsList) {
+&nbsp;                &quot;Oracle CREATE TABLE AS SELECT does not support list parameter &#39;$name&#39;.&quot;
+&nbsp;            }
+&nbsp;            return oracleDdlLiteral(context.parameterValues[name], name)
+&nbsp;        }
+&nbsp;    }
+&nbsp;    return copy(query = inliner.rewriteQuery(query))
+&nbsp;}
+&nbsp;
+&nbsp;@ExperimentalKronosSyntaxApi
+&nbsp;fun SqlStatement.toRenderedSqlBatch(context: SqlRenderContext = SqlRenderContext()): RenderedSqlBatch {
+&nbsp;    val lowered = context.lowerer.lowerStatement(this, context.dialect)
+&nbsp;    val plan = context.planner.plan(lowered, context.dialect)
+&nbsp;    val diagnostics = plan.diagnostics + plan.statements.flatMap { context.validator.validate(it, context.dialect) }
+&nbsp;    throwOnDialectErrors(context, diagnostics)
+&nbsp;    val renderer = sqlRenderer(context.dialect)
+&nbsp;    return RenderedSqlBatch(
+&nbsp;        statements = plan.statements.map { plannedStatement -&gt;
+&nbsp;            val statement = plannedStatement.prepareForRendering(context)
+&nbsp;            renderedSql(
+&nbsp;                sql = renderer.renderStatement(statement),
+&nbsp;                context = context,
+&nbsp;                astParameterNames = SqlParameterCollector.collectNamedParameters(statement),
+&nbsp;                listParameterOccurrences = SqlParameterCollector.collectListExpansionOccurrences(statement)
+&nbsp;            )
+&nbsp;        },
+&nbsp;        diagnostics = diagnostics
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;fun SqlQuery.toSql(dialect: SqlDialect = SqlDialect.Standard): String =
+&nbsp;    sqlRenderer(dialect).renderQuery(this)
+&nbsp;
+&nbsp;fun SqlQuery.toSql(context: SqlRenderContext): String =
+&nbsp;    toRenderedSql(context).sql
+&nbsp;
+&nbsp;fun SqlQuery.toRenderedSql(context: SqlRenderContext = SqlRenderContext()): RenderedSql {
+&nbsp;    val lowered = context.lowerer.lowerQuery(this, context.dialect)
+&nbsp;    val plan = context.planner.plan(lowered, context.dialect)
+&nbsp;    val diagnostics = plan.diagnostics + plan.statements.flatMap { context.validator.validate(it, context.dialect) }
+&nbsp;    throwOnDialectErrors(context, diagnostics)
+&nbsp;    if (plan.statements.size != 1) {
+&nbsp;        throw MultiStatementSqlPlanException(plan.statements.size)
+&nbsp;    }
+&nbsp;    val statement = plan.statements.single()
+&nbsp;    return renderedSql(
+&nbsp;        sql = sqlRenderer(context.dialect).renderStatement(statement),
+&nbsp;        context = context,
+&nbsp;        astParameterNames = SqlParameterCollector.collectNamedParameters(statement),
+&nbsp;        listParameterOccurrences = SqlParameterCollector.collectListExpansionOccurrences(statement)
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;fun SqlExpr.toSql(dialect: SqlDialect = SqlDialect.Standard): String =
+&nbsp;    sqlRenderer(dialect).renderExpr(this)
+&nbsp;
+&nbsp;fun SqlExpr.toSql(context: SqlRenderContext): String =
+&nbsp;    toRenderedSql(context).sql
+&nbsp;
+&nbsp;fun SqlExpr.toRenderedSql(context: SqlRenderContext = SqlRenderContext()): RenderedSql {
+&nbsp;    val lowered = context.lowerer.lowerExpr(this, context.dialect)
+&nbsp;    val diagnostics = context.validator.validate(lowered, context.dialect)
+&nbsp;    throwOnDialectErrors(context, diagnostics)
+&nbsp;    return renderedSql(
+&nbsp;        sql = sqlRenderer(context.dialect).renderExpr(lowered),
+&nbsp;        context = context,
+&nbsp;        astParameterNames = SqlParameterCollector.collectNamedParameters(lowered),
+&nbsp;        listParameterOccurrences = SqlParameterCollector.collectListExpansionOccurrences(lowered)
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;fun SqlTable.toSql(dialect: SqlDialect = SqlDialect.Standard): String =
+&nbsp;    sqlRenderer(dialect).renderTable(this)
+&nbsp;
+&nbsp;fun SqlTable.toSql(context: SqlRenderContext): String =
+&nbsp;    toRenderedSql(context).sql
+&nbsp;
+&nbsp;fun SqlTable.toRenderedSql(context: SqlRenderContext = SqlRenderContext()): RenderedSql {
+&nbsp;    val lowered = context.lowerer.lowerTable(this, context.dialect)
+&nbsp;    val diagnostics = context.validator.validate(lowered, context.dialect)
+&nbsp;    throwOnDialectErrors(context, diagnostics)
+&nbsp;    return renderedSql(
+&nbsp;        sql = sqlRenderer(context.dialect).renderTable(lowered),
+&nbsp;        context = context,
+&nbsp;        astParameterNames = SqlParameterCollector.collectNamedParameters(lowered),
+&nbsp;        listParameterOccurrences = SqlParameterCollector.collectListExpansionOccurrences(lowered)
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;data class RenderedSqlBatch(
+&nbsp;    val statements: List&lt;RenderedSql&gt;,
+&nbsp;    val diagnostics: List&lt;SqlValidationDiagnostic&gt; = emptyList()
+&nbsp;)
+&nbsp;
+&nbsp;class MultiStatementSqlPlanException(
+&nbsp;    val statementCount: Int
+&nbsp;) : IllegalStateException(&quot;SQL plan produced $statementCount statements. Use toRenderedSqlBatch() for multi-statement plans.&quot;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:56</div>
+</div>
+</body>
+</html>

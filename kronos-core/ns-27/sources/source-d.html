@@ -1,0 +1,312 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > IdentityHashMap</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: IdentityHashMap (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IdentityHashMap</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.2%
+  </span>
+  <span class="absValue">
+    (18/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (19/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.3%
+  </span>
+  <span class="absValue">
+    (182/191)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">IdentityHashMap$entries$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (41/41)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">IdentityHashMap$entries$1$iterator$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98%
+  </span>
+  <span class="absValue">
+    (50/51)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">IdentityHashMap$put$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70%
+  </span>
+  <span class="absValue">
+    (21/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (34/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.7%
+  </span>
+  <span class="absValue">
+    (297/307)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;/** A per-thread stack holder; scopes must never bleed between concurrent queries. */
+&nbsp;internal expect class PlatformThreadLocal&lt;T&gt;(initial: () -&gt; T) {
+&nbsp;    fun get(): T
+&nbsp;    fun set(value: T)
+&nbsp;    fun remove()
+&nbsp;}
+&nbsp;
+&nbsp;/** Small identity map; generated data-class equality must not merge distinct query sources. */
+<b class="fc">&nbsp;internal class IdentityHashMap&lt;K : Any, V&gt; : AbstractMutableMap&lt;K, V&gt;() {</b>
+<b class="fc">&nbsp;    private val buckets = mutableMapOf&lt;Int, MutableList&lt;MutableMap.MutableEntry&lt;K, V&gt;&gt;&gt;()</b>
+<b class="fc">&nbsp;    override val size: Int get() = buckets.values.sumOf { it.size }</b>
+&nbsp;    override val entries: MutableSet&lt;MutableMap.MutableEntry&lt;K, V&gt;&gt;
+<b class="fc">&nbsp;        get() = object : AbstractMutableSet&lt;MutableMap.MutableEntry&lt;K, V&gt;&gt;() {</b>
+<b class="fc">&nbsp;            override val size get() = this@IdentityHashMap.size</b>
+&nbsp;            override fun iterator(): MutableIterator&lt;MutableMap.MutableEntry&lt;K, V&gt;&gt; {
+<b class="fc">&nbsp;                val keys = buckets.values.flatMap { bucket -&gt; bucket.map { it.key } }.iterator()</b>
+<b class="fc">&nbsp;                var last: K? = null</b>
+<b class="fc">&nbsp;                return object : MutableIterator&lt;MutableMap.MutableEntry&lt;K, V&gt;&gt; {</b>
+<b class="fc">&nbsp;                    override fun hasNext() = keys.hasNext()</b>
+&nbsp;                    override fun next(): MutableMap.MutableEntry&lt;K, V&gt; {
+<b class="fc">&nbsp;                        val key = keys.next(); last = key</b>
+<b class="pc">&nbsp;                        return buckets.getValue(platformIdentityHashCode(key)).first { it.key === key }</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    override fun remove() { this@IdentityHashMap.remove(last ?: error(&quot;Call next before remove&quot;)); last = null }</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            override fun add(element: MutableMap.MutableEntry&lt;K, V&gt;): Boolean = error(&quot;Use put&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;    override fun get(key: K): V? = buckets[platformIdentityHashCode(key)]?.firstOrNull { it.key === key }?.value</b>
+<b class="pc">&nbsp;    override fun containsKey(key: K): Boolean = buckets[platformIdentityHashCode(key)]?.any { it.key === key } == true</b>
+<b class="fc">&nbsp;    override fun clear() = buckets.clear()</b>
+&nbsp;    override fun remove(key: K): V? {
+<b class="fc">&nbsp;        val hash = platformIdentityHashCode(key)</b>
+<b class="fc">&nbsp;        val bucket = buckets[hash] ?: return null</b>
+<b class="pc">&nbsp;        val index = bucket.indexOfFirst { it.key === key }</b>
+<b class="pc">&nbsp;        if (index &lt; 0) return null</b>
+<b class="fc">&nbsp;        val result = bucket.removeAt(index).value</b>
+<b class="pc">&nbsp;        if (bucket.isEmpty()) buckets.remove(hash)</b>
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;    override fun put(key: K, value: V): V? {
+<b class="fc">&nbsp;        val bucket = buckets.getOrPut(platformIdentityHashCode(key)) { mutableListOf() }</b>
+<b class="pc">&nbsp;        val entry = bucket.firstOrNull { it.key === key }</b>
+<b class="fc">&nbsp;        if (entry != null) return entry.setValue(value)</b>
+<b class="fc">&nbsp;        bucket += object : MutableMap.MutableEntry&lt;K, V&gt; {</b>
+<b class="fc">&nbsp;            override val key = key</b>
+<b class="fc">&nbsp;            override var value = value</b>
+<b class="fc">&nbsp;            override fun setValue(newValue: V): V = this.value.also { this.value = newValue }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal expect fun platformIdentityHashCode(value: Any): Int
+&nbsp;
+&nbsp;internal expect fun platformIsKPojoClass(declaration: kotlin.reflect.KClass&lt;*&gt;): Boolean
+&nbsp;internal expect fun platformIsEnumClass(declaration: kotlin.reflect.KClass&lt;*&gt;): Boolean
+&nbsp;internal expect fun platformClassAssignable(source: kotlin.reflect.KClass&lt;*&gt;, target: kotlin.reflect.KClass&lt;*&gt;): Boolean
+&nbsp;internal expect fun platformIsCollectionClass(declaration: kotlin.reflect.KClass&lt;*&gt;): Boolean
+&nbsp;
+&nbsp;internal expect fun registerPlatformGeneratedType(type: kotlin.reflect.KType, isKPojo: Boolean, isEnum: Boolean)
+&nbsp;
+&nbsp;internal expect fun platformValidateKPojoFactoryType(type: kotlin.reflect.KType)
+&nbsp;
+&nbsp;internal expect fun platformNamingLowercase(value: String): String
+&nbsp;
+&nbsp;/** Distinguishes unavailable optional JVM types from cancellation and fatal runtime failures. */
+&nbsp;internal expect fun platformIsUnavailableTypeMetadata(failure: Error): Boolean
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

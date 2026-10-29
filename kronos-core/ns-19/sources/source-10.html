@@ -1,0 +1,304 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosPhysicalRow</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosPhysicalRow (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosPhysicalRow</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85%
+  </span>
+  <span class="absValue">
+    (17/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (16/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.4%
+  </span>
+  <span class="absValue">
+    (126/128)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosPhysicalRow$DefaultImpls</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/11)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (4/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85%
+  </span>
+  <span class="absValue">
+    (17/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (16/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.6%
+  </span>
+  <span class="absValue">
+    (126/139)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;/**
+&nbsp; * A platform-neutral physical database value.
+&nbsp; *
+&nbsp; * Database wrappers expose only these storage classes at the cursor boundary.
+&nbsp; * Logical Kotlin conversion, including enum, temporal, serialization, and
+&nbsp; * nullable handling, belongs to the codec layer after this value is read.
+&nbsp; */
+&nbsp;sealed interface KronosPhysicalValue {
+&nbsp;    /** SQL NULL, distinct from a missing column. */
+&nbsp;    data object Null : KronosPhysicalValue
+&nbsp;
+&nbsp;    /** A signed 64-bit database integer. */
+&nbsp;    data class Integer(val value: Long) : KronosPhysicalValue
+&nbsp;
+&nbsp;    /** A double-precision database real value. */
+&nbsp;    data class Real(val value: Double) : KronosPhysicalValue
+&nbsp;
+&nbsp;    /** A database text value. */
+&nbsp;    data class Text(val value: String) : KronosPhysicalValue
+&nbsp;
+&nbsp;    /**
+&nbsp;     * A binary database value.
+&nbsp;     *
+&nbsp;     * The constructor and accessor copy the byte content so a row value stays
+&nbsp;     * stable while a caller retains it after a cursor advances.
+&nbsp;     */
+&nbsp;    class Blob(bytes: ByteArray) : KronosPhysicalValue {
+&nbsp;        private val content: ByteArray = bytes.copyOf()
+&nbsp;
+&nbsp;        val bytes: ByteArray
+&nbsp;            get() = content.copyOf()
+&nbsp;
+&nbsp;        override fun equals(other: Any?): Boolean =
+&nbsp;            other is Blob &amp;&amp; content.contentEquals(other.content)
+&nbsp;
+&nbsp;        override fun hashCode(): Int = content.contentHashCode()
+&nbsp;
+&nbsp;        override fun toString(): String = &quot;Blob(size=${content.size})&quot;
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * One active physical row supplied by a platform database cursor.
+&nbsp; *
+&nbsp; * Column positions are one-based to match the execution/binding boundary used
+&nbsp; * by current wrappers. Labels are exact database column names or SQL aliases;
+&nbsp; * duplicate labels must be addressed by position. A row is live only while its
+&nbsp; * mapper is running. Implementations set [isActive] to `false` afterwards and
+&nbsp; * all accessors must then throw [IllegalStateException].
+&nbsp; */
+&nbsp;interface KronosPhysicalRow {
+&nbsp;    /** Zero-based index of this row in the current result. */
+&nbsp;    val rowNumber: Int
+&nbsp;
+&nbsp;    /** Number of columns available from this row. */
+&nbsp;    val columnCount: Int
+&nbsp;
+&nbsp;    /** Whether this row remains valid for reads. */
+&nbsp;    val isActive: Boolean
+&nbsp;
+&nbsp;    /** Returns the exact column name or alias at the one-based [position]. */
+&nbsp;    fun columnLabel(position: Int): String
+&nbsp;
+&nbsp;    /** Returns the raw physical value at the one-based [position]. */
+&nbsp;    fun get(position: Int): KronosPhysicalValue
+&nbsp;
+&nbsp;    /** Verifies that the row still belongs to its active mapper callback. */
+<b class="nc">&nbsp;    fun requireActive() {</b>
+<b class="fc">&nbsp;        check(isActive) { &quot;KronosPhysicalRow is only valid while its mapper is running&quot; }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Verifies that [position] identifies a column in this active row. */
+<b class="nc">&nbsp;    fun requireColumnPosition(position: Int) {</b>
+<b class="fc">&nbsp;        requireActive()</b>
+<b class="pc">&nbsp;        require(position in 1..columnCount) {</b>
+<b class="fc">&nbsp;            &quot;Column position $position is outside 1..$columnCount&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Resolves one exact [label] to its one-based column position.
+&nbsp;     *
+&nbsp;     * A label must select exactly one column. This intentionally does not use
+&nbsp;     * case-insensitive matching because platform drivers can expose labels that
+&nbsp;     * differ only by case.
+&nbsp;     */
+<b class="nc">&nbsp;    fun columnPosition(label: String): Int {</b>
+<b class="pc">&nbsp;        require(label.isNotBlank()) { &quot;Column label must not be blank&quot; }</b>
+<b class="fc">&nbsp;        requireActive()</b>
+<b class="fc">&nbsp;        var match = 0</b>
+<b class="pc">&nbsp;        for (position in 1..columnCount) {</b>
+<b class="fc">&nbsp;            if (columnLabel(position) == label) {</b>
+<b class="fc">&nbsp;                if (match != 0) {</b>
+<b class="fc">&nbsp;                    throw IllegalArgumentException(</b>
+<b class="fc">&nbsp;                        &quot;Ambiguous row column label &#39;$label&#39;; use a one-based position&quot;</b>
+&nbsp;                    )
+&nbsp;                }
+<b class="fc">&nbsp;                match = position</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        require(match != 0) { &quot;No row column with label &#39;$label&#39;&quot; }</b>
+<b class="fc">&nbsp;        return match</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns the raw physical value selected by one exact [label]. */
+<b class="pc">&nbsp;    fun get(label: String): KronosPhysicalValue = get(columnPosition(label))</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

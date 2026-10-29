@@ -1,0 +1,252 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PlatformTemporalCodecKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: PlatformTemporalCodecKt (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PlatformTemporalCodecKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.9%
+  </span>
+  <span class="absValue">
+    (58/70)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.2%
+  </span>
+  <span class="absValue">
+    (55/61)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.2%
+  </span>
+  <span class="absValue">
+    (483/554)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(kotlinx.datetime.format.FormatStringsInDatetimeFormats::class)
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import kotlinx.datetime.LocalDate
+&nbsp;import kotlinx.datetime.LocalDateTime
+&nbsp;import kotlinx.datetime.LocalTime
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import kotlinx.datetime.format.byUnicodePattern
+&nbsp;import kotlinx.datetime.format.DateTimeComponents
+&nbsp;import kotlinx.datetime.format.format
+&nbsp;import kotlinx.datetime.offsetAt
+&nbsp;import kotlinx.datetime.atTime
+&nbsp;import kotlinx.datetime.TimeZone
+&nbsp;import kotlinx.datetime.toInstant
+&nbsp;import kotlinx.datetime.toLocalDateTime
+&nbsp;import kotlin.time.Instant
+&nbsp;import com.kotlinorm.utils.withoutTopLevelNullability
+&nbsp;
+&nbsp;internal fun encodePlatformTemporal(
+&nbsp;    value: Any,
+&nbsp;    context: StaticValueCodecContext
+&nbsp;): KronosPhysicalValue? {
+<b class="fc">&nbsp;    if (value !is Instant &amp;&amp; value !is LocalDate &amp;&amp; value !is LocalDateTime &amp;&amp; value !is LocalTime) return null</b>
+<b class="fc">&nbsp;    val pattern = context.explicitPattern() ?: return KronosPhysicalValue.Text(value.toString())</b>
+<b class="fc">&nbsp;    val format = portableTemporalFormat(pattern)</b>
+<b class="fc">&nbsp;        ?: return KronosPhysicalValue.Text(formatPlatformSpecificTemporalPattern(value, context, pattern))</b>
+<b class="fc">&nbsp;    val text = format.format {</b>
+<b class="fc">&nbsp;        when (value) {</b>
+<b class="fc">&nbsp;            is Instant -&gt; {</b>
+<b class="fc">&nbsp;                setDateTime(value.toLocalDateTime(context.zone()))</b>
+<b class="fc">&nbsp;                setOffset(context.zone().offsetAt(value))</b>
+<b class="fc">&nbsp;                timeZoneId = context.zone().id</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is LocalDateTime -&gt; setDateTime(value)</b>
+<b class="fc">&nbsp;            is LocalDate -&gt; setDateTime(value.atTime(0, 0))</b>
+<b class="pc">&nbsp;            is LocalTime -&gt; setDateTime(LocalDate.fromEpochDays(0).atTime(value))</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return KronosPhysicalValue.Text(text)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun decodePlatformTemporal(
+&nbsp;    value: KronosPhysicalValue,
+&nbsp;    context: StaticValueCodecContext
+&nbsp;): Any? {
+<b class="fc">&nbsp;    val key = context.targetType.withoutTopLevelNullability().key</b>
+<b class="fc">&nbsp;    if (!key.startsWith(&quot;kotlinx.datetime.&quot;) &amp;&amp; key != &quot;kotlin.time.Instant&quot;) return null</b>
+<b class="fc">&nbsp;    if (value is KronosPhysicalValue.Integer &amp;&amp; key in setOf(&quot;kotlinx.datetime.Instant&quot;, &quot;kotlin.time.Instant&quot;)) {</b>
+<b class="fc">&nbsp;        return Instant.fromEpochMilliseconds(value.value)</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val text = (value as? KronosPhysicalValue.Text)?.value ?: return null</b>
+<b class="fc">&nbsp;    val pattern = context.pattern()</b>
+<b class="fc">&nbsp;    val format = portableTemporalFormat(pattern)</b>
+<b class="fc">&nbsp;        ?: return parsePlatformSpecificTemporalPattern(text, context, pattern)</b>
+<b class="fc">&nbsp;    return when (key) {</b>
+<b class="fc">&nbsp;        &quot;kotlinx.datetime.Instant&quot;, &quot;kotlin.time.Instant&quot; -&gt; configuredOrIso(text, format,</b>
+<b class="fc">&nbsp;            { it.instant(context.zone()) }, { isoInstant(text, context.zone()) })</b>
+<b class="fc">&nbsp;        &quot;kotlinx.datetime.LocalDate&quot; -&gt; configuredOrIso(text, format,</b>
+<b class="fc">&nbsp;            { it.toLocalDate() }, { isoLocalDate(text, context.zone()) })</b>
+<b class="fc">&nbsp;        &quot;kotlinx.datetime.LocalDateTime&quot; -&gt; configuredOrIso(text, format,</b>
+<b class="pc">&nbsp;            { if (it.offsetHours != null || it.timeZoneId != null) it.instant(context.zone()).toLocalDateTime(context.zone()) else it.toLocalDateTime() },</b>
+<b class="fc">&nbsp;            { isoLocalDateTime(text, context.zone()) })</b>
+<b class="fc">&nbsp;        &quot;kotlinx.datetime.LocalTime&quot; -&gt; configuredOrIso(text, format,</b>
+<b class="fc">&nbsp;            { it.toLocalTime() }, { isoLocalTime(text, context.zone()) })</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="pc">&nbsp;private fun StaticValueCodecContext.zone(): TimeZone = timeZone?.let(TimeZone::of) ?: TimeZone.currentSystemDefault()</b>
+<b class="fc">&nbsp;private fun StaticValueCodecContext.explicitPattern(): String? = dateFormat ?: field?.dateFormat</b>
+<b class="fc">&nbsp;private fun StaticValueCodecContext.pattern(): String = explicitPattern() ?: Kronos.defaultDateFormat</b>
+&nbsp;
+&nbsp;/** Builder rejection is a capability result: unsupported directives may throw either documented exception type. */
+&nbsp;private fun portableTemporalFormat(pattern: String): kotlinx.datetime.format.DateTimeFormat&lt;DateTimeComponents&gt;? = try {
+<b class="fc">&nbsp;    DateTimeComponents.Format { byUnicodePattern(pattern) }</b>
+&nbsp;} catch (_: UnsupportedOperationException) {
+<b class="nc">&nbsp;    null</b>
+&nbsp;} catch (_: IllegalArgumentException) {
+<b class="fc">&nbsp;    null</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Configured patterns win even when their text is also valid ISO (e.g. yyyy-dd-MM). */
+&nbsp;private inline fun &lt;T&gt; configuredOrIso(text: String, format: kotlinx.datetime.format.DateTimeFormat&lt;DateTimeComponents&gt;,
+&nbsp;    configured: (DateTimeComponents) -&gt; T, iso: () -&gt; T): T = try {
+<b class="fc">&nbsp;    configured(format.parse(text))</b>
+&nbsp;} catch (_: IllegalArgumentException) {
+<b class="fc">&nbsp;    iso()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Used only when the common formatter cannot build a requested pattern. */
+&nbsp;internal expect fun formatPlatformSpecificTemporalPattern(value: Any, context: StaticValueCodecContext, pattern: String): String
+&nbsp;internal expect fun parsePlatformSpecificTemporalPattern(text: String, context: StaticValueCodecContext, pattern: String): Any
+&nbsp;
+<b class="nc">&nbsp;internal fun StaticValueCodecContext.temporalPatternFailure(pattern: String, cause: Throwable? = null) =</b>
+<b class="pc">&nbsp;    StaticValueCodecException(direction, origin, targetType, field?.name, field?.columnName,</b>
+<b class="fc">&nbsp;        &quot;unsupported or invalid temporal pattern &#39;$pattern&#39;&quot;, cause)</b>
+&nbsp;
+<b class="fc">&nbsp;private fun DateTimeComponents.instant(zone: TimeZone): Instant = if (offsetHours != null) {</b>
+<b class="fc">&nbsp;    toInstantUsingOffset()</b>
+&nbsp;} else {
+<b class="pc">&nbsp;    toLocalDateTime().toInstant(timeZoneId?.let(TimeZone::of) ?: zone)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun isoInstant(text: String, zone: TimeZone): Instant = try {
+<b class="fc">&nbsp;    Instant.parse(text)</b>
+&nbsp;} catch (_: IllegalArgumentException) {
+<b class="fc">&nbsp;    LocalDateTime.parse(text).toInstant(zone)</b>
+&nbsp;}
+&nbsp;
+<b class="pc">&nbsp;internal fun parseIsoPlatformTemporal(text: String, context: StaticValueCodecContext): Any = when (context.targetType.withoutTopLevelNullability().key) {</b>
+<b class="fc">&nbsp;    &quot;kotlin.time.Instant&quot;, &quot;kotlinx.datetime.Instant&quot; -&gt; isoInstant(text, context.zone())</b>
+<b class="nc">&nbsp;    &quot;kotlinx.datetime.LocalDate&quot; -&gt; isoLocalDate(text, context.zone())</b>
+<b class="nc">&nbsp;    &quot;kotlinx.datetime.LocalDateTime&quot; -&gt; isoLocalDateTime(text, context.zone())</b>
+<b class="nc">&nbsp;    &quot;kotlinx.datetime.LocalTime&quot; -&gt; isoLocalTime(text, context.zone())</b>
+<b class="nc">&nbsp;    else -&gt; error(&quot;Unsupported portable temporal type ${context.targetType.key}&quot;)</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private fun isoLocalDate(text: String, zone: TimeZone): LocalDate = try { LocalDate.parse(text) }</b>
+<b class="fc">&nbsp;    catch (_: IllegalArgumentException) { isoInstant(text, zone).toLocalDateTime(zone).date }</b>
+<b class="fc">&nbsp;private fun isoLocalDateTime(text: String, zone: TimeZone): LocalDateTime = try { LocalDateTime.parse(text) }</b>
+<b class="fc">&nbsp;    catch (_: IllegalArgumentException) { isoInstant(text, zone).toLocalDateTime(zone) }</b>
+<b class="fc">&nbsp;private fun isoLocalTime(text: String, zone: TimeZone): LocalTime = try { LocalTime.parse(text) }</b>
+<b class="fc">&nbsp;    catch (_: IllegalArgumentException) { isoInstant(text, zone).toLocalDateTime(zone).time }</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

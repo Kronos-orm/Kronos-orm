@@ -1,0 +1,567 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > GeneratedTypeProviderMode</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin</a>
+</div>
+
+<h1>Coverage Summary for Class: GeneratedTypeProviderMode (com.kotlinorm.compiler.plugin)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderMode$Disabled</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderMode$Enabled</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderMode$Missing</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">GeneratedTypeProviderMode$Native</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (33/33)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.utils.GeneratedFactoryPackageFqName
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfiguration
+&nbsp;import org.jetbrains.kotlin.config.CommonConfigurationKeys
+&nbsp;import org.jetbrains.kotlin.config.JVMConfigurationKeys
+&nbsp;import org.jetbrains.kotlin.platform.jvm.isJvm
+&nbsp;import org.jetbrains.kotlin.platform.isCommon
+&nbsp;import org.jetbrains.kotlin.platform.konan.isNative
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfigurationKey
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import java.io.IOException
+&nbsp;import java.nio.file.Files
+&nbsp;import java.nio.file.Paths
+&nbsp;import java.security.MessageDigest
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler option carrying the stable module identity for generated metadata.
+&nbsp; */
+&nbsp;internal const val MODULE_COORDINATE_OPTION_NAME = &quot;module-coordinate&quot;
+&nbsp;internal const val JVM_SOURCE_SET_PREFIX_OPTION_NAME = &quot;jvm-source-set-prefix&quot;
+&nbsp;internal val ModuleCoordinateKey = CompilerConfigurationKey&lt;String&gt;(&quot;Kronos module Maven coordinate&quot;)
+&nbsp;internal val JvmSourceSetPrefixKey = CompilerConfigurationKey&lt;String&gt;(&quot;JVM source-set naming prefix&quot;)
+&nbsp;
+&nbsp;internal const val GENERATED_PROVIDER_ID_OPTION_NAME = &quot;generated-provider-id&quot;
+&nbsp;/**
+&nbsp; * Compiler option carrying the generated provider&#39;s fully qualified class name.
+&nbsp; */
+&nbsp;internal const val GENERATED_PROVIDER_FQ_NAME_OPTION_NAME = &quot;generated-provider-fq-name&quot;
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler option selecting independently emitted provider fragments.
+&nbsp; *
+&nbsp; * Each source file receives a stable provider name derived from the compilation identity and its
+&nbsp; * source identity. This lets Kotlin incremental compilation preserve contributions from unchanged
+&nbsp; * source files instead of overwriting one compilation-wide provider with a partial IR view.
+&nbsp; */
+&nbsp;internal const val GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME = &quot;generated-provider-fragments&quot;
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler option used by Native compilations that transform Kronos code but
+&nbsp; * intentionally do not emit the JVM ServiceLoader provider.
+&nbsp; */
+&nbsp;internal const val SKIP_GENERATED_PROVIDER_OPTION_NAME = &quot;skip-generated-provider&quot;
+&nbsp;
+&nbsp;/** Compiler option carrying the common-source Native metadata entry function. */
+&nbsp;internal const val NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME = &quot;native-provider-entry-fq-name&quot;
+&nbsp;
+&nbsp;/** Compiler option carrying the stable identity for the Native metadata entry. */
+&nbsp;internal const val NATIVE_PROVIDER_ID_OPTION_NAME = &quot;native-provider-id&quot;
+&nbsp;internal const val NATIVE_PROVIDER_DEPENDENCY_ENTRIES_OPTION_NAME = &quot;native-provider-dependency-entries&quot;
+&nbsp;internal const val NATIVE_PROVIDER_DEPENDENCY_ENTRIES_FILE_OPTION_NAME = &quot;native-provider-dependency-entries-file&quot;
+&nbsp;internal val NativeProviderDependencyEntriesFileKey = CompilerConfigurationKey&lt;String&gt;(
+&nbsp;    &quot;UTF-8 file containing Native registration entries from this target compilation&#39;s dependencies&quot;
+&nbsp;)
+&nbsp;internal val NativeProviderDependencyEntriesKey = CompilerConfigurationKey&lt;List&lt;String&gt;&gt;(
+&nbsp;    &quot;Native registration entries from this target compilation&#39;s dependencies&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler key storing [GENERATED_PROVIDER_ID_OPTION_NAME].
+&nbsp; */
+&nbsp;internal val GeneratedProviderIdKey = CompilerConfigurationKey&lt;String&gt;(
+&nbsp;    &quot;stable id of the module-local Kronos generated type provider&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler key storing [GENERATED_PROVIDER_FQ_NAME_OPTION_NAME].
+&nbsp; */
+&nbsp;internal val GeneratedProviderFqNameKey = CompilerConfigurationKey&lt;String&gt;(
+&nbsp;    &quot;fully qualified name of the module-local Kronos generated type provider&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler key enabling source-owned generated provider fragments.
+&nbsp; */
+&nbsp;internal val GeneratedProviderFragmentsKey = CompilerConfigurationKey&lt;Boolean&gt;(
+&nbsp;    &quot;whether generated type providers are emitted as source-owned fragments&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Compiler key recording an explicit request to skip JVM provider generation.
+&nbsp; */
+&nbsp;internal val SkipGeneratedProviderKey = CompilerConfigurationKey&lt;Boolean&gt;(
+&nbsp;    &quot;whether this compilation intentionally skips JVM generated type provider emission&quot;
+&nbsp;)
+&nbsp;
+&nbsp;internal val NativeProviderEntryFqNameKey = CompilerConfigurationKey&lt;String&gt;(
+&nbsp;    &quot;fully qualified common-source Native metadata entry function&quot;
+&nbsp;)
+&nbsp;
+&nbsp;internal val NativeProviderIdKey = CompilerConfigurationKey&lt;String&gt;(
+&nbsp;    &quot;stable module identity for the Native metadata entry&quot;
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Validated identity for the module-local generated type provider.
+&nbsp; *
+&nbsp; * The fully qualified name must place the provider directly in the generated factory package,
+&nbsp; * and its short name must be a legal Kotlin identifier. The stable [id] identifies provider
+&nbsp; * content at runtime and must be unique for the compilation module.
+&nbsp; *
+&nbsp; * @property id non-blank, stable module identity used for duplicate-provider detection
+&nbsp; * @property fqName fully qualified class name emitted by the IR generator
+&nbsp; * @throws IllegalArgumentException when either identity invariant is violated
+&nbsp; */
+&nbsp;internal data class GeneratedTypeProviderConfiguration(
+&nbsp;    val id: String,
+&nbsp;    val fqName: FqName
+&nbsp;) {
+&nbsp;    init {
+&nbsp;        require(id.isNotBlank()) { &quot;Generated type provider id must not be blank&quot; }
+&nbsp;        require(!fqName.isRoot) { &quot;Generated type provider fq-name must not be blank&quot; }
+&nbsp;        require(fqName.parent() == GeneratedFactoryPackageFqName) {
+&nbsp;            &quot;Generated type provider must be in ${GeneratedFactoryPackageFqName.asString()}: ${fqName.asString()}&quot;
+&nbsp;        }
+&nbsp;        require(fqName.shortName().asString().matches(KotlinIdentifier)) {
+&nbsp;            &quot;Generated type provider class name must be a valid Kotlin identifier: ${fqName.shortName()}&quot;
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a deterministic source-owned provider identity.
+&nbsp;     *
+&nbsp;     * The source identity is intentionally hashed before becoming part of the binary name. It can
+&nbsp;     * contain an absolute path when the Kotlin compiler has no source-root information, but never
+&nbsp;     * leaks that path into generated bytecode or service metadata. Renaming a source creates a
+&nbsp;     * new fragment; Kotlin&#39;s output mapping removes the old source-owned class.
+&nbsp;     */
+&nbsp;    fun fragmentFor(sourceIdentity: String): GeneratedTypeProviderConfiguration {
+&nbsp;        require(sourceIdentity.isNotBlank()) { &quot;Generated provider source identity must not be blank&quot; }
+&nbsp;        val sourceHash = MessageDigest.getInstance(&quot;SHA-256&quot;)
+&nbsp;            .digest(sourceIdentity.toByteArray(Charsets.UTF_8))
+&nbsp;            .joinToString(separator = &quot;&quot;) { byte -&gt;
+&nbsp;                (byte.toInt() and HASH_BYTE_MASK).toString(HEX_RADIX).padStart(2, &#39;0&#39;)
+&nbsp;            }
+&nbsp;            .take(GENERATED_PROVIDER_SOURCE_HASH_LENGTH)
+&nbsp;        return GeneratedTypeProviderConfiguration(
+&nbsp;            id = &quot;$id:$sourceHash&quot;,
+&nbsp;            fqName = FqName(&quot;${fqName.asString()}_$sourceHash&quot;)
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Backend provider-generation policy derived from compiler options.
+&nbsp; *
+&nbsp; * FIR-only IDE loading may legitimately leave every option absent. A real IR
+&nbsp; * compilation must instead either provide a complete identity or explicitly
+&nbsp; * opt out for a Native target.
+&nbsp; */
+&nbsp;internal sealed interface GeneratedTypeProviderMode {
+<b class="fc">&nbsp;    data class Enabled(</b>
+<b class="fc">&nbsp;        val configuration: GeneratedTypeProviderConfiguration,</b>
+<b class="fc">&nbsp;        val useSourceFragments: Boolean</b>
+&nbsp;    ) : GeneratedTypeProviderMode
+&nbsp;
+<b class="fc">&nbsp;    data object Disabled : GeneratedTypeProviderMode</b>
+&nbsp;
+&nbsp;    /** Native uses a source-visible common entry instead of ServiceLoader. */
+&nbsp;    data class Native(
+<b class="fc">&nbsp;        val id: String,</b>
+<b class="fc">&nbsp;        val entryFqName: FqName,</b>
+<b class="fc">&nbsp;        val dependencyEntries: List&lt;FqName&gt; = emptyList()</b>
+&nbsp;    ) : GeneratedTypeProviderMode
+&nbsp;
+<b class="fc">&nbsp;    data object Missing : GeneratedTypeProviderMode</b>
+&nbsp;}
+&nbsp;
+&nbsp;private val KotlinIdentifier = Regex(&quot;[A-Za-z_][A-Za-z0-9_]*&quot;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads and validates both generated-provider options for callers that require provider generation.
+&nbsp; *
+&nbsp; * @return validated provider configuration
+&nbsp; * @throws IllegalStateException when either compiler option is absent
+&nbsp; * @throws IllegalArgumentException when a supplied identity is invalid
+&nbsp; */
+&nbsp;internal fun CompilerConfiguration.generatedTypeProviderConfiguration(): GeneratedTypeProviderConfiguration {
+&nbsp;    val id = get(GeneratedProviderIdKey)
+&nbsp;        ?: error(&quot;Missing compiler option &#39;$GENERATED_PROVIDER_ID_OPTION_NAME&#39;&quot;)
+&nbsp;    val fqName = get(GeneratedProviderFqNameKey)
+&nbsp;        ?: error(&quot;Missing compiler option &#39;$GENERATED_PROVIDER_FQ_NAME_OPTION_NAME&#39;&quot;)
+&nbsp;    return GeneratedTypeProviderConfiguration(id, FqName(fqName))
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads generated-provider options when this compilation is configured to emit a provider.
+&nbsp; *
+&nbsp; * @return `null` when neither option is present, otherwise the validated configuration
+&nbsp; * @throws IllegalArgumentException when only one option is present or an identity is invalid
+&nbsp; */
+&nbsp;internal fun CompilerConfiguration.generatedTypeProviderConfigurationOrNull(): GeneratedTypeProviderConfiguration? {
+&nbsp;    val id = get(GeneratedProviderIdKey)
+&nbsp;    val fqName = get(GeneratedProviderFqNameKey)
+&nbsp;    if (id == null &amp;&amp; fqName == null) return null
+&nbsp;    requireNotNull(id) { &quot;Missing compiler option &#39;$GENERATED_PROVIDER_ID_OPTION_NAME&#39;&quot; }
+&nbsp;    requireNotNull(fqName) { &quot;Missing compiler option &#39;$GENERATED_PROVIDER_FQ_NAME_OPTION_NAME&#39;&quot; }
+&nbsp;    return GeneratedTypeProviderConfiguration(id, FqName(fqName))
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves the backend provider policy while preserving the all-or-none
+&nbsp; * identity invariant.
+&nbsp; *
+&nbsp; * @return [GeneratedTypeProviderMode.Missing] when IDE FIR-only loading has
+&nbsp; * no build options, [GeneratedTypeProviderMode.Disabled] only after an
+&nbsp; * explicit Native opt-out, otherwise the validated provider identity
+&nbsp; */
+&nbsp;internal fun CompilerConfiguration.generatedTypeProviderMode(): GeneratedTypeProviderMode {
+&nbsp;    if (get(ModuleCoordinateKey) != null) return moduleCoordinateProviderMode()
+&nbsp;    require(get(JvmSourceSetPrefixKey) == null) {
+&nbsp;        &quot;Compiler option &#39;$JVM_SOURCE_SET_PREFIX_OPTION_NAME&#39; requires &#39;$MODULE_COORDINATE_OPTION_NAME&#39;&quot;
+&nbsp;    }
+&nbsp;    val nativeEntry = get(NativeProviderEntryFqNameKey)
+&nbsp;    val nativeId = get(NativeProviderIdKey)
+&nbsp;    if (nativeEntry != null || nativeId != null) {
+&nbsp;        require(nativeEntry != null) {
+&nbsp;            &quot;Missing compiler option &#39;$NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME&#39;&quot;
+&nbsp;        }
+&nbsp;        require(nativeId != null) {
+&nbsp;            &quot;Missing compiler option &#39;$NATIVE_PROVIDER_ID_OPTION_NAME&#39;&quot;
+&nbsp;        }
+&nbsp;        require(nativeId.isNotBlank()) { &quot;Native generated provider id must not be blank&quot; }
+&nbsp;        require(get(GeneratedProviderIdKey) == null &amp;&amp; get(GeneratedProviderFqNameKey) == null) {
+&nbsp;            &quot;Native metadata entry options cannot be combined with JVM generated provider options&quot;
+&nbsp;        }
+&nbsp;        require(get(SkipGeneratedProviderKey) != true) {
+&nbsp;            &quot;Native metadata entry options cannot be combined with &#39;$SKIP_GENERATED_PROVIDER_OPTION_NAME&#39;&quot;
+&nbsp;        }
+&nbsp;        return GeneratedTypeProviderMode.Native(nativeId, FqName(nativeEntry), nativeDependencyEntries())
+&nbsp;    }
+&nbsp;    require(get(NativeProviderDependencyEntriesKey).isNullOrEmpty() &amp;&amp; get(NativeProviderDependencyEntriesFileKey) == null) {
+&nbsp;        &quot;Native dependency entries require Native generated provider options&quot;
+&nbsp;    }
+&nbsp;    val provider = generatedTypeProviderConfigurationOrNull()
+&nbsp;    if (get(SkipGeneratedProviderKey) == true) {
+&nbsp;        require(provider == null) {
+&nbsp;            &quot;Compiler option &#39;$SKIP_GENERATED_PROVIDER_OPTION_NAME&#39; cannot be combined with generated provider options&quot;
+&nbsp;        }
+&nbsp;        require(get(GeneratedProviderFragmentsKey) != true) {
+&nbsp;            &quot;Compiler option &#39;$GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME&#39; cannot be combined with &#39;$SKIP_GENERATED_PROVIDER_OPTION_NAME&#39;&quot;
+&nbsp;        }
+&nbsp;        return GeneratedTypeProviderMode.Disabled
+&nbsp;    }
+&nbsp;    return provider?.let {
+&nbsp;        GeneratedTypeProviderMode.Enabled(it, get(GeneratedProviderFragmentsKey) == true)
+&nbsp;    } ?: GeneratedTypeProviderMode.Missing
+&nbsp;}
+&nbsp;
+&nbsp;/** Expands a build module coordinate using the compiler&#39;s actual platform and main/test module name. */
+&nbsp;private fun CompilerConfiguration.moduleCoordinateProviderMode(): GeneratedTypeProviderMode {
+&nbsp;    val coordinate = requireNotNull(get(ModuleCoordinateKey))
+&nbsp;    val parts = coordinate.split(&#39;:&#39;)
+&nbsp;    require(parts.size == 2 &amp;&amp; parts.all { it.matches(Regex(&quot;[A-Za-z0-9_.-]+&quot;)) }) {
+&nbsp;        &quot;Compiler option &#39;$MODULE_COORDINATE_OPTION_NAME&#39; must be group:module: $coordinate&quot;
+&nbsp;    }
+&nbsp;    require(listOf(GeneratedProviderIdKey, GeneratedProviderFqNameKey, NativeProviderIdKey,
+&nbsp;        NativeProviderEntryFqNameKey).all { get(it) == null } &amp;&amp; get(SkipGeneratedProviderKey) != true) {
+&nbsp;        &quot;Module coordinates cannot be combined with explicit generated provider options&quot;
+&nbsp;    }
+&nbsp;    val module = parts[1]
+&nbsp;    val name = get(CommonConfigurationKeys.MODULE_NAME)
+&nbsp;    val prefix = get(JvmSourceSetPrefixKey).orEmpty()
+&nbsp;    require(prefix in setOf(&quot;&quot;, &quot;jvm&quot;)) { &quot;Unsupported JVM source-set prefix: $prefix&quot; }
+&nbsp;    // IDE FIR-only loading can carry plugin options without a CLI compilation identity.
+&nbsp;    if (name == null) return GeneratedTypeProviderMode.Missing
+&nbsp;    val platform = get(CommonConfigurationKeys.TARGET_PLATFORM)
+&nbsp;    // Konan compiles shared Native fragments with a Native platform and -Xmetadata-klib.
+&nbsp;    // These frontend-only KLIBs must not acquire a runtime provider identity.
+&nbsp;    val nativeMetadata = platform?.isNative() == true &amp;&amp; get(CommonConfigurationKeys.METADATA_KLIB) == true
+&nbsp;    if (platform?.isCommon() == true || nativeMetadata) {
+&nbsp;        val metadataScopes = setOf(&quot;common&quot;, &quot;native&quot;, &quot;apple&quot;, &quot;ios&quot;, &quot;linux&quot;, &quot;macos&quot;, &quot;mingw&quot;, &quot;tvos&quot;, &quot;watchos&quot;)
+&nbsp;            .flatMap { listOf(it, &quot;${it}Main&quot;) }
+&nbsp;        require(name == module || metadataScopes.any { name == &quot;${module}_$it&quot; }) {
+&nbsp;            &quot;Unsupported metadata compiler module &#39;$name&#39; for Kronos module &#39;$module&#39;&quot;
+&nbsp;        }
+&nbsp;        return GeneratedTypeProviderMode.Missing
+&nbsp;    }
+&nbsp;    val suffix = when (name) {
+&nbsp;        module -&gt; &quot;Main&quot;
+&nbsp;        &quot;${module}_test&quot; -&gt; &quot;Test&quot;
+&nbsp;        else -&gt; error(&quot;Unsupported compiler module &#39;$name&#39; for Kronos module &#39;$module&#39;; expected &#39;$module&#39; or &#39;${module}_test&#39;&quot;)
+&nbsp;    }
+&nbsp;    val jvm = platform?.isJvm() == true || get(JVMConfigurationKeys.JVM_TARGET) != null
+&nbsp;    require(jvm || platform?.isNative() == true) { &quot;Unsupported compiler platform for Kronos module &#39;$module&#39;: $platform&quot; }
+&nbsp;    val scope = if (jvm) {
+&nbsp;        if (prefix.isEmpty()) suffix.lowercase() else prefix + suffix
+&nbsp;    } else &quot;common$suffix&quot;
+&nbsp;    val identity = &quot;gradle:$coordinate::$module:$scope&quot;
+&nbsp;    val hash = MessageDigest.getInstance(&quot;SHA-256&quot;).digest(identity.toByteArray(Charsets.UTF_8))
+&nbsp;        .joinToString(&quot;&quot;) { (it.toInt() and HASH_BYTE_MASK).toString(HEX_RADIX).padStart(2, &#39;0&#39;) }
+&nbsp;        .take(GENERATED_PROVIDER_SOURCE_HASH_LENGTH)
+&nbsp;    return if (jvm) {
+&nbsp;        require(get(NativeProviderDependencyEntriesKey).isNullOrEmpty() &amp;&amp; get(NativeProviderDependencyEntriesFileKey) == null) {
+&nbsp;            &quot;Native dependency entries require a Native compiler platform&quot;
+&nbsp;        }
+&nbsp;        GeneratedTypeProviderMode.Enabled(GeneratedTypeProviderConfiguration(&quot;$identity#$hash&quot;,
+&nbsp;            FqName(&quot;com.kotlinorm.generated.factory.KronosGeneratedTypeProvider_$hash&quot;)),
+&nbsp;            get(GeneratedProviderFragmentsKey) == true)
+&nbsp;    } else {
+&nbsp;        require(get(GeneratedProviderFragmentsKey) != true) { &quot;Native metadata does not use JVM provider fragments&quot; }
+&nbsp;        GeneratedTypeProviderMode.Native(&quot;$identity#$hash&quot;,
+&nbsp;            FqName(&quot;com.kotlinorm.generated.native.KronosGeneratedTypeMetadata_$hash&quot;), nativeDependencyEntries())
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Read only when the compiler executes, after Gradle has produced its declared input. */
+&nbsp;private fun CompilerConfiguration.nativeDependencyEntries(): List&lt;FqName&gt; {
+&nbsp;    val fileEntries = get(NativeProviderDependencyEntriesFileKey)?.let { filename -&gt;
+&nbsp;        require(filename.isNotBlank()) { &quot;Native dependency registration entries file path must not be blank&quot; }
+&nbsp;        val path = Paths.get(filename)
+&nbsp;        require(Files.isRegularFile(path)) { &quot;Native dependency registration entries file is not a regular file: $path&quot; }
+&nbsp;        try {
+&nbsp;            Files.readAllLines(path, Charsets.UTF_8).filter(String::isNotBlank)
+&nbsp;        } catch (failure: IOException) {
+&nbsp;            throw IllegalArgumentException(&quot;Cannot read Native dependency registration entries file &#39;$path&#39; as UTF-8&quot;, failure)
+&nbsp;        }
+&nbsp;    }.orEmpty()
+&nbsp;    return (get(NativeProviderDependencyEntriesKey).orEmpty() + fileEntries).distinct().sorted().map { entry -&gt;
+&nbsp;        require(entry.matches(Regex(&quot;[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+&quot;))) {
+&nbsp;            &quot;Invalid Native dependency registration entry: $entry&quot;
+&nbsp;        }
+&nbsp;        FqName(entry)
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private const val HASH_BYTE_MASK = 0xff
+&nbsp;private const val HEX_RADIX = 16
+&nbsp;private const val GENERATED_PROVIDER_SOURCE_HASH_LENGTH = 16
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 11:00</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,195 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > JdbcParameterTypeHintsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: JdbcParameterTypeHintsKt (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">JdbcParameterTypeHintsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98%
+  </span>
+  <span class="absValue">
+    (50/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.2%
+  </span>
+  <span class="absValue">
+    (56/57)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.5%
+  </span>
+  <span class="absValue">
+    (323/328)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">JdbcParameterTypeHintsKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98%
+  </span>
+  <span class="absValue">
+    (50/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.2%
+  </span>
+  <span class="absValue">
+    (56/57)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.5%
+  </span>
+  <span class="absValue">
+    (323/328)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.beans.task
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;object JdbcParameterTypeHints {
+&nbsp;    /** Stash key reserved for a `Map&lt;String, Int&gt;` of JDBC SQL type constants. */
+&nbsp;    const val STASH_KEY: String = &quot;kronos.jdbc.parameterTypeHints&quot;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Reads valid parameter type hints from [stash].
+&nbsp;     *
+&nbsp;     * Non-string keys and non-numeric values are discarded. Numeric values are converted
+&nbsp;     * to [Int], matching the JDBC `Types` representation.
+&nbsp;     *
+&nbsp;     * @param stash operation-local task metadata; `null` is treated as empty
+&nbsp;     * @return an immutable empty map when no valid hints exist, otherwise the valid entries
+&nbsp;     */
+&nbsp;    fun from(stash: Map&lt;String, Any?&gt;?): Map&lt;String, Int&gt; {
+&nbsp;        val value = stash?.get(STASH_KEY) as? Map&lt;*, *&gt; ?: return emptyMap()
+&nbsp;        return value.mapNotNull { (key, sqlType) -&gt;
+&nbsp;            val name = key as? String ?: return@mapNotNull null
+&nbsp;            val type = when (sqlType) {
+&nbsp;                is Int -&gt; sqlType
+&nbsp;                is Number -&gt; sqlType.toInt()
+&nbsp;                else -&gt; return@mapNotNull null
+&nbsp;            }
+&nbsp;            name to type
+&nbsp;        }.toMap()
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    /**</b>
+<b class="fc">&nbsp;     * Creates a task stash containing [hints], omitting the reserved entry when empty.</b>
+<b class="fc">&nbsp;     *</b>
+&nbsp;     * @return a new mutable stash suitable for an atomic task
+<b class="fc">&nbsp;     */</b>
+<b class="fc">&nbsp;    fun stashFor(hints: Map&lt;String, Int&gt;): MutableMap&lt;String, Any?&gt; =</b>
+&nbsp;        if (hints.isEmpty()) mutableMapOf() else mutableMapOf(STASH_KEY to hints)
+&nbsp;}
+&nbsp;
+&nbsp;internal expect fun Iterable&lt;Field&gt;.jdbcNullParameterTypeHints(parameterValues: Map&lt;String, Any?&gt;): Map&lt;String, Int&gt;
+&nbsp;
+&nbsp;internal expect fun Field.jdbcNullType(): Int?
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

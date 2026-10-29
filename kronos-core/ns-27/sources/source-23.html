@@ -1,0 +1,429 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > StaticTypeMetadataRegistryKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: StaticTypeMetadataRegistryKt (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StaticTypeMetadataRegistryKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (154/154)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">StaticTypeMetadataRegistryKt$collectContribution$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (42/42)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (33/33)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (196/196)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;/**
+&nbsp; * Receives compiler-generated static type descriptors from one module.
+&nbsp; *
+&nbsp; * This contract intentionally uses [StaticTypeRef] instead of platform reflection
+&nbsp; * types so an application can install generated metadata on every Kotlin target.
+&nbsp; */
+&nbsp;interface StaticTypeMetadataRegistrar {
+&nbsp;    /**
+&nbsp;     * Registers one compiler-generated descriptor.
+&nbsp;     */
+&nbsp;    fun registerTypeInfo(typeInfo: StaticTypeInfo)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Supplies the generated static type descriptors owned by one module fragment.
+&nbsp; *
+&nbsp; * Applications install every reachable provider before the first metadata lookup.
+&nbsp; * The compiler/Gradle integration is responsible for creating an explicit Native
+&nbsp; * aggregation entry; this common contract does not discover providers itself.
+&nbsp; */
+&nbsp;interface StaticTypeMetadataProvider {
+&nbsp;    /**
+&nbsp;     * Stable identity used to deduplicate equivalent generated contributions.
+&nbsp;     */
+&nbsp;    val id: String
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds this provider&#39;s generated descriptors to [registrar].
+&nbsp;     */
+&nbsp;    fun contributeTo(registrar: StaticTypeMetadataRegistrar)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Immutable, conflict-checked static metadata available after registry freeze.
+&nbsp; */
+&nbsp;class StaticTypeMetadataSnapshot internal constructor(
+&nbsp;    private val typeInfos: Map&lt;StaticTypeRef, StaticTypeInfo&gt;
+&nbsp;) {
+&nbsp;    /**
+&nbsp;     * Returns metadata for [type], treating only its outer nullability as equivalent.
+&nbsp;     */
+&nbsp;    fun typeInfo(type: StaticTypeRef): StaticTypeInfo? =
+&nbsp;        typeInfos[type.withoutTopLevelNullability()]?.copyForRegistry()
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Explicit generated-metadata registry for common and Native runtimes.
+&nbsp; *
+&nbsp; * Registration remains open until [snapshot] is called. That first lookup builds
+&nbsp; * one deterministic snapshot and closes registration permanently, so application
+&nbsp; * startup cannot accidentally change type metadata during query execution.
+&nbsp; */
+&nbsp;class StaticTypeMetadataRegistry {
+&nbsp;    private val lock = StaticTypeMetadataLock()
+&nbsp;    private val contributions = mutableListOf&lt;StaticTypeProviderContribution&gt;()
+&nbsp;    private var frozenSnapshot: StaticTypeMetadataSnapshot? = null
+&nbsp;    private var state = StaticTypeMetadataRegistryState.OPEN
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a generated provider before the first [snapshot] call.
+&nbsp;     *
+&nbsp;     * Equivalent provider ids are allowed and are deduplicated while building the
+&nbsp;     * snapshot. Conflicting content is reported by [snapshot] with the provider id.
+&nbsp;     */
+&nbsp;    fun register(provider: StaticTypeMetadataProvider) {
+&nbsp;        lock.withLock {
+&nbsp;            check(state == StaticTypeMetadataRegistryState.OPEN) {
+&nbsp;                &quot;Static type metadata registry is frozen; register all providers before the first lookup.&quot;
+&nbsp;            }
+&nbsp;        }
+&nbsp;        val providerId = provider.id
+&nbsp;        require(providerId.isNotBlank()) { &quot;Static type metadata provider id must not be blank.&quot; }
+&nbsp;        val contribution = provider.collectContribution(providerId)
+&nbsp;        lock.withLock {
+&nbsp;            check(state == StaticTypeMetadataRegistryState.OPEN) {
+&nbsp;                &quot;Static type metadata registry is frozen; register all providers before the first lookup.&quot;
+&nbsp;            }
+&nbsp;            contributions += contribution
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Installs one compiler-generated module contribution.
+&nbsp;     *
+&nbsp;     * Native modules expose this operation through a generated common-source
+&nbsp;     * entry. Keeping the provider id and descriptors in one call lets the
+&nbsp;     * compiler-generated entry remain a plain source-visible function while
+&nbsp;     * preserving the same duplicate and freeze checks as [register].
+&nbsp;     */
+&nbsp;    fun registerGeneratedTypeMetadata(
+&nbsp;        providerId: String,
+&nbsp;        typeInfos: List&lt;StaticTypeInfo&gt;
+&nbsp;    ) {
+&nbsp;        register(object : StaticTypeMetadataProvider {
+&nbsp;            override val id: String = providerId
+&nbsp;
+&nbsp;            override fun contributeTo(registrar: StaticTypeMetadataRegistrar) {
+&nbsp;                typeInfos.forEach(registrar::registerTypeInfo)
+&nbsp;            }
+&nbsp;        })
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the deterministic metadata snapshot and permanently closes registration.
+&nbsp;     */
+&nbsp;    fun snapshot(): StaticTypeMetadataSnapshot = lock.withLock {
+&nbsp;        frozenSnapshot ?: run {
+&nbsp;            check(state == StaticTypeMetadataRegistryState.OPEN) {
+&nbsp;                &quot;Static type metadata registry is already building its first snapshot.&quot;
+&nbsp;            }
+&nbsp;            state = StaticTypeMetadataRegistryState.FREEZING
+&nbsp;            try {
+&nbsp;                buildSnapshot(contributions).also {
+&nbsp;                    frozenSnapshot = it
+&nbsp;                    state = StaticTypeMetadataRegistryState.FROZEN
+&nbsp;                }
+&nbsp;            } finally {
+&nbsp;                if (state == StaticTypeMetadataRegistryState.FREEZING) {
+&nbsp;                    state = StaticTypeMetadataRegistryState.OPEN
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildSnapshot(
+&nbsp;        registeredContributions: List&lt;StaticTypeProviderContribution&gt;
+&nbsp;    ): StaticTypeMetadataSnapshot {
+&nbsp;        val contributionsByProvider = linkedMapOf&lt;String, StaticTypeProviderContribution&gt;()
+&nbsp;        registeredContributions.forEach { contribution -&gt;
+&nbsp;            val existing = contributionsByProvider[contribution.providerId]
+&nbsp;            when {
+&nbsp;                existing == null -&gt; contributionsByProvider[contribution.providerId] = contribution
+&nbsp;                existing.summary != contribution.summary -&gt; {
+&nbsp;                    throw IllegalArgumentException(
+&nbsp;                        &quot;Static type metadata provider &#39;${contribution.providerId}&#39; contributed conflicting metadata.&quot;
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        val typeInfos = linkedMapOf&lt;StaticTypeRef, StaticTypeInfo&gt;()
+&nbsp;        contributionsByProvider.values.sortedBy(StaticTypeProviderContribution::providerId).forEach { contribution -&gt;
+&nbsp;            contribution.typeInfos.forEach { (type, typeInfo) -&gt;
+&nbsp;                val existing = typeInfos[type]
+&nbsp;                when {
+&nbsp;                    existing == null -&gt; typeInfos[type] = typeInfo
+&nbsp;                    existing != typeInfo -&gt; {
+&nbsp;                        throw IllegalArgumentException(
+&nbsp;                            &quot;Conflicting generated static type metadata was registered for &quot; +
+&nbsp;                                type.structuralSignature()
+&nbsp;                        )
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return StaticTypeMetadataSnapshot(typeInfos.toMap())
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private enum class StaticTypeMetadataRegistryState {
+&nbsp;    OPEN,
+&nbsp;    FREEZING,
+&nbsp;    FROZEN
+&nbsp;}
+&nbsp;
+&nbsp;private data class StaticTypeProviderContribution(
+&nbsp;    val providerId: String,
+&nbsp;    val typeInfos: Map&lt;StaticTypeRef, StaticTypeInfo&gt;
+&nbsp;) {
+&nbsp;    val summary: List&lt;String&gt; = typeInfos.entries
+&nbsp;        .sortedBy { (type, _) -&gt; type.structuralSignature() }
+&nbsp;        .map { (type, typeInfo) -&gt;
+&nbsp;            &quot;TYPE|${type.structuralSignature()}|${typeInfo.structuralSignature()}&quot;
+&nbsp;        }
+&nbsp;}
+&nbsp;
+&nbsp;private fun StaticTypeMetadataProvider.collectContribution(
+&nbsp;    providerId: String
+&nbsp;): StaticTypeProviderContribution {
+<b class="fc">&nbsp;    val typeInfos = linkedMapOf&lt;StaticTypeRef, StaticTypeInfo&gt;()</b>
+<b class="fc">&nbsp;    contributeTo(object : StaticTypeMetadataRegistrar {</b>
+&nbsp;        override fun registerTypeInfo(typeInfo: StaticTypeInfo) {
+<b class="fc">&nbsp;            val normalized = typeInfo.normalizedForRegistry()</b>
+<b class="fc">&nbsp;            val existing = typeInfos[normalized.type]</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                existing == null -&gt; typeInfos[normalized.type] = normalized</b>
+<b class="fc">&nbsp;                existing != normalized -&gt; {</b>
+<b class="fc">&nbsp;                    throw IllegalArgumentException(</b>
+<b class="fc">&nbsp;                        &quot;Conflicting generated static type metadata was registered for &quot; +</b>
+<b class="fc">&nbsp;                            normalized.type.structuralSignature()</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    })
+<b class="fc">&nbsp;    return StaticTypeProviderContribution(providerId, typeInfos.toMap())</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;private fun StaticTypeInfo.normalizedForRegistry(): StaticTypeInfo = StaticTypeInfo(</b>
+<b class="fc">&nbsp;    type = type.copyForRegistry().withoutTopLevelNullability(),</b>
+<b class="fc">&nbsp;    directSupertypes = directSupertypes.map { it.copyForRegistry().withoutTopLevelNullability() },</b>
+<b class="fc">&nbsp;    containerKind = containerKind,</b>
+<b class="fc">&nbsp;    elementType = elementType?.copyForRegistry(),</b>
+<b class="fc">&nbsp;    isKPojo = isKPojo,</b>
+<b class="fc">&nbsp;    enumKey = enumKey,</b>
+<b class="fc">&nbsp;    declarationVariances = declarationVariances.toList()</b>
+&nbsp;)
+&nbsp;
+<b class="fc">&nbsp;private fun StaticTypeInfo.copyForRegistry(): StaticTypeInfo = StaticTypeInfo(</b>
+<b class="fc">&nbsp;    type = type.copyForRegistry(),</b>
+<b class="fc">&nbsp;    directSupertypes = directSupertypes.map(StaticTypeRef::copyForRegistry),</b>
+<b class="fc">&nbsp;    containerKind = containerKind,</b>
+<b class="fc">&nbsp;    elementType = elementType?.copyForRegistry(),</b>
+<b class="fc">&nbsp;    isKPojo = isKPojo,</b>
+<b class="fc">&nbsp;    enumKey = enumKey,</b>
+<b class="fc">&nbsp;    declarationVariances = declarationVariances.toList()</b>
+&nbsp;)
+&nbsp;
+<b class="fc">&nbsp;private fun StaticTypeRef.copyForRegistry(): StaticTypeRef = StaticTypeRef(</b>
+<b class="fc">&nbsp;    key = key,</b>
+<b class="fc">&nbsp;    nullable = nullable,</b>
+<b class="fc">&nbsp;    arguments = arguments.map { argument -&gt;</b>
+<b class="fc">&nbsp;        StaticTypeArgument(argument.variance, argument.type?.copyForRegistry())</b>
+&nbsp;    }
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-29 10:55</div>
+</div>
+</body>
+</html>

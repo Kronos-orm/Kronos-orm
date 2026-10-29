@@ -274,11 +274,24 @@
             <h2 id="install-title">{{ isZh ? '添加依赖，然后开始写 Kotlin。' : 'Add dependencies, then write Kotlin.' }}</h2>
             <p>
                 {{ isZh
-                    ? 'Kronos 支持 Gradle Kotlin DSL、Gradle Groovy 和 Maven。完整配置见快速上手文档。'
-                    : 'Kronos supports Gradle Kotlin DSL, Gradle Groovy and Maven. See quick start for the full setup.' }}
+                    ? '使用 Kotlin Toolchain、Gradle 或 Maven 配置运行时和编译器插件。'
+                    : 'Configure the runtime and compiler plugin with Kotlin Toolchain, Gradle or Maven.' }}
             </p>
+            <a [routerLink]="installationUrl">{{ isZh ? '查看完整安装步骤' : 'Open the installation guide' }}</a>
         </div>
-        <pre><code>@for (line of installCode; track $index) {<span class="code-line">@for (token of highlight(line); track $index) {<span [class]="'code-' + token.kind">{{ token.text }}</span>}</span>}</code></pre>
+        <div class="install-example">
+            <div class="install-tools" role="group" [attr.aria-label]="isZh ? '构建工具' : 'Build tool'">
+                @for (tool of installTools; track tool; let index = $index) {
+                    <button type="button" [attr.aria-pressed]="activeInstall === index" (click)="activeInstall = index">{{ tool }}</button>
+                }
+            </div>
+            <p class="install-file">{{ installFileName }}</p>
+            <pre><code>@for (line of installCode; track $index) {<span class="code-line">@for (token of highlight(line); track $index) {<span [class]="'code-' + token.kind">{{ token.text }}</span>}</span>}</code></pre>
+            @if (activeInstall === 0) {
+                <p class="install-file">resources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider</p>
+                <pre><code>com.kotlinorm.generated.factory.AppGeneratedTypeProvider</code></pre>
+            }
+        </div>
     </section>
 
     <footer class="home-footer">

@@ -28,6 +28,22 @@ Put `KPojo` models, business queries, SQL expressions and result-processing logi
 
 Android/JVM is Android's JVM compilation target. AndroidX SQLite is a driver library used by the Native reference application for bundled SQLite. See [Android SQLite](/documentation/en/database/android-sqlite) and [Native SQLite](/documentation/en/database/native-sqlite) for their connection implementations.
 
+## Integrate with Kotlin Toolchain
+
+A Toolchain project declares `kmp/lib` and its platforms in `models/module.yaml`, then loads `kronos-compiler-plugin` through `settings.kotlin.compilerPlugins`. Shared models live in `src/`; platform sources live in `src@jvm/` and `src@native/`.
+
+The [KMP guide](/documentation/en/getting-started/kmp) includes a complete downloadable project with a shared-model library, a JVM application and a Native application. After extracting it, use the standard Kotlin SDK to prepare type registrations, then run the applications with the Toolchain wrapper:
+
+```bash
+kotlinc -script prepare.main.kts
+./kotlin run -m jvm-app
+./kotlin test -m models -p jvm
+# Apple Silicon Mac
+./kotlin run -m native-app -p macosArm64
+```
+
+The example also exports an inferred projection from the shared library and consumes its fields, ordering context and result mapping in the applications. Gradle projects can use the version catalog below.
+
 ## Configure dependencies in a version catalog
 
 This example uses a Gradle KMP project with Kotlin `2.4.21`. Keep the Kronos plugin and runtime on the same version in `gradle/libs.versions.toml`.

@@ -28,6 +28,16 @@ kotlin {
 
 重新加载 Gradle 项目，让 IDEA 导入编译器插件及集合字面量参数。Gradle 项目的编辑器接入由 KEFS 完成；Kotlin Toolchain 项目使用对应的构建模型导入插件。
 
+## 配置 Kotlin Toolchain 项目
+
+按 {{ $.keyword("getting-started/installation", ["安装"]) }} 配置 JVM 应用，或使用 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }} 的完整多模块示例。在 `module.yaml` 中加载 `kronos-compiler-plugin`，准备类型注册文件后，先编译 JVM 目标确认配置：
+
+```bash name="Kotlin Toolchain" icon="terminal"
+./kotlin build -p jvm
+```
+
+安装官方 Toolchain IDE 插件后打开项目目录，等待 `project.yaml` 导入完成，再按下文配置 KEFS 的 Kronos 制品组。
+
 ## 版本兼容表
 
 按下表选择 Kronos ORM、KEFS 和 IntelliJ IDEA 的版本组合。`IDE Kotlin` 是 IDEA 内置编译器的版本，KEFS 用它选择 Kronos 编辑器制品；项目自身的 Kotlin 版本由构建配置管理。

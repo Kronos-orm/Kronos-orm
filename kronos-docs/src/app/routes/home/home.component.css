@@ -963,6 +963,45 @@ em {
     background: rgba(255, 255, 255, 0.035);
 }
 
+.install-example {
+    min-width: 0;
+}
+
+.install-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.install-tools button {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid rgba(246, 247, 239, 0.2);
+    border-radius: 6px;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+.install-tools button[aria-pressed="true"] {
+    border-color: #dfff67;
+    color: #dfff67;
+    background: rgba(223, 255, 103, 0.07);
+}
+
+.install-tools button:focus-visible {
+    outline: 2px solid #dfff67;
+    outline-offset: 3px;
+}
+
+.install-section .install-file {
+    margin: 1rem 0 0.5rem;
+    color: rgba(246, 247, 239, 0.7);
+    font: 0.75rem/1.6 "JetBrains Mono", monospace;
+    overflow-wrap: anywhere;
+}
+
 .home-footer {
     position: relative;
     z-index: 1;

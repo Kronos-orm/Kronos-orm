@@ -1,3 +1,6 @@
+// Angular 21 targets ES2022, including class fields.
+/* eslint-env browser, es2022 */
+/* eslint "es-x/no-class-fields": "off" */
 import {CommonModule} from '@angular/common';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {RouterLink} from '@angular/router';
@@ -67,11 +70,35 @@ const KEYWORDS = new Set([
 })
 export class HomeComponent implements OnInit, OnDestroy {
     activeStage = 0;
+    public activeInstall = 0;
     private rotation: number | undefined;
 
     readonly dbLogos = ['MySQL', 'PostgreSQL', 'SQLite', 'H2', 'SQL Server', 'Oracle', 'DM8'];
 
-    readonly installCode = [
+    public readonly installTools = ['Kotlin Toolchain', 'Gradle (Kotlin DSL)'];
+
+    public readonly toolchainInstallCode = [
+        'product: jvm/app',
+        '',
+        'dependencies:',
+        '  - com.kotlinorm:kronos-core:0.4.0',
+        '',
+        'settings:',
+        '  kotlin:',
+        '    version: 2.4.21',
+        '    compileIncrementally: false',
+        '    freeCompilerArgs:',
+        '      - -Xcollection-literals',
+        '      - -Xcontext-sensitive-resolution',
+        '    compilerPlugins:',
+        '      - id: kronos-compiler-plugin',
+        '        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0',
+        '        options:',
+        '          generated-provider-id: com.example:app:main',
+        '          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider'
+    ];
+
+    public readonly gradleInstallCode = [
         'plugins {',
         '    kotlin("jvm") version "2.4.21"',
         '    id("com.kotlinorm.kronos-gradle-plugin") version "0.4.0"',
@@ -87,6 +114,18 @@ export class HomeComponent implements OnInit, OnDestroy {
         '    implementation("com.kotlinorm:kronos-core:0.4.0")',
         '}'
     ];
+
+    public get installCode(): string[] {
+        return this.activeInstall === 0 ? this.toolchainInstallCode : this.gradleInstallCode;
+    }
+
+    public get installFileName(): string {
+        return this.activeInstall === 0 ? 'module.yaml' : 'build.gradle.kts';
+    }
+
+    public get installationUrl(): string {
+        return this.docRoute('getting-started/installation');
+    }
 
     readonly stages: Stage[] = [
         {

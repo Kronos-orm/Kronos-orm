@@ -57,6 +57,45 @@ KEFS editor setup is documented at `/documentation/en/resources/kefs` and `/docu
 
 ## 项目配置
 
+### Kotlin Toolchain
+
+使用 [Kotlin Toolchain wrapper](https://kotlin-toolchain.org/latest/cli/provisioning/) 创建 JVM 应用。在项目根目录添加以下两个文件，Kotlin 源码放在 `src/` 下。
+
+```yaml group="Toolchain JVM" name="module.yaml"
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:0.4.0
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+类型注册文件的内容必须与 `generated-provider-fq-name` 相同，供 JVM 加载本模块的实体和投影元数据。
+
+```text group="Toolchain JVM" name="resources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
+com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+在 `src/Main.kt` 中定义 `main()` 后运行：
+
+```bash group="Toolchain run" name="shell"
+./kotlin run
+```
+
+多模块、测试和 Native 接入见[完整 KMP 示例](https://kotlinorm.com/#/documentation/zh-CN/getting-started/kmp)。其 `prepare.main.kts` 通过 `module-coordinate` 派生每个模块及 main/test 的身份，运行 `kotlinc -script prepare.main.kts` 后使用 Toolchain wrapper 构建。
+
 ### Gradle (Kotlin DSL)
 
 ```kotlin
@@ -148,7 +187,7 @@ Kronos.connect(
 
 ### Kotlin Multiplatform
 
-Place portable KPojo models and queries in `commonMain`; apply the Kronos Gradle plugin to every model/query module, and use `kronos-core` from the shared source set. Use Kotlin `2.4.21` with one Kronos version in the version catalog. Native targets cover iOS, macOS, tvOS, watchOS, Linux and Windows.
+Place portable KPojo models and queries in shared sources (`src/` for Toolchain, `commonMain` for Gradle); load the Kronos compiler plugin in every model/query module, and use `kronos-core` from the shared source set. Use Kotlin `2.4.21` with one Kronos version in the version catalog. Native targets cover iOS, macOS, tvOS, watchOS, Linux and Windows.
 
 Call `com.kotlinorm.utils.initializeKronosMetadata()` in the final Kotlin application/framework before database operations. Connect an application-owned `KronosExecutionDataSource` through `com.kotlinorm.wrappers.KronosExecutionWrapper`, then set `Kronos.dataSource = { wrapper }`. The Native reference application supplies SQLite drivers; its AndroidX Apple/Linux and SQLite C API Windows adapters belong to the application.
 
@@ -1988,7 +2027,7 @@ val (sql, params, atomicTasks) = truncateTask
 ## 故障排查入口
 
 - 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.4.0`、`com.kotlinorm:kronos-jdbc-wrapper:0.4.0` 和数据库 driver 的当前稳定版。
-- 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
+- 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要加载 Kronos 编译器插件。
 - 检查 KPojo generated members：`__kType`、`__tableName`、`__tableComment`、`__columns`、`__tableIndexes`、`__createTime`、`__updateTime`、`__logicDelete`、`__optimisticLock` 和 `toDataMap()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。
 - 数据源未配置：设置 `Kronos.dataSource = { wrapper }`，或在结果方法中传入具体 `KronosDataSourceWrapper`。

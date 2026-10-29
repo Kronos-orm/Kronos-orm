@@ -23,6 +23,10 @@ For a complete setup, see {{ $.keyword("getting-started/quick-start", ["Quick St
 
 Kronos compile-time support runs during Kotlin compilation. Compile the module that declares `KPojo` classes or writes Kronos DSL calls, then check the build output.
 
+```bash group="Compiler plugin" name="Kotlin Toolchain (JVM)" icon="terminal"
+./kotlin build -p jvm
+```
+
 ```bash group="Compiler plugin" name="Gradle" icon="terminal"
 ./gradlew :app:compileKotlin
 ```
@@ -32,7 +36,7 @@ Kronos compile-time support runs during Kotlin compilation. Compile the module t
 BUILD SUCCESSFUL
 ```
 
-Apply the Kronos Gradle or Maven plugin to each source set that declares entities or query DSL. The complete build-tool examples and source-set rule are in {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }}.
+Apply the Kronos compiler plugin to each source set that declares entities or query DSL. The complete build-tool examples and source-set rule are in {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }}.
 
 ## Check KPojo generated members
 

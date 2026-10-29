@@ -45,7 +45,14 @@
                 "output": "assets/ng-doc"
               },
               "src/favicon.ico",
-              "src/assets"
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets",
+                "ignore": [
+                  "examples/**"
+                ]
+              }
             ],
             "styles": [
               "node_modules/@ng-doc/app/styles/global.css",

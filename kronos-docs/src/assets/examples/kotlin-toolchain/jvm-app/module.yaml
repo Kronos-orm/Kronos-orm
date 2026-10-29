@@ -1,0 +1,16 @@
+product: jvm/app
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - ../models
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0
+        options:
+          module-coordinate: example:jvm-app
+          jvm-source-set-prefix: ''

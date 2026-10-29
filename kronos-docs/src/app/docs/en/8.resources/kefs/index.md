@@ -28,6 +28,16 @@ kotlin {
 
 Reload the Gradle project so IDEA imports the compiler plugin and collection-literal option. KEFS provides editor integration for Gradle projects. Kotlin Toolchain projects use their corresponding build-model import plugin.
 
+## Configure a Kotlin Toolchain project
+
+Configure a JVM application with {{ $.keyword("getting-started/installation", ["Installation"]) }}, or use the complete multi-module example in {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}. Load `kronos-compiler-plugin` in `module.yaml`, prepare the type registrations and compile the JVM target to confirm the configuration:
+
+```bash name="Kotlin Toolchain" icon="terminal"
+./kotlin build -p jvm
+```
+
+Install the official Toolchain IDE plugin, open the project directory and wait for `project.yaml` import to finish. Then configure the Kronos artifact group in KEFS as described below.
+
 ## Version compatibility
 
 Choose a Kronos ORM, KEFS and IntelliJ IDEA combination from this table. `IDE Kotlin` identifies IDEA's embedded compiler, which KEFS uses to select the Kronos editor artifact. The project Kotlin version is managed by the build configuration.

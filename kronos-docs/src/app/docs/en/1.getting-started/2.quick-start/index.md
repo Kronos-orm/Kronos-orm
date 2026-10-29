@@ -5,7 +5,33 @@
 
 Add the ORM runtime, the Kronos compiler plugin, the JDBC wrapper, and the database driver used by this example.
 
-```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
+```yaml group="Build setup" name="Kotlin Toolchain · module.yaml"
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:{{ $.kronosVersion() }}
+  - com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}
+  - org.apache.commons:commons-dbcp2:<latest-stable>
+  - com.mysql:mysql-connector-j:<latest-stable>
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+Toolchain projects also need the type registration file shown in {{ $.keyword("getting-started/installation", ["Installation"]) }}. Put the Kotlin files below in `src/` and run the application with `./kotlin run`.
+
+```kotlin group="Build setup" name="Gradle · build.gradle.kts" icon="gradlekts"
 plugins {
     kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"

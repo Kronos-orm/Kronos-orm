@@ -1,0 +1,4 @@
+modules:
+  - jvm-app
+  - models
+  - native-app

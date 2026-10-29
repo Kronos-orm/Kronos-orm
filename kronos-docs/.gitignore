@@ -44,3 +44,6 @@ Thumbs.db
 
 # NgDoc files
 /ng-doc
+
+# Downloadable examples are packaged from their maintained sources
+/src/assets/downloads/kotlin-toolchain.zip

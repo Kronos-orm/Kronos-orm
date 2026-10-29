@@ -5,7 +5,33 @@
 
 添加 ORM 运行时、Kronos 编译插件、JDBC wrapper 和本示例使用的数据库驱动。
 
-```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
+```yaml group="Build setup" name="Kotlin Toolchain · module.yaml"
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:{{ $.kronosVersion() }}
+  - com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}
+  - org.apache.commons:commons-dbcp2:<latest-stable>
+  - com.mysql:mysql-connector-j:<latest-stable>
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+Toolchain 项目还需添加类型注册文件，完整内容见 {{ $.keyword("getting-started/installation", ["安装"]) }}。后续 Kotlin 文件放在 `src/` 下，执行 `./kotlin run` 运行应用。
+
+```kotlin group="Build setup" name="Gradle · build.gradle.kts" icon="gradlekts"
 plugins {
     kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"

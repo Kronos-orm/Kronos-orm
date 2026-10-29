@@ -2,7 +2,7 @@
 
 ## 连接 Native 应用
 
-共享 `KPojo` 模型和查询通过应用内的 SQLite 连接执行。Gradle 配置见 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}。
+共享 `KPojo` 模型和查询通过应用内的 SQLite 连接执行。Kotlin Toolchain 和 Gradle 配置见 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}。
 
 [Native 参考应用](https://github.com/Kronos-orm/kronos-example-ios) 包含连接适配器、平台驱动、桌面可执行程序和 iOS 应用。其中 `KronosSqliteDataSource` 实现 `KronosExecutionDataSource`，由 core 中的 `KronosExecutionWrapper` 接入 ORM。
 

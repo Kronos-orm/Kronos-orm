@@ -1,0 +1,5 @@
+build/
+.kotlin/
+**/GeneratedKronosMetadata.kt
+**/GeneratedKronosProjectionAnchor.kt
+**/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider

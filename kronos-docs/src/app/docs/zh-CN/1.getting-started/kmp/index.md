@@ -2,7 +2,7 @@
 
 ## 共享模型和查询
 
-将 `KPojo` 模型和查询代码放在 `commonMain`。应用按平台提供数据库连接：JVM 使用 JDBC，Android/JVM 使用 `SQLiteDatabase`，Apple、Linux 和 Windows 使用 Native SQLite 适配器。
+将 `KPojo` 模型和查询代码放在共享源码目录：Toolchain 使用 `src/`，Gradle 使用 `commonMain`。应用按平台提供数据库连接：JVM 使用 JDBC，Android/JVM 使用 `SQLiteDatabase`，Apple、Linux 和 Windows 使用 Native SQLite 适配器。
 
 Native 目标包括：
 
@@ -16,6 +16,138 @@ Native 目标包括：
 Android 应用按 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} 配置。Android 使用 JVM 字节码；AndroidX SQLite 是 Native 示例使用的数据库驱动库。
 
 构建 Apple 目标需要 macOS 和 Xcode 16 或更新版本。用 `xcodebuild -version` 检查当前选中的 Xcode；安装多个版本时，通过 `DEVELOPER_DIR` 指定构建使用的 `Contents/Developer` 目录。
+
+## 配置 Kotlin Toolchain
+
+使用 Kotlin Toolchain `0.13.0` 和 Kotlin `2.4.21`。[下载完整多模块示例](/assets/downloads/kotlin-toolchain.zip)，解压后保留 wrapper、共享配置和准备脚本。示例由共享模型库 `models`、JVM 应用 `jvm-app` 和 macOS 应用 `native-app` 组成。
+
+```text name="项目目录"
+project.yaml
+common.module-template.yaml
+kotlin / kotlin.bat
+prepare.main.kts
+models/
+  module.yaml
+  src/example/Person.kt
+  test/example/ProjectionTest.kt
+jvm-app/
+  module.yaml
+  src/example/Main.kt
+native-app/
+  module.yaml
+  src/example/Main.kt
+```
+
+`project.yaml` 注册三个模块，公共模板统一 Kotlin 版本和 DSL 参数：
+
+```yaml group="Toolchain project" name="project.yaml"
+modules:
+  - jvm-app
+  - models
+  - native-app
+```
+
+```yaml group="Toolchain project" name="common.module-template.yaml"
+settings:
+  kotlin:
+    version: 2.4.21
+    languageVersion: 2.4
+    apiVersion: 2.4
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+  jvm:
+    release: 8
+    jdk:
+      version: 21
+```
+
+共享库通过同一个 `kronos-core` 坐标选择各平台构件，并导出给两个应用。编译器插件配置放在模块的通用 `settings` 中：
+
+```yaml name="models/module.yaml"
+product:
+  type: kmp/lib
+  platforms: [jvm, macosArm64, macosX64, iosArm64, iosSimulatorArm64, linuxX64]
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - com.kotlinorm:kronos-core:{{ $.kronosVersion() }}: exported
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          module-coordinate: example:models
+          jvm-source-set-prefix: 'jvm'
+```
+
+两个应用依赖 `../models`，并在自身模块加载编译器插件，以便继续编写查询和消费共享库公开返回的投影：
+
+```yaml group="Toolchain applications" name="jvm-app/module.yaml"
+product: jvm/app
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - ../models
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          module-coordinate: example:jvm-app
+          jvm-source-set-prefix: ''
+```
+
+```yaml group="Toolchain applications" name="native-app/module.yaml"
+product:
+  type: macos/app
+  platforms: [macosArm64, macosX64]
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - ../models
+
+settings:
+  native:
+    entryPoint: example.main
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          module-coordinate: example:native-app
+          jvm-source-set-prefix: ''
+```
+
+### 准备并运行
+
+安装标准 Kotlin SDK，用 `kotlinc` 执行准备脚本；`./kotlin` 则是示例自带的 Toolchain wrapper。脚本从每个模块的 `module-coordinate` 自动生成主源码和测试源码的类型注册文件。新增模块时，在 `project.yaml` 注册模块，并同步准备脚本中的 `modules` 列表：`jvmScope` 指定 JVM source set，`nativeDependencies` 列出 Native 模块依赖。修改模块坐标或依赖后再次运行脚本，不需要手写生成的类型名称。
+
+```bash name="JVM" icon="terminal"
+kotlinc -script prepare.main.kts
+./kotlin run -m jvm-app
+./kotlin test -m models -p jvm
+```
+
+在 Apple Silicon Mac 上运行 Native 应用和共享模型测试；Intel Mac 将平台改为 `macosX64`：
+
+```bash name="macOS" icon="terminal"
+./kotlin run -m native-app -p macosArm64
+./kotlin test -m models -p macosArm64
+```
+
+Toolchain 的共享源码放在 `src/`，平台源码使用 `src@jvm/`、`src@native/` 等目录；Gradle 对应使用 `commonMain`、`jvmMain` 和 `nativeMain`。下面的模型和查询可以用于两种构建方式。数据库连接仍由应用提供，SQLite 驱动接入见 {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }}。
 
 ## 配置 Gradle
 

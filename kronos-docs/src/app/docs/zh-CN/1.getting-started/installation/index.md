@@ -11,6 +11,47 @@
 
 可复制依赖片段使用 `{{ $.kronosVersion() }}`。只有在测试未发布源码改动时才使用 snapshot 版本。
 
+## Kotlin Toolchain
+
+使用 [Kotlin Toolchain wrapper](https://kotlin-toolchain.org/latest/cli/provisioning/) 创建 JVM 应用。在项目根目录添加以下两个文件，Kotlin 源码放在 `src/` 下。
+
+```yaml group="Toolchain JVM" name="module.yaml"
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:{{ $.kronosVersion() }}
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+类型注册文件的内容必须与 `generated-provider-fq-name` 相同，供 JVM 加载本模块的实体和投影元数据。
+
+```text group="Toolchain JVM" name="resources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
+com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+在 `src/Main.kt` 中定义 `main()` 后运行：
+
+```bash group="Toolchain run" name="shell"
+./kotlin run
+```
+
+多模块、测试 source set 和 KMP 配置见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }} 与 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}。
+
+## Gradle
+
 ```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
 plugins {
     kotlin("jvm") version "2.4.21"
@@ -44,6 +85,8 @@ dependencies {
     implementation 'com.kotlinorm:kronos-core:{{ $.kronosVersion() }}'
 }
 ```
+
+## Maven
 
 ```xml group="Maven" name="pom.xml" icon="maven"
 <project>
@@ -93,6 +136,11 @@ dependencies {
 
 应用直接使用 JDBC `DataSource` 时，添加 `kronos-jdbc-wrapper`。它负责执行生成 SQL，并把查询结果映射回 KPojo 对象。
 
+```yaml group="JDBC wrapper" name="Kotlin Toolchain"
+dependencies:
+  - com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}
+```
+
 ```kotlin group="JDBC wrapper" name="Gradle" icon="gradlekts"
 dependencies {
     implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
@@ -117,6 +165,12 @@ Android/JVM 和 Android `SQLiteDatabase` 接入请统一阅读 {{ $.keyword("dat
 
 JDBC Driver 和连接池版本需要与数据库服务端、JDK 匹配。下面的 `<latest-stable>` 占位符表示第三方依赖按运行环境选择当前稳定版。
 
+```yaml group="Driver" name="Kotlin Toolchain"
+dependencies:
+  - org.apache.commons:commons-dbcp2:<latest-stable>
+  - com.mysql:mysql-connector-j:<latest-stable>
+```
+
 ```kotlin group="Driver" name="MySQL example" icon="gradlekts"
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
@@ -128,7 +182,7 @@ dependencies {
 
 - JDK 8 或更高版本。
 - Kotlin 2.4.21 或更高版本。
-- Maven 3.9+，或 Kotlin 2.4.21 支持的 Gradle 版本。
+- Kotlin Toolchain 0.13.0、Maven 3.9+，或 Kotlin 2.4.21 支持的 Gradle 版本。
 
 > **Warning**
 > 请确保 IDE 使用的 Kotlin 插件支持 Kotlin 2.4.21 或更高版本。

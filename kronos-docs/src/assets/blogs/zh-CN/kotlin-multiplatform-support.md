@@ -28,6 +28,22 @@
 
 Android/JVM 是 Android 的 JVM 编译目标。AndroidX SQLite 是数据库驱动库，Native 示例通过它使用 bundled SQLite。具体连接代码分别见 [Android SQLite](/documentation/zh-CN/database/android-sqlite) 和 [Native SQLite](/documentation/zh-CN/database/native-sqlite)。
 
+## 使用 Kotlin Toolchain 接入
+
+Toolchain 项目在 `models/module.yaml` 中声明 `kmp/lib` 和目标平台，通过 `settings.kotlin.compilerPlugins` 加载 `kronos-compiler-plugin`。共享模型放在 `src/`，JVM 与 Native 源码分别放在 `src@jvm/` 和 `src@native/`。
+
+[KMP 指南](/documentation/zh-CN/getting-started/kmp)提供完整可下载的三模块项目：共享模型、JVM 应用和 Native 应用。解压后先用标准 Kotlin SDK 执行类型注册准备，再用 Toolchain wrapper 运行应用：
+
+```bash
+kotlinc -script prepare.main.kts
+./kotlin run -m jvm-app
+./kotlin test -m models -p jvm
+# Apple Silicon Mac
+./kotlin run -m native-app -p macosArm64
+```
+
+示例同时演示共享库公开返回的投影类型，以及应用中的字段读取、排序和结果映射。选择 Gradle 的项目可以使用下面的版本目录配置。
+
 ## 用版本目录配置依赖
 
 下面使用 Gradle KMP 项目演示接入。Kotlin 版本为 `2.4.21`，Kronos 插件和运行时保持同一版本，并统一放进 `gradle/libs.versions.toml`。

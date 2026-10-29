@@ -11,6 +11,47 @@ Add `kronos-core` for the ORM runtime and the Kronos compiler plugin for compile
 
 Use `{{ $.kronosVersion() }}` for copyable dependency examples. Use the snapshot version only when you are testing unreleased source changes.
 
+## Kotlin Toolchain
+
+Create a JVM application with the [Kotlin Toolchain wrapper](https://kotlin-toolchain.org/latest/cli/provisioning/). Add these two files at the project root and place Kotlin sources in `src/`.
+
+```yaml group="Toolchain JVM" name="module.yaml"
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:{{ $.kronosVersion() }}
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+The registration file must contain the same name as `generated-provider-fq-name`, so the JVM loads entity and projection metadata from this module.
+
+```text group="Toolchain JVM" name="resources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
+com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+After defining `main()` in `src/Main.kt`, run:
+
+```bash group="Toolchain run" name="shell"
+./kotlin run
+```
+
+For modules, test source sets and KMP, see {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }} and {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}.
+
+## Gradle
+
 ```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
 plugins {
     kotlin("jvm") version "2.4.21"
@@ -44,6 +85,8 @@ dependencies {
     implementation 'com.kotlinorm:kronos-core:{{ $.kronosVersion() }}'
 }
 ```
+
+## Maven
 
 ```xml group="Maven" name="pom.xml" icon="maven"
 <project>
@@ -93,6 +136,11 @@ dependencies {
 
 Add `kronos-jdbc-wrapper` when the application uses JDBC `DataSource` objects directly. The wrapper executes generated SQL and maps rows back to KPojo objects.
 
+```yaml group="JDBC wrapper" name="Kotlin Toolchain"
+dependencies:
+  - com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}
+```
+
 ```kotlin group="JDBC wrapper" name="Gradle" icon="gradlekts"
 dependencies {
     implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
@@ -117,6 +165,12 @@ For Android/JVM and Android `SQLiteDatabase` setup, use the dedicated {{ $.keywo
 
 Choose JDBC driver and connection-pool versions that match your database server and JDK. The `<latest-stable>` placeholders below represent the current stable third-party versions for your runtime environment.
 
+```yaml group="Driver" name="Kotlin Toolchain"
+dependencies:
+  - org.apache.commons:commons-dbcp2:<latest-stable>
+  - com.mysql:mysql-connector-j:<latest-stable>
+```
+
 ```kotlin group="Driver" name="MySQL example" icon="gradlekts"
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
@@ -128,7 +182,7 @@ dependencies {
 
 - JDK 8 or later.
 - Kotlin 2.4.21 or later.
-- Maven 3.9+ or a Gradle version supported by Kotlin 2.4.21.
+- Kotlin Toolchain 0.13.0, Maven 3.9+, or a Gradle version supported by Kotlin 2.4.21.
 
 > **Warning**
 > Make sure the Kotlin plugin used by your IDE supports Kotlin 2.4.21 or later.

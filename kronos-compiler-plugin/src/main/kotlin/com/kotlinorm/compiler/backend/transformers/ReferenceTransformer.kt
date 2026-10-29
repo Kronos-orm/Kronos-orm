@@ -85,7 +85,7 @@ class ReferenceTransformer(
         }
 
         return with(pluginContext) {
-            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock(resultType = expression.type) {
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
                 val fields = collectReferences(expression.value)
@@ -98,6 +98,7 @@ class ReferenceTransformer(
                             arguments[1] = fieldExpr
                         }
                     }
+                    +neutralDslReturn(expression, irFunction.returnType)
                 }
             }
         }

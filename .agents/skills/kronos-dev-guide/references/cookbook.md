@@ -17,91 +17,37 @@
 
 ## Add a New Database Dialect
 
-Example: adding DB2 support.
+Database support has two parts: portable SQL rendering in `kronos-syntax/src` and metadata/table operations in `kronos-core/src`.
 
-### Step 1: Add DBType enum value
-File: `kronos-core/src/main/kotlin/com/kotlinorm/enums/DBType.kt`
-```kotlin
-enum class DBType {
-    Mysql, Postgres, SQLite, H2, Mssql, Oracle, DM8,
-    Db2  // add new value
-}
-```
+### Step 1: Define database identity
 
-### Step 2: Create dialect package
-Create: `kronos-core/src/main/kotlin/com/kotlinorm/database/db2/`
+Add the database identifier and name/URL recognition to `kronos-core/src/com/kotlinorm/enums/DBType.kt`. Check how the JDBC connection wrapper resolves the database product name. Keep these declarations independent of JDBC classes.
 
-### Step 3: Implement DatabasesSupport
-Create: `database/db2/Db2Support.kt`
-```kotlin
-object Db2Support : DatabasesSupport {
-    override val quotes = Pair("\"", "\"")
+### Step 2: Implement SQL rendering
 
-    override fun getDBNameFromUrl(url: String): String {
-        // Parse DB name from jdbc:db2://host:port/dbname
-    }
+Use `kronos-syntax/src/com/kotlinorm/syntax/render/SqlDialect.kt` for quoting, pagination and parameter capabilities. Check the dialect family and renderers for SELECT, mutations, conflict handling, locking and functions. Add renderer behavior and syntax tests in `kronos-syntax` when the existing dialect settings cannot express the database's SQL.
 
-    override fun getColumnType(field: Field): String {
-        // Map Field → DB2 DDL type string
-        // e.g., KColumnType.INT → "INTEGER", VARCHAR → "VARCHAR(${field.length})"
-    }
+### Step 3: Implement metadata and table statements
 
-    override fun getKColumnType(type: String, length: Int): KColumnType {
-        // Map DB2 type string → KColumnType enum
-    }
+Create the database package under `kronos-core/src/com/kotlinorm/database/` and subclass `DatabaseStatements`. Follow `database/h2/H2Statements.kt` or another matching database implementation. Implement:
 
-    override fun getSelectSql(info: SelectClauseInfo): KAtomicQueryTask {
-        // Build SELECT with DB2-specific pagination, locking
-        // DB2 pagination: FETCH FIRST n ROWS ONLY / OFFSET n ROWS
-    }
+- `databaseName`, `tableExists`, `tableColumns` and `tableIndexes` for metadata queries;
+- `mapColumns` and `mapIndexes` for normalized metadata rows;
+- `sameColumnDefinition` for schema comparisons;
+- `createTable`, `dropTable`, `truncateTable` and `syncTable` for AST statements;
+- `tableComment` and `lastInsertIdFallback` when the database needs them.
 
-    override fun getInsertSql(tableName, fields, paramMap): KAtomicActionTask { ... }
-    override fun getDeleteSql(tableName, where, paramMap): KAtomicActionTask { ... }
-    override fun getUpdateSql(tableName, toUpdateFields, where, paramMap): KAtomicActionTask { ... }
+`DatabaseCreateTable` and `DatabaseSyncTable` carry the inputs. Return SQL AST nodes so the selected renderer handles quoting and parameters consistently.
 
-    override fun getOnConflictSql(resolver: ConflictResolver): KAtomicActionTask {
-        // DB2 upsert: MERGE INTO ... USING ... WHEN MATCHED THEN UPDATE ... WHEN NOT MATCHED THEN INSERT
-    }
+### Step 4: Register both parts
 
-    override fun getCreateTableSql(tableName, columns, indexes): List<String> { ... }
-    override fun getSyncTableSql(...): List<String> { ... }
-    override fun showColumnsFrom(tableName): String { ... }
-    override fun showIndexesFrom(tableName): String { ... }
-    override fun getTableColumns(wrapper, tableName): List<Field> { ... }
-    override fun getTableIndexes(wrapper, tableName): List<KTableIndex> { ... }
-}
-```
+`kronos-core/src/com/kotlinorm/database/SqlManager.kt` owns the mappings. Use `SqlManager.registerDatabase(dbType, dialect, definitions)` for a complete registration, or its `registerDialect` / `registerStatements` methods when replacing one part. For a built-in database, update the initial mappings as well.
 
-Use existing dialects as reference — `MysqlSupport` is the most complete.
+### Step 5: Add database tests
 
-### Step 4: Register the dialect
-File: `kronos-core/src/main/kotlin/com/kotlinorm/database/RegisteredDBTypeManager.kt`
-```kotlin
-private val registeredDBTypes = mutableMapOf(
-    // ... existing entries ...
-    DBType.Db2 to Db2Support
-)
-```
+Manage the JDBC driver through the version catalog and add the integration test in `kronos-testing/src/test/kotlin`. Reuse shared integration suites, then cover database-specific generated keys, type normalization, defaults, indexes, upserts, pagination and schema synchronization. `H2IntegrationTest` is an in-process reference.
 
-### Step 5: Add URL pattern matching
-Ensure `DBType` can be resolved from `jdbc:db2://` URLs. Check the URL parsing logic in `SqlManager` or `DBType`.
-
-### Step 6: Add function builder (if needed)
-If DB2 has dialect-specific SQL functions, create a `Db2FunctionBuilder` and register it:
-```kotlin
-FunctionManager.registerFunctionBuilder(Db2FunctionBuilder)
-```
-
-### Step 7: Add driver dependency to kronos-testing
-File: `kronos-testing/build.gradle.kts`:
-```kotlin
-implementation("com.ibm.db2:jcc:11.5.9.0")
-```
-
-### Step 8: Write integration tests
-Create test class in `kronos-testing/src/test/kotlin/` following the existing pattern (see "Write an Integration Test" below).
-
-H2 is a useful in-process reference implementation: `database/h2/H2Statements` owns metadata and DDL, `SqlDialect.H2` selects `H2SqlRenderer`, and `H2IntegrationTest` reuses the shared integration suites with an in-memory JDBC URL.
+Run the syntax and core suites, followed by the new database's integration class. When touching shared rendering or metadata contracts, repeat the existing database suites affected by the change.
 
 ---
 
@@ -110,7 +56,7 @@ H2 is a useful in-process reference implementation: `database/h2/H2Statements` o
 Example: adding a `KTableForGroupBy` DSL.
 
 ### Step 1: Create DSL bean
-File: `kronos-core/src/main/kotlin/com/kotlinorm/beans/dsl/KTableForGroupBy.kt`
+File: `kronos-core/src/com/kotlinorm/beans/dsl/KTableForGroupBy.kt`
 ```kotlin
 class KTableForGroupBy<T : KPojo> {
     // Operator overloads for the DSL
@@ -121,7 +67,7 @@ class KTableForGroupBy<T : KPojo> {
 ```
 
 ### Step 2: Add type alias
-File: `kronos-core/src/main/kotlin/com/kotlinorm/types/KTableField.kt`
+File: `kronos-core/src/com/kotlinorm/types/KTableField.kt`
 ```kotlin
 typealias KTableGroupByField<T, R> = KTableForGroupBy<T>.() -> R
 ```
@@ -237,7 +183,7 @@ Usage: `User().select { f.myFunc(it.name) }.queryList()`
 ## Add a New Annotation
 
 ### Step 1: Define annotation
-File: `kronos-core/src/main/kotlin/com/kotlinorm/annotations/MyAnnotation.kt`
+File: `kronos-core/src/com/kotlinorm/annotations/MyAnnotation.kt`
 ```kotlin
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.BINARY)  // must be BINARY for compiler plugin
@@ -320,7 +266,7 @@ Use `testData/diagnostics` for invalid source that should fail compilation. Use 
 Run:
 
 ```bash
-./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.ConditionBoxTest --no-daemon --console=plain
+scripts/run build test -m kronos-compiler-plugin -p jvm --include-classes='*ConditionBoxTest'
 ```
 
 ---
@@ -365,20 +311,20 @@ class MyFeatureTest {
 }
 ```
 
-Run: `source envsetup.sh && ./gradlew :kronos-testing:test --tests "*.MyFeatureTest"`
+Run: `scripts/run build test -m kronos-testing -p jvm --include-classes='*MyFeatureTest'`
 
 ---
 
 ## Write a Unit Test for kronos-core
 
-File: `kronos-core/src/test/kotlin/com/kotlinorm/MyTest.kt`
+File: `kronos-core/test@jvm/com/kotlinorm/MyTest.kt`
 
 ```kotlin
 class MyTest {
     @Test
     fun testSqlGeneration() {
         // kronos-core tests have the compiler plugin active via
-        // kotlinCompilerPluginClasspathTest dependency
+        // the shared runtime module template
         val user = User(name = "test", age = 18)
         val clause = user.select().where { it.age > 18 }
         val task = clause.build()
@@ -388,7 +334,7 @@ class MyTest {
 }
 ```
 
-Run: `./gradlew :kronos-core:test`
+Run: `scripts/run build test -m kronos-core -p jvm`
 
 ---
 
@@ -432,28 +378,19 @@ kronos {
 
 ## Release a New Version
 
-### Snapshot (automatic)
-Push a `-SNAPSHOT` version to `main` → CI runs `publishAllToCentralSnapshots`.
+1. Set the release version with `scripts/run version set 0.4.0`.
+2. Complete the release checklist in `references/testing-and-ci.md`, including bilingual release notes and dependency examples.
+3. Run the affected Toolchain tests and publication/editor gates.
+4. Stage and verify the complete Maven repository on macOS with Xcode.
+5. Create the signed Central bundle and publish it.
 
-### Release
-1. Update version: `bash .github/scripts/bump-version.sh set 0.3.1` (remove -SNAPSHOT)
-2. Complete the "Release Version Upgrade Checklist" in `references/testing-and-ci.md`.
-3. Commit: `git commit -am "chore(version): prepare release 0.3.1"`
-4. Create PR to `main`
-5. Merge PR → CI automatically:
-   - Tags `v0.3.1`
-   - Publishes to Maven Central (signed)
-   - Opens the next `0.3.2-SNAPSHOT` PR
-   - Commits and pushes
-
-### Manual Release
 ```bash
-bash .github/scripts/bump-version.sh release-from-current
-git add -A && git commit -m "chore(version): release $(cat VERSION)"
-git tag "v$(cat VERSION)"
-git push origin main --tags
-./gradlew publishAllToMavenCentral
-bash .github/scripts/bump-version.sh next-snapshot
-git add -A && git commit -m "chore(version): start next snapshot"
-git push origin main
+scripts/run release stage --repository build/release/repository
+scripts/run release verify --repository build/release/repository
+scripts/run release bundle --repository build/release/repository --output build/release/central-bundle.zip --sign
+scripts/run release publish --output build/release/central-bundle.zip
 ```
+
+For local JVM consumers use `scripts/run release jvm-stage --repository build/release/jvm-repository`. Reference applications select that absolute repository path with `-PkronosRepository=...`.
+
+After completing the release, `scripts/run version next-snapshot` prepares the next development version. The release workflow owns repository tags and GitHub Release automation.

@@ -56,6 +56,7 @@ Use this table as a compact reference for automatic mapping. The selected databa
 | `java.time.LocalTime`, `kotlinx.datetime.LocalTime` | `TIME` |
 | `java.time.LocalDateTime`, `kotlinx.datetime.LocalDateTime` | `DATETIME` |
 | `java.sql.Timestamp` | `TIMESTAMP` |
+| `kotlin.time.Instant`, `kotlinx.datetime.Instant` | `TIMESTAMP` |
 | `kotlin.ByteArray` | `BLOB` |
 | Scalar enum | `VARCHAR` |
 | `@Serialize` property | `VARCHAR` unless `@ColumnType` overrides it |

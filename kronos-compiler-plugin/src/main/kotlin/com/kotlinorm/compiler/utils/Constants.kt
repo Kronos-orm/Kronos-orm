@@ -29,6 +29,7 @@ private const val MAX_JOIN_SOURCE_ARITY = 16
 
 // Core interfaces
 val KPojoFqName = FqName("com.kotlinorm.interfaces.KPojo")
+val KronosAtomicQueryTaskFqName = FqName("com.kotlinorm.beans.task.KronosAtomicQueryTask")
 
 // DSL classes
 val FieldFqName = FqName("com.kotlinorm.beans.dsl.Field")
@@ -103,7 +104,7 @@ val SortDescendingFunctionName = Name.identifier("desc")
 val WindowOverFunctionName = "over"
 val WindowPartitionByFunctionName = "partitionBy"
 val WindowOrderByFunctionName = "orderBy"
-val PlainAggregateFunctionNames = setOf("count", "sum", "avg", "min", "max")
+val PlainAggregateFunctionNames = setOf("count", "sum", "avg", "avgdouble", "min", "max")
 val SubqueryQuantifierFunctionNames = setOf(
     Name.identifier("any"),
     Name.identifier("some"),
@@ -132,6 +133,12 @@ val GeneratedTypeProviderFqName = FqName("com.kotlinorm.utils.GeneratedTypeProvi
 val GeneratedTypeRegistrarFqName = FqName("com.kotlinorm.utils.GeneratedTypeRegistrar")
 val KPojoFactoryFqName = FqName("com.kotlinorm.utils.KPojoFactory")
 val EnumFactoryFqName = FqName("com.kotlinorm.utils.EnumFactory")
+val StaticTypeInfoFqName = FqName("com.kotlinorm.utils.StaticTypeInfo")
+val StaticTypeRefFqName = FqName("com.kotlinorm.utils.StaticTypeRef")
+val StaticTypeArgumentFqName = FqName("com.kotlinorm.utils.StaticTypeArgument")
+val StaticTypeVarianceFqName = FqName("com.kotlinorm.utils.StaticTypeVariance")
+val StaticContainerKindFqName = FqName("com.kotlinorm.utils.StaticContainerKind")
+val StaticTypeMetadataRegistryFqName = FqName("com.kotlinorm.utils.StaticTypeMetadataRegistry")
 
 // Annotation FqNames grouped for class transformer
 object AnnotationFqNames {
@@ -158,6 +165,13 @@ object AnnotationFqNames {
 
 // Core interfaces
 val KPojoClassId = ClassId.topLevel(KPojoFqName)
+val KronosAtomicQueryTaskClassId = ClassId.topLevel(KronosAtomicQueryTaskFqName)
+val StaticTypeInfoClassId = ClassId.topLevel(StaticTypeInfoFqName)
+val StaticTypeRefClassId = ClassId.topLevel(StaticTypeRefFqName)
+val StaticTypeArgumentClassId = ClassId.topLevel(StaticTypeArgumentFqName)
+val StaticTypeVarianceClassId = ClassId.topLevel(StaticTypeVarianceFqName)
+val StaticContainerKindClassId = ClassId.topLevel(StaticContainerKindFqName)
+val StaticTypeMetadataRegistryClassId = ClassId.topLevel(StaticTypeMetadataRegistryFqName)
 
 // DSL classes
 val FieldClassId = ClassId.topLevel(FieldFqName)

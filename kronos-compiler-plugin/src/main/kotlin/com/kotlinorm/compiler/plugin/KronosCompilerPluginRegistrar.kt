@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.plugin
 
-import com.google.auto.service.AutoService
 import com.kotlinorm.compiler.backend.KronosIrGenerationExtension
 import com.kotlinorm.compiler.fir.KronosFirExtensionRegistrar
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -32,7 +31,6 @@ import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
  * Registers the IR generation extension with the Kotlin compiler
  */
 @OptIn(ExperimentalCompilerApi::class)
-@AutoService(CompilerPluginRegistrar::class)
 class KronosCompilerPluginRegistrar : CompilerPluginRegistrar() {
 
     override val pluginId: String = "kronos-compiler-plugin"
@@ -42,14 +40,10 @@ class KronosCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         FirExtensionRegistrar.registerExtension(KronosFirExtensionRegistrar())
 
-        val messageCollector = configuration.get(
-            org.jetbrains.kotlin.config.CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY,
-            org.jetbrains.kotlin.cli.common.messages.MessageCollector.NONE
-        )
         IrGenerationExtension.registerExtension(
             KronosIrGenerationExtension(
-                messageCollector,
-                configuration.generatedTypeProviderConfigurationOrNull()
+                configuration,
+                configuration.generatedTypeProviderMode()
             )
         )
     }

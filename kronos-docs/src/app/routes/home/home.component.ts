@@ -73,11 +73,18 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     readonly installCode = [
         'plugins {',
-        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1"',
+        '    kotlin("jvm") version "2.4.21"',
+        '    id("com.kotlinorm.kronos-gradle-plugin") version "0.4.0"',
+        '}',
+        '',
+        'kotlin {',
+        '    compilerOptions {',
+        '        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")',
+        '    }',
         '}',
         '',
         'dependencies {',
-        '    implementation("com.kotlinorm:kronos-core:0.3.1")',
+        '    implementation("com.kotlinorm:kronos-core:0.4.0")',
         '}'
     ];
 
@@ -221,15 +228,16 @@ export class HomeComponent implements OnInit, OnDestroy {
                 en: 'Frameworks and plugins'
             },
             title: {
-                zh: '接入 JVM 框架和 Android SQLite 应用。',
-                en: 'Connect JVM frameworks and Android SQLite applications.'
+                zh: '接入 JVM 框架、Android 和 iOS SQLite 应用。',
+                en: 'Connect JVM frameworks, Android, and iOS SQLite applications.'
             },
             copy: {
-                zh: 'Kronos 内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言，服务端可接入 Spring Boot、Ktor、Vert.x、Solon，Android/JVM 可接入 SQLiteDatabase。',
-                en: 'Kronos ships MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng) dialects for Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLiteDatabase applications.'
+                zh: 'Kronos 内置 MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8（达梦）方言，服务端可接入 Spring Boot、Ktor、Vert.x、Solon，Android 使用 SQLiteDatabase，iOS 通过共享 Kotlin 代码连接 SQLite。',
+                en: 'Kronos ships MySQL, PostgreSQL, SQLite, H2, SQL Server, Oracle, and DM8 (Dameng) dialects. Connect Spring Boot, Ktor, Vert.x, and Solon on the server, SQLiteDatabase on Android, and SQLite through shared Kotlin code on iOS.'
             },
             bullets: [
                 {zh: 'Android/JVM SQLite 接入指南', en: 'Android/JVM SQLite integration guide'},
+                {zh: 'iOS SwiftUI 与共享 SQLite 示例', en: 'iOS SwiftUI and shared SQLite example'},
                 {zh: 'KPojo 模型与 CRUD', en: 'KPojo models and CRUD'},
                 {zh: '服务端自定义 wrapper 接入', en: 'Server-side custom wrapper integration'}
             ],
@@ -295,8 +303,8 @@ export class HomeComponent implements OnInit, OnDestroy {
             label: '06',
             title: {zh: '框架与平台接入', en: 'Framework and platform integration'},
             copy: {
-                zh: 'Spring Boot、Ktor、Vert.x、Solon 与 Android/JVM SQLite 共享同一套 ORM DSL。',
-                en: 'Spring Boot, Ktor, Vert.x, Solon, and Android/JVM SQLite applications share the same ORM DSL.'
+                zh: 'Spring Boot、Ktor、Vert.x、Solon、Android 与 iOS SQLite 共享同一套 ORM DSL。',
+                en: 'Spring Boot, Ktor, Vert.x, Solon, Android, and iOS SQLite applications share the same ORM DSL.'
             },
             docPath: 'database/android-sqlite'
         }
@@ -323,6 +331,13 @@ export class HomeComponent implements OnInit, OnDestroy {
             copy: {zh: 'Android/JVM、SQLiteDatabase wrapper 与 KPojo CRUD。', en: 'Android/JVM, SQLiteDatabase wrappers, and KPojo CRUD.'},
             action: {zh: '打开指南', en: 'Open guide'},
             docPath: 'database/android-sqlite'
+        },
+        {
+            label: 'iOS',
+            title: {zh: 'iOS SQLite', en: 'iOS SQLite'},
+            copy: {zh: 'SwiftUI 应用、共享 KPojo 模型、SQLite 连接与事务。', en: 'A SwiftUI app with shared KPojo models, SQLite connections, and transactions.'},
+            action: {zh: '打开指南', en: 'Open guide'},
+            docPath: 'database/native-sqlite'
         },
         {
             label: 'Plugin',
@@ -365,14 +380,14 @@ export class HomeComponent implements OnInit, OnDestroy {
         },
         {
             label: 'Blog',
-            title: {zh: 'Kronos IntelliJ IDEA 插件', en: 'Kronos IntelliJ IDEA plugin'},
+            title: {zh: '使用 KEFS 支持 Kronos 编辑器分析', en: 'Kronos editor support with KEFS'},
             copy: {
-                zh: 'IDEA K2 分析现在可以理解 Kronos 生成成员、生成投影和 DSL diagnostics。',
-                en: 'IDEA K2 analysis can now understand Kronos generated members, generated projections, and DSL diagnostics.'
+                zh: '通过 KEFS 加载 Kronos 编译器支持，为生成投影提供补全、类型和 DSL 诊断。',
+                en: 'Load Kronos compiler support through KEFS for projection completion, inferred types and DSL diagnostics.'
             },
             action: {zh: '阅读文章', en: 'Read article'},
             route: '/blog',
-            href: 'intellij-idea-plugin'
+            href: 'kefs-editor-support'
         }
     ];
 
@@ -382,56 +397,56 @@ export class HomeComponent implements OnInit, OnDestroy {
             title: {zh: 'Kronos Core API 文档', en: 'Kronos Core API Docs'},
             copy: {zh: '核心 DSL、语句构建、KPojo 能力和通用类型参考。', en: 'Core DSL, statement builders, KPojo capabilities and common type references.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-core'
+            href: '/api/kronos-core/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos JDBC Wrapper API 文档', en: 'Kronos JDBC Wrapper API Docs'},
             copy: {zh: '数据源包装、执行器、事务和 JDBC 集成 API。', en: 'Data-source wrapper, executor, transaction and JDBC integration APIs.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-jdbc-wrapper'
+            href: '/api/kronos-jdbc-wrapper/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos Compiler Plugin API 文档', en: 'Kronos Compiler Plugin API Docs'},
             copy: {zh: '插件模块的扩展点、生成逻辑和内部 API 参考。', en: 'Extension points, generation logic and internal APIs for the plugin module.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-compiler-plugin'
+            href: '/api/kronos-compiler-plugin/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos Codegen API 文档', en: 'Kronos Codegen API Docs'},
             copy: {zh: '数据库结构读取、代码生成配置和模板相关 API。', en: 'Database schema reading, code-generation configuration and template APIs.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-codegen'
+            href: '/api/kronos-codegen/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos Logging API 文档', en: 'Kronos Logging API Docs'},
             copy: {zh: '日志适配器、日志任务和运行时日志配置 API。', en: 'Logging adapters, logging tasks and runtime logging configuration APIs.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-logging'
+            href: '/api/kronos-logging/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos Syntax API 文档', en: 'Kronos Syntax API Docs'},
             copy: {zh: 'SQL 语法校验和语句遍历相关 API。', en: 'SQL syntax validation and statement traversal APIs.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-syntax'
+            href: '/api/kronos-syntax/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos Maven Plugin API 文档', en: 'Kronos Maven Plugin API Docs'},
             copy: {zh: 'Maven 编译器插件接入和配置 API。', en: 'Maven compiler-plugin integration and configuration APIs.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-maven-plugin'
+            href: '/api/kronos-maven-plugin/index.html'
         },
         {
             label: 'API',
             title: {zh: 'Kronos Gradle Plugin API 文档', en: 'Kronos Gradle Plugin API Docs'},
             copy: {zh: 'Gradle 插件注册、配置和编译器插件接入 API。', en: 'Gradle plugin registration, configuration and compiler-plugin integration APIs.'},
             action: {zh: '打开 API', en: 'Open API'},
-            href: '/api/kronos-gradle-plugin'
+            href: '/api/kronos-gradle-plugin/index.html'
         }
     ];
 

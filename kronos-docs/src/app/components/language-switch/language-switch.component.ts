@@ -1,7 +1,5 @@
 import {CommonModule} from '@angular/common';
 import {Component, Input} from '@angular/core';
-import {Router} from '@angular/router';
-import {TranslocoService} from '@jsverse/transloco';
 import {Popover} from 'primeng/popover';
 import {AppService} from '../../app.service';
 
@@ -30,12 +28,7 @@ export class LanguageSwitchComponent {
         {lang: 'en', label: 'English'}
     ];
 
-    constructor(
-        private appService: AppService,
-        private translocoService: TranslocoService,
-        private router: Router
-    ) {
-    }
+    constructor(private appService: AppService) {}
 
     get language(): LanguageCode {
         return this.appService.language === 'zh-CN' ? 'zh-CN' : 'en';
@@ -51,11 +44,5 @@ export class LanguageSwitchComponent {
         }
 
         this.appService.language = language;
-        this.translocoService.setActiveLang(language);
-
-        if (this.router.url.startsWith('/documentation/')) {
-            const docPath = this.router.url.split('/').slice(3).join('/') || 'getting-started/introduce';
-            void this.router.navigate([`/documentation/${language}/${docPath}`]);
-        }
     }
 }

@@ -16,7 +16,7 @@
 
 @file:OptIn(com.kotlinorm.annotations.InternalKronosApi::class)
 
-// Verifies recursive enum metadata discovery, Ignore direction handling, and direct entry factories.
+// Verifies declaration-owned enum factories and recursive enum field metadata.
 
 import com.kotlinorm.annotations.Ignore
 import com.kotlinorm.annotations.Serialize
@@ -83,6 +83,7 @@ fun box(): String {
     val expectedEntries = linkedMapOf(
         typeOf<DirectStatus>() to listOf("DIRECT_ON", "DIRECT_OFF"),
         typeOf<FromMapStatus>() to listOf("FROM_ON", "FROM_OFF"),
+        typeOf<IgnoredStatus>() to listOf("IGNORED_ON", "IGNORED_OFF"),
         typeOf<ListStatus>() to listOf("LIST_ON", "LIST_OFF"),
         typeOf<NestedStatus>() to listOf("NESTED_ON", "NESTED_OFF"),
         typeOf<NullableStatus>() to listOf("NULLABLE_ON", "NULLABLE_OFF"),
@@ -93,7 +94,6 @@ fun box(): String {
     val actualEntries = metadata.mapValues { it.value.entryNames }
     if (provider.id != identity.first) return "Fail: provider id was ${provider.id}"
     if (actualEntries != expectedEntries) return "Fail: enum metadata was $actualEntries"
-    if (typeOf<IgnoredStatus>() in metadata) return "Fail: Ignore(ALL) metadata was contributed"
 
     val decodedNames = metadata.mapValues { (_, contribution) ->
         contribution.factory.create(contribution.entryNames.first())?.name

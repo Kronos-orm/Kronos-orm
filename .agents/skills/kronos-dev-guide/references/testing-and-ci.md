@@ -20,17 +20,7 @@
 
 ### Writing Unit Tests (kronos-core)
 
-kronos-core tests use the compiler plugin at test time via:
-```kotlin
-// kronos-core/build.gradle.kts
-dependencies {
-    kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.mockk)
-}
-```
-
-This means test code can use KPojo data classes with full compiler plugin augmentation.
+`kronos-core/module.yaml` applies `templates/kronos-runtime.module-template.yaml`, which enables the source-built Kronos compiler plugin for application and test code. JVM test dependencies are declared in `test-dependencies@jvm`; shared and platform tests live in `test/` and `test@jvm/`.
 
 Example pattern:
 ```kotlin
@@ -48,7 +38,7 @@ class SelectTest {
 
 ### Writing Official Compiler Plugin Tests
 
-Kronos is migrating compiler-plugin behavior to Kotlin's official compiler test infrastructure. These tests compile `kronos-compiler-plugin/testData` sources through the real FIR/IR/codegen pipeline with `KronosCompilerPluginRegistrar` registered.
+Kronos uses Kotlin's official compiler test infrastructure for compiler-plugin behavior. These tests compile `kronos-compiler-plugin/testData` sources through the real FIR/IR/codegen pipeline with `KronosCompilerPluginRegistrar` registered.
 
 Read the Kronos official compiler testData style section in:
 
@@ -160,38 +150,21 @@ When a removed behavior needs coverage:
 #### Running Official Compiler Tests
 
 ```bash
-# All official compiler box tests
-./gradlew :kronos-compiler-plugin:test --tests "com.kotlinorm.compiler.*BoxTest" --no-daemon --console=plain
+# All official compiler box suites
+scripts/run build test -m kronos-compiler-plugin -p jvm --include-classes='*BoxTest'
 
-# One official suite
-./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.ConditionBoxTest --no-daemon --console=plain
-
-# One test method
-./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.TypeParameterFixerBoxTest.queryReturnTypes --no-daemon --console=plain
+# One suite, or multiple suites using repeated options
+scripts/run build test -m kronos-compiler-plugin -p jvm --include-classes='*ConditionBoxTest'
+scripts/run build test -m kronos-compiler-plugin -p jvm --include-classes='*KPojoGeneratedBodiesBoxTest' --include-classes='*KronosCommandLineProcessorTest'
 ```
+
+Each `--include-classes` value is a class-name glob. Repeat the option for alternatives.
 
 ### Writing Integration Tests (kronos-testing)
 
 Tests connect to real databases or in-process JDBC databases. CI starts MySQL, PostgreSQL, SQL Server, Oracle, and DM8 through Compose; H2 and SQLite run inside the test JVM.
 
-```kotlin
-// kronos-testing/build.gradle.kts
-dependencies {
-    implementation(project(":kronos-core"))
-    implementation(project(":kronos-jdbc-wrapper"))
-    kotlinCompilerPluginClasspath(project(":kronos-compiler-plugin"))
-    // DB drivers
-    implementation(libs.driver.jdbc.mysql)
-    implementation(libs.driver.jdbc.postgres)
-    implementation(libs.driver.jdbc.sqlite)
-    implementation(libs.driver.jdbc.h2)
-    implementation(libs.driver.jdbc.mssql)
-    implementation(libs.driver.jdbc.oracle)
-    implementation(libs.driver.jdbc.dameng)
-    // Connection pool
-    implementation(libs.dbcp2)
-}
-```
+`kronos-testing/module.yaml` declares ORM modules, JDBC drivers and connection pools in `test-dependencies`, and applies the shared runtime compiler-plugin template.
 
 Test setup pattern:
 ```kotlin
@@ -248,124 +221,98 @@ class MysqlTest {
 ### Running Tests Locally
 
 ```bash
-# All tests (checks DB connectivity, runs all modules)
-./test.sh
+# Start the Docker databases, run integration tests and stop the services
+scripts/run ci integration
 
-# Unit tests only
-./gradlew test
+# A single JVM module
+scripts/run build test -m kronos-core -p jvm
+scripts/run build test -m kronos-compiler-plugin -p jvm
+scripts/run build test -m kronos-codegen -p jvm
 
-# Single module
-./gradlew :kronos-core:test
-./gradlew :kronos-compiler-plugin:test
-./gradlew :kronos-codegen:test
-
-# Integration tests (external services use env vars; H2 and SQLite use in-process defaults)
-source envsetup.sh  # sets DB env vars
-./gradlew :kronos-testing:test --info --stacktrace
+# Integration tests against databases already running
+scripts/run build test -m kronos-testing -p jvm
 ```
 
-`test.sh` runs: DB connectivity check → kronos-testing → kronos-core → kronos-codegen → kronos-compiler-plugin, with output logged to `*-output.log` files.
-
-Windows equivalents:
-
-```bat
-rem All tests (checks DB connectivity, runs all modules)
-test.bat
-
-rem Environment defaults for local DB credentials
-call envsetup.bat
-```
-
-`test.bat` mirrors `test.sh` and writes the same `*-output.log` files at the repo root.
+These commands use JDK 21 on macOS, Linux and Windows; Windows runs them with `scripts\run.cmd`.
+`scripts/common.main.kts` loads integration defaults and optional `kronos-testing/env.local.properties`.
+Existing environment variables take precedence. `scripts/run ci env` writes the same database settings
+to `GITHUB_ENV` for subsequent GitHub Actions steps.
 
 ---
 
 ## CI/CD Workflows
 
-All workflows in `.github/workflows/`:
+`.github/workflows/kronos-kmp-testing.yml` orchestrates the complete PR and merge-group DAG.
+It keeps the protected names `kronos-core-unittests`, `kronos-compiler-plugin-unittests`,
+`kronos-codegen-unittests`, `Run integration tests`, `Check Code Quality`, `kronos-core-coverage`,
+`Build documentation site`, and `KMP gate`. Codacy remains a separately required GitHub App check.
 
-| Workflow | Trigger | What It Does |
-|----------|---------|-------------|
-| `kronos-core-testing.yml` | push/PR to `main` | `./gradlew :kronos-core:test` (JDK 21) |
-| `kronos-compiler-plugin-testing.yml` | push/PR to `main` | `./gradlew :kronos-compiler-plugin:test` (JDK 21) |
-| `kronos-codegen-testing.yml` | push/PR to `main` | `./gradlew :kronos-codegen:test` (JDK 21) |
-| `kronos-testing.yml` | push/PR to `main` | Integration tests with real databases from `kronos-testing/docker-compose.integration.yml` (MySQL 8.0, PostgreSQL 17, SQL Server 2022, Oracle Free, and DM8; H2 and SQLite run in the test JVM) |
-| `kronos-examples.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out the external Ktor, Spring Boot, Solon, and Vert.x examples, rewires their coordinates to the current version, and runs their smoke tests |
-| `kronos-android-example.yml` | push/PR to `main` | Publishes current Kronos artifacts to Maven Local, checks out the Android example, rewires its coordinates to the current version, and runs `:app:assembleDebug` plus `:app:lintDebug` |
-| `kronos-docs-testing.yml` | docs/workflow push or PR to `main` | Installs locked pnpm dependencies and builds the Angular/ng-doc documentation site |
-| `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
-| `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
-| `publish.yml` | push to `main` | Snapshot publishing to Central Snapshots, or formal release publishing to Maven Central, JetBrains Marketplace, and GitHub Releases |
-| `greetings.yml` | new issues/PRs | Bilingual welcome messages |
-| `stale.yml` | daily 15:40 UTC | Marks stale issues (60d) and PRs, closes after grace period |
+The JVM candidate feeds all five OS/JDK compatibility entries, KEFS, server examples and the Android
+APK producer. JDK 21 module receipts require the matrix's actual complete JUnit results, avoiding a
+second identical unit-suite execution. Four instrumented JVM coverage suites and the actual KEFS editor
+contracts produce execution data in parallel. The `kronos-core-coverage` job merges their verified artifacts,
+generates the compiler report without rerunning tests, and compares the published baseline. Docs, detekt
+and all database integration tests run in parallel.
+
+Full project metadata is built before six Native producers: iOS, macOS/Intel Apple, tvOS, watchOS,
+Linux and Windows. Each group publishes all three runtime modules and executes its shared Native
+suites. Linux ARM executables run on an ARM host. Each SQLite consumer needs only its platform group;
+iOS also builds and runs the application UI test. Android builds and lints both APKs once, then API 26
+and 35 install and run those exact APKs. The final gate verifies every job result and eleven consumer
+receipts against the assembled publication and APK manifests.
+
+Reusable workflows are `kronos-kmp-publication.yml`, `kronos-native-sqlite-example.yml`,
+`kronos-android-example.yml`, `kronos-examples.yml`, and `kronos-ide-support.yml`. `publish.yml`
+uses the same complete DAG before publishing the exact assembled repository. `greetings.yml` and
+`stale.yml` manage repository issues and pull requests.
+
+SDK/dependency caches are configured in `.github/actions/setup-toolchain`; source-built candidate
+repositories and reports travel through artifacts. The scripts launcher fingerprints shared main.kts
+sources and JAVA_HOME to invalidate compiled scripts when imports or the script JDK change.
 
 ### Integration Test CI Setup
-`kronos-testing.yml` loads the integration defaults, starts `kronos-testing/docker-compose.integration.yml`, prepares the SQL Server database, and runs `:kronos-testing:test`.
+The `high-level-tests` job loads the integration defaults, starts `kronos-testing/docker-compose.integration.yml`, prepares the SQL Server database, and runs the `kronos-testing` JVM suite.
 
 The regular integration gate starts `dm8` directly alongside the other integration databases using `toyangdon/dm:8-arm64`. That image is ARM64-only, so the job registers QEMU before Compose. It uses the image's public `SYSDBA` / `SYSDBA` defaults on a dedicated host port; no developer-local password, repository secret, job-specific DM8 variables, Compose profile, or Gradle exclusion is involved. Local installations override the tracked test defaults through ignored local environment settings.
 
-H2 is supplied by `com.h2database:h2` and uses `IntegrationDatabaseEnvironments.h2` with an in-memory URL. `H2IntegrationTest` applies the shared integration suites, while `H2GeneratedKeyIntegrationTest` verifies identity inserts through JDBC generated keys. The H2 test environment is initialized inside the Gradle test process; Compose services cover the external databases.
+H2 is supplied by `com.h2database:h2` and uses `IntegrationDatabaseEnvironments.h2` with an in-memory URL. `H2IntegrationTest` applies the shared integration suites, while `H2GeneratedKeyIntegrationTest` verifies identity inserts through JDBC generated keys. The H2 test environment is initialized inside the JVM test process; Compose services cover the external databases.
 
 ---
 
 ## Coverage
 
-### Kover Configuration
-Coverage is measured by Kover. Configured per-module in `build.gradle.kts`:
+### Coverage Commands
 
-**kronos-compiler-plugin** (enforced):
-```kotlin
-kover {
-    reports {
-        verify {
-            rule { minBound(80) }  // 80% minimum line coverage
-        }
-    }
-}
-```
-
-**kronos-core** and **kronos-codegen**: Kover enabled for reporting but no minimum enforcement.
-
-### Coverage CI (`coverage.yml`)
-1. Runs `./gradlew :module:koverLog` and `:module:koverHtmlReport` for core, compiler-plugin, codegen
-2. Extracts line coverage percentage from `build/kover/coverage.txt`
-3. Generates SVG badges via `emibcn/badge-action@v2.0.3`
-4. Deploys HTML reports + badges to `coverage` branch via `JamesIves/github-pages-deploy-action@v4`
-5. Reports accessible at `https://coverage.kotlinorm.com/<module-name>`
-
-### Running Coverage Locally
 ```bash
-./gradlew :kronos-compiler-plugin:koverVerify   # check 80% minimum
-./gradlew :kronos-core:koverHtmlReport           # generate HTML report
-# Report at: build/reports/kover/html/index.html
+scripts/run quality coverage --module kronos-compiler-plugin
+scripts/run quality coverage --module kronos-core
+scripts/run quality coverage
+scripts/run quality coverage --baseline-dir .coverage-baseline
+scripts/run quality compare --baseline-dir .coverage-baseline
 ```
 
----
+The quality tool instruments JVM tests with Kover. Reports are written to `<module>/build/reports/kover/report.xml`, `html/index.html` and `summary.json`. Without `--module`, it covers core, syntax, compiler-plugin and codegen. When the selected modules include compiler-plugin, the same command runs the real KEFS editor contracts once using the already built production JARs, then merges CLI and IDE coverage before enforcing minimums. A selection without compiler-plugin runs only the selected JVM suites. Add `--baseline-dir` to compare the complete report in that invocation; comparison writes `coverage/comparison.json` and `coverage/comparison.md` and fails on any coverage regression.
+
+CI keeps the expensive producers parallel: `quality coverage --defer-compiler-coverage --input-bundle build/coverage/cli` produces all four JVM reports without comparing the incomplete compiler report, while `ide test --coverage-dir build/coverage/ide` produces the actual editor execution data. A lightweight dependent job runs `quality merge-coverage --cli-inputs build/coverage/cli --ide-inputs build/coverage/ide`, then the existing baseline comparison. The merge verifies source/run provenance, identical compiler class bytes, agent and report hashes, and successful complete test receipts. Its independent compiler `ide/report.xml` and `ide/summary.json` prove covered lines in the FIR IDE host bridge before the combined report is accepted. Baseline thresholds and the no-regression policy apply to the merged result.
 
 ## Version Management
 
-### Where Version Lives
-Two files (must stay in sync):
-1. `build-logic/src/main/kotlin/publishing.gradle.kts` → `project.version = "0.3.1"`
-2. `kronos-gradle-plugin/src/main/kotlin/.../KronosGradlePlugin.kt` → `version = "0.3.1"`
+### Version Sources
 
-### Bump Script
-`.github/scripts/bump-version.sh`:
+`scripts/version.main.kts` synchronizes the publishing version in `templates/common.module-template.yaml`, the compiler bootstrap dependency in `libs.versions.toml`, and the packaged Gradle compiler version resource.
+
 ```bash
-bump-version.sh set 1.2.3            # set explicit version
-bump-version.sh next-snapshot         # 0.3.1 → 0.3.2-SNAPSHOT
-bump-version.sh release-from-current  # <stable-version>-SNAPSHOT → <stable-version>
-bump-version.sh next-release          # 0.3.1 → 0.3.2
+scripts/run version set 0.4.0
+scripts/run version release-from-current
+scripts/run version next-snapshot
 ```
-
-Parses `MAJOR.MINOR.PATCH`, increments PATCH, uses `sed` to update both files. Handles macOS vs Linux `sed` differences.
 
 ### Release Version Upgrade Checklist
 
-When preparing a stable release, do not stop after changing the two code version fields. Update every user-facing version surface in the same change:
+When preparing a stable release, do not stop after changing the publishing version. Update every user-facing version surface in the same change:
 
-- Run `bash .github/scripts/bump-version.sh set <stable-version>` to update `publishing.gradle.kts` and `KronosGradlePlugin.kt`.
-- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.3.2-SNAPSHOT` / `0.3.2--SNAPSHOT`.
+- Run `scripts/run version set <stable-version>` to synchronize Toolchain publishing, bootstrap and integration versions.
+- Update `kronos-docs/src/app/docs/macros/common.njk`: `kronosVersion()` becomes `<stable-version>`, and snapshot macros become the next patch snapshot, for example `0.4.1-SNAPSHOT` / `0.4.1--SNAPSHOT`.
 - Update `README.MD` and `README-zh_CN.MD`: Maven Central snapshot badge, Kotlin compatibility table, Gradle Kotlin/Groovy snippets, Maven dependency snippets, and plugin dependency snippets.
 - Update docs release notes in both languages: add a new top section for `<stable-version>` and update `8.resources/release-notes/ng-doc.page.ts` `@status:primary`.
 - Update non-macro docs surfaces: `kronos-docs/src/app/routes/home/home.component.ts`, blog snippets under `kronos-docs/src/assets/blogs/*`, `kronos-gradle-plugin/README.md`, and `kronos-maven-plugin/README.md`.
@@ -374,88 +321,71 @@ When preparing a stable release, do not stop after changing the two code version
 - Scan for stale release strings before finishing:
 
 ```bash
-rg -n "0\\.3\\.1-SNAPSHOT|0\\.3\\.1--SNAPSHOT" build-logic kronos-gradle-plugin kronos-maven-plugin kronos-docs README.MD README-zh_CN.MD .agents/skills -g '!kronos-docs/node_modules' -g '!kronos-docs/dist' -g '!**/build/**'
+rg -n "0\\.3\\.1-SNAPSHOT|0\\.3\\.1--SNAPSHOT" templates plugins kronos-gradle-plugin kronos-maven-plugin kronos-docs README.MD README-zh_CN.MD .agents/skills -g '!kronos-docs/node_modules' -g '!kronos-docs/dist' -g '!**/build/**'
 ```
 
 ### Dependency Versions
-All dependency versions in `gradle/libs.versions.toml`:
-```toml
-[versions]
-kotlin = "2.3.0"
-kover = "0.9.1"
-dokka = "2.0.0"
-# ... drivers, test libs, etc.
 
-[libraries]
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-driver-jdbc-mysql = { module = "com.mysql:mysql-connector-j", version = "9.2.0" }
-# ...
-
-[plugins]
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-# ...
-```
+All dependency versions live in the root `libs.versions.toml`. The Kotlin compiler version is `2.4.21`; the shared module template configures Kotlin language/API `2.4` and the JVM release target. Keep the catalog's `kronos-compiler-plugin` dependency aligned with the shared publishing version.
 
 ---
 
 ## Publishing
 
-### Snapshot Publishing
-- Trigger: push to `release/0.1.0` branch
-- Task: `./gradlew publishAllToCentralSnapshots`
-- Target: Maven Central Snapshots (`https://central.sonatype.com/repository/maven-snapshots/`)
-- No GPG signing required
-- Secrets: `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`
+### Stage And Verify Publications
 
-### Release Publishing
-- Trigger: push to `main` (version must NOT end with `-SNAPSHOT`)
-- Flow:
-  1. `bump-version.sh release-from-current` strips `-SNAPSHOT`
-  2. Commits and pushes the release version
-  3. Builds JVM artifacts
-  4. Runs `:kronos-idea-plugin:publishPlugin`, which builds, signs, and uploads the current release version to the public JetBrains Marketplace `default` channel
-  5. Runs `publishAllToMavenCentral` with GPG signing
-  6. Creates or updates the GitHub Release with JVM artifacts, the signed IDEA plugin zip, and checksums
-  7. Opens a PR that bumps the project to the next SNAPSHOT version
-- Maven Central secrets: `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY` (ASCII-armored GPG), `SIGNING_PASSWORD`
-- JetBrains Marketplace secrets: `JETBRAINS_MARKETPLACE_TOKEN`, `IDEA_CERTIFICATE_CHAIN`, `IDEA_PRIVATE_KEY`, `IDEA_PRIVATE_KEY_PASSWORD`
+On macOS with Xcode, build the complete multiplatform repository into a new staging directory:
 
-The IDEA plugin version comes from `rootProject.version`; do not hard-code a
-release number in the plugin build. Snapshot pushes never upload to Marketplace.
-The formal release job must fail if Marketplace credentials are absent, plugin
-signing fails, upload fails, or the expected signed zip is missing.
-Structure/signature validation and artifact validation remain release gates.
-Only the signed zip for the current release version may be attached to the
-GitHub Release.
-
-Create `JETBRAINS_MARKETPLACE_TOKEN` in the JetBrains Marketplace profile. Store
-the complete PEM certificate chain, matching complete PEM private key, and key
-password in the other three repository secrets. Never commit or print these
-values. For local verification, prefer the file-backed
-`CERTIFICATE_CHAIN_FILE` and `PRIVATE_KEY_FILE` inputs and run `signPlugin`,
-`verifyPluginStructure`, and `verifyPluginSignature` without invoking
-`publishPlugin`.
-
-### Publishing Convention Plugin
-`build-logic/src/main/kotlin/publishing.gradle.kts`:
-- Uses `com.vanniktech.maven.publish` with `KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true)`
-- POM: Apache 2.0 license, 3 developers (ousc, FOYU, yf), SCM → GitHub
-- Three targets: Maven Central (release), Central Portal Snapshots, Aliyun (private mirror)
-- Root project registers aggregate tasks: `publishAllToMavenLocal`, `publishAllToMavenCentral`, `publishAllToAliyun`, `publishAllToCentralSnapshots`
-- Signing skipped for SNAPSHOT builds
-
-### Publishing Locally
 ```bash
-./gradlew publishAllToMavenLocal  # publishes to ~/.m2/repository
+scripts/run release stage --repository build/release/repository
+scripts/run release verify --repository build/release/repository
 ```
 
----
+For a JVM publication used by Linux/Android integration consumers:
+
+```bash
+scripts/run release jvm-stage --repository build/release/jvm-repository
+```
+
+A Gradle reference application can consume the staged artifacts through its repository property:
+
+```bash
+./gradlew -PkronosRepository=/absolute/path/to/build/release/repository :shared:macosX64Test
+```
+
+This is the reference application's Gradle command; the Kronos repository artifacts are built by Kotlin Toolchain. Source SNAPSHOT artifacts use the same staging entry points.
+
+### Publish Snapshots
+
+Use the Maven CLI for timestamped snapshot metadata and attachments:
+
+```bash
+scripts/run release publish-snapshot --repository build/release/repository
+```
+
+The command uses `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD` and publishes the staged SNAPSHOT artifacts to Central's snapshot repository. Native KLIBs, Gradle module metadata, tooling metadata, sources and documentation are deployed with each component.
+
+### Sign And Publish A Release
+
+```bash
+scripts/run version release-from-current
+scripts/run release stage --repository build/release/repository
+scripts/run release verify --repository build/release/repository
+scripts/run release bundle --repository build/release/repository --output build/release/central-bundle.zip --sign
+scripts/run release publish --output build/release/central-bundle.zip
+```
+
+`bundle --sign` signs the staged artifacts and prepares the Central bundle; `publish` submits that existing formal-release bundle. Publication credentials and signing configuration are supplied to the release process. The version must not end in `-SNAPSHOT` for this formal publication command.
+
+KEFS compatibility keeps the ordinary compiler coordinate and stages a second version,
+`<IDE Kotlin compiler version>-<Kronos version>`, with the same CLI JAR bytes. Its POM retains
+publication metadata and dependency versions from the ordinary artifact. The editor gate verifies
+all required types, completion, syntax and diagnostic contracts plus the actual loaded class bytes.
 
 ## Documentation
 
 ### Unified Deployment (`kronos-docs/deploy-docs.sh`)
-A single script under `kronos-docs/` builds and merges both Dokka API docs and the kronos-docs website into `kronos-docs/dist/site/`, ready for Cloudflare Pages deployment.
+Use JDK 21 for the Kotlin quality/build scripts invoked by deployment. A single script under `kronos-docs/` builds and merges both Dokka API docs and the kronos-docs website into `kronos-docs/dist/site/`, ready for Cloudflare Pages deployment.
 
 ```bash
 cd kronos-docs
@@ -476,15 +406,13 @@ kronos-docs/dist/site/
 Deploy: `npx wrangler pages deploy kronos-docs/dist/site --project-name=kotlinorm`
 
 ### Dokka API Docs
-- Convention plugin: `build-logic/src/main/kotlin/dokka-convention.gradle.kts`
-- Root task: `dokkaGenerateAll` runs `dokkaGenerate` on all subprojects
-- Copies each subproject's `build/dokka/html/` into `docs/<module-name>/`
-- Config: `reportUndocumented = true`, `jdkVersion = 17`, includes `README.md`
 
 ```bash
-./gradlew :dokkaGenerateAll  # generates all API docs
-# Output: docs/<module-name>/index.html
+scripts/run quality dokka
+scripts/run quality dokka --module kronos-core
 ```
+
+The quality tool generates API documentation under `docs/<module>/`. Each module's README is attached to its common or main source set; verification requires the introduction, section headings and code examples in the rendered module page and checks local links throughout the API site. The required documentation CI check and deployment script merge these pages with the documentation website under `/api/`.
 
 ### User-Facing Documentation (kronos-docs)
 - Angular 21 / ng-doc application in `kronos-docs/`
@@ -495,41 +423,12 @@ Deploy: `npx wrangler pages deploy kronos-docs/dist/site --project-name=kotlinor
 
 ## Build System
 
-### Root Settings
-`settings.gradle.kts` includes 7 modules:
-```kotlin
-include("kronos-core", "kronos-compiler-plugin",
-        "kronos-maven-plugin", "kronos-logging", "kronos-jdbc-wrapper",
-        "kronos-codegen", "kronos-testing")
-includeBuild("kronos-gradle-plugin")  // separate included build
-```
+### Project And Module Configuration
 
-### Build Logic
-`build-logic/` is a composite build with two convention plugins:
-- `kronos.publishing` — Maven Central publishing config
-- `kronos.dokka-convention` — Dokka documentation config
+`project.yaml` lists the runtime, compiler, Gradle/Maven integrations, integration tests and build tools. Each `module.yaml` declares its product, targets, source layout and dependencies. `templates/common.module-template.yaml` supplies shared Kotlin/JVM/publishing settings; `kronos-runtime.module-template.yaml` enables the source-built Kronos compiler.
 
-Applied via:
-```kotlin
-plugins {
-    alias(libs.plugins.kronos.publishing)
-    alias(libs.plugins.kronos.dokka)
-}
-```
+Use `scripts/run build` for repository commands so the compiler bootstrap is refreshed first. The wrapper's local Maven repository is `build/repository/bootstrap`. Toolchain extensions under `plugins/kronos-native` generate metadata and provider resources; Android, Spring Boot, Ktor and Vert.x examples verify Gradle consumption of staged publications; Solon and Spring Boot Maven examples verify Maven integration.
 
-### Compiler Flags
-Common across modules:
-```kotlin
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-parameters")
-        freeCompilerArgs.add("-Xcontext-sensitive-resolution")
-        freeCompilerArgs.add("-Xskip-prerelease-check")
-    }
-}
-```
+### Compiler And JVM Settings
 
-### JDK Configuration
-- Runtime target: JVM 1.8 (for broad compatibility)
-- Build toolchain: JDK 17/21
-- CI uses JDK 21
+The shared module template selects Kotlin 2.4.21, language/API 2.4, collection literals, context-sensitive resolution and expect/actual classes. Published JVM bytecode targets Java 8; repository builds use JDK 21, and JVM tests target Java 17. The IDEA integration module uses the SDK's runtime requirements and its own isolated build.

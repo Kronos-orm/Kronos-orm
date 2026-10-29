@@ -1,6 +1,10 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+## Kotlin Multiplatform
+
+共享模型、Native 目标与版本目录配置见 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}。
+
 ## 运行时和编译插件
 
 添加 `kronos-core` 作为 ORM 运行时，并启用 Kronos 编译插件来获得编译期 DSL 支持。
@@ -9,8 +13,14 @@
 
 ```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -20,8 +30,14 @@ dependencies {
 
 ```groovy group="Gradle" name="build.gradle" icon="gradle"
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
     id 'com.kotlinorm.kronos-gradle-plugin' version '{{ $.kronosVersion() }}'
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -32,7 +48,7 @@ dependencies {
 ```xml group="Maven" name="pom.xml" icon="maven"
 <project>
     <properties>
-        <kotlin.version>2.4.0</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <kronos.version>{{ $.kronosVersion() }}</kronos.version>
     </properties>
 
@@ -52,6 +68,10 @@ dependencies {
                 <version>${kotlin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <args>
+                        <arg>-Xcollection-literals</arg>
+                        <arg>-Xcontext-sensitive-resolution</arg>
+                    </args>
                     <compilerPlugins>
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
@@ -107,10 +127,10 @@ dependencies {
 ## 最小环境
 
 - JDK 8 或更高版本。
-- Kotlin 2.4.0 或更高版本。
-- Maven 3.9+，或 Kotlin 2.4.0 支持的 Gradle 版本。
+- Kotlin 2.4.21 或更高版本。
+- Maven 3.9+，或 Kotlin 2.4.21 支持的 Gradle 版本。
 
 > **Warning**
-> 请确保 IDE 使用的 Kotlin 插件支持 Kotlin 2.4.0 或更高版本。
+> 请确保 IDE 使用的 Kotlin 插件支持 Kotlin 2.4.21 或更高版本。
 
 下一步按 {{ $.keyword("getting-started/first-query", ["第一次查询"]) }} 完成最小模型、建表、插入和查询流程。

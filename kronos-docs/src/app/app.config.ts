@@ -23,7 +23,6 @@ import {providePrimeNG} from "primeng/config";
 export const appConfig: ApplicationConfig = {
     providers: [
         provideAnimationsAsync(),
-        provideHttpClient(withInterceptorsFromDi()),
         provideRouter(routes, withInMemoryScrolling({
             scrollPositionRestoration: "enabled",
             anchorScrolling: "enabled",
@@ -32,7 +31,6 @@ export const appConfig: ApplicationConfig = {
         provideNgDocContext(),
         provideMermaid(),
         provideNgDocApp(),
-        provideAnimationsAsync(),
         providePrimeNG({
             theme: {
                 preset: Aura,
@@ -53,7 +51,7 @@ export const appConfig: ApplicationConfig = {
                 availableLangs: ['en', 'zh-CN'],
                 defaultLang: 'en',
                 // Remove this option if your application doesn't support changing language in runtime.
-                reRenderOnLangChange: false,
+                reRenderOnLangChange: true,
                 prodMode: !isDevMode(),
             },
             loader: TranslocoHttpLoader

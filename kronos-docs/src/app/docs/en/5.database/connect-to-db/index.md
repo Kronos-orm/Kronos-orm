@@ -3,6 +3,8 @@
 
 Kronos executes database operations through {{ $.keyword("database/datasource-wrapper", ["Data source wrapper"]) }}. Use `Kronos.connect(...)` for the default connection.
 
+For Apple, Linux and Windows connections, see {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }}. Android/JVM connections use {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}.
+
 ## Connect with a JDBC URL
 
 Call `Kronos.connect(...)` during application startup to configure the default data source.

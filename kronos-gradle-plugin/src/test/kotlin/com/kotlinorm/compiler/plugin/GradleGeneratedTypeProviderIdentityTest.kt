@@ -38,7 +38,32 @@ class GradleGeneratedTypeProviderIdentityTest {
 
         assertEquals(identity.id, identity.compilerOptions[GENERATED_PROVIDER_ID_OPTION_NAME])
         assertEquals(identity.fqName, identity.compilerOptions[GENERATED_PROVIDER_FQ_NAME_OPTION_NAME])
+        assertEquals("true", identity.compilerOptions[GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME])
         assertEquals("${identity.fqName}\n", identity.serviceContent)
+        assertEquals(
+            "com.kotlinorm.generated.native.KronosGeneratedTypeMetadata_" +
+                identity.fqName.substringAfterLast('_'),
+            identity.nativeEntryFqName
+        )
+        assertEquals(identity.id, identity.nativeCompilerOptions[NATIVE_PROVIDER_ID_OPTION_NAME])
+        assertEquals(
+            identity.nativeEntryFqName,
+            identity.nativeCompilerOptions[NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME]
+        )
+    }
+
+    @Test
+    fun customNativeCompilationsOwnAnEntryDistinctFromAssociatedMain() {
+        assertEquals("commonMain", nativeMetadataOwnerSourceSetName("main", "iosArm64Main"))
+        assertEquals("commonTest", nativeMetadataOwnerSourceSetName("test", "iosArm64Test"))
+        assertEquals("iosArm64Benchmark", nativeMetadataOwnerSourceSetName("benchmark", "iosArm64Benchmark"))
+        val main = gradleGeneratedTypeProviderIdentity("gradle:example:app::commonMain")
+        val benchmark = gradleGeneratedTypeProviderIdentity("gradle:example:app::iosArm64Benchmark")
+        val other = gradleGeneratedTypeProviderIdentity("gradle:example:app::macosX64Benchmark")
+        assertNotEquals(main.id, benchmark.id)
+        assertNotEquals(main.nativeEntryFqName, benchmark.nativeEntryFqName)
+        assertNotEquals(other.nativeEntryFqName, benchmark.nativeEntryFqName)
+        assertEquals(benchmark.id, benchmark.nativeCompilerOptions[NATIVE_PROVIDER_ID_OPTION_NAME])
     }
 
     @Test

@@ -14,7 +14,7 @@ jobs:
       pull-requests: write
 
     steps:
-    - uses: actions/stale@v10
+    - uses: actions/stale@1e223db275d687790206a7acac4d1a11bd6fe629 # v10
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         
@@ -82,5 +82,4 @@ jobs:
         close-pr-label: "closed/stale-pr"
         
         # 可视化统计
-        log-level: debug    # 调试时查看详细日志
         operations-per-run: 100  # 单次运行处理的最大数量

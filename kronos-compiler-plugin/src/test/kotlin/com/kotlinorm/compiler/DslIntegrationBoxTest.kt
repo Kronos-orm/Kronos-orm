@@ -26,6 +26,12 @@ import org.junit.jupiter.api.Test
  * not appear in isolated transformer tests.
  */
 class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
+    @Test
+    fun transformedDslReturnsPreserveCollectedValues() = box("transformedDslReturnsPreserveCollectedValues")
+
+    @Test
+    fun explicitDslReturnTypesPreserveCallingConvention() = box("typedDslReturnsKeepCovariantApiArguments")
+
     /**
      * Verifies select clause SQL statement construction after compiler-plugin field transformation.
      */
@@ -163,5 +169,17 @@ class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
      */
     @Test
     fun multiFileKPojo() = box("multiFileKPojo")
+
+    @Test
+    fun scopeValuesAcrossDsl() = box("scopeValuesAcrossDsl")
+
+    @Test
+    fun scopeSelectorDelegation() = box("scopeSelectorDelegation")
+
+    @Test
+    fun scopeReceiverValuesAcrossDsl() = box("scopeReceiverValuesAcrossDsl")
+
+    @Test
+    fun scopeReceiverTailResults() = box("scopeReceiverTailResults")
 
 }

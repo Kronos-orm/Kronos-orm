@@ -2,6 +2,11 @@
 
 `KronosDataSourceWrapper`连接Kronos SQL task和数据库执行层。内置JDBC实现是`KronosJdbcWrapper`，自定义wrapper可以把执行委托给Spring JDBC、JDBI、MyBatis或项目中的数据访问层。
 
+
+## Native 驱动
+
+为平台驱动实现 `KronosExecutionDataSource`，再通过 `KronosExecutionWrapper` 执行共享 ORM 查询。完整连接示例见 {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }}。
+
 ## 配置默认数据源
 
 `Kronos.connect(...)`配置`Kronos.dataSource`，并返回`KronosJdbcWrapper`。

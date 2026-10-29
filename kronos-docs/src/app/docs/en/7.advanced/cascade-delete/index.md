@@ -196,7 +196,7 @@ School(name = "school").delete().by { it.name }.execute()
 
 ## 3. Many-to-many cascading relationships
 
-Through the `manyToMany` delegation, Kronos simplifies many-to-many relationships into one-to-many relationships and automatically creates association table records for you. For details, see: {{$.keyword("advanced/cascade", ["cascade relationship definition", "using delegation to implement cascading many-to-many cross-intermediate table relationships"] )}}.
+Through the `manyToMany` delegation, Kronos simplifies many-to-many relationships into one-to-many relationships and automatically creates association table records for you. For details, see: {{$.keyword("advanced/cascade", ["cascade relationship definition", "Using delegation to implement cascading many-to-many relationships across intermediate tables"] )}}.
 
 ### Data class definition
 

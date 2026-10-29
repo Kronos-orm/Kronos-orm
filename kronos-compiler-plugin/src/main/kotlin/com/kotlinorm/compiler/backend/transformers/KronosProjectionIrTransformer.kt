@@ -1,5 +1,3 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-
 /**
  * Copyright 2022-2026 kronos-orm
  *
@@ -74,6 +72,7 @@ import org.jetbrains.kotlin.ir.types.IrTypeProjection
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.createType
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
 import org.jetbrains.kotlin.ir.util.addFakeOverrides
@@ -81,9 +80,11 @@ import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 import org.jetbrains.kotlin.ir.declarations.moduleDescriptor
+import org.jetbrains.kotlin.ir.util.isAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.ClassIdBasedLocality
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
@@ -101,7 +102,8 @@ import org.jetbrains.kotlin.types.Variance
  */
 class KronosProjectionIrTransformer(
     private val pluginContext: IrPluginContext,
-    private val errorReporter: ErrorReporter
+    private val errorReporter: ErrorReporter,
+    private val nativeProjectionAnchorName: String? = null
 ) : IrElementTransformerVoidWithContext() {
     private val materializedProjectionClasses = linkedMapOf<FqName, IrClass>()
     private val projectionMetadataClasses = linkedMapOf<FqName, IrClass>()
@@ -109,11 +111,29 @@ class KronosProjectionIrTransformer(
         get() = materializedProjectionClasses.values
 
     private var moduleFragment: IrModuleFragment? = null
-    private var projectionFile: IrFile? = null
+    /**
+     * Projection classes are emitted into synthetic files, but each synthetic file retains the
+     * entry of the source file that owns its select call. Generated provider fragments use that
+     * entry to preserve unchanged registrations during incremental compilation.
+     */
+    private val projectionFilesBySourceEntry = linkedMapOf<String, IrFile>()
+    private var currentSourceFile: IrFile? = null
 
     override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment {
         moduleFragment = declaration
         return super.visitModuleFragment(declaration)
+    }
+
+    override fun visitFileNew(declaration: IrFile): IrFile {
+        val previousSourceFile = currentSourceFile
+        if (!declaration.isGeneratedProjectionFile()) {
+            currentSourceFile = declaration
+        }
+        return try {
+            super.visitFileNew(declaration)
+        } finally {
+            currentSourceFile = previousSourceFile
+        }
     }
 
     /**
@@ -173,6 +193,7 @@ class KronosProjectionIrTransformer(
         if (function.kotlinFqName != SelectFunctionFqName && !isJoinSelect) return null
 
         val selectType = call.type as? IrSimpleType ?: return null
+        val selectClass = selectType.classOrNull ?: return null
         val sourceType = (selectType.arguments.getOrNull(0) as? IrTypeProjection)?.type ?: return null
         val projectionType = (selectType.arguments.getOrNull(1) as? IrTypeProjection)?.type ?: return null
         val contextType = (selectType.arguments.getOrNull(2) as? IrTypeProjection)?.type ?: return null
@@ -180,8 +201,9 @@ class KronosProjectionIrTransformer(
         val contextClass = contextType.classOrNull?.owner ?: return null
         if (!projectionClass.isGeneratedProjectionClass()) return null
         if (!contextClass.isGeneratedProjectionClass()) return null
-        val materializedProjectionClass = materializeGeneratedProjectionClass(projectionClass, sourceType)
-        val materializedContextClass = materializeGeneratedProjectionClass(contextClass, sourceType)
+        val sourceFile = currentSourceFile
+        val materializedProjectionClass = materializeGeneratedProjectionClass(projectionClass, sourceType, sourceFile)
+        val materializedContextClass = materializeGeneratedProjectionClass(contextClass, sourceType, sourceFile)
         val materializedProjectionType = materializedProjectionClass.symbol.defaultType
         val materializedContextType = materializedContextClass.symbol.defaultType
 
@@ -192,7 +214,7 @@ class KronosProjectionIrTransformer(
         } else {
             SelectGeneratedProjectionCallableId
         }
-        val selectGeneratedSymbol = pluginContext.referenceFunctions(selectGeneratedCallableId)
+        val selectGeneratedSymbol = pluginContext.finderForBuiltins().findFunctions(selectGeneratedCallableId)
             .firstOrNull { symbol ->
                 symbol.owner.typeParameters.size >= 3 &&
                     symbol.owner.parameters.size == 2 &&
@@ -207,6 +229,7 @@ class KronosProjectionIrTransformer(
         return DeclarationIrBuilder(pluginContext, currentScope!!.scope.scopeOwnerSymbol).irCall(selectGeneratedSymbol).takeIf {
             it.typeArguments.size >= 3 && it.arguments.size >= 2
         }?.apply {
+            type = selectClass.typeWith(sourceType, materializedProjectionType, materializedContextType)
             typeArguments[0] = sourceType
             typeArguments[1] = materializedProjectionType
             typeArguments[2] = materializedContextType
@@ -216,13 +239,22 @@ class KronosProjectionIrTransformer(
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun materializeGeneratedProjectionClass(generatedClass: IrClass, sourceType: IrType): IrClass {
+    private fun materializeGeneratedProjectionClass(
+        generatedClass: IrClass,
+        sourceType: IrType,
+        ownerSourceFile: IrFile? = currentSourceFile
+    ): IrClass {
         val fqName = generatedClass.kotlinFqName
-        materializedProjectionClasses[fqName]?.let { return it }
+        val sourceFile = ownerSourceFile ?: generatedClass.sourceFileOrNull()
+            ?: error("Kronos projection materializer could not determine the source file for $fqName")
+        materializedProjectionClasses[fqName]?.let { existing ->
+            existing.moveToProjectionFile(sourceFile)
+            return existing
+        }
         val classId = ClassId.topLevel(fqName)
         val model = KronosProjectionRegistry.findAny(classId) ?: return generatedClass
 
-        val file = projectionFile ?: createProjectionFile().also { projectionFile = it }
+        val file = projectionFileFor(sourceFile)
         val irClass = pluginContext.irFactory.buildClass {
             origin = IrDeclarationOrigin.DEFINED
             name = generatedClass.name
@@ -248,8 +280,7 @@ class KronosProjectionIrTransformer(
         val projectionFields = model.fieldsFor(classId).withCascadeLocalKeyFields(sourceClass, sourceProperties)
         projectionFields.forEach { field ->
             val fieldSourceClass = field.sourceClassId
-                ?.takeUnless { it.isLocal }
-                ?.let(pluginContext::referenceClass)
+                ?.let(::referenceProjectionSourceClass)
                 ?.owner
                 ?: sourceClass
             val fieldSourceProperties = fieldSourceClass.properties.associateBy { it.name }
@@ -269,6 +300,9 @@ class KronosProjectionIrTransformer(
         irClass.addNoArgConstructor()
         irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))
         irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter, metadataClass), null)
+        if (nativeProjectionAnchorName != null) {
+            pluginContext.metadataDeclarationRegistrar.registerClassAsMetadataVisible(irClass)
+        }
         return irClass
     }
 
@@ -319,8 +353,7 @@ class KronosProjectionIrTransformer(
         forEach { field ->
             add(field)
             val fieldSourceClass = field.sourceClassId
-                ?.takeUnless { it.isLocal }
-                ?.let(pluginContext::referenceClass)
+                ?.let(::referenceProjectionSourceClass)
                 ?.owner
                 ?: sourceClass
             val fieldSourceProperties = fieldSourceClass.properties.associateBy { it.name }
@@ -365,7 +398,7 @@ class KronosProjectionIrTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun IrProperty.cascadeStringArguments(index: Int): List<Name> {
         val cascade = annotations.firstOrNull {
-            it.symbol.owner.returnType.classFqName == CascadeAnnotationFqName
+            it.isAnnotation(CascadeAnnotationFqName)
         } ?: return emptyList()
         val vararg = cascade.arguments[index] as IrVararg
         return vararg.elements.filterIsInstance<IrConst>().map { element ->
@@ -379,10 +412,46 @@ class KronosProjectionIrTransformer(
         return type.firstTypeArgument()?.classOrNull?.owner ?: type.classOrNull?.owner
     }
 
-    private fun createProjectionFile(): IrFile {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun projectionFileFor(sourceFile: IrFile): IrFile {
+        nativeProjectionAnchorName?.let { anchorName ->
+            val module = moduleFragment ?: error("Kronos projection materializer has no module fragment")
+            return module.files.firstOrNull { file ->
+                file.packageFqName == GeneratedProjectionPackageFqName &&
+                    file.declarations.filterIsInstance<IrClass>().any { it.name.asString() == anchorName }
+            } ?: error("Missing source-visible Native projection anchor: $anchorName")
+        }
+        val sourceEntry = sourceFile.fileEntry.name
+        return projectionFilesBySourceEntry.getOrPut(sourceEntry) {
+            val module = moduleFragment ?: error("Kronos projection materializer has no module fragment")
+            module.files.firstOrNull { file ->
+                file.isGeneratedProjectionFile() && file.fileEntry.name == sourceEntry
+            } ?: createProjectionFile(sourceFile)
+        }
+    }
+
+    /**
+     * An accessor in another source can materialize a generated projection before the source
+     * select call is traversed. The select call later supplies the authoritative owner, so move
+     * the existing class before provider generation observes its source entry.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.moveToProjectionFile(sourceFile: IrFile) {
+        val targetFile = projectionFileFor(sourceFile)
+        if (parent === targetFile) return
+        (parent as? IrFile)?.declarations?.remove(this)
+        parent = targetFile
+        targetFile.declarations += this
+    }
+
+    private fun IrClass.sourceFileOrNull(): IrFile? =
+        (parent as? IrFile)?.takeUnless { file -> file.isGeneratedProjectionFile() }
+
+    private fun IrFile.isGeneratedProjectionFile(): Boolean =
+        packageFqName == GeneratedProjectionPackageFqName
+
+    private fun createProjectionFile(sourceFile: IrFile): IrFile {
         val module = moduleFragment ?: error("Kronos projection materializer has no module fragment")
-        val sourceFile = module.files.firstOrNull()
-            ?: error("Kronos projection materializer requires at least one source file")
         val fileEntry = sourceFile.fileEntry
         val packageFragment = MutablePackageFragmentDescriptor(sourceFile.moduleDescriptor, GeneratedProjectionPackageFqName)
         return IrFileImpl(
@@ -407,7 +476,7 @@ class KronosProjectionIrTransformer(
         }.also { property ->
             property.annotations += sourceProperty
                 ?.annotations
-                ?.filter { it.symbol.owner.returnType.classFqName == SerializeAnnotationFqName }
+                ?.filter { it.isAnnotation(SerializeAnnotationFqName) }
                 ?.map { it.deepCopyWithSymbols() }
                 .orEmpty()
             val backingField = property.addBackingField {
@@ -425,7 +494,7 @@ class KronosProjectionIrTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun ConeKotlinType.toIrTypeOrNull(): IrType? {
         val classType = this as? ConeClassLikeType ?: return null
-        val classSymbol = pluginContext.referenceClass(classType.lookupTag.classId) ?: return null
+        val classSymbol = referenceProjectionSourceClass(classType.lookupTag.classId) ?: return null
         val arguments = classType.typeArguments.map { projection ->
             when (projection) {
                 is ConeStarProjection -> IrStarProjectionImpl
@@ -438,11 +507,16 @@ class KronosProjectionIrTransformer(
                     }
                     makeTypeProjection(type, variance)
                 }
-                else -> return null
             }
         }
         return classSymbol.createType(classType.isMarkedNullable, arguments)
     }
+
+    /** Class-ID lookup accepts non-local IDs; record source references for incremental compilation. */
+    @OptIn(ClassIdBasedLocality::class)
+    private fun referenceProjectionSourceClass(classId: ClassId) =
+        if (classId.isLocal) null
+        else pluginContext.finderForSource(checkNotNull(currentSourceFile)).findClass(classId)
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun IrClass.addNoArgConstructor() {

@@ -41,14 +41,17 @@ abstract class KTableTransformer(
      * This method ensures that only return statements from the current function are processed,
      * avoiding the processing of return statements from nested lambdas or inner functions.
      *
-     * The check is based on comparing the return target symbol with the current function's symbol.
-     * If they match, the return is from the current function and should be processed.
+     * The return must belong to the current function. Result-returning scope calls can
+     * delegate to their own DSL callbacks; receiver-returning scopes on the DSL context
+     * remain ordinary Kotlin side effects. Neither has a result for this collector.
      *
      * @param expression The return expression to check
      * @return true if this return expression should be processed, false otherwise
      */
     protected fun shouldProcessReturn(expression: IrReturn): Boolean {
-        return expression.returnTargetSymbol == irFunction.symbol
+        return expression.returnTargetSymbol == irFunction.symbol &&
+            !expression.value.isDelegatingDslScopeCall(irFunction) &&
+            !expression.value.isReturningDslReceiverScope(irFunction)
     }
 
     /**

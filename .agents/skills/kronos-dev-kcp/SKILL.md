@@ -7,9 +7,12 @@ description: Kotlin compiler plugin programming guide focused on K2 FIR/frontend
 
 Use this skill for Kotlin compiler plugin (KCP) programming. The guidance is about Kotlin's own compiler plugin model, especially K2 FIR/frontend plugin APIs, backend IR extensions, registration, diagnostics, generated declarations, and compiler-plugin tests.
 
+## Local Troubleshooting Notes
+
+If this skill directory contains a developer-local `Evolution.index.md`, consult matching entries when diagnosing recurring failures. Keep confirmed, reusable findings in local `evolution/` files; both paths are Git-ignored and optional. Initialize personal notes from the [empty index template](../kronos-dev-guide/assets/troubleshooting-index.template.md) and [record example](../kronos-dev-guide/assets/troubleshooting-record.example.md).
+
 ## Required Reading
 
-- For every compiler-plugin error, backend crash, invalid IR, or unexpected generated-declaration behavior, read [Evolution.index.md](Evolution.index.md) before changing code. Do not browse the full evolution history by default. If the index matches, open only the linked `evolution/*.md` entry file, reuse the documented solution, and after a verified fix create one new `evolution/*.md` file plus one concise index row only for reusable, confirmed pitfalls. Remove, archive, or rewrite obsolete evolution records when the guidance is no longer true.
 - Start with [references/build-a-plugin.md](references/build-a-plugin.md) when implementing a plugin or when the task is broad.
 - If the agent is new to Kotlin compiler plugins, read [references/minimal-plugin-walkthrough.md](references/minimal-plugin-walkthrough.md) before writing production code.
 - Read [references/kcp-overview.md](references/kcp-overview.md) before choosing frontend vs backend architecture.

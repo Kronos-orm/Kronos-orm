@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.plugin
 
-import com.google.auto.service.AutoService
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.CliOption
@@ -27,22 +26,57 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
  * Command line processor for the Kronos compiler plugin
  */
 @OptIn(ExperimentalCompilerApi::class)
-@AutoService(CommandLineProcessor::class)
 class KronosCommandLineProcessor : CommandLineProcessor {
     override val pluginId: String = "kronos-compiler-plugin"
 
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
+        CliOption(NATIVE_PROVIDER_DEPENDENCY_ENTRIES_OPTION_NAME, "<entry-fq-names>",
+            "Comma-separated Native registration entries for this target compilation", required = false),
+        CliOption(NATIVE_PROVIDER_DEPENDENCY_ENTRIES_FILE_OPTION_NAME, "<path>",
+            "UTF-8 file containing one Native registration entry per line", required = false),
+        CliOption(MODULE_COORDINATE_OPTION_NAME, "<group:module>",
+            "Derive provider identities from this module coordinate and the compiler platform", required = false),
+        CliOption(JVM_SOURCE_SET_PREFIX_OPTION_NAME, "<jvm|empty>",
+            "JVM source-set prefix; jvm for multiplatform modules, empty for JVM-only modules", required = false),
         CliOption(
             optionName = GENERATED_PROVIDER_ID_OPTION_NAME,
             valueDescription = "<stable-module-id>",
-            description = "Stable id for this compilation's generated type provider",
-            required = false
+            description = "Stable id for this compilation's generated type provider (last value wins)",
+            required = false,
+            allowMultipleOccurrences = true
         ),
         CliOption(
             optionName = GENERATED_PROVIDER_FQ_NAME_OPTION_NAME,
             valueDescription = "<provider-fq-name>",
-            description = "Module-unique generated type provider class name",
+            description = "Module-unique generated type provider class name (last value wins)",
+            required = false,
+            allowMultipleOccurrences = true
+        ),
+        CliOption(
+            optionName = GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME,
+            valueDescription = "true",
+            description = "Emit source-owned generated type provider fragments for incremental compilation",
             required = false
+        ),
+        CliOption(
+            optionName = SKIP_GENERATED_PROVIDER_OPTION_NAME,
+            valueDescription = "true",
+            description = "Explicitly skip JVM generated provider emission for a Native compilation",
+            required = false
+        ),
+        CliOption(
+            optionName = NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME,
+            valueDescription = "<entry-fq-name>",
+            description = "Common-source Native generated metadata entry function (last value wins)",
+            required = false,
+            allowMultipleOccurrences = true
+        ),
+        CliOption(
+            optionName = NATIVE_PROVIDER_ID_OPTION_NAME,
+            valueDescription = "<stable-module-id>",
+            description = "Stable identity for a Native generated metadata entry (last value wins)",
+            required = false,
+            allowMultipleOccurrences = true
         )
     )
 
@@ -52,8 +86,31 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         configuration: CompilerConfiguration
     ) {
         when (option.optionName) {
+            NATIVE_PROVIDER_DEPENDENCY_ENTRIES_OPTION_NAME -> configuration.put(
+                NativeProviderDependencyEntriesKey, value.split(',').filter(String::isNotBlank)
+            )
+            NATIVE_PROVIDER_DEPENDENCY_ENTRIES_FILE_OPTION_NAME ->
+                configuration.put(NativeProviderDependencyEntriesFileKey, value)
+            MODULE_COORDINATE_OPTION_NAME -> configuration.put(ModuleCoordinateKey, value)
+            JVM_SOURCE_SET_PREFIX_OPTION_NAME -> configuration.put(JvmSourceSetPrefixKey, value)
             GENERATED_PROVIDER_ID_OPTION_NAME -> configuration.put(GeneratedProviderIdKey, value)
             GENERATED_PROVIDER_FQ_NAME_OPTION_NAME -> configuration.put(GeneratedProviderFqNameKey, value)
+            GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME -> {
+                require(value == "true") {
+                    "Compiler option '$GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME' must be 'true'"
+                }
+                configuration.put(GeneratedProviderFragmentsKey, true)
+            }
+            SKIP_GENERATED_PROVIDER_OPTION_NAME -> {
+                require(value == "true") {
+                    "Compiler option '$SKIP_GENERATED_PROVIDER_OPTION_NAME' must be 'true'"
+                }
+                configuration.put(SkipGeneratedProviderKey, true)
+            }
+            NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME ->
+                configuration.put(NativeProviderEntryFqNameKey, value)
+            NATIVE_PROVIDER_ID_OPTION_NAME ->
+                configuration.put(NativeProviderIdKey, value)
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }

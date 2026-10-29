@@ -1,0 +1,30 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: Gradle consumer integration for the Kronos Kotlin compiler plugin.
+
+dependencies:
+  - $libs.gradle.api: compile-only
+  - $libs.kotlin.gradle.plugin.api
+  - $libs.kotlin.gradle.plugin
+
+test-dependencies:
+  - $libs.gradle.api
+  - $libs.kotlin.test
+
+test-settings:
+  jvm:
+    test:
+      freeJvmArgs:
+        - -Xmx2g
+        - --add-opens=java.base/java.lang=ALL-UNNAMED
+      systemProperties:
+        junit.jupiter.execution.parallel.enabled: 'false'
+
+repositories:
+  - id: mavenLocal
+    url: mavenLocal
+    publish: true

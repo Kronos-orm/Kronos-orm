@@ -3,6 +3,8 @@
 
 Kronos通过{{ $.keyword("database/datasource-wrapper", ["数据源包装器"]) }}执行数据库操作。默认连接直接使用`Kronos.connect(...)`配置。
 
+Apple、Linux 和 Windows 连接见 {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }}，Android/JVM 连接见 {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }}。
+
 ## 使用JDBC URL连接
 
 在应用启动时调用`Kronos.connect(...)`配置默认数据源。

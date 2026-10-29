@@ -1,0 +1,159 @@
+:host {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    text-align: start;
+}
+
+:host ::ng-deep .benchmark-report {
+    display: block;
+    min-width: 0;
+    color: var(--ng-doc-text);
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+:host ::ng-deep .benchmark-report :is(h1, h2, h3, h4) {
+    color: var(--ng-doc-text);
+    font-weight: 650;
+    line-height: 1.4;
+    text-wrap: balance;
+    scroll-margin-top: 6rem;
+}
+
+:host ::ng-deep .benchmark-report h1 {
+    margin: 0 0 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--ng-doc-border-color);
+    font-size: clamp(1.6rem, 3vw, 2rem);
+}
+
+:host ::ng-deep .benchmark-report h2 {
+    margin: 3rem 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--ng-doc-border-color);
+    font-size: 1.35rem;
+}
+
+:host ::ng-deep .benchmark-report h3 {
+    margin: 2rem 0 0.8rem;
+    font-size: 1.08rem;
+}
+
+:host ::ng-deep .benchmark-report :is(p, ul, ol) {
+    margin: 0.85rem 0;
+}
+
+:host ::ng-deep .benchmark-report :is(ul, ol) {
+    padding-inline-start: 1.4rem;
+}
+
+:host ::ng-deep .benchmark-report li + li {
+    margin-top: 0.4rem;
+}
+
+:host ::ng-deep .benchmark-report a {
+    color: var(--ng-doc-link-color);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+
+:host ::ng-deep .benchmark-report a:focus-visible {
+    outline: 2px solid var(--ng-doc-primary);
+    outline-offset: 3px;
+}
+
+:host ::ng-deep .benchmark-report table {
+    display: block;
+    max-width: 100%;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    border: 1px solid var(--ng-doc-border-color);
+    border-spacing: 0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+:host ::ng-deep .benchmark-report :is(th, td) {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--ng-doc-border-color);
+    text-align: start;
+    vertical-align: top;
+}
+
+:host ::ng-deep .benchmark-report th {
+    color: var(--ng-doc-text);
+    background: var(--ng-doc-base-2);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+:host ::ng-deep .benchmark-report tr:last-child td {
+    border-bottom: 0;
+}
+
+:host ::ng-deep .benchmark-report p:has(> img) {
+    margin: 1.5rem 0;
+    padding: 0;
+    background: transparent;
+}
+
+:host ::ng-deep .benchmark-report img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--ng-doc-border-color);
+    border-radius: 8px;
+}
+
+:host ::ng-deep .benchmark-report blockquote {
+    margin: 1.5rem 0;
+    padding: 0.25rem 1.1rem;
+    border-inline-start: 3px solid var(--ng-doc-primary);
+    color: var(--ng-doc-text-muted);
+    background: var(--ng-doc-base-2);
+}
+
+:host ::ng-deep .benchmark-report :not(pre) > code {
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    color: var(--ng-doc-text);
+    background: var(--ng-doc-base-2);
+    font-size: 0.85em;
+}
+
+:host ::ng-deep .benchmark-report pre {
+    max-width: 100%;
+    padding: 1rem;
+    overflow-x: auto;
+    border: 1px solid var(--ng-doc-border-color);
+    border-radius: 8px;
+    background: var(--ng-doc-code-background);
+    font-size: 0.82rem;
+}
+
+:host ::ng-deep .benchmark-report details {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--ng-doc-border-color);
+    border-radius: 8px;
+}
+
+:host ::ng-deep .benchmark-report summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    :host ::ng-deep .benchmark-report {
+        font-size: 0.9rem;
+    }
+
+    :host ::ng-deep .benchmark-report :is(th, td) {
+        padding: 0.6rem 0.7rem;
+    }
+}

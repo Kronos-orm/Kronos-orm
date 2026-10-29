@@ -4,12 +4,13 @@
 .codex/
 .kotlin/
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### IntelliJ IDEA ###
-.idea/
+.idea/*
+!.idea/kotlin-plugins.xml
 .intellijPlatform/
 *.iws
 *.iml
@@ -64,8 +65,18 @@ kronos-docs/ng-doc/
 
 ### Gradle ###
 *.properties
+!**/gradle/wrapper/gradle-wrapper.properties
+!kronos-gradle-plugin/src/main/resources/**/*.properties
 /keystore/*
 *.gpg
 *.key
 */bin/*
 *-output.log
+
+### Coverage reports ###
+/coverage/
+
+### Developer-local troubleshooting history ###
+/evolution/
+/.agents/skills/**/evolution/
+/.agents/skills/**/Evolution*.md

@@ -1,0 +1,706 @@
+name: Kronos CI
+on:
+  pull_request: null
+  merge_group: null
+  push:
+    branches:
+    - release/**
+  workflow_dispatch: null
+  workflow_call: null
+permissions:
+  contents: read
+concurrency:
+  group: kmp-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  jvm-candidate:
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: jvm
+      runner: ubuntu-24.04
+  jvm:
+    name: KMP JVM (${{ matrix.os }}, JDK ${{ matrix.java }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - os: ubuntu-24.04
+          java: '17'
+        - os: ubuntu-24.04
+          java: '21'
+        - os: ubuntu-24.04
+          java: '25'
+        - os: windows-2025
+          java: '21'
+        - os: macos-26
+          java: '21'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: ${{ matrix.java }}
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: jvm-${{ matrix.java }}
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: ci-jvm
+        path: build/ci-input
+    - name: Select compiler candidate
+      shell: bash
+      run: |
+        repository="$GITHUB_WORKSPACE/build/ci-input"
+        if [ "$RUNNER_OS" = Windows ]; then repository=$(cygpath -m "$repository"); fi
+        echo "KRONOS_COMPILER_REPOSITORY=$repository" >> "$GITHUB_ENV"
+    - name: Keep production core free of reflect.full
+      run: scripts/run ci reflect-check
+    - name: JVM runtime, compiler and published Gradle plugin tests
+      run: scripts/run ci jvm --jdk ${{ matrix.java }}
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always()
+      with:
+        name: kmp-jvm-${{ matrix.os }}-jdk-${{ matrix.java }}-reports
+        path: |
+          build/reports/**
+          **/build/test-results/**/TEST-*.xml
+          **/build/reports/tests/**
+        if-no-files-found: error
+        overwrite: true
+    needs: jvm-candidate
+  metadata:
+    needs: jvm-candidate
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: metadata
+      runner: macos-26
+  native-ios:
+    needs: metadata
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: ios
+      runner: macos-26
+  # Shared CInterop metadata resolves every target declared by the multi-module example.
+  # Use the complete candidate assembled from all six parallel Native producers.
+  sqlite-ios:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: ios
+      runner: macos-26
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  native-macos:
+    needs: metadata
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: macos
+      runner: macos-26
+  sqlite-macos:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: macos
+      runner: macos-26
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  sqlite-macos-intel:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: macos
+      runner: macos-26-intel
+      developer-directory: /Applications/Xcode_26.4.1.app/Contents/Developer
+      consumer-id: sqlite-macos-intel
+      shared-suites: true
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  native-tvos:
+    needs: metadata
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: tvos
+      runner: macos-26
+  sqlite-tvos:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: tvos
+      runner: macos-26
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  native-watchos:
+    needs: metadata
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: watchos
+      runner: macos-26
+  sqlite-watchos:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: watchos
+      runner: macos-26
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  native-linux:
+    needs: metadata
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: linux
+      runner: ubuntu-24.04
+  sqlite-linux:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: linux
+      runner: ubuntu-24.04
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  native-windows:
+    needs: metadata
+    uses: ./.github/workflows/kronos-kmp-publication.yml
+    with:
+      phase: windows
+      runner: windows-2025
+  sqlite-windows:
+    needs: publication
+    uses: ./.github/workflows/kronos-native-sqlite-example.yml
+    with:
+      group: windows
+      runner: windows-2025
+      publication-artifact: kmp-publication-repository
+      example-ref: cfc8b757036439bdaa4107db8e1d381a2fb896d2
+  native-arm64:
+    name: KMP Native (linuxArm64 runtime)
+    needs: native-linux
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '21'
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: arm-runtime
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: kmp-linux-arm64-test-binaries
+        path: native-arm64
+    - name: Execute cross-compiled tests on ARM64
+      run: |
+        test "$(uname -m)" = aarch64
+        chmod +x native-arm64/*.kexe
+        scripts/run .github/scripts/run-kmp-native-binaries.main.kts \
+          --report native-arm64/runtime-results.json \
+          native-arm64/kronos-syntax_test.kexe \
+          native-arm64/kronos-core_test.kexe \
+          native-arm64/kronos-logging_test.kexe
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always()
+      with:
+        name: kmp-linux-arm64-runtime-report
+        path: native-arm64/runtime-results.json
+        if-no-files-found: error
+        overwrite: true
+  sqlite-arm64:
+    name: SQLite linuxArm64 runtime
+    needs: sqlite-linux
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '21'
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: arm-runtime
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: kmp-sqlite-linux-arm64-binaries
+        path: sqlite-arm64
+    - name: Run real SQLite on Linux ARM64
+      run: |
+        test "$(uname -m)" = aarch64
+        chmod +x sqlite-arm64/debugTest/test.kexe sqlite-arm64/debugExecutable/*.kexe
+        scripts/run .github/scripts/run-kmp-native-binaries.main.kts \
+          --require-suite com.kotlinorm.example.ios.NativeOrmIntegrationTest \
+          --report sqlite-arm64/runtime-results.json sqlite-arm64/debugTest/test.kexe
+        for executable in sqlite-arm64/debugExecutable/*.kexe; do "$executable"; done
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always()
+      with:
+        name: kmp-sqlite-linux-arm64-runtime-report
+        path: sqlite-arm64/runtime-results.json
+        if-no-files-found: error
+        overwrite: true
+  publication:
+    name: Complete KMP publication verification
+    needs:
+    - metadata
+    - native-ios
+    - native-macos
+    - native-tvos
+    - native-watchos
+    - native-linux
+    - native-windows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '21'
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: publication-assembly
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        pattern: ci-*
+        path: build/ci-inputs
+    - name: Assemble all six groups and verify all fifteen Native targets
+      run: |
+        scripts/run release assemble --seed build/ci-inputs/ci-metadata --repository build/ci-complete \
+          --input build/ci-inputs/ci-ios --input build/ci-inputs/ci-macos \
+          --input build/ci-inputs/ci-tvos --input build/ci-inputs/ci-watchos \
+          --input build/ci-inputs/ci-linux --input build/ci-inputs/ci-windows
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: kmp-publication-repository
+        path: build/ci-complete
+        retention-days: 3
+        if-no-files-found: error
+        overwrite: true
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always()
+      with:
+        name: kmp-publication-reports
+        path: build/publications.json
+        if-no-files-found: error
+        overwrite: true
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: complete-publication-manifest
+        path: build/ci-complete/ci-candidate.json
+        if-no-files-found: error
+        overwrite: true
+  android:
+    needs: jvm-candidate
+    uses: ./.github/workflows/kronos-android-example.yml
+    with:
+      publication-artifact: ci-jvm
+  examples:
+    needs: metadata
+    uses: ./.github/workflows/kronos-examples.yml
+    with:
+      publication-artifact: ci-metadata
+  ide-support:
+    needs: jvm-candidate
+    uses: ./.github/workflows/kronos-ide-support.yml
+  unit-receipts:
+    name: ${{ format('kronos-{0}-unittests', matrix.module) }}
+    needs: jvm
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+        - compiler-plugin
+        - core
+        - codegen
+        - syntax
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: unit-receipts
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: kmp-jvm-ubuntu-24.04-jdk-21-reports
+        path: jvm-results
+    - name: Require the complete module suite from the JDK 21 matrix
+      run: scripts/run .github/scripts/verify-kmp-test-results.main.kts "jvm-results/build/reports/kronos-${{ matrix.module }}/jvm"
+  coverage-suites:
+    name: Instrumented CLI coverage suites
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        java-version: '21'
+        distribution: temurin
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: kronos-core-coverage
+    - name: Run all four instrumented Toolchain suites
+      run: scripts/run quality coverage --defer-compiler-coverage --input-bundle build/coverage/cli
+    - name: Upload executed CLI coverage and compiler bytecode
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: coverage-cli-inputs
+        path: build/coverage/cli/
+        if-no-files-found: error
+        overwrite: true
+  kronos-core-coverage:
+    name: kronos-core-coverage
+    needs: [coverage-suites, ide-support]
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        java-version: '21'
+        distribution: temurin
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: kronos-core-coverage
+    - name: Require both independent execution lanes
+      env:
+        CLI_RESULT: ${{ needs.coverage-suites.result }}
+        IDE_RESULT: ${{ needs.ide-support.result }}
+      run: |
+        test "$CLI_RESULT" = success
+        test "$IDE_RESULT" = success
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: coverage-cli-inputs
+        path: build/coverage/cli
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: coverage-ide-inputs
+        path: build/coverage/ide
+    - name: Create coverage publication directories
+      run: |
+        mkdir -p coverage/kronos-core coverage/kronos-syntax
+        mkdir -p coverage/kronos-compiler-plugin coverage/kronos-codegen .coverage-baseline
+    - name: Load published coverage baseline
+      run: |
+        if git fetch --depth=1 origin coverage; then
+          if ! git archive --format=tar FETCH_HEAD | tar -x -C .coverage-baseline; then
+            echo "Cannot unpack origin/coverage branch; no published coverage baseline is available." > .coverage-baseline/.baseline-error
+          fi
+        else
+          echo "Cannot fetch origin/coverage branch; no published coverage baseline is available." > .coverage-baseline/.baseline-error
+        fi
+    - name: Merge real CLI and IDE compiler execution data
+      id: core-coverage
+      run: scripts/run quality merge-coverage --cli-inputs build/coverage/cli --ide-inputs build/coverage/ide
+    - name: Copy core coverage report
+      if: always()
+      run: cp -rf kronos-core/build/reports/kover/html/. coverage/kronos-core/
+    - name: Copy syntax coverage report
+      id: syntax-coverage
+      if: always()
+      run: cp -rf kronos-syntax/build/reports/kover/html/. coverage/kronos-syntax/
+    - name: Copy compiler-plugin coverage report
+      id: compiler-plugin-coverage
+      if: always()
+      run: cp -rf kronos-compiler-plugin/build/reports/kover/html/. coverage/kronos-compiler-plugin/
+    - name: Copy codegen coverage report
+      id: codegen-coverage
+      if: always()
+      run: cp -rf kronos-codegen/build/reports/kover/html/. coverage/kronos-codegen/
+    - name: Compare coverage with published baseline
+      id: coverage-comparison
+      if: always()
+      continue-on-error: true
+      run: |
+        scripts/run quality compare \
+          --baseline-dir .coverage-baseline --output coverage
+    - name: Comment coverage on PR 💬
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always()
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const marker = '<!-- kronos-coverage-comparison -->';
+          const reportPath = 'coverage/comparison.md';
+          const comparison = fs.existsSync(reportPath)
+            ? fs.readFileSync(reportPath, 'utf8').trim()
+            : [
+                marker,
+                '## :bar_chart: Test Coverage Report',
+                '',
+                '> :warning: **Coverage report unavailable.** Comparison output was not generated; check the workflow logs.',
+              ].join('\n');
+          const body = [
+            comparison,
+            '',
+            `> Generated for commit \`${{ github.event.pull_request.head.sha }}\``,
+          ].join('\n');
+
+          // 找到之前由 Bot 发的同类评论并更新，避免重复刷评论
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo:  context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          const existing = comments.find(c =>
+            c.user.type === 'Bot' &&
+            (c.body.includes(marker) || c.body.includes('📊 Test Coverage Report'))
+          );
+
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner:      context.repo.owner,
+              repo:       context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+          }
+    - name: Upload coverage XML for diagnostics
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: coverage-xml
+        path: |
+          kronos-syntax/build/reports/kover/report.xml
+          kronos-codegen/build/reports/kover/report.xml
+          kronos-core/build/reports/kover/report.xml
+          kronos-compiler-plugin/build/reports/kover/report.xml
+          kronos-compiler-plugin/build/reports/kover/ide/report.xml
+          kronos-compiler-plugin/build/reports/kover/ide/summary.json
+        overwrite: true
+    - name: Enforce coverage comparison gate
+      if: always()
+      run: |
+        if [ "${{ steps.core-coverage.outcome }}" != "success" ]; then
+          echo "Coverage inputs, execution provenance, or merged minimums failed."
+          exit 1
+        fi
+        if [ "${{ steps.coverage-comparison.outcome }}" != "success" ]; then
+          echo "Coverage comparison failed. See coverage/comparison.md or the step summary for details."
+          exit 1
+        fi
+        jq -e '.failed == false' coverage/comparison.json
+    - name: Generate the badge SVG image for Core
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325 # v2.0.4
+      with:
+        label: core coverage
+        status: ${{ steps.core-coverage.outputs['kronos-core-lines'] }}
+        color: blue,555,daf
+        path: coverage/coverage-core.svg
+    - name: Generate the badge SVG image for Syntax
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325 # v2.0.4
+      with:
+        label: syntax coverage
+        status: ${{ steps.core-coverage.outputs['kronos-syntax-lines'] }}
+        color: blue,555,daf
+        path: coverage/coverage-syntax.svg
+    - name: Generate the badge SVG image for Compiler Plugin
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325 # v2.0.4
+      with:
+        label: compiler plugin coverage
+        status: ${{ steps.core-coverage.outputs['kronos-compiler-plugin-lines'] }}
+        color: blue,555,daf
+        path: coverage/coverage-compiler-plugin.svg
+    - name: Generate the badge SVG image for Codegen
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325 # v2.0.4
+      with:
+        label: codegen coverage
+        status: ${{ steps.core-coverage.outputs['kronos-codegen-lines'] }}
+        color: blue,555,daf
+        path: coverage/coverage-codegen.svg
+    - name: Deploy to coverage branch 📦
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4
+      with:
+        branch: coverage
+        folder: coverage
+        clean: true
+        single-commit: true
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+  docs:
+    name: Build documentation site
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - name: Checkout
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+    - name: Set up JDK 21
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+      with:
+        distribution: temurin
+        java-version: '21'
+    - name: Set up pnpm
+      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      with:
+        version: 10.30.2
+    - name: Set up Node.js
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+      with:
+        node-version: 22
+        cache: pnpm
+        cache-dependency-path: kronos-docs/pnpm-lock.yaml
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: docs
+    - name: Install documentation dependencies
+      working-directory: kronos-docs
+      run: pnpm install --frozen-lockfile
+    - name: Test locale, search and documentation contracts
+      working-directory: kronos-docs
+      run: pnpm test:policies
+    - name: Check bilingual documentation routes and links
+      working-directory: kronos-docs
+      run: pnpm check:links
+    - name: Build documentation site
+      working-directory: kronos-docs
+      run: pnpm build
+    - name: Test Angular documentation application
+      working-directory: kronos-docs
+      run: pnpm run test --watch=false --browsers=ChromeHeadless
+    - name: Build and verify module API documentation
+      run: scripts/run quality dokka
+    - name: Merge the complete documentation site
+      run: node kronos-docs/scripts/merge-site.mjs kronos-docs/docs docs docs/kronos-gradle-plugin kronos-docs/dist/site
+    permissions:
+      contents: read
+  high-level-tests:
+    name: Run integration tests
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      with:
+        java-version: 21
+        distribution: temurin
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: high-level-tests
+    - name: Export integration environment
+      run: scripts/run ci env
+    - name: Start integration databases
+      run: docker compose -f kronos-testing/docker-compose.integration.yml up -d --wait --wait-timeout 600
+    - name: Prepare SQL Server database
+      run: |
+        docker exec kronos-testing-sqlserver bash -lc \
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U '${SQLSERVER_USERNAME}' -P '${SQLSERVER_PASSWORD}' -C -Q \"IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}; SELECT DB_NAME(DB_ID('${SQLSERVER_DATABASE}'));\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U '${SQLSERVER_USERNAME}' -P '${SQLSERVER_PASSWORD}' -Q \"IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}; SELECT DB_NAME(DB_ID('${SQLSERVER_DATABASE}'));\""
+    - name: Run integration tests
+      run: scripts/run build test -m kronos-testing -p jvm
+    - name: Stop integration databases
+      if: always()
+      run: docker compose -f kronos-testing/docker-compose.integration.yml down -v
+  detekt:
+    name: Check Code Quality
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout 🛎️
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        fetch-depth: 1
+        ref: ${{ github.head_ref }}
+    - name: detekt
+      uses: alaegin/Detekt-Action@31b3733d9abfdae0c8c7d92afea33ed016f66034
+      with:
+        github_token: ${{ secrets.github_token }}
+        detekt_config: detekt.yml
+    permissions:
+      contents: read
+  gate:
+    name: KMP gate
+    if: always()
+    needs:
+    - jvm-candidate
+    - jvm
+    - metadata
+    - native-ios
+    - sqlite-ios
+    - native-macos
+    - sqlite-macos
+    - sqlite-macos-intel
+    - native-tvos
+    - sqlite-tvos
+    - native-watchos
+    - sqlite-watchos
+    - native-linux
+    - sqlite-linux
+    - sqlite-arm64
+    - native-windows
+    - sqlite-windows
+    - native-arm64
+    - publication
+    - android
+    - examples
+    - ide-support
+    - unit-receipts
+    - coverage-suites
+    - kronos-core-coverage
+    - docs
+    - high-level-tests
+    - detekt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      NEEDS_JSON: ${{ toJson(needs) }}
+    steps:
+    - name: Require every platform, consumer and quality gate to pass
+      run: |
+        echo "$NEEDS_JSON" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+        echo "$NEEDS_JSON" | jq -e 'length > 0 and all(.[]; .result == "success")'
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        persist-credentials: false
+    - uses: ./.github/actions/setup-toolchain
+      with:
+        lane: gate
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        pattern: receipt-*
+        path: build/receipts
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: complete-publication-manifest
+        path: build/final-manifest
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: android-apk-manifest
+        path: build/android-manifest
+    - name: Verify all twelve consumers used the final candidate bytes
+      run: scripts/run release verify-consumers --repository build/final-manifest/ci-candidate.json --seed build/android-manifest/ci-candidate.json --input build/receipts

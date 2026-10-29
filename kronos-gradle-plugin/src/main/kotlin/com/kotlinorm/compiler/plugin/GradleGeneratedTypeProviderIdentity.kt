@@ -20,22 +20,49 @@ import java.security.MessageDigest
 
 internal const val GENERATED_PROVIDER_ID_OPTION_NAME = "generated-provider-id"
 internal const val GENERATED_PROVIDER_FQ_NAME_OPTION_NAME = "generated-provider-fq-name"
+internal const val GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME = "generated-provider-fragments"
+internal const val SKIP_GENERATED_PROVIDER_OPTION_NAME = "skip-generated-provider"
+internal const val NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME = "native-provider-entry-fq-name"
+internal const val NATIVE_PROVIDER_ID_OPTION_NAME = "native-provider-id"
+internal const val NATIVE_PROVIDER_DEPENDENCY_ENTRIES_OPTION_NAME = "native-provider-dependency-entries"
+internal const val NATIVE_PROVIDER_DEPENDENCY_ENTRIES_FILE_OPTION_NAME = "native-provider-dependency-entries-file"
 private const val HASH_BYTE_MASK = 0xff
 private const val HEX_RADIX = 16
 private const val GENERATED_PROVIDER_HASH_LENGTH = 16
+
+/** Standard compilations share source-visible entries across targets; custom compilations own theirs. */
+internal fun nativeMetadataOwnerSourceSetName(compilationName: String, defaultSourceSetName: String): String =
+    when (compilationName) {
+        "main" -> "commonMain"
+        "test" -> "commonTest"
+        else -> defaultSourceSetName
+    }
 
 internal data class GradleGeneratedTypeProviderIdentity(
     val id: String,
     val fqName: String
 ) {
+    private val hash: String
+        get() = fqName.substringAfterLast('_')
+
     val compilerOptions: Map<String, String>
         get() = linkedMapOf(
             GENERATED_PROVIDER_ID_OPTION_NAME to id,
-            GENERATED_PROVIDER_FQ_NAME_OPTION_NAME to fqName
+            GENERATED_PROVIDER_FQ_NAME_OPTION_NAME to fqName,
+            GENERATED_PROVIDER_FRAGMENTS_OPTION_NAME to "true"
         )
 
     val serviceContent: String
         get() = "$fqName\n"
+
+    val nativeEntryFqName: String
+        get() = "com.kotlinorm.generated.native.KronosGeneratedTypeMetadata_$hash"
+
+    val nativeCompilerOptions: Map<String, String>
+        get() = linkedMapOf(
+            NATIVE_PROVIDER_ID_OPTION_NAME to id,
+            NATIVE_PROVIDER_ENTRY_FQ_NAME_OPTION_NAME to nativeEntryFqName
+        )
 }
 
 internal fun gradleGeneratedTypeProviderIdentity(moduleCoordinate: String): GradleGeneratedTypeProviderIdentity {

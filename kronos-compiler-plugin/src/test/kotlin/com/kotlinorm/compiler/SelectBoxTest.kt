@@ -139,4 +139,6 @@ class SelectBoxTest : AbstractKronosJvmBoxSuite("select") {
      */
     @Test
     fun scalarSubquerySelectItemTypeHint() = box("scalarSubquerySelectItemTypeHint")
+    @Test
+    fun portableAverageDouble() = box("portableAverageDouble")
 }

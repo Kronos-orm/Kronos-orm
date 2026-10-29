@@ -44,8 +44,6 @@ import java.util.Collections
 import java.util.IdentityHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
 /**
@@ -320,7 +318,7 @@ internal object KronosResultMappers {
         maxRows: Int = Int.MAX_VALUE
     ): List<Any?> =
         when (val mapping = targetType.mapping()) {
-            is ResultMapping.Map -> toMapList(resultSet, mapping.valueType, context, resultColumns, maxRows)
+            is ResultMapping.Map -> toMapList(resultSet, mapping.shape, context, resultColumns, maxRows)
             is ResultMapping.KPojoResult -> toKPojoList(resultSet, mapping.targetType, context, resultColumns, maxRows)
             is ResultMapping.Scalar -> toObjectList(resultSet, mapping.targetType, context, resultColumns, maxRows)
         }
@@ -328,13 +326,12 @@ internal object KronosResultMappers {
     /**
      * Maps rows to direct Map results while enforcing their requested value KType.
      *
-     * A concrete [valueType] replaces only the planner metadata type, retaining field,
-     * storage and label context. A null value type represents `Any` or a star projection,
-     * so planner metadata may supply the logical type and an absent entry stays raw.
+     * Both execution adapters use [MapResultShape] to retain complete value bounds,
+     * replace stale metadata and preserve raw Any/star values without running codecs.
      */
     private fun toMapList(
         resultSet: ResultSet,
-        valueType: KType?,
+        shape: MapResultShape,
         context: KronosStatementContext,
         resultColumns: Map<String, ResultColumnMetadata> = emptyMap(),
         maxRows: Int = Int.MAX_VALUE
@@ -346,14 +343,9 @@ internal object KronosResultMappers {
                 val label = metaData.getColumnLabel(position)
                 val rawValue = row.readValue(resultSet, position, context)
                 val declaredColumn = resultColumns.columnMetadata(label)
-                val column = when {
-                    valueType != null && declaredColumn != null ->
-                        declaredColumn.copy(type = valueType, columnLabel = label)
-                    valueType != null -> ResultColumnMetadata(valueType, columnLabel = label)
-                    declaredColumn != null -> declaredColumn.withLabel(label)
-                    else -> null
-                }
-                values[label] = if (column == null) rawValue else rawValue.convert(column, context)
+                require(label !in values) { "Ambiguous row column label '$label'; use a physical row mapper" }
+                val column = shape.column(label, declaredColumn)
+                values[label] = shape.value(if (column == null) rawValue else rawValue.convert(column, context), label)
             }
             values
         }
@@ -373,21 +365,20 @@ internal object KronosResultMappers {
         maxRows: Int = Int.MAX_VALUE
     ): List<Any?> =
         mapRows(resultSet, context, maxRows) { row, _ ->
+            require(resultSet.metaData.columnCount > 0) { "Scalar result has no columns" }
             val label = resultSet.metaData.getColumnLabel(1)
             val declaredColumn = resultColumns.columnMetadata(label) ?: resultColumns.values.singleOrNull()
             val rawValue = row.readValue(resultSet, 1, context)
             if (declaredColumn == null && targetType.isAnyType()) {
-                return@mapRows rawValue
+                return@mapRows requireResultValueType(rawValue, targetType, label)
             }
             val logicalType = if (targetType.isAnyType()) {
                 declaredColumn?.type ?: targetType
             } else {
                 targetType
             }
-            val column = declaredColumn
-                ?.copy(type = logicalType, columnLabel = label)
-                ?: ResultColumnMetadata(logicalType, columnLabel = label)
-            rawValue.convert(column, context)
+            val column = resultColumnForType(logicalType, declaredColumn, label)
+            requireResultValueType(if (column == null) rawValue else rawValue.convert(column, context), targetType, label)
         }
 
     /**
@@ -444,7 +435,7 @@ internal object KronosResultMappers {
                         typeOf<Any?>()
                     }
                 val column = resultColumns.columnMetadata(label)
-                    ?.copy(type = fieldType, columnLabel = label)
+                    ?.withTargetType(fieldType, field.typeInfo)?.copy(columnLabel = label)
                     ?: ResultColumnMetadata(fieldType, field, columnLabel = label)
                 val value = row.readValue(resultSet, position, context).convert(column, context)
                 this[field.name] = value
@@ -539,13 +530,11 @@ internal object KronosResultMappers {
                 rawValue
             } else {
                 val logicalType = if (targetType.isAnyType()) declaredColumn?.type ?: targetType else targetType
-                val column = declaredColumn
-                    ?.copy(type = logicalType, columnLabel = label)
-                    ?: ResultColumnMetadata(logicalType, columnLabel = label)
-                rawValue.convert(column, context)
+                val column = resultColumnForType(logicalType, declaredColumn, label)
+                if (column == null) rawValue else rawValue.convert(column, context)
             }
-            decodedValues[key] = value
-            return value
+            decodedValues[key] = requireResultValueType(value, targetType, label)
+            return decodedValues[key]
         }
 
         override fun get(label: String, targetType: KType): Any? {
@@ -620,9 +609,6 @@ private fun <T> Map<String, T>.caseInsensitiveEntry(label: String): Map.Entry<St
 private fun Map<String, Field>.columnField(label: String): Field? =
     this[label] ?: caseInsensitiveEntry(label)?.value
 
-private fun ResultColumnMetadata.withLabel(label: String): ResultColumnMetadata =
-    if (columnLabel == label) this else copy(columnLabel = label)
-
 /**
  * Performs the single logical database-to-Kotlin conversion for one typed result value.
  *
@@ -651,68 +637,19 @@ private fun Any?.convert(metadata: ResultColumnMetadata, context: KronosStatemen
  * @return validated Map mapping, or null when this type is outside the Map hierarchy
  * @throws UnsupportedTypeException when a Map subtype or unsupported key type is requested
  */
-private fun KType.directMapMappingOrNull(): ResultMapping.Map? {
-    val normalizedType = withoutTopLevelNullability()
-    if (!normalizedType.isSubtypeOf(typeOf<Map<*, *>>())) return null
-    if (!normalizedType.hasDirectMapDeclaration()) {
-        throw UnsupportedTypeException(
-            "Unsupported Map result type $this: JDBC row mapping returns LinkedHashMap " +
-                "and supports only direct Map or MutableMap declarations"
-        )
-    }
-
-    val keyType = normalizedType.arguments.getOrNull(0)?.type
-    if (keyType != null && !keyType.equalsIgnoringTopLevelNullability(typeOf<String>())) {
-        throw UnsupportedTypeException(
-            "Unsupported Map key type $keyType in $this: JDBC row labels require String, String?, or *"
-        )
-    }
-    val valueType = normalizedType.arguments.getOrNull(1)?.type?.takeUnless { it.isAnyType() }
-    return ResultMapping.Map(valueType)
+private fun KType.directMapMappingOrNull(): ResultMapping.Map? = try {
+    mapResultShapeOrNull()?.let { ResultMapping.Map(it) }
+} catch (failure: IllegalArgumentException) {
+    throw UnsupportedTypeException(failure.message.orEmpty()).apply { initCause(failure) }
 }
 
 /**
- * Confirms the concrete declaration boundary for the row container returned by JDBC mapping.
- *
- * This is intentionally the only class-level Map check: runtime construction always returns
- * [LinkedHashMap], so only the directly assignable Map and MutableMap declarations are valid.
- * Key/value semantics continue to come from the complete [KType] in [directMapMappingOrNull].
- * Kotlin type aliases resolve to their underlying declaration and therefore remain supported.
- *
- * @receiver top-level non-null logical Map type
- * @return true only for direct Map or MutableMap declarations
- */
-private fun KType.hasDirectMapDeclaration(): Boolean {
-    val declaration = classifierClass()
-    return declaration == Map::class || declaration == MutableMap::class
-}
-
-/**
- * Checks for the complete Any type after ignoring only top-level nullability.
+ * Checks for Any or Any? through its direct classifier and arguments.
  *
  * @receiver logical target type
- * @return true for Any or Any?, and false for every other complete KType
+ * @return true for Any or Any?, and false for every generic or other target type
  */
-private fun KType.isAnyType(): Boolean = equalsIgnoringTopLevelNullability(typeOf<Any>())
-
-/**
- * Compares complete types after removing only their top-level nullability marker.
- *
- * @receiver first type to compare
- * @param other second type to compare
- * @return true when all remaining KType structure is equal
- */
-private fun KType.equalsIgnoringTopLevelNullability(other: KType): Boolean =
-    withoutTopLevelNullability() == other.withoutTopLevelNullability()
-
-/**
- * Removes the top-level nullable marker without changing nested type arguments.
- *
- * @receiver type to normalize
- * @return this type when already non-nullable, otherwise its non-nullable form
- */
-private fun KType.withoutTopLevelNullability(): KType =
-    if (isMarkedNullable) withNullability(false) else this
+private fun KType.isAnyType(): Boolean = classifierClass() == Any::class && arguments.isEmpty()
 
 /**
  * Selects the row-mapping strategy for this complete logical result type.
@@ -730,7 +667,7 @@ private fun KType.mapping(): ResultMapping {
 }
 
 private sealed interface ResultMapping {
-    data class Map(val valueType: KType?) : ResultMapping
+    data class Map(val shape: MapResultShape) : ResultMapping
     data class KPojoResult(val targetType: KType) : ResultMapping
     data class Scalar(val targetType: KType) : ResultMapping
 }

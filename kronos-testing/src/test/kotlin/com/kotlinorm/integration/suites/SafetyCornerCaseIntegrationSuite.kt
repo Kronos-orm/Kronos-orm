@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 abstract class SafetyCornerCaseIntegrationSuite(
     environment: IntegrationDatabaseEnvironment,
@@ -226,7 +227,8 @@ abstract class SafetyCornerCaseIntegrationSuite(
             assertEquals(ValueCodecOrigin.DATABASE, failure.origin)
             assertEquals("deleted", failure.fieldName)
             assertNull(failure.declaredSourceType)
-            assertEquals(typeOf<Int>(), failure.runtimeSourceType)
+            assertNull(failure.runtimeSourceType)
+            assertTrue(failure.message.orEmpty().contains("runtime source unknown"))
             assertEquals(typeOf<Boolean?>(), failure.targetType)
         } else {
             assertEquals(

@@ -7,7 +7,7 @@
         <div class="nav-links">
             <a [routerLink]="quickStartUrl">{{ isZh ? '快速开始' : 'Quick start' }}</a>
             <a [routerLink]="docsUrl">{{ isZh ? '文档' : 'Docs' }}</a>
-            <a href="/api/kronos-core">API</a>
+            <a href="/api/kronos-core/index.html">API</a>
             <a href="https://github.com/Kronos-orm/Kronos-orm" target="_blank" rel="noreferrer">GitHub</a>
         </div>
         <div class="nav-actions">
@@ -29,11 +29,25 @@
                     </svg>
                     <span>{{ isZh ? '返回博客列表' : 'Back to blogs' }}</span>
                 </button>
-                <span>{{ articleTitle }}</span>
+                <span>{{ articleTag }} <span aria-hidden="true">/</span> {{ readMinutes }} {{ isZh ? '分钟阅读' : 'min read' }}</span>
             </div>
-            <markdown class="markdown-body"
-                      [src]="'/assets/blogs/' + language + '/' + blog + '.md'"
-                      lineNumbers/>
+            <div class="article-layout">
+                <markdown #articleBody class="markdown-body"
+                          [src]="'/assets/blogs/' + language + '/' + blog + '.md'"
+                          (load)="onArticleLoad($event)" (ready)="prepareArticle()"
+                          (click)="onArticleClick($event)" lineNumbers/>
+                @if (headings().length) {
+                    <aside class="article-sidebar">
+                        <nav class="article-toc" [attr.aria-label]="isZh ? '文章目录' : 'On this page'"
+                             (click)="onArticleClick($event)">
+                            <p>{{ isZh ? '文章目录' : 'On this page' }}</p>
+                            @for (heading of headings(); track heading.id; let index = $index) {
+                                <a [href]="headingUrl(heading.id)"><span>{{ (index + 1).toString().padStart(2, '0') }}</span>{{ heading.title }}</a>
+                            }
+                        </nav>
+                    </aside>
+                }
+            </div>
         </article>
     } @else {
         <section class="blog-hero" aria-labelledby="blog-title">

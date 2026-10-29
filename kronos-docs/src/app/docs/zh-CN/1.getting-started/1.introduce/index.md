@@ -29,7 +29,7 @@ graph LR
 
 # 为什么使用Kronos
 
-* 可以使用jvm平台的**全部生态和资源**，如**数据库驱动和日志框架**等，未来可能支持kotlin多平台
+* 在 **JVM、Android 和 Kotlin/Native** 之间共享模型和查询，包括 iOS SQLite 应用。配置见 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}，iOS 示例见 {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }}。
 * **Kotlin 编译器插件** 和 **协程**驱动，**完全不依赖反射**，Kronos 为用户提供 **超高性能** 的数据库操作体验。
 * 支持大多数**主流数据库**且支持自由地通过插件**添加数据库扩展**
 * **书写简洁、富有表现力，支持 Kotlin 原生语法** `==`、`>`、`<`、`in` 等，而不是 .eq、.gt、.lt 等

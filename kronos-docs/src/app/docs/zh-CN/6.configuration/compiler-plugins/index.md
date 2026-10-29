@@ -3,13 +3,13 @@
 
 ## 设置 Kotlin 项目基线
 
-Kronos 编译期支持由 Kotlin 构建加载。项目使用 JDK 8+、Kotlin 2.4.0+、Maven 3.9+，或 Kotlin 2.4.0 支持的 Gradle 版本。
+Kronos 编译期支持由 Kotlin 构建加载。项目使用 JDK 8+、Kotlin 2.4.21+、Maven 3.9+，或 Kotlin 2.4.21 支持的 Gradle 版本。
 
 ```kotlin group="Baseline 1" name="gradle(kts)" icon="gradlekts"
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
 }
 
 kotlin {
@@ -21,7 +21,7 @@ kotlin {
 
 ```xml group="Baseline 1" name="maven" icon="maven"
 <properties>
-    <kotlin.version>2.4.0</kotlin.version>
+    <kotlin.version>2.4.21</kotlin.version>
     <maven.compiler.release>8</maven.compiler.release>
 </properties>
 ```
@@ -39,8 +39,14 @@ BUILD SUCCESSFUL
 
 ```kotlin group="Gradle 1" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.21"
     id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
@@ -67,7 +73,7 @@ BUILD SUCCESSFUL
 ```xml group="Maven 1" name="pom.xml" icon="maven"
 <project>
     <properties>
-        <kotlin.version>2.4.0</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <kronos.version>{{ $.kronosVersion() }}</kronos.version>
     </properties>
 
@@ -87,6 +93,10 @@ BUILD SUCCESSFUL
                 <version>${kotlin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <args>
+                        <arg>-Xcollection-literals</arg>
+                        <arg>-Xcontext-sensitive-resolution</arg>
+                    </args>
                     <compilerPlugins>
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
@@ -313,4 +323,4 @@ val query = User().select { [it.id, f.length(it.name).alias("name")] }
 val query = User().select { [it - it.name, f.length(it.name).alias("name")] }
 ```
 
-构建配置从 {{ $.keyword("getting-started/quick-start", ["Quick Start"]) }} 开始。数据库执行和 SQL 日志请参考 {{ $.keyword("database/connect-to-db", ["连接到数据库"]) }} 和 {{ $.keyword("configuration/logging", ["日志"]) }}。IDE 检查行为请参考 {{ $.keyword("resources/idea-plugin", ["IntelliJ IDEA 插件"]) }}。
+构建配置从 {{ $.keyword("getting-started/quick-start", ["Quick Start"]) }} 开始。数据库执行和 SQL 日志请参考 {{ $.keyword("database/connect-to-db", ["连接到数据库"]) }} 和 {{ $.keyword("configuration/logging", ["日志"]) }}。IDE 检查行为请参考 {{ $.keyword("resources/kefs", ["KEFS 编辑器支持"]) }}。

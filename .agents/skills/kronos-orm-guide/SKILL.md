@@ -11,17 +11,11 @@ description: >
 
 Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、强类型、支持多数据库（MySQL、PostgreSQL、SQLite、H2、SQL Server、Oracle、DM8/达梦）。
 
-## Evolution Memory Protocol
+KEFS editor setup is documented at `/documentation/en/resources/kefs` and `/documentation/zh-CN/resources/kefs`. Gradle consumers apply `com.kotlinorm.kronos-gradle-plugin`, enable `-Xcollection-literals`, install Kotlin External FIR Support, and configure `com.kotlinorm:kronos-compiler-plugin` with Exact matching and its artifact repository. Confirm `Successfully Loaded` in KEFS Diagnostics. Kotlin Toolchain IDE import is only needed for projects using `project.yaml`.
 
-当遇到 ORM 使用问题、报错、行为不符合预期或重复踩坑时，先读 `Evolution.index.md`，不要默认浏览完整演进历史。除非索引命中相关条目，否则不要打开演进记录；索引命中时只打开它链接的 `evolution/*.md` 单条记录文件。
+## 本地失败记录
 
-优先级：
-
-1. 读 `Evolution.index.md`，按症状、API、错误信息、数据库类型匹配。
-2. 如果索引命中，只读取索引链接的 `evolution/*.md` 条目文件。
-3. 如果索引没有命中，不打开完整演进记录，直接读本 skill 的相关章节或 `references/advanced.md` / `references/annotations.md`。
-4. 验证修复后，只有可复用、已确认的问题才新增一个 `evolution/*.md` 文件，并给 `Evolution.index.md` 增加一行关键词索引。
-5. 定期删除、归档或改写已经过时的记录，避免索引继续指向错误经验。
+若本 skill 目录已有个人维护的 `Evolution.index.md`，排查重复问题时先按索引读取相关条目。确认后的可复用经验记录在本地 `evolution/`；索引和记录均由 Git 忽略，没有这些文件也可正常使用 skill。可从[空白索引模板](../kronos-dev-guide/assets/troubleshooting-index.template.md)和[记录示例](../kronos-dev-guide/assets/troubleshooting-record.example.md)初始化个人记录。
 
 ## 目录
 
@@ -57,7 +51,7 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 - 数据库和方言：`database/connect-to-db`、`database/dialect-support`、`database/create-database-dialect`、`database/android-sqlite`。
 - 配置：`configuration/global-config`、`configuration/common-strategy`、`configuration/logging`、`configuration/compiler-plugins`。
 - 修改操作：`mutation/insert`、`mutation/update`、`mutation/delete`、`mutation/upsert`、`mutation/logic-delete`、`mutation/optimistic-lock`、`mutation/last-insert-id`。
-- 工具入口：`resources/database-first`、`resources/codegen`、`resources/idea-plugin`、`resources/troubleshooting`。
+- 工具入口：`resources/database-first`、`resources/codegen`、`resources/kefs`、`resources/troubleshooting`。
 
 ---
 
@@ -67,14 +61,20 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.4.0"
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1"
+    kotlin("jvm") version "2.4.21"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.4.0"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.3.1")
+    implementation("com.kotlinorm:kronos-core:0.4.0")
     // JDBC 包装器
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
     // JDBC Driver 使用和数据库/JDK 匹配的最新稳定版
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
@@ -86,20 +86,45 @@ dependencies {
 <dependency>
     <groupId>com.kotlinorm</groupId>
     <artifactId>kronos-core</artifactId>
-    <version>0.3.1</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
 在 `kotlin-maven-plugin` 中添加编译器插件：
 ```xml
-<compilerPlugins>
-    <plugin>kronos-maven-plugin</plugin>
-</compilerPlugins>
+<plugin>
+    <groupId>org.jetbrains.kotlin</groupId>
+    <artifactId>kotlin-maven-plugin</artifactId>
+    <version>2.4.21</version>
+    <extensions>true</extensions>
+    <configuration>
+        <args>
+            <arg>-Xcollection-literals</arg>
+            <arg>-Xcontext-sensitive-resolution</arg>
+        </args>
+        <compilerPlugins>
+            <plugin>kronos-maven-plugin</plugin>
+        </compilerPlugins>
+    </configuration>
+    <dependencies>
+        <dependency>
+            <groupId>com.kotlinorm</groupId>
+            <artifactId>kronos-maven-plugin</artifactId>
+            <version>0.4.0</version>
+        </dependency>
+    </dependencies>
+</plugin>
 ```
 
-要求：JDK 8+，Kotlin 2.4.0+
+要求：JDK 8+，Kotlin 2.4.21+
 
-技能中的 Kronos 推荐稳定版本直接写 `0.3.1`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+技能中的 Kronos 推荐稳定版本直接写 `0.4.0`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+
+### IntelliJ IDEA 编辑器支持
+
+按 [Kronos ORM / KEFS / IDEA 版本兼容表](https://kotlinorm.com/#/documentation/zh-CN/resources/kefs) 选择版本组合，再安装由 [Mr3zee](https://github.com/Mr3zee) 开发的 [Kotlin External FIR Support（KEFS）](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support)。在 `Tools -> Kotlin External FIR Support -> Artifacts` 添加 Kronos 插件组：Coordinates 为 `com.kotlinorm:kronos-compiler-plugin`（不带版本），Version matching 选择 Exact，关联 Maven Central 并启用。项目构建配置 Kronos 编译器依赖，KEFS 负责加载对应编辑器制品。项目中的 `.idea/kotlin-plugins.xml` 可提交并共享。
+
+在构建中启用 `-Xcollection-literals`，重新加载项目以同步 Kotlin 编辑器语法。Kotlin Toolchain 项目另安装其[官方 Kotlin Toolchain 插件](https://kotlin-toolchain.org/latest/getting-started/ide-setup/)，并打开包含 `project.yaml` 的目录。IDE 接入说明位于 `resources/kefs`；实体生成使用 `resources/codegen` 中的脚本方式。
 
 ### 最小 JDBC 连接
 
@@ -121,18 +146,34 @@ Kronos.connect(
 
 ---
 
+### Kotlin Multiplatform
+
+Place portable KPojo models and queries in `commonMain`; apply the Kronos Gradle plugin to every model/query module, and use `kronos-core` from the shared source set. Use Kotlin `2.4.21` with one Kronos version in the version catalog. Native targets cover iOS, macOS, tvOS, watchOS, Linux and Windows.
+
+Call `com.kotlinorm.utils.initializeKronosMetadata()` in the final Kotlin application/framework before database operations. Connect an application-owned `KronosExecutionDataSource` through `com.kotlinorm.wrappers.KronosExecutionWrapper`, then set `Kronos.dataSource = { wrapper }`. The Native reference application supplies SQLite drivers; its AndroidX Apple/Linux and SQLite C API Windows adapters belong to the application.
+
+Use Kotlin primitives, enums, byte arrays and `kotlin.time.Instant` in portable models. Keep Java types and JDBC in JVM source sets. Use `f.avgDouble(number)` for a portable SQL AVG scalar; the JVM `f.avg(...)` decimal API remains available in JVM code. Shared `Kronos.timeZone` accepts an IANA string.
+
+Source chapters: `getting-started/kmp` and `database/native-sqlite`. The [iOS and Native example](https://github.com/Kronos-orm/kronos-example-ios) contains a SwiftUI app that calls shared Kotlin SQLite CRUD; its README describes XcodeGen setup and the `KronosIosApp` scheme.
+
 ### Android/JVM SQLite
 
 Android/JVM applications use the Gradle plugin, `kronos-core`, and an application-owned `KronosDataSourceWrapper` around Android `SQLiteDatabase`. Add `kronos-logging` when SQL output should appear in Logcat.
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.3.1" apply false
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.4.0"
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xcollection-literals", "-Xcontext-sensitive-resolution")
+    }
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.3.1")
-    implementation("com.kotlinorm:kronos-logging:0.3.1") // Logcat SQL output
+    implementation("com.kotlinorm:kronos-core:0.4.0")
+    implementation("com.kotlinorm:kronos-logging:0.4.0") // Logcat SQL output
 }
 ```
 
@@ -372,7 +413,7 @@ Kronos.registerValueCodec(
 配置优先级：
 
 - 必须：`Kronos.dataSource = { wrapper }`，没有显式 wrapper 的 `execute()`、`toList()`、`first()` 等终端方法会读取它。
-- 常用：`tableNamingStrategy`、`fieldNamingStrategy`、`defaultDateFormat`、`timeZone`、`logPath`。
+- 常用：`tableNamingStrategy`、`fieldNamingStrategy`、`defaultDateFormat`、`timeZone`、`logging.path`。
 - 按业务启用：`createTimeStrategy`、`updateTimeStrategy`、`logicDeleteStrategy`、`optimisticLockStrategy`、`strictSetValue`；自定义转换通过 `Kronos.registerValueCodec` 注册。
 
 ```kotlin
@@ -380,7 +421,6 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.wrappers.KronosJdbcWrapper
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import java.time.ZoneId
 
 val wrapper by lazy {
     BasicDataSource().apply {
@@ -400,7 +440,7 @@ with(Kronos) {
     logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
     optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
     defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
-    timeZone = ZoneId.of("Asia/Shanghai")
+    timeZone = "Asia/Shanghai"
 }
 ```
 
@@ -408,15 +448,15 @@ with(Kronos) {
 
 ## 日志配置
 
-内置日志由 `kronos-core` 提供，默认输出到控制台。需要同时输出控制台和日志目录时，配置 `Kronos.logPath`：
+通过 `Kronos.logging.enabled = false` 关闭全部 Kronos 日志，重新设为 `true` 时保留类型、路径和自定义工厂。`enabled` 默认为 `true`，`path` 默认为 `["console"]`。通过 `Kronos.logging.minimumLevel` 设置最低日志级别。内置日志由 `kronos-core` 提供，默认输出到控制台。需要同时输出控制台和日志目录时，配置 `Kronos.logging.path`：
 
 ```kotlin
 import com.kotlinorm.Kronos
 import com.kotlinorm.enums.KLoggerType
 
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = listOf("console", "logs/kronos")
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = arrayOf("console", "logs/kronos")
 }
 ```
 
@@ -434,7 +474,7 @@ Found rows: 1
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.3.1")
+    implementation("com.kotlinorm:kronos-logging:0.4.0")
 }
 ```
 
@@ -445,14 +485,14 @@ import com.kotlinorm.enums.KLoggerType
 
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.JDK_LOGGER
+Kronos.logging.type = KLoggerType.JDK_LOGGER
 ```
 
 使用 Apache Commons Logging 时，应用还需要加入对应 API：
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.3.1")
+    implementation("com.kotlinorm:kronos-logging:0.4.0")
     implementation("commons-logging:commons-logging:<latest-stable>")
 }
 ```
@@ -460,7 +500,7 @@ dependencies {
 ```kotlin
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.COMMONS_LOGGER
+Kronos.logging.type = KLoggerType.COMMONS_LOGGER
 ```
 
 ---
@@ -573,15 +613,15 @@ DataGuardPlugin.disable()
 
 `kronos-codegen` 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.3.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.4.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -824,7 +864,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 
 物理 reader 在 `getObject` 前执行，只按 JDBC metadata/vendor 行为判断；处理后的 SQL `NULL` 必须返回 `Handled(null)`，不匹配时返回 `NotHandled`。UUID 等逻辑目标转换通过 `Kronos.registerValueCodec` 注册 `ValueCodec`，不要放进物理 reader。
 
-连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.3.1`。
+连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.4.0`。
 
 生产连接检查要覆盖连接池大小、连接/网络/查询/空闲超时、validation query 或 JDBC validation method、SSL/TLS 与证书配置、secret 来源、时区/编码 URL 参数，以及数据库服务端、JDK、认证和 TLS 能力对应的 driver 稳定分支。
 
@@ -1947,7 +1987,7 @@ val (sql, params, atomicTasks) = truncateTask
 
 ## 故障排查入口
 
-- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.3.1`、`com.kotlinorm:kronos-jdbc-wrapper:0.3.1` 和数据库 driver 的当前稳定版。
+- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.4.0`、`com.kotlinorm:kronos-jdbc-wrapper:0.4.0` 和数据库 driver 的当前稳定版。
 - 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
 - 检查 KPojo generated members：`__kType`、`__tableName`、`__tableComment`、`__columns`、`__tableIndexes`、`__createTime`、`__updateTime`、`__logicDelete`、`__optimisticLock` 和 `toDataMap()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。

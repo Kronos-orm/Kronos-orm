@@ -44,8 +44,11 @@ import org.jetbrains.kotlin.fir.declarations.findArgumentByName
 import org.jetbrains.kotlin.fir.declarations.getAnnotationByClassId
 import org.jetbrains.kotlin.fir.declarations.hasAnnotation
 import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
-import org.jetbrains.kotlin.fir.declarations.unwrapVarargValue
+import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
+import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
+import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
+import org.jetbrains.kotlin.fir.expressions.FirWrappedArgumentExpression
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
@@ -165,9 +168,15 @@ private fun FirProperty.requiresScalarEnumMetadata(session: FirSession): Boolean
 private fun FirProperty.isIgnoredForAll(session: FirSession): Boolean {
     val ignore = getAnnotationByClassId(IgnoreAnnotationClassId, session) ?: return false
     val targets = ignore.findArgumentByName(IgnoreTargetsName) ?: return true
-    return targets.unwrapVarargValue().any { target ->
-        target.extractEnumValueArgumentInfo()?.enumEntryName == IgnoreAllName
-    }
+    return targets.containsIgnoreAllTarget()
+}
+
+/** Matches only the enum leaves of Ignore.targets across annotation argument shapes. */
+private fun FirExpression.containsIgnoreAllTarget(): Boolean = when (this) {
+    is FirVarargArgumentsExpression -> arguments.any { it.containsIgnoreAllTarget() }
+    is FirWrappedArgumentExpression -> expression.containsIgnoreAllTarget()
+    is FirCollectionLiteral -> argumentList.arguments.any { it.containsIgnoreAllTarget() }
+    else -> extractEnumValueArgumentInfo()?.enumEntryName == IgnoreAllName
 }
 
 private fun FirRegularClass.isGeneratedProviderKPojoCandidate(session: FirSession): Boolean =

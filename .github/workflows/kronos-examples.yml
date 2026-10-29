@@ -1,22 +1,20 @@
 name: Kronos example projects
-
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+  workflow_call:
+    inputs:
+      publication-artifact:
+        type: string
+        required: true
 env:
   MYSQL_DRIVER: com.mysql.cj.jdbc.Driver
   MYSQL_JDBC_URL: jdbc:mysql://127.0.0.1:3306/kronos_testing
   MYSQL_USERNAME: kronos
   MYSQL_PASSWORD: kronos
-
+  KRONOS_CONSUMER_EVIDENCE_DIR: ${{ github.workspace }}/consumer-resolution
 jobs:
   examples:
     name: Run example projects
     runs-on: ubuntu-22.04
-
     services:
       mysql:
         image: mysql:8.0
@@ -26,136 +24,98 @@ jobs:
           MYSQL_PASSWORD: kronos
           MYSQL_ROOT_PASSWORD: kronos
         ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -ukronos -pkronos"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
+        - 3306:3306
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -ukronos -pkronos" --health-interval=10s --health-timeout=5s --health-retries=10
     steps:
-      - name: Checkout Kronos
-        uses: actions/checkout@v6
-        with:
-          path: kronos-orm
-          persist-credentials: false
-
-      - name: Checkout Ktor example
-        uses: actions/checkout@v6
-        with:
-          repository: Kronos-orm/kronos-example-ktor
-          path: kronos-example-ktor
-          persist-credentials: false
-
-      - name: Checkout Spring Boot example
-        uses: actions/checkout@v6
-        with:
-          repository: Kronos-orm/kronos-example-spring-boot
-          path: kronos-example-spring-boot
-          persist-credentials: false
-
-      - name: Checkout Solon example
-        uses: actions/checkout@v6
-        with:
-          repository: Kronos-orm/kronos-example-solon
-          path: kronos-example-solon
-          persist-credentials: false
-
-      - name: Checkout Vert.x example
-        uses: actions/checkout@v6
-        with:
-          repository: Kronos-orm/kronos-example-vertx
-          path: kronos-example-vertx
-          persist-credentials: false
-
-      - name: Detect Kronos version
-        working-directory: kronos-orm
-        run: |
-          set -euo pipefail
-          version=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
-          kotlin_version=$(grep -E '^kotlin\s*=\s*"[^"]+"' libs.versions.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
-          echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          java-version: 21
-          distribution: adopt
-
-      - name: Publish current Kronos artifacts to Maven local
-        working-directory: kronos-orm
-        run: ./gradlew publishAllToMavenLocal --no-daemon --console=plain -x test
-
-      - name: Publish current Kronos Gradle plugin to Maven local
-        working-directory: kronos-orm/kronos-gradle-plugin
-        run: ./gradlew publishToMavenLocal --no-daemon --console=plain -x test
-
-      - name: Point examples to current Kronos version
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          version = os.environ["KRONOS_EXAMPLE_VERSION"]
-          kotlin_version = os.environ["KRONOS_EXAMPLE_KOTLIN_VERSION"]
-          replacements = {
-              "kronos-example-ktor/build.gradle.kts": [
-                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
-                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
-                  (r'implementation\("com\.kotlinorm:kronos-jdbc-wrapper:[^"]+"\)', f'implementation("com.kotlinorm:kronos-jdbc-wrapper:{version}")'),
-              ],
-              "kronos-example-spring-boot/gradle-project/libs.versions.toml": [
-                  (r'kronos = "[^"]+"', f'kronos = "{version}"'),
-              ],
-              "kronos-example-spring-boot/gradle-project/gradle.properties": [
-                  (r'^version=.*$', f'version={version}'),
-                  (r'^kronosVersion=.*$', f'kronosVersion={version}'),
-              ],
-              "kronos-example-spring-boot/maven-project/pom.xml": [
-                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
-              ],
-              "kronos-example-solon/pom.xml": [
-                  (r'<kronos.version>[^<]+</kronos.version>', f'<kronos.version>{version}</kronos.version>'),
-                  (r'<kotlin.version>[^<]+</kotlin.version>', f'<kotlin.version>{kotlin_version}</kotlin.version>'),
-              ],
-              "kronos-example-vertx/build.gradle.kts": [
-                  (r'id\("com\.kotlinorm\.kronos-gradle-plugin"\) version "[^"]+"', f'id("com.kotlinorm.kronos-gradle-plugin") version "{version}"'),
-                  (r'implementation\("com\.kotlinorm:kronos-core:[^"]+"\)', f'implementation("com.kotlinorm:kronos-core:{version}")'),
-                  (r'implementation\("com\.kotlinorm:kronos-jdbc-wrapper:[^"]+"\)', f'implementation("com.kotlinorm:kronos-jdbc-wrapper:{version}")'),
-              ],
-          }
-
-          for file_name, patterns in replacements.items():
-              path = Path(file_name)
-              text = path.read_text()
-              for pattern, replacement in patterns:
-                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
-                  if count != 1:
-                      raise SystemExit(f"missing expected pattern in {file_name}: {pattern}")
-              path.write_text(text)
-          PY
-
-      - name: Run Ktor example smoke tests
-        working-directory: kronos-example-ktor
-        run: ./gradlew test --no-daemon --console=plain
-
-      - name: Run Spring Boot Gradle example smoke tests
-        working-directory: kronos-example-spring-boot/gradle-project
-        run: ./gradlew test --no-daemon --console=plain
-
-      - name: Run Spring Boot Maven example smoke tests
-        working-directory: kronos-example-spring-boot/maven-project
-        run: mvn -B test
-
-      - name: Run Solon example smoke tests
-        working-directory: kronos-example-solon
-        run: mvn -B test
-
-      - name: Run Vert.x example smoke tests
-        working-directory: kronos-example-vertx
-        run: |
-          chmod +x ./gradlew
-          ./gradlew test --no-daemon --console=plain
+    - name: Checkout Kronos
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        path: kronos-orm
+        persist-credentials: false
+    - name: Checkout Ktor example
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        repository: Kronos-orm/kronos-example-ktor
+        ref: 1329736685e5c6d80c9b5604113d5e73ed5f787d
+        path: kronos-example-ktor
+        persist-credentials: false
+    - name: Checkout Spring Boot example
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        repository: Kronos-orm/kronos-example-spring-boot
+        ref: ae60975c802637546e88570dfaba911524c84e1b
+        path: kronos-example-spring-boot
+        persist-credentials: false
+    - name: Checkout Solon example
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        repository: Kronos-orm/kronos-example-solon
+        ref: 4ab30defe177773407ad460cb845886b0da77860
+        path: kronos-example-solon
+        persist-credentials: false
+    - name: Checkout Vert.x example
+      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      with:
+        repository: Kronos-orm/kronos-example-vertx
+        ref: e7833e03ba5718296207dcf1d4204f1277f6230a
+        path: kronos-example-vertx
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      with:
+        java-version: 21
+        distribution: temurin
+    - uses: ./kronos-orm/.github/actions/setup-toolchain
+      with:
+        lane: server-examples
+    - name: Detect Kronos version
+      working-directory: kronos-orm
+      run: |
+        set -euo pipefail
+        version=$(scripts/run version show)
+        kotlin_version=$(scripts/run version json | jq -er .kotlin)
+        echo "KRONOS_EXAMPLE_VERSION=${version}" >> "$GITHUB_ENV"
+        echo "KRONOS_EXAMPLE_KOTLIN_VERSION=${kotlin_version}" >> "$GITHUB_ENV"
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: ${{ inputs.publication-artifact }}
+        path: kronos-orm/build/example-publications
+    - name: Verify shared JVM publication candidate
+      working-directory: kronos-orm
+      run: scripts/run release check-candidate --repository build/example-publications
+    - name: Select the Toolchain-built Maven repository
+      run: echo "JAVA_TOOL_OPTIONS=-Dmaven.repo.local=$GITHUB_WORKSPACE/kronos-orm/build/example-publications" >> "$GITHUB_ENV"
+    - name: Point examples to current Kronos version
+      run: |
+        set -euo pipefail
+        kronos-orm/scripts/run .github/scripts/prepare-examples.main.kts jvm --workspace "$GITHUB_WORKSPACE"
+    - name: Run Ktor example smoke tests
+      working-directory: kronos-example-ktor
+      run: '"$GITHUB_WORKSPACE/kronos-orm/scripts/run" .github/scripts/run-kmp-gradle-gate.main.kts bash ./gradlew test --no-daemon --console=plain'
+    - name: Run Spring Boot Gradle example smoke tests
+      working-directory: kronos-example-spring-boot/gradle-project
+      run: '"$GITHUB_WORKSPACE/kronos-orm/scripts/run" .github/scripts/run-kmp-gradle-gate.main.kts bash ./gradlew test --no-daemon --console=plain'
+    - name: Run Spring Boot Maven example smoke tests
+      working-directory: kronos-example-spring-boot/maven-project
+      run: |
+        mvn -B test
+        "$GITHUB_WORKSPACE/kronos-orm/scripts/run" .github/scripts/record-maven-consumer.main.kts
+    - name: Run Solon example smoke tests
+      working-directory: kronos-example-solon
+      run: |
+        mvn -B test
+        "$GITHUB_WORKSPACE/kronos-orm/scripts/run" .github/scripts/record-maven-consumer.main.kts
+    - name: Run Vert.x example smoke tests
+      working-directory: kronos-example-vertx
+      run: |
+        chmod +x ./gradlew
+        "$GITHUB_WORKSPACE/kronos-orm/scripts/run" .github/scripts/run-kmp-gradle-gate.main.kts bash ./gradlew test --no-daemon --console=plain
+    - name: Record consumed candidate bytes
+      run: scripts/run release receipt --repository build/example-publications --group server --family jvm --output "$GITHUB_WORKSPACE/consumer-receipt.json"
+      working-directory: kronos-orm
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: receipt-server
+        path: consumer-receipt.json
+        if-no-files-found: error
+        overwrite: true

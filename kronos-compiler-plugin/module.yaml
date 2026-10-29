@@ -1,0 +1,37 @@
+product: jvm/lib
+layout: maven-like
+
+apply:
+  - //templates/common.module-template.yaml
+
+description: Kronos Kotlin compiler plugin for FIR diagnostics, projections and ORM code generation.
+
+dependencies:
+  - $libs.kotlin.compiler.embeddable: compile-only
+
+test-dependencies:
+  - //kronos-core
+  - $libs.kotlin.test
+  - $libs.kotlin.compiler
+  - $libs.kotlin.compiler.internal.test.framework
+  - $libs.kotlin.reflect
+  - $libs.kotlin.script.runtime
+  - $libs.kotlin.annotations.jvm
+  - $libs.ktx.serialization.core
+  - $libs.ktx.serialization.json
+
+test-settings:
+  kotlin:
+    serialization: enabled
+  jvm:
+    test:
+      freeJvmArgs: [-Xmx4g]
+      systemProperties:
+        junit.jupiter.execution.parallel.enabled: 'false'
+        junit.jupiter.execution.parallel.mode.default: same_thread
+        junit.jupiter.execution.parallel.mode.classes.default: same_thread
+
+repositories:
+  - id: mavenLocal
+    url: mavenLocal
+    publish: true

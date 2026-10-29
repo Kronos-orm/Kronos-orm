@@ -211,11 +211,11 @@ select、join、subquery 和 CTAS 的 SQL 示例见 {{ $.keyword("query/subqueri
 @file:DependsOn("com.kotlinorm:kronos-codegen:{{ $.kronosVersion() }}")
 ```
 
-编辑器支持和诊断入口见 IDEA 插件页面。
+编辑器支持和诊断入口见 KEFS 配置页面。
 
 ```text group="Tools 2" name="pages"
 资源 -> 代码生成器
-资源 -> IntelliJ IDEA 插件
+资源 -> KEFS 编辑器支持
 ```
 
-详见 {{ $.keyword("resources/codegen", ["代码生成器"]) }} 和 {{ $.keyword("resources/idea-plugin", ["IntelliJ IDEA 插件"]) }}。
+详见 {{ $.keyword("resources/codegen", ["代码生成器"]) }} 和 {{ $.keyword("resources/kefs", ["KEFS 编辑器支持"]) }}。

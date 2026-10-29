@@ -1,6 +1,8 @@
 package com.kotlinorm.codegen
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.kotlinorm.Kronos
+import com.kotlinorm.enums.PrimaryKeyType
 import org.intellij.lang.annotations.Language
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -286,13 +288,15 @@ class ConfigReaderTest {
                 [strategy]
                 [output]
                 packageName = "com.kotlinorm.orm.table"
+
+                [dataSource]
+                wrapperClassName = "must.not.BeLoaded"
                 """.trimIndent()
             )
         }.path
 
-        assertFailsWith<IllegalArgumentException>("Target directory is required in output config: $configPath") {
-            init(configPath)
-        }
+        val failure = assertFailsWith<IllegalArgumentException> { init(configPath) }
+        assertEquals("Target directory is required in output config: $configPath", failure.message)
     }
 
     @Test
@@ -392,4 +396,86 @@ class ConfigReaderTest {
         assertEquals(Kronos.noneNamingStrategy, codeGenConfig!!.strategy.tableNamingStrategy)
         assertEquals(Kronos.noneNamingStrategy, codeGenConfig!!.strategy.fieldNamingStrategy)
     }
+
+    @Test
+    fun identityAndOptimisticLockStrategiesAreReadFromToml() {
+        val configFile = File(tempDir, "identity-and-version.toml").apply {
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_user"
+
+                [strategy]
+                optimisticLockStrategy = "revision"
+                primaryKeyStrategy = "user_id"
+
+                [output]
+                targetDir = "./src/main/kotlin/"
+
+                [dataSource]
+                wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
+                url = "jdbc:mysql://localhost:3306/test"
+                username = "root"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                """
+            )
+        }
+
+        init(configFile.path)
+
+        val config = assertNotNull(codeGenConfig)
+        assertEquals("tb_user", config.table.single().name)
+        assertEquals(null, config.table.single().className)
+        val version = assertNotNull(config.strategy.optimisticLockStrategy)
+        assertEquals(true, version.enabled)
+        assertEquals("revision", version.field.name)
+        val identity = assertNotNull(config.strategy.primaryKeyStrategy)
+        assertEquals(true, identity.enabled)
+        assertEquals("userId", identity.field.name)
+        assertEquals("user_id", identity.field.columnName)
+        assertEquals(PrimaryKeyType.IDENTITY, identity.field.primaryKey)
+    }
+
+    @Test
+    fun missingTableNameReportsTheConfigPathBeforeCreatingADataSource() {
+        val configFile = File(tempDir, "missing-table-name.toml").apply {
+            writeTomlContent(
+                """
+                [[table]]
+                className = "User"
+
+                [output]
+                targetDir = "./src/main/kotlin/"
+
+                [dataSource]
+                wrapperClassName = "does.not.Exist"
+                """
+            )
+        }
+
+        val error = assertFailsWith<IllegalArgumentException> { init(configFile.path) }
+        assertEquals("Table name is required in config: ${configFile.path}", error.message)
+    }
+
+    @Test
+    fun nullConfigDocumentsReportTheirOrigin() {
+        val originalMapper = mapper
+        val jsonMapper = ObjectMapper()
+        try {
+            // A configured mapper can deserialize a document to null, including an inherited one.
+            mapper = jsonMapper
+            val empty = File(tempDir, "null-config.json").apply { writeText("null") }
+            val child = File(tempDir, "extends-null.json").apply {
+                writeText(jsonMapper.writeValueAsString(mapOf("extend" to empty.path)))
+            }
+
+            val rootFailure = assertFailsWith<IllegalArgumentException> { readConfig(empty.path) }
+            assertEquals("Config file not found or is empty", rootFailure.message)
+            val extensionFailure = assertFailsWith<IllegalArgumentException> { readConfig(child.path) }
+            assertEquals("Extend config file not found or is empty: ${empty.path}", extensionFailure.message)
+        } finally {
+            mapper = originalMapper
+        }
+    }
+
 }

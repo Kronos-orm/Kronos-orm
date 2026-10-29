@@ -689,9 +689,12 @@ typed Map 查询只接受直接 `Map`/`MutableMap` 声明（顶层可空也支�
 默认使用 `kronos-core` 的内置日志：
 
 ```kotlin
-with(Kronos) {
-    loggerType = KLoggerType.DEFAULT_LOGGER
-    logPath = listOf("console", "logs/kronos")
+Kronos.logging.enabled = false // 关闭全部 Kronos 日志
+Kronos.logging.enabled = true // 保留原配置后重新开启
+
+with(Kronos.logging) {
+    type = KLoggerType.DEFAULT_LOGGER
+    path = arrayOf("console", "logs/kronos")
 }
 ```
 
@@ -709,14 +712,14 @@ Affected rows: 1
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.3.1")
+    implementation("com.kotlinorm:kronos-logging:0.4.0")
 }
 ```
 
 ```kotlin
 KronosLoggerApp.detectLoggerImplementation()
 
-Kronos.loggerType = KLoggerType.JDK_LOGGER
+Kronos.logging.type = KLoggerType.JDK_LOGGER
 ```
 
 ---
@@ -791,15 +794,15 @@ DataGuardPlugin.enable {
 
 Codegen 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.3.1`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.4.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-core:0.3.1")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.3.1")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.4.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.4.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -910,3 +913,34 @@ kotlinc -script example.main.kts
 ```text
 File generated successfully: src/main/kotlin/com/example/entity/User.kt
 ```
+
+
+## Kotlin Multiplatform 数据库接入
+
+共享模型与查询放在 `commonMain`，每个声明模型或查询的模块都应用 Kronos 插件。应用提供 `KronosExecutionDataSource`，通过执行桥配置默认连接：
+
+```kotlin
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.KronosExecutionDataSource
+import com.kotlinorm.utils.initializeKronosMetadata
+import com.kotlinorm.wrappers.KronosExecutionWrapper
+
+fun configureDatabase(source: KronosExecutionDataSource): KronosExecutionWrapper {
+    initializeKronosMetadata()
+    val wrapper = KronosExecutionWrapper(source)
+    Kronos.dataSource = { wrapper }
+    return wrapper
+}
+```
+
+构建 Apple 目标需 macOS 与 Xcode 16+；用 `xcodebuild -version` 检查当前选择，多个安装可用 `DEVELOPER_DIR` 指定。平台连接由应用管理。[iOS 与 Native SQLite 示例](https://github.com/Kronos-orm/kronos-example-ios) 提供调用共享 Kotlin CRUD 的 SwiftUI 应用、Apple/Linux AndroidX 驱动和 Windows SQLite C API 驱动；README 包含 XcodeGen 和 `KronosIosApp` scheme 的运行步骤，连接生命周期、事务与生成主键操作见 `database/native-sqlite`。共享配置用 `Kronos.timeZone = "Asia/Shanghai"`，Java 类型与 JDBC 配置放在 JVM source set。
+
+共享时间类型使用 `kotlin.time.Instant` 或 `kotlinx.datetime.LocalDateTime`。SQLite `CURRENT_TIMESTAMP` 为 UTC 的 `yyyy-MM-dd HH:mm:ss` 文本，读取到 Instant 时配置 `Kronos.timeZone = "UTC"`。公共 codec 同时支持 ISO 文本、字段 `@DateTimeFormat` 和全局 `defaultDateFormat`。
+
+Native SQLite 示例的普通语句错误保留连接与已有数据；事务中的驱动错误会中止并回滚整个事务，捕获异常后也不能继续写入或提交。连接损坏或未知驱动故障才需要 `reopen()`，内存库重新打开后为空库。
+
+## IDE 编辑器支持
+
+根据 [Kronos ORM / KEFS / IDEA 兼容表](https://kotlinorm.com/#/documentation/zh-CN/resources/kefs) 选择版本组合，使用 KEFS 加载 Kronos 编译器支持。安装由 [Mr3zee](https://github.com/Mr3zee) 开发的 [Kotlin External FIR Support](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support)，在 `Tools -> Kotlin External FIR Support -> Artifacts` 配置 `com.kotlinorm:kronos-compiler-plugin`、Exact 匹配及 Maven Central；启用 `-Xcollection-literals` 并重新加载项目。投影字段、nullable 类型、子查询和 INSERT SELECT 诊断来自 Kotlin 编译器分析。项目配置保存在可共享的 `.idea/kotlin-plugins.xml`；Kotlin Toolchain 项目安装官方 Toolchain IDE 插件并打开 `project.yaml`。配置和可用 receiver 示例见 docs 的 `resources/kefs`，实体文件生成见 `resources/codegen`。
+
+点击生成投影属性会打开生成的 Kotlin 属性声明。例如 `rowNumber().alias("rn")` 对应 `rn: Int?`，补全、hover 和声明导航使用同一类型信息。

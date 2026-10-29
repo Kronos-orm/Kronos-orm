@@ -1,0 +1,47 @@
+repositories:
+  - id: kronosBootstrap
+    url: mavenLocal
+    publish: true
+
+settings:
+  kotlin:
+    version: 2.4.21
+    languageVersion: 2.4
+    apiVersion: 2.4
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+      - -Xexpect-actual-classes
+  jvm:
+    release: 8
+    jdk:
+      version: 21
+  publishing:
+    enabled: true
+    group: com.kotlinorm
+    version: 0.4.0
+    publishSources: true
+    checksums: [md5, sha1, sha256, sha512]
+    pom:
+      url: https://www.kotlinorm.com
+      licenses:
+        - name: The Apache License, Version 2.0
+          url: https://www.apache.org/licenses/LICENSE-2.0.txt
+      scm:
+        url: https://github.com/Kronos-orm/Kronos-orm
+        connection: scm:git:https://github.com/Kronos-orm/Kronos-orm.git
+        developerConnection: scm:git:ssh://git@github.com:Kronos-orm/Kronos-orm.git
+      developers:
+        - id: ousc
+          name: ousc
+          email: sundaiyue@foxmail.com
+        - id: FOYU
+          name: FOYU
+          email: 2456416562@qq.com
+        - id: yf
+          name: yf
+          email: 1661264104@qq.com
+
+test-settings:
+  jvm:
+    release: 17

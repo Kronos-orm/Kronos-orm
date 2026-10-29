@@ -460,6 +460,16 @@ val listOfFunctionSymbol: IrSimpleFunctionSymbol
     }
 
 /**
+ * emptyList function symbol (kotlin.collections.emptyList without a vararg array).
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val emptyListFunctionSymbol: IrSimpleFunctionSymbol
+    get() = context.referenceFunctions(
+        CallableId(FqName("kotlin.collections"), null, Name.identifier("emptyList"))
+    ).single { it.owner.parameters.valueParameters.isEmpty() }
+
+/**
  * KColumnType enum symbol
  */
 context(context: IrPluginContext)

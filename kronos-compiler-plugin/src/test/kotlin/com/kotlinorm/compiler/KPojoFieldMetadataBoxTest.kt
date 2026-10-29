@@ -78,4 +78,10 @@ class KPojoFieldMetadataBoxTest : AbstractKronosJvmBoxSuite("kpojoFieldMetadata"
      */
     @Test
     fun staticTypeMetadata() = box("staticTypeMetadata")
+
+    /**
+     * Verifies empty and nested metadata collections keep instance isolation and naming timing.
+     */
+    @Test
+    fun metadataCollectionIsolation() = box("metadataCollectionIsolation")
 }

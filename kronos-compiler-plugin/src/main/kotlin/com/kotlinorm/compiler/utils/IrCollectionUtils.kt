@@ -16,6 +16,7 @@
 
 package com.kotlinorm.compiler.utils
 
+import com.kotlinorm.compiler.core.emptyListFunctionSymbol
 import com.kotlinorm.compiler.core.listOfFunctionSymbol
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -40,9 +41,10 @@ import org.jetbrains.kotlin.ir.types.typeWith
  */
 context(builder: IrBuilderWithScope, context: IrPluginContext)
 fun irListOf(elementType: IrType, elements: List<IrExpression>): IrExpression {
-    return builder.irCall(listOfFunctionSymbol).apply {
+    val function = if (elements.isEmpty()) emptyListFunctionSymbol else listOfFunctionSymbol
+    return builder.irCall(function).apply {
         type = context.irBuiltIns.listClass.typeWith(elementType)
         typeArguments[0] = elementType
-        arguments[0] = builder.irVararg(elementType, elements)
+        if (elements.isNotEmpty()) arguments[0] = builder.irVararg(elementType, elements)
     }
 }

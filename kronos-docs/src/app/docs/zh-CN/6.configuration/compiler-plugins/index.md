@@ -3,7 +3,7 @@
 
 ## 设置 Kotlin 项目基线
 
-Kronos 编译期支持由 Kotlin 构建加载。项目使用 JDK 8+、Kotlin 2.4.21+、Maven 3.9+，或 Kotlin 2.4.21 支持的 Gradle 版本。
+Kronos 编译期支持由 Kotlin 构建加载。运行时使用 JDK 8+。构建可选择 Kotlin Toolchain 0.13.0（Kotlin 2.4.21）、Maven 3.9+，或 Kotlin 2.4.21 支持的 Gradle 版本。
 
 ```kotlin group="Baseline 1" name="gradle(kts)" icon="gradlekts"
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -32,6 +32,33 @@ kotlin {
 > Task :compileKotlin
 BUILD SUCCESSFUL
 ```
+
+## 启用 Kotlin Toolchain 编译器插件
+
+JVM 单模块应用按 {{ $.keyword("getting-started/installation", ["安装"]) }} 添加 `compilerPlugins` 配置及类型注册文件。插件的 `id` 是 `kronos-compiler-plugin`，依赖坐标是 `com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}`。
+
+每个模块、主源码和测试源码使用独立的身份。如果单模块应用包含测试，在相同 `module.yaml` 中覆盖测试配置，并添加对应注册文件：
+
+```yaml group="Toolchain tests" name="module.yaml · test-settings"
+test-settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          generated-provider-id: com.example:app:test
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppTestGeneratedTypeProvider
+```
+
+```text group="Toolchain tests" name="testResources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
+com.kotlinorm.generated.factory.AppTestGeneratedTypeProvider
+```
+
+```bash name="Toolchain test" icon="terminal"
+./kotlin test
+```
+
+多模块和 KMP 项目使用 {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }} 的完整示例。其 `prepare.main.kts` 自动生成各模块和 source set 的注册文件；模块坐标统一由 `module-coordinate` 指定。`compilerPlugins` 放在通用 `settings.kotlin` 中，平台差异由编译器处理。
 
 ## 启用{{ $.title("kronos-gradle-plugin") }}
 
@@ -127,10 +154,10 @@ Loaded Maven plugin com.kotlinorm.compiler.plugin.KronosMavenPlugin
 
 ## 编译每个 Kronos source set
 
-每个声明 `KPojo` 类或使用 Kronos DSL 的 JVM source set 都需要启用 Kronos 构建插件。只消费已编译实体的模块可以正常依赖上游模块；但只要本模块声明实体或编写查询 DSL，就需要在本模块编译时加载 Kronos 插件。
+每个声明 `KPojo` 类或使用 Kronos DSL 的 source set 都需要启用 Kronos 构建插件。只消费已编译实体的模块可以正常依赖上游模块；但只要本模块声明实体或编写查询 DSL，就需要在本模块编译时加载 Kronos 插件。
 
 ```kotlin group="Source set 1" name="module layout" icon="kotlin"
-// :domain 声明 KPojo，需要应用 Kronos Gradle 或 Maven 插件。
+// :domain 声明 KPojo，需要应用 Kronos 编译器插件。
 @Table("tb_user")
 data class User(
     @PrimaryKey

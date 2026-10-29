@@ -23,6 +23,7 @@ import com.kotlinorm.compiler.core.joinSourceClassSymbol
 import com.kotlinorm.compiler.core.kPojoClassSymbol
 import com.kotlinorm.compiler.core.kSelectableClassSymbol
 import com.kotlinorm.compiler.fir.KronosProjectionField
+import com.kotlinorm.compiler.fir.KronosProjectionGeneratedDeclarationKey
 import com.kotlinorm.compiler.fir.KronosProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionRegistry
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
@@ -90,6 +91,11 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
+import org.jetbrains.kotlin.fir.backend.FirMetadataSource
+import org.jetbrains.kotlin.fir.builder.buildPackageDirective
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
+import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
+import org.jetbrains.kotlin.fir.declarations.builder.buildFile
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
 import org.jetbrains.kotlin.fir.types.ConeStarProjection
@@ -300,9 +306,9 @@ class KronosProjectionIrTransformer(
         irClass.addNoArgConstructor()
         irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))
         irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter, metadataClass), null)
-        if (nativeProjectionAnchorName != null) {
-            pluginContext.metadataDeclarationRegistrar.registerClassAsMetadataVisible(irClass)
-        }
+        // A compiled library must expose the same result/context shape as source resolution.
+        // The compiler serializes the complete IR shape, including the generated KPojo members.
+        pluginContext.metadataDeclarationRegistrar.registerClassAsMetadataVisible(irClass)
         return irClass
     }
 
@@ -458,7 +464,21 @@ class KronosProjectionIrTransformer(
             fileEntry = fileEntry,
             packageFragmentDescriptor = packageFragment,
             module = module
-        ).also { module.files += it }
+        ).also { file ->
+            // The metadata registrar needs a FIR container in the generated class's package.
+            // Keep JVM's per-source ownership without borrowing the source package's FIR file.
+            val source = (sourceFile.metadata as FirMetadataSource.File).fir
+            file.metadata = FirMetadataSource.File(buildFile {
+                moduleData = source.moduleData
+                origin = FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
+                resolvePhase = FirResolvePhase.BODY_RESOLVE
+                packageDirective = buildPackageDirective { packageFqName = GeneratedProjectionPackageFqName }
+                name = source.name
+                this.sourceFile = source.sourceFile
+                sourceFileLinesMapping = source.sourceFileLinesMapping
+            })
+            module.files += file
+        }
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)

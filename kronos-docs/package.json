@@ -3,9 +3,9 @@
   "version": "0.0.2",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --host 0.0.0.0 --port 3307 --no-hmr",
-    "build": "ng build && node scripts/build-static-docs.mjs && node scripts/check-static-docs.mjs",
-    "watch": "ng build --watch --configuration development",
+    "start": "node scripts/build-examples.mjs && ng serve --host 0.0.0.0 --port 3307 --no-hmr",
+    "build": "node scripts/build-examples.mjs && ng build && node scripts/build-static-docs.mjs && node scripts/check-static-docs.mjs",
+    "watch": "node scripts/build-examples.mjs && ng build --watch --configuration development",
     "test": "ng test",
     "test:policies": "node --test scripts/docs-policies.test.mjs",
     "check:links": "node scripts/check-docs.mjs",

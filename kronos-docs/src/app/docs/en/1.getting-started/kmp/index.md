@@ -2,7 +2,7 @@
 
 ## Share models and queries
 
-Put `KPojo` models and query code in `commonMain`. Each application supplies a database connection for its platform: JDBC on the JVM, `SQLiteDatabase` on Android/JVM, and a Native SQLite adapter on Apple, Linux and Windows.
+Put `KPojo` models and query code in shared sources: `src/` for Toolchain or `commonMain` for Gradle. Each application supplies a database connection for its platform: JDBC on the JVM, `SQLiteDatabase` on Android/JVM, and a Native SQLite adapter on Apple, Linux and Windows.
 
 The Native targets are:
 
@@ -16,6 +16,138 @@ The Native targets are:
 Android applications use the {{ $.keyword("database/android-sqlite", ["Android SQLite"]) }} setup. The Android app consumes JVM bytecode; AndroidX SQLite is a driver library used by the Native example.
 
 Building Apple targets requires macOS and Xcode 16 or newer. Check the selected Xcode with `xcodebuild -version`; when multiple versions are installed, set `DEVELOPER_DIR` to the intended `Contents/Developer` directory.
+
+## Configure Kotlin Toolchain
+
+Use Kotlin Toolchain `0.13.0` with Kotlin `2.4.21`. [Download the complete multi-module example](/assets/downloads/kotlin-toolchain.zip) and keep its wrapper, shared configuration and preparation script. It contains the shared `models` library, a `jvm-app` application and a macOS `native-app` application.
+
+```text name="Project layout"
+project.yaml
+common.module-template.yaml
+kotlin / kotlin.bat
+prepare.main.kts
+models/
+  module.yaml
+  src/example/Person.kt
+  test/example/ProjectionTest.kt
+jvm-app/
+  module.yaml
+  src/example/Main.kt
+native-app/
+  module.yaml
+  src/example/Main.kt
+```
+
+`project.yaml` lists the three modules. The shared template sets the Kotlin version and DSL options:
+
+```yaml group="Toolchain project" name="project.yaml"
+modules:
+  - jvm-app
+  - models
+  - native-app
+```
+
+```yaml group="Toolchain project" name="common.module-template.yaml"
+settings:
+  kotlin:
+    version: 2.4.21
+    languageVersion: 2.4
+    apiVersion: 2.4
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+  jvm:
+    release: 8
+    jdk:
+      version: 21
+```
+
+The shared library resolves `kronos-core` for each target and exports it to both applications. Configure the compiler plugin in the unqualified module `settings`:
+
+```yaml name="models/module.yaml"
+product:
+  type: kmp/lib
+  platforms: [jvm, macosArm64, macosX64, iosArm64, iosSimulatorArm64, linuxX64]
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - com.kotlinorm:kronos-core:{{ $.kronosVersion() }}: exported
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          module-coordinate: example:models
+          jvm-source-set-prefix: 'jvm'
+```
+
+Both applications depend on `../models` and load the compiler plugin in their own module, so they can write queries and consume projections returned by the shared library:
+
+```yaml group="Toolchain applications" name="jvm-app/module.yaml"
+product: jvm/app
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - ../models
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          module-coordinate: example:jvm-app
+          jvm-source-set-prefix: ''
+```
+
+```yaml group="Toolchain applications" name="native-app/module.yaml"
+product:
+  type: macos/app
+  platforms: [macosArm64, macosX64]
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - ../models
+
+settings:
+  native:
+    entryPoint: example.main
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          module-coordinate: example:native-app
+          jvm-source-set-prefix: ''
+```
+
+### Prepare and run
+
+Install the standard Kotlin SDK and run the preparation script with `kotlinc`. `./kotlin` is the Toolchain wrapper included in the example. The script derives main and test type registrations from each module’s `module-coordinate`. When adding a module, register it in `project.yaml` and update the script’s `modules` list: `jvmScope` selects its JVM source set and `nativeDependencies` lists its Native module dependencies. Run the script again after changing coordinates or dependencies; generated type names do not need to be maintained by hand.
+
+```bash name="JVM" icon="terminal"
+kotlinc -script prepare.main.kts
+./kotlin run -m jvm-app
+./kotlin test -m models -p jvm
+```
+
+Run the Native application and shared-model tests on an Apple Silicon Mac. Use `macosX64` on an Intel Mac:
+
+```bash name="macOS" icon="terminal"
+./kotlin run -m native-app -p macosArm64
+./kotlin test -m models -p macosArm64
+```
+
+Toolchain uses `src/` for shared sources and directories such as `src@jvm/` and `src@native/` for platform sources. Gradle uses `commonMain`, `jvmMain` and `nativeMain`. The models and queries below work with either build tool. Applications supply their database connections; see {{ $.keyword("database/native-sqlite", ["Native SQLite"]) }} for SQLite driver integration.
 
 ## Configure Gradle
 

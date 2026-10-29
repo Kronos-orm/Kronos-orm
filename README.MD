@@ -162,6 +162,7 @@ val users = union(currentUsers, archivedUsers)
 |------------|---------|
 | JDK | 8+ |
 | Kotlin | 2.4.21+ |
+| Kotlin Toolchain | 0.13.0 |
 | Gradle | A version supported by Kotlin 2.4.21 |
 | Maven | 3.9+ |
 
@@ -172,6 +173,41 @@ For IntelliJ IDEA, install [Kotlin External FIR Support (KEFS)](https://plugins.
 --------
 
 ## Installation
+
+<details>
+<summary><b>Kotlin Toolchain</b></summary>
+
+```yaml
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:0.4.0
+  - com.kotlinorm:kronos-jdbc-wrapper:0.4.0
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+Add `resources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider`:
+
+```text
+com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+Place Kotlin sources in `src/` and run `./kotlin run`. [Installation](https://kotlinorm.com/#/documentation/en/getting-started/installation) · [KMP setup](https://kotlinorm.com/#/documentation/en/getting-started/kmp)
+
+</details>
 
 <details>
 <summary><b>Gradle (Kotlin DSL)</b></summary>

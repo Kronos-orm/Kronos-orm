@@ -23,6 +23,10 @@ dependencies {
 
 Kronos 编译期支持在 Kotlin 编译时加载。编译声明 `KPojo` 或编写 Kronos DSL 的模块，并查看构建输出。
 
+```bash group="Compiler plugin" name="Kotlin Toolchain (JVM)" icon="terminal"
+./kotlin build -p jvm
+```
+
 ```bash group="Compiler plugin" name="Gradle" icon="terminal"
 ./gradlew :app:compileKotlin
 ```
@@ -32,7 +36,7 @@ Kronos 编译期支持在 Kotlin 编译时加载。编译声明 `KPojo` 或编�
 BUILD SUCCESSFUL
 ```
 
-声明实体或查询 DSL 的每个 source set 都需要启用 Kronos Gradle 或 Maven 插件。完整构建示例和 source set 规则见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
+声明实体或查询 DSL 的每个 source set 都需要启用 Kronos 编译器插件。完整构建示例和 source set 规则见 {{ $.keyword("configuration/compiler-plugins", ["编译器插件"]) }}。
 
 ## 检查 KPojo generated members
 

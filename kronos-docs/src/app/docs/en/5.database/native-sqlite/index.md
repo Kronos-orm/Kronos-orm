@@ -2,7 +2,7 @@
 
 ## Connect a Native application
 
-Use shared `KPojo` models and queries with an application-owned SQLite connection. Follow {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }} for Gradle configuration.
+Use shared `KPojo` models and queries with an application-owned SQLite connection. Follow {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }} for Kotlin Toolchain and Gradle configuration.
 
 The [Native reference application](https://github.com/Kronos-orm/kronos-example-ios) contains the connection adapter, platform drivers, desktop executable and iOS app. Its `KronosSqliteDataSource` implements `KronosExecutionDataSource`; the core `KronosExecutionWrapper` connects it to the ORM.
 

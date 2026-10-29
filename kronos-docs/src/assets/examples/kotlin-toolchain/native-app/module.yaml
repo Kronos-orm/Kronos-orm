@@ -1,0 +1,20 @@
+product:
+  type: macos/app
+  platforms: [macosArm64, macosX64]
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - ../models
+
+settings:
+  native:
+    entryPoint: example.main
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0
+        options:
+          module-coordinate: example:native-app
+          jvm-source-set-prefix: ''

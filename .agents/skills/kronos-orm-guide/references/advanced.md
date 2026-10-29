@@ -944,3 +944,7 @@ Native SQLite 示例的普通语句错误保留连接与已有数据；事务中
 根据 [Kronos ORM / KEFS / IDEA 兼容表](https://kotlinorm.com/#/documentation/zh-CN/resources/kefs) 选择版本组合，使用 KEFS 加载 Kronos 编译器支持。安装由 [Mr3zee](https://github.com/Mr3zee) 开发的 [Kotlin External FIR Support](https://plugins.jetbrains.com/plugin/26480-kotlin-external-fir-support)，在 `Tools -> Kotlin External FIR Support -> Artifacts` 配置 `com.kotlinorm:kronos-compiler-plugin`、Exact 匹配及 Maven Central；启用 `-Xcollection-literals` 并重新加载项目。投影字段、nullable 类型、子查询和 INSERT SELECT 诊断来自 Kotlin 编译器分析。项目配置保存在可共享的 `.idea/kotlin-plugins.xml`；Kotlin Toolchain 项目安装官方 Toolchain IDE 插件并打开 `project.yaml`。配置和可用 receiver 示例见 docs 的 `resources/kefs`，实体文件生成见 `resources/codegen`。
 
 点击生成投影属性会打开生成的 Kotlin 属性声明。例如 `rowNumber().alias("rn")` 对应 `rn: Int?`，补全、hover 和声明导航使用同一类型信息。
+
+### Kotlin Toolchain 多模块接入
+
+使用 Toolchain 0.13.0、Kotlin 2.4.21，在每个模型或查询模块的 `settings.kotlin.compilerPlugins` 配置 `id: kronos-compiler-plugin` 与 `dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0`，保持 `compileIncrementally: false`。单 JVM 模块的 provider 配置及注册文件见 SKILL.md；KMP 项目使用[完整示例](https://kotlinorm.com/#/documentation/zh-CN/getting-started/kmp)的 `module-coordinate` 和 `prepare.main.kts`，由脚本统一生成 main/test 注册及 Native 入口。共享源码用 `src/`，平台目录用 `src@jvm/`、`src@native/`；最终 Native 应用调用 `initializeKronosMetadata()`。

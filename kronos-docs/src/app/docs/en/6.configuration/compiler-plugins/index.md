@@ -3,7 +3,7 @@
 
 ## Set the Kotlin project baseline
 
-Kronos compile-time support is loaded by the Kotlin build. Use JDK 8+, Kotlin 2.4.21+, Maven 3.9+, or a Gradle version supported by Kotlin 2.4.21.
+Kronos compile-time support is loaded by the Kotlin build. The JVM runtime requires JDK 8+. Build with Kotlin Toolchain 0.13.0 (Kotlin 2.4.21), Maven 3.9+, or a Gradle version supported by Kotlin 2.4.21.
 
 ```kotlin group="Baseline 1" name="gradle(kts)" icon="gradlekts"
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -32,6 +32,33 @@ The baseline build should compile before the Kronos data source and ORM code are
 > Task :compileKotlin
 BUILD SUCCESSFUL
 ```
+
+## Enable the Kotlin Toolchain compiler plugin
+
+For a single-module JVM application, add the `compilerPlugins` configuration and type registration file from {{ $.keyword("getting-started/installation", ["Installation"]) }}. The plugin `id` is `kronos-compiler-plugin`; its dependency coordinate is `com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}`.
+
+Use a separate identity for each module and for its main and test sources. For tests in a single-module application, override the plugin configuration in the same `module.yaml` and add the matching registration file:
+
+```yaml group="Toolchain tests" name="module.yaml · test-settings"
+test-settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:{{ $.kronosVersion() }}
+        options:
+          generated-provider-id: com.example:app:test
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppTestGeneratedTypeProvider
+```
+
+```text group="Toolchain tests" name="testResources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider"
+com.kotlinorm.generated.factory.AppTestGeneratedTypeProvider
+```
+
+```bash name="Toolchain test" icon="terminal"
+./kotlin test
+```
+
+For multi-module and KMP projects, use the complete example in {{ $.keyword("getting-started/kmp", ["Kotlin Multiplatform"]) }}. Its `prepare.main.kts` generates registrations for each module and source set from `module-coordinate`. Keep `compilerPlugins` in unqualified `settings.kotlin`; the compiler handles the platform differences.
 
 ## Enable {{ $.title("kronos-gradle-plugin") }}
 
@@ -127,10 +154,10 @@ Loaded Maven plugin com.kotlinorm.compiler.plugin.KronosMavenPlugin
 
 ## Compile each Kronos source set
 
-Apply the Kronos build plugin to every JVM source set that declares `KPojo` classes or uses Kronos DSL calls. A module that only consumes compiled entities can depend on that module normally, but a module that declares entities or query DSL must compile with the Kronos plugin active.
+Load the Kronos compiler plugin in every source set that declares `KPojo` classes or uses Kronos DSL calls. A module that only consumes compiled entities can depend on that module normally, but a module that declares entities or query DSL must compile with the Kronos plugin active.
 
 ```kotlin group="Source set 1" name="module layout" icon="kotlin"
-// :domain declares KPojo classes and must apply the Kronos Gradle or Maven plugin.
+// :domain declares KPojo classes and must apply the Kronos compiler plugin.
 @Table("tb_user")
 data class User(
     @PrimaryKey

@@ -149,7 +149,8 @@ fun downloadVerified(url: String, target: Path, checksumUrl: String? = "$url.sha
         val temporary = Files.createTempFile(target.parent, "${target.fileName}.", ".part")
         val record = Files.createTempFile(target.parent, "${target.fileName}.", ".metadata")
         fun download(source: String) = run(listOf("curl", "--fail", "--silent", "--show-error", "--location", "--retry", "3",
-            "--connect-timeout", "30", "--max-time", "600", "--output", temporary.toString(), source))
+            "--retry-all-errors", "--retry-max-time", "600", "--connect-timeout", "30", "--max-time", "600",
+            "--output", temporary.toString(), source))
         try {
             val expected = if (checksumUrl == null) null else trusted ?: checksumUrl.let { source ->
                 download(source)

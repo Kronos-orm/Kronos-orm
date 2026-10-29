@@ -1,0 +1,18 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, macosArm64, macosX64, iosArm64, iosSimulatorArm64, linuxX64]
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - com.kotlinorm:kronos-core:0.4.0: exported
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0
+        options:
+          module-coordinate: example:models
+          jvm-source-set-prefix: 'jvm'

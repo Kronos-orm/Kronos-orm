@@ -163,6 +163,7 @@ val users = union(currentUsers, archivedUsers)
 |------|------|
 | JDK | 8+ |
 | Kotlin | 2.4.21+ |
+| Kotlin Toolchain | 0.13.0 |
 | Gradle | Kotlin 2.4.21 支持的版本 |
 | Maven | 3.9+ |
 
@@ -173,6 +174,41 @@ val users = union(currentUsers, archivedUsers)
 --------
 
 ## 安装
+
+<details>
+<summary><b>Kotlin Toolchain</b></summary>
+
+```yaml
+product: jvm/app
+
+dependencies:
+  - com.kotlinorm:kronos-core:0.4.0
+  - com.kotlinorm:kronos-jdbc-wrapper:0.4.0
+
+settings:
+  kotlin:
+    version: 2.4.21
+    compileIncrementally: false
+    freeCompilerArgs:
+      - -Xcollection-literals
+      - -Xcontext-sensitive-resolution
+    compilerPlugins:
+      - id: kronos-compiler-plugin
+        dependency: com.kotlinorm:kronos-compiler-plugin:0.4.0
+        options:
+          generated-provider-id: com.example:app:main
+          generated-provider-fq-name: com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+添加 `resources/META-INF/services/com.kotlinorm.utils.GeneratedTypeProvider`：
+
+```text
+com.kotlinorm.generated.factory.AppGeneratedTypeProvider
+```
+
+将 Kotlin 源码放入 `src/`，通过 `./kotlin run` 运行。[完整安装步骤](https://kotlinorm.com/#/documentation/zh-CN/getting-started/installation) · [KMP 配置](https://kotlinorm.com/#/documentation/zh-CN/getting-started/kmp)
+
+</details>
 
 <details>
 <summary><b>Gradle (Kotlin DSL)</b></summary>

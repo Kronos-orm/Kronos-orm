@@ -22,6 +22,10 @@ import org.junit.jupiter.api.Test
  * Covers FIR-generated select projection result types.
  */
 class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
+    /** Verifies compiled library projection results and contexts retain Kotlin metadata. */
+    @Test
+    fun binaryLibraryProjectionMetadata() = box("binaryLibraryProjectionMetadata")
+
     /**
      * Verifies bare select lambdas refine toList() to generated projection row types.
      */

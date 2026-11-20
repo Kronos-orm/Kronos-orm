@@ -588,17 +588,32 @@ fun assembleShards(repository: Path, metadata: Path, inputs: List<Path>) {
 }
 
 
+fun <T> withSigningHome(action: (Path, Map<String, String>) -> T): T {
+    // macOS TMPDIR can exceed the Unix socket limit once GnuPG adds its extra/browser suffixes.
+    val temporary = if (windows) Files.createTempDirectory("kr-gpg-")
+        else Files.createTempDirectory(Path.of("/tmp"), "kr-gpg-")
+    val environment = mapOf("GNUPGHOME" to temporary.toString())
+    val cleanup = AutoCloseable {
+        AutoCloseable { deleteTree(temporary) }.use {
+            run(listOf("gpgconf", "--homedir", temporary.toString(), "--kill", "all"), environment = environment,
+                capture = true, timeoutSeconds = 30)
+        }
+    }
+    return cleanup.use {
+        if (!windows) Files.setPosixFilePermissions(temporary, PosixFilePermissions.fromString("rwx------"))
+        run(listOf("gpgconf", "--homedir", temporary.toString(), "--launch", "gpg-agent"), environment = environment,
+            capture = true, timeoutSeconds = 30)
+        action(temporary, environment)
+    }
+}
+
 fun sign(repository: Path, files: List<Path>) {
-    val key =
-        System.getenv("KOTLIN_TOOLCHAIN_SIGNING_KEY")
-            ?: error("Release signing requires KOTLIN_TOOLCHAIN_SIGNING_KEY")
-    val temporary = Files.createTempDirectory("kronos-release-gnupg-")
-    try {
-        if (!windows)
-            Files.setPosixFilePermissions(temporary, PosixFilePermissions.fromString("rwx------"))
-        val environment = mapOf("GNUPGHOME" to temporary.toString())
+    val key = System.getenv("KOTLIN_TOOLCHAIN_SIGNING_KEY")
+        ?: error("Release signing requires KOTLIN_TOOLCHAIN_SIGNING_KEY")
+    val passphrase = System.getenv("KOTLIN_TOOLCHAIN_SIGNING_KEY_PASSPHRASE").orEmpty()
+    withSigningHome { _, environment ->
         run(
-            listOf("gpg", "--batch", "--import"),
+            listOf("gpg", "--homedir", environment.getValue("GNUPGHOME"), "--batch", "--import"),
             environment = environment,
             input = key.toByteArray(),
             capture = true,
@@ -607,6 +622,8 @@ fun sign(repository: Path, files: List<Path>) {
             files.filter { it.extension !in checksumAlgorithms && it.extension != "asc" }) run(
             listOf(
                 "gpg",
+                "--homedir",
+                environment.getValue("GNUPGHOME"),
                 "--batch",
                 "--yes",
                 "--pinentry-mode",
@@ -618,11 +635,8 @@ fun sign(repository: Path, files: List<Path>) {
                 path.toString(),
             ),
             environment = environment,
-            input =
-                System.getenv("KOTLIN_TOOLCHAIN_SIGNING_KEY_PASSPHRASE").orEmpty().toByteArray(),
+            input = passphrase.toByteArray(),
         )
-    } finally {
-        deleteTree(temporary)
     }
     checksums(repository)
 }

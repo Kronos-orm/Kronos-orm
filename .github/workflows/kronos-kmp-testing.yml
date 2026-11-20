@@ -630,6 +630,8 @@ jobs:
       run: pnpm check:links
     - name: Build documentation site
       working-directory: kronos-docs
+      env:
+        DOCS_ICP_NUMBER: ${{ vars.DOCS_ICP_NUMBER }}
       run: pnpm build
     - name: Test Angular documentation application
       working-directory: kronos-docs

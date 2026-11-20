@@ -1,4 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
+import {icpNumber} from './site-config';
 import {SharedModule} from "./shared.module";
 import {MessageService} from 'primeng/api';
 import {AppService} from "./app.service";
@@ -23,6 +24,7 @@ import {updatePrimaryPalette} from "@primeuix/themes";
     providers: [MessageService]
 })
 export class AppComponent implements OnInit, OnDestroy {
+    readonly icpNumber = icpNumber;
     private unsubscribe$ = new Subject<void>();
     constructor(
         private primengConfig: PrimeNG,

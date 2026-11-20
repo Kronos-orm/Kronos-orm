@@ -33,6 +33,8 @@ jobs:
           node-version: 22
 
       - name: Build merged documentation site
+        env:
+          DOCS_ICP_NUMBER: ${{ vars.DOCS_ICP_NUMBER }}
         run: bash kronos-docs/deploy-docs.sh
 
       - name: Configure SSH

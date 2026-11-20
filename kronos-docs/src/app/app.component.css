@@ -42,3 +42,21 @@
     background: linear-gradient(90deg, rgba(98, 151, 164, 0) 0, #6297a4 30%, #6297a4 50%, #6297a4 70%, rgba(98, 151, 164, 0) 100%)
   }
 }
+
+.icp-footer {
+  padding: 16px 24px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ng-doc-text, #64748b);
+  background: var(--ng-doc-background, #fff);
+}
+
+.icp-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.icp-footer a:hover {
+  text-decoration: underline;
+}

@@ -67,3 +67,19 @@ For Cloudflare Pages, use:
 - Root directory: `kronos-docs`
 - Build command: `./deploy-docs.sh`
 - Build output directory: `dist/site`
+
+## ICP registration footer
+
+Set the GitHub repository Actions variable `DOCS_ICP_NUMBER` to `浙ICP备2026044501号-2`.
+The CN deployment workflow passes it to the build. The build reads it before Angular
+compilation and adds a link to `https://beian.miit.gov.cn/` at the bottom of the
+interactive website and generated static documentation pages. An empty or unset
+value hides the registration footer.
+
+For a local build:
+
+```bash
+DOCS_ICP_NUMBER='浙ICP备2026044501号-2' pnpm build
+```
+
+Changing this variable requires rebuilding the website.

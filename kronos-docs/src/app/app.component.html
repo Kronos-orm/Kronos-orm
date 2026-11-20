@@ -1,3 +1,8 @@
 <div class="alain-default__progress-bar" *ngIf="isFetching"></div>
 <router-outlet/>
+@if (icpNumber) {
+    <footer class="icp-footer">
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">{{ icpNumber }}</a>
+    </footer>
+}
 <p-toast />

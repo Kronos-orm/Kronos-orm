@@ -15,7 +15,12 @@ export function comparison(eventName, event) {
         return [event.pull_request.base.sha, event.pull_request.head.sha, '--merge-base'];
     }
     if (eventName === 'merge_group') return [event.merge_group.base_sha, event.merge_group.head_sha];
-    // Releases, manual runs and reusable workflow calls always run the complete suite.
+    if (eventName === 'push' && event.ref === 'refs/heads/main' &&
+        /^[0-9a-f]{40}$/i.test(event.before ?? '') && !/^0+$/.test(event.before) &&
+        /^[0-9a-f]{40}$/i.test(event.after ?? '')) {
+        return [event.before, event.after];
+    }
+    // Release pushes, manual runs and unknown ranges always run the complete suite.
     return null;
 }
 
@@ -44,5 +49,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         const kotlin = !refs || !docsOnly(paths);
         appendFileSync(process.env.GITHUB_OUTPUT, `kotlin=${kotlin}\n`);
         console.log(kotlin ? 'Run full Kotlin and documentation CI.' : 'Run documentation CI; skip Kotlin builds and tests.');
+        if (refs && kotlin) {
+            const requiredBy = paths.filter(path => !docsOnly([path]));
+            console.log('Full CI required by:', JSON.stringify(requiredBy));
+        }
     }
 }

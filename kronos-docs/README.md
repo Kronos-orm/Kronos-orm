@@ -101,5 +101,7 @@ pass. Module API generation and Toolchain setup are skipped in this CI path.
 
 Changes to `kronos-docs/deploy-docs.sh`, Kotlin modules, build/CI files, or any other
 paths run the full suite. Mixed changes also run the full suite. Release pushes,
-manual runs and reusable workflow calls always run full CI. Production deployment
-continues to build the complete site, including module API documentation.
+manual runs and reusable workflow calls without a supported change range run full CI.
+For pushes to `main`, the publication workflow compares the complete `before`/`after`
+range and skips Kotlin verification, publication Codacy polling and artifact publishing
+when every change is documentation-only. Website deployment continues to build the complete site, including module API documentation.

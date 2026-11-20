@@ -255,8 +255,10 @@ consumers inherit that result. The unit-receipt matrix keeps its protected check
 that tests are unnecessary; coverage, integration and Detekt retain their named skipped checks.
 `KMP gate` requires successful scope detection and website checks, rejects failed/cancelled jobs,
 and skips Toolchain/artifact verification on this path. Mixed, unknown, build, workflow and
-production deployment-script changes run full CI. Release pushes, manual runs and workflow calls
-also run full CI. Production deployments still build the complete Dokka site.
+production deployment-script changes run full CI. Release pushes, manual runs and workflow calls without a supported range also run full CI. Main pushes use
+the event's complete before/after range: `publish.yml` skips Kotlin verification, publication
+Codacy polling and artifact publishing for documentation-only changes. Website deployments
+still build the complete Dokka site.
 
 Validate the scope and final-gate behavior with:
 

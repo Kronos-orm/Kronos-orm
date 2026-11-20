@@ -17,10 +17,15 @@ test('source, build, CI, deployment and unknown files require full CI, including
     assert.equal(docsOnly([]), false);
 });
 
-test('PRs use the merge base, merge queues use their full range, other events run full CI', () => {
+test('PRs use the merge base, merge queues and main pushes use their full range', () => {
     assert.deepEqual(comparison('pull_request', {pull_request: {base: {sha: 'base'}, head: {sha: 'head'}}}),
         ['base', 'head', '--merge-base']);
     assert.deepEqual(comparison('merge_group', {merge_group: {base_sha: 'base', head_sha: 'head'}}), ['base', 'head']);
+    const before = 'a'.repeat(40), after = 'b'.repeat(40);
+    assert.deepEqual(comparison('push', {ref: 'refs/heads/main', before, after}), [before, after]);
+    assert.equal(comparison('push', {ref: 'refs/heads/release/0.4.0', before, after}), null);
+    assert.equal(comparison('push', {ref: 'refs/heads/main', before: '0'.repeat(40), after}), null);
+    assert.equal(comparison('push', {ref: 'refs/heads/main', before: 'unknown', after}), null);
     for (const event of ['push', 'workflow_dispatch', 'workflow_call']) assert.equal(comparison(event, {}), null);
 });
 
@@ -90,9 +95,12 @@ test('real Git ranges include every path and both sides of a rename', async () =
         const pr = head => ({pull_request: {base: {sha: base}, head: {sha: head}}});
         assert.equal(classify('pull_request', pr(docsHead)), 'kotlin=false\n');
         assert.equal(classify('merge_group', {merge_group: {base_sha: base, head_sha: docsHead}}), 'kotlin=false\n');
+        assert.equal(classify('push', {ref: 'refs/heads/main', before: base, after: docsHead}), 'kotlin=false\n');
+        assert.equal(classify('push', {ref: 'refs/heads/release/0.4.0', before: base, after: docsHead}), 'kotlin=true\n');
         git('mv', 'kronos-core/Model.kt', 'kronos-docs/Model.kt');
         const renamedHead = commit();
         assert.equal(classify('pull_request', pr(renamedHead)), 'kotlin=true\n');
+        assert.equal(classify('push', {ref: 'refs/heads/main', before: docsHead, after: renamedHead}), 'kotlin=true\n');
         assert.equal(classify('workflow_dispatch', {}), 'kotlin=true\n');
     } finally {
         rmSync(directory, {recursive: true, force: true});

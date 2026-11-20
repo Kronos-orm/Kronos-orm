@@ -247,6 +247,25 @@ It keeps the protected names `kronos-core-unittests`, `kronos-compiler-plugin-un
 `kronos-codegen-unittests`, `Run integration tests`, `Check Code Quality`, `kronos-core-coverage`,
 `Build documentation site`, and `KMP gate`. Codacy remains a separately required GitHub App check.
 
+The `changes` job uses `.github/scripts/ci-scope.mjs` to compare the full PR merge-base range
+or merge-group range without GitHub file-list limits. PRs limited to `kronos-docs/` (except
+`deploy-docs.sh`), root README/CONTRIBUTING/CHANGELOG Markdown, and `.agents/skills/` run only
+website policy, link, build/static and Angular checks. Kotlin root lanes are skipped and their
+consumers inherit that result. The unit-receipt matrix keeps its protected check names and reports
+that tests are unnecessary; coverage, integration and Detekt retain their named skipped checks.
+`KMP gate` requires successful scope detection and website checks, rejects failed/cancelled jobs,
+and skips Toolchain/artifact verification on this path. Mixed, unknown, build, workflow and
+production deployment-script changes run full CI. Release pushes, manual runs and workflow calls without a supported range also run full CI. Main pushes use
+the event's complete before/after range: `publish.yml` skips Kotlin verification, publication
+Codacy polling and artifact publishing for documentation-only changes. Website deployments
+still build the complete Dokka site.
+
+Validate the scope and final-gate behavior with:
+
+```bash
+node --test .github/scripts/ci-scope.test.mjs
+```
+
 The JVM candidate feeds all five OS/JDK compatibility entries, KEFS, server examples and the Android
 APK producer. JDK 21 module receipts require the matrix's actual complete JUnit results, avoiding a
 second identical unit-suite execution. Four instrumented JVM coverage suites and the actual KEFS editor

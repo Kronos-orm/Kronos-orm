@@ -15,7 +15,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  changes:
+    name: Detect publication scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      kotlin: ${{ steps.scope.outputs.kotlin }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test CI scope and gate policy
+        run: node --test .github/scripts/ci-scope.test.mjs
+      - name: Classify the complete main push
+        id: scope
+        run: node .github/scripts/ci-scope.mjs
+
   kmp-verification:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
     uses: ./.github/workflows/kronos-kmp-testing.yml
     permissions:
       contents: write
@@ -23,6 +44,8 @@ jobs:
       pull-requests: write
 
   codacy:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
     name: Verify Codacy on the publication commit
     runs-on: ubuntu-24.04
     timeout-minutes: 50

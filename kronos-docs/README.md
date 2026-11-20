@@ -82,4 +82,26 @@ For a local build:
 DOCS_ICP_NUMBER='浙ICP备2026044501号-2' pnpm build
 ```
 
+For Cloudflare Pages Git integration, set `DOCS_ICP_NUMBER=浙ICP备2026044501号-2`
+in the Pages project under **Settings → Variables and Secrets** (or **Environment
+variables**), selecting **Production**. Set it for **Preview** too if preview
+sites should display it. GitHub repository variables are only available to GitHub
+Actions; Cloudflare builds do not inherit them. Retry the deployment after saving.
+
 Changing this variable requires rebuilding the website.
+
+## Documentation pull request checks
+
+PRs and merge queue entries that only change `kronos-docs/`, root README/contributor/
+changelog Markdown files, or `.agents/skills/` run website policy tests, route/link
+checks, the production Angular/static build and Angular tests. Kotlin publication,
+platform tests, database integration, Detekt and coverage are skipped. Protected
+check names still report a result and `KMP gate` requires documentation checks to
+pass. Module API generation and Toolchain setup are skipped in this CI path.
+
+Changes to `kronos-docs/deploy-docs.sh`, Kotlin modules, build/CI files, or any other
+paths run the full suite. Mixed changes also run the full suite. Release pushes,
+manual runs and reusable workflow calls without a supported change range run full CI.
+For pushes to `main`, the publication workflow compares the complete `before`/`after`
+range and skips Kotlin verification, publication Codacy polling and artifact publishing
+when every change is documentation-only. Website deployment continues to build the complete site, including module API documentation.

@@ -13,7 +13,25 @@ concurrency:
   group: kmp-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
+  changes:
+    name: Detect CI scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      kotlin: ${{ steps.scope.outputs.kotlin }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Test CI scope and gate policy
+      run: node --test .github/scripts/ci-scope.test.mjs
+    - name: Classify all changed paths
+      id: scope
+      run: node .github/scripts/ci-scope.mjs
   jvm-candidate:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
     uses: ./.github/workflows/kronos-kmp-publication.yml
     with:
       phase: jvm
@@ -359,7 +377,8 @@ jobs:
     uses: ./.github/workflows/kronos-ide-support.yml
   unit-receipts:
     name: ${{ format('kronos-{0}-unittests', matrix.module) }}
-    needs: jvm
+    needs: [changes, jvm]
+    if: always() && needs.changes.result == 'success' && (needs.changes.outputs.kotlin == 'false' || needs.jvm.result == 'success')
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -370,19 +389,28 @@ jobs:
         - codegen
         - syntax
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Documentation-only change
+      if: needs.changes.outputs.kotlin == 'false'
+      run: echo 'Kotlin unit tests are not required for documentation-only changes.'
+    - if: needs.changes.outputs.kotlin == 'true'
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
-    - uses: ./.github/actions/setup-toolchain
+    - if: needs.changes.outputs.kotlin == 'true'
+      uses: ./.github/actions/setup-toolchain
       with:
         lane: unit-receipts
-    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+    - if: needs.changes.outputs.kotlin == 'true'
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: kmp-jvm-ubuntu-24.04-jdk-21-reports
         path: jvm-results
     - name: Require the complete module suite from the JDK 21 matrix
+      if: needs.changes.outputs.kotlin == 'true'
       run: scripts/run .github/scripts/verify-kmp-test-results.main.kts "jvm-results/build/reports/kronos-${{ matrix.module }}/jvm"
   coverage-suites:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
     name: Instrumented CLI coverage suites
     runs-on: ubuntu-22.04
     steps:
@@ -408,8 +436,8 @@ jobs:
         overwrite: true
   kronos-core-coverage:
     name: kronos-core-coverage
-    needs: [coverage-suites, ide-support]
-    if: always()
+    needs: [changes, coverage-suites, ide-support]
+    if: always() && needs.changes.outputs.kotlin == 'true'
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -596,12 +624,14 @@ jobs:
       pull-requests: write
   docs:
     name: Build documentation site
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
     - name: Set up JDK 21
+      if: needs.changes.outputs.kotlin == 'true'
       uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
       with:
         distribution: temurin
@@ -617,6 +647,7 @@ jobs:
         cache: pnpm
         cache-dependency-path: kronos-docs/pnpm-lock.yaml
     - uses: ./.github/actions/setup-toolchain
+      if: needs.changes.outputs.kotlin == 'true'
       with:
         lane: docs
     - name: Install documentation dependencies
@@ -637,12 +668,16 @@ jobs:
       working-directory: kronos-docs
       run: pnpm run test --watch=false --browsers=ChromeHeadless
     - name: Build and verify module API documentation
+      if: needs.changes.outputs.kotlin == 'true'
       run: scripts/run quality dokka
     - name: Merge the complete documentation site
+      if: needs.changes.outputs.kotlin == 'true'
       run: node kronos-docs/scripts/merge-site.mjs kronos-docs/docs docs docs/kronos-gradle-plugin kronos-docs/dist/site
     permissions:
       contents: read
   high-level-tests:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
     name: Run integration tests
     runs-on: ubuntu-22.04
     steps:
@@ -672,6 +707,8 @@ jobs:
       if: always()
       run: docker compose -f kronos-testing/docker-compose.integration.yml down -v
   detekt:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
     name: Check Code Quality
     runs-on: ubuntu-latest
     steps:
@@ -691,6 +728,7 @@ jobs:
     name: KMP gate
     if: always()
     needs:
+    - changes
     - jvm-candidate
     - jvm
     - metadata
@@ -725,27 +763,30 @@ jobs:
     env:
       NEEDS_JSON: ${{ toJson(needs) }}
     steps:
-    - name: Require every platform, consumer and quality gate to pass
-      run: |
-        echo "$NEEDS_JSON" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
-        echo "$NEEDS_JSON" | jq -e 'length > 0 and all(.[]; .result == "success")'
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
+    - name: Verify checks required for the detected scope
+      run: node .github/scripts/ci-scope.mjs gate
     - uses: ./.github/actions/setup-toolchain
+      if: needs.changes.outputs.kotlin == 'true'
       with:
         lane: gate
     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      if: needs.changes.outputs.kotlin == 'true'
       with:
         pattern: receipt-*
         path: build/receipts
     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      if: needs.changes.outputs.kotlin == 'true'
       with:
         name: complete-publication-manifest
         path: build/final-manifest
     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      if: needs.changes.outputs.kotlin == 'true'
       with:
         name: android-apk-manifest
         path: build/android-manifest
     - name: Verify all twelve consumers used the final candidate bytes
+      if: needs.changes.outputs.kotlin == 'true'
       run: scripts/run release verify-consumers --repository build/final-manifest/ci-candidate.json --seed build/android-manifest/ci-candidate.json --input build/receipts

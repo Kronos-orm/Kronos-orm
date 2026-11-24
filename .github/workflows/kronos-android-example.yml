@@ -32,7 +32,7 @@ jobs:
         path: kronos-example-android
         persist-credentials: false
     - name: Set up JDK 21 for Kronos publication
-      uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
       with:
         java-version: 21
         distribution: temurin
@@ -64,7 +64,7 @@ jobs:
         set -euo pipefail
         kronos-orm/scripts/run .github/scripts/prepare-examples.main.kts android --workspace "$GITHUB_WORKSPACE"
     - name: Set up JDK 17 for Android
-      uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
       with:
         java-version: 17
         distribution: temurin
@@ -131,7 +131,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
-    - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
+    - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
       with:
         distribution: temurin
         java-version: '17'
